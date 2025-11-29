@@ -1,0 +1,70 @@
+@import "tailwindcss";
+
+@theme {
+
+  --color-brand-50: oklch(0.98 0.01 20);
+  --color-brand-100: oklch(0.95 0.03 20);
+  --color-brand-500: oklch(0.55 0.20 25);
+
+  --color-brand-600: oklch(0.45 0.20 25);
+  --color-brand-900: oklch(0.25 0.10 25);
+
+  --color-background: oklch(0.99 0 0);
+  --color-foreground: oklch(0.15 0.02 260);
+
+  --font-display: "Poppins", "Inter", sans-serif;
+  --font-body: "Poppins", sans-serif;
+
+  --animate-blob: blob 7s infinite;
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+
+  .bg-grid-pattern {
+    background-size: 40px 40px;
+    background-image: linear-gradient(to right, rgba(0, 0, 0, 0.05) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(0, 0, 0, 0.05) 1px, transparent 1px);
+  }
+
+
+  .glass {
+    @apply bg-white/70 backdrop-blur-lg border border-white/20;
+  }
+}
+
+@keyframes blob {
+  0% {
+    transform: translate(0px, 0px) scale(1);
+  }
+
+  33% {
+    transform: translate(30px, -50px) scale(1.1);
+  }
+
+  66% {
+    transform: translate(-20px, 20px) scale(0.9);
+  }
+
+  100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+}
+
+:root {
+  color-scheme: light;
+}
+
+body {
+  @apply bg-background text-foreground antialiased selection:bg-brand-500/20 selection:text-brand-900;
+  font-family: var(--font-body);
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+}
