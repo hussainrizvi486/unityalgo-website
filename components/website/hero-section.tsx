@@ -7,6 +7,8 @@ import { ArrowRight, ShieldCheck, Zap, Layers } from 'lucide-react';
 import { Globe } from '@/components/globe';
 
 export function HeroSection() {
+    const [windowWidth, setWindowWidth] = useState(0);
+
     const { scrollY } = useScroll();
     const y1 = useTransform(scrollY, [0, 500], [0, 200]);
     const globeY = useTransform(scrollY, [0, 500], [0, 100]);
@@ -18,27 +20,33 @@ export function HeroSection() {
     const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
 
     useEffect(() => {
+
+        const handleResize = () => setWindowWidth(window.innerWidth)
+
+
         const handleMouseMove = (e: MouseEvent) => {
             setMousePosition({
                 x: (e.clientX - window.innerWidth / 2) / 20,
                 y: (e.clientY - window.innerHeight / 2) / 20
             });
         };
+
         window.addEventListener('mousemove', handleMouseMove);
-        return () => window.removeEventListener('mousemove', handleMouseMove);
+        window.addEventListener("resize", handleResize)
+
+        return () => {
+            window.removeEventListener('mousemove', handleMouseMove);
+            window.removeEventListener("resize", handleResize);
+        }
     }, []);
 
     return (
         <section className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden bg-background pt-32 pb-20">
 
-            {/* --- BACKGROUND LAYERS --- */}
-
-            {/* 1. Tech Grid */}
             <div className="absolute inset-0 z-0">
-                <div className="absolute inset-0 bg-grid-pattern [mask-image:radial-gradient(ellipse_at_center,black_30%,transparent_70%)] opacity-40" />
+                <div className="absolute inset-0 bg-grid-pattern mask-[radial-gradient(ellipse_at_center,black_30%,transparent_70%)] opacity-40" />
             </div>
 
-            {/* 2. Ambient Red/Blue Glows */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
                 <motion.div
                     style={{ x: mousePosition.x * -1, y: mousePosition.y * -1 }}
@@ -50,27 +58,24 @@ export function HeroSection() {
                 />
             </div>
 
-            {/* --- THE 3D GLOBE (Positioned absolutely behind the content) --- */}
-            <motion.div
-                style={{ y: globeY }}
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 1.5, ease: "easeOut" }}
-                className="absolute z-0 top-[15%] md:top-[10%] opacity-40 md:opacity-100 pointer-events-none"
-            >
-                {/* We wrap it in a div that fades out at the bottom so it blends into the footer area */}
-                <div className="relative">
-                    <Globe className="w-[500px] h-[500px] md:w-[800px] md:h-[800px]" />
-                    {/* Fade Mask */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-transparent z-10" />
-                </div>
-            </motion.div>
+            {windowWidth > 760 &&
+                <motion.div
+                    style={{ y: globeY }}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 1.5, ease: "easeOut" }}
+                    className="absolute z-0 top-[15%] md:top-[10%] opacity-40 md:opacity-100 pointer-events-none"
+                >
+
+                    <div className="relative">
+                        <Globe className="w-[500px] h-[500px] md:w-[800px] md:h-[800px]" />
+                        <div className="absolute inset-0 bg-linear-to-t from-white via-transparent to-transparent z-10" />
+                    </div>
+                </motion.div>
+            }
 
 
-            {/* --- MAIN TEXT CONTENT --- */}
             <div className="container relative z-10 px-4 mx-auto text-center">
-
-                {/* Badge */}
                 <motion.div
                     initial={{ opacity: 0, y: -20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -88,12 +93,11 @@ export function HeroSection() {
                     </div>
                 </motion.div>
 
-                {/* Headline */}
                 <motion.h1
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.7, ease: "easeOut" }}
-                    className="relative max-w-5xl mx-auto text-5xl md:text-7xl font-bold tracking-tight text-brand-900 mb-6 text-balance leading-[1.1]"
+                    className="relative max-w-5xl mx-auto text-4xl md:text-7xl font-bold tracking-tight text-brand-900 mb-6 text-balance leading-[1.1]"
                 >
                     Empowering Business with <br className="hidden md:block" />
                     <span className="bg-linear-to-r from-brand-500 via-brand-600 to-brand-900 bg-clip-text ">
@@ -101,18 +105,17 @@ export function HeroSection() {
                     </span>
                 </motion.h1>
 
-                {/* Subtext */}
                 <motion.p
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.7, delay: 0.2, ease: "easeOut" }}
-                    className="relative max-w-2xl mx-auto text-lg md:text-xl text-gray-600 mb-10 text-balance backdrop-blur-sm"
+                    className="relative max-w-2xl mx-auto md:text-xl text-gray-600 mb-10 text-balance backdrop-blur-sm"
                 >
                     We engineer scalable digital ecosystems that drive transformation.
                     Connect with a global network of innovation.
                 </motion.p>
 
-                {/* Buttons */}
+
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -121,22 +124,23 @@ export function HeroSection() {
                 >
                     <Button
                         size="lg"
-                        className="h-12 px-8 text-base bg-brand-600 hover:bg-brand-500 text-white rounded-full shadow-lg shadow-brand-500/25 transition-all hover:scale-105"
+                        className="px-8 text-xs sm:h-12 sm:text-base bg-brand-600 hover:bg-brand-500 text-white rounded-full shadow-lg shadow-brand-500/25 transition-all hover:scale-105"
                     >
-                        Get Started <ArrowRight className="ml-2 w-4 h-4" />
+                        Get Started <ArrowRight className="ml-1 w-4 h-4" />
                     </Button>
 
                     <Button
                         variant="outline"
                         size="lg"
                         onClick={() => scrollToSection('services')}
-                        className="h-12 px-8 text-base bg-white/60 backdrop-blur-md border-gray-200 text-gray-800 hover:bg-white rounded-full transition-all"
+
+                        className="px-8 text-xs sm:h-12 sm:text-base bg-white/60 backdrop-blur-md shadow-md border-input hover:bg-white rounded-full transition-all"
                     >
                         Our Services
                     </Button>
                 </motion.div>
 
-                
+
                 <motion.div
                     style={{ y: y1 }}
                     className="relative z-20 grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto mt-12"

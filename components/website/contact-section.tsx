@@ -115,59 +115,60 @@ export function Contact() {
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <label htmlFor="first_name" className="text-xs font-semibold uppercase tracking-wider text-gray-500">First Name</label>
+                  <label htmlFor="first_name" className="text-xs font-semibold uppercase tracking-wider">First Name</label>
                   <Input
                     id="first_name"
                     value={formData.first_name}
                     onChange={handleChange}
                     required
-                    className="bg-gray-50 border-gray-200 focus:border-brand-500 focus:ring-brand-500/20 h-12"
+                    className="focus-within:ring-brand-500/20"
                     placeholder="John"
                   />
                 </div>
                 <div className="space-y-2">
-                  <label htmlFor="last_name" className="text-xs font-semibold uppercase tracking-wider text-gray-500">Last Name</label>
+                  <label htmlFor="last_name" className="text-xs font-semibold uppercase tracking-wider">Last Name</label>
                   <Input
                     id="last_name"
                     value={formData.last_name}
                     onChange={handleChange}
                     required
-                    className="bg-gray-50 border-gray-200 focus:border-brand-500 focus:ring-brand-500/20 h-12"
+                    className="focus-within:ring-brand-500/20"
                     placeholder="Doe"
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <label htmlFor="email" className="text-xs font-semibold uppercase tracking-wider text-gray-500">Email Address</label>
+                <label htmlFor="email" className="text-xs font-semibold uppercase tracking-wider">Email Address</label>
                 <Input
                   id="email"
                   type="email"
                   value={formData.email}
                   onChange={handleChange}
                   required
-                  className="bg-gray-50 border-gray-200 focus:border-brand-500 focus:ring-brand-500/20 h-12"
+                  className="focus-within:ring-brand-500/20"
                   placeholder="john@example.com"
                 />
               </div>
 
               <div className="space-y-2">
-                <label htmlFor="phone" className="text-xs font-semibold uppercase tracking-wider text-gray-500">Phone Number</label>
+                <label htmlFor="phone" className="text-xs font-semibold uppercase tracking-wider">Phone Number</label>
                 <Input
                   id="phone"
                   value={formData.phone}
                   onChange={handleChange}
                   required
-                  className="bg-gray-50 border-gray-200 focus:border-brand-500 focus:ring-brand-500/20 h-12"
+                  className="focus-within:ring-brand-500/20"
                   placeholder="+1 (555) 000-0000"
                 />
               </div>
 
               <div className="space-y-2">
-                <label htmlFor="message" className="text-xs font-semibold uppercase tracking-wider text-gray-500">Message</label>
+                <label htmlFor="message" className="text-xs font-semibold uppercase tracking-wider">Message</label>
                 <textarea
+
                   id="message"
-                  className="flex w-full rounded-md border border-gray-200 bg-gray-50 px-3 py-3 text-sm ring-offset-white placeholder:text-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/20 focus-visible:border-brand-500 disabled:cursor-not-allowed disabled:opacity-50 min-h-[120px]"
+                  className="flex w-full rounded-md border border-input px-3 py-3 text-sm ring-offset-white placeholder:text-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-within:ring-brand-500/20 disabled:cursor-not-allowed disabled:opacity-50 min-h-[120px]"
                   placeholder="Tell us about your project..."
                   value={formData.message}
                   onChange={handleChange}

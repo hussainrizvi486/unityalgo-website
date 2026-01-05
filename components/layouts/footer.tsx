@@ -74,7 +74,6 @@ export function Footer() {
             </ul>
           </div>
 
-          {/* Social Media */}
           <div>
             <h4 className="mb-4" style={{ fontSize: '1.125rem', fontWeight: 600 }}>
               Connect With Us
@@ -84,6 +83,7 @@ export function Footer() {
                 href="https://www.facebook.com/profile.php?id=61583797718151"
                 className="w-10 h-10 rounded-full bg-white/10 hover:bg-[#7B0F0F] flex items-center justify-center transition-colors"
                 aria-label="Facebook"
+                target='_blank'
               >
                 <Facebook className="w-5 h-5" />
               </Link>
@@ -91,33 +91,31 @@ export function Footer() {
                 href="https://www.linkedin.com/company/unityalgo/posts/?feedView=all"
                 className="w-10 h-10 rounded-full bg-white/10 hover:bg-[#7B0F0F] flex items-center justify-center transition-colors"
                 aria-label="LinkedIn"
+                target='_blank'
               >
                 <Linkedin className="w-5 h-5" />
               </Link>
-              <Link
+              {/* <Link
                 href="https://github.com/orgs/UnityAlgo/dashboard"
                 className="w-10 h-10 rounded-full bg-white/10 hover:bg-[#7B0F0F] flex items-center justify-center transition-colors"
                 aria-label="GitHub"
               >
                 <Github className="w-5 h-5" />
-              </Link>
+              </Link> */}
             </div>
           </div>
         </div>
 
-        {/* Bottom Bar */}
-        <div className="border-t border-white/10 pt-8">
+
+        <div className="pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-gray-300 text-center md:text-left">
-              © 2025 UnityAlgo. All rights reserved.
+            <p className="text-center md:text-left">
+              &copy; 2026 UnityAlgo. All rights reserved.
             </p>
             <div className="flex gap-6">
-              <Link href="/privacy-policy" className="text-gray-300 hover:text-white transition-colors">
+              <Link href="/privacy-policy">
                 Privacy Policy
               </Link>
-              <a href="#" className="text-gray-300 hover:text-white transition-colors">
-                Terms of Service
-              </a>
             </div>
           </div>
         </div>
