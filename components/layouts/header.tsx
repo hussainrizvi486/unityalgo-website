@@ -1,11 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Logo } from '@/components/Logo'; // Assuming you have this component
 import Link from 'next/link';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Menu, X } from 'lucide-react'; // Install lucide-react if missing
+import { TextAlignJustify, X as CloseIcon } from 'lucide-react';
+import { create } from 'zustand';
+
+import { Button } from '@/components/ui/button';
+import { Logo } from '@/components/Logo';
 
 const navLinks = [
   { name: 'Home', href: '/' },
@@ -14,9 +16,22 @@ const navLinks = [
   { name: 'Contact', href: '/#contact' },
 ];
 
+interface UIState {
+  mobileMenuOpen: boolean;
+  setMobileMenuOpen: (open: boolean) => void;
+  toggleMobileMenu: () => void;
+}
+
+export const UIStore = create<UIState>((set) => ({
+  mobileMenuOpen: false,
+  setMobileMenuOpen: (open: boolean) => set({ mobileMenuOpen: open }),
+  toggleMobileMenu: () => set((state) => ({ mobileMenuOpen: !state.mobileMenuOpen })),
+
+}))
+
 export function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const state = UIStore();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -38,7 +53,7 @@ export function Header() {
         <div className="container mx-auto px-4 md:px-6">
           <div className="flex items-center justify-between">
 
-            {/* Logo Wrapper */}
+
             <div className="shrink-0">
               <Logo />
             </div>
@@ -70,41 +85,48 @@ export function Header() {
 
             <button
               className="md:hidden p-2 text-gray-600"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              onClick={() => state.setMobileMenuOpen(!state.mobileMenuOpen)}
             >
-              {mobileMenuOpen ? <X /> : <Menu />}
+              {state.mobileMenuOpen ? <CloseIcon className='stroke-3 size-6' /> : <TextAlignJustify className='stroke-3 size-6' />}
             </button>
           </div>
         </div>
       </header>
 
-      {/* Mobile Menu Overlay */}
+
       <AnimatePresence>
-        {mobileMenuOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="fixed inset-0 z-40 bg-white pt-24 px-6 md:hidden"
-          >
-            <div className="flex flex-col gap-6 text-center">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.name}
-                  href={link.href}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="text-2xl font-medium text-gray-800 hover:text-brand-600"
-                >
-                  {link.name}
-                </Link>
-              ))}
-              <Button className="w-full bg-brand-600 mt-4 h-12 text-lg rounded-xl">
-                Get Started
-              </Button>
-            </div>
-          </motion.div>
+        {state.mobileMenuOpen && (
+          <MobileMenu />
         )}
       </AnimatePresence>
     </>
   );
+}
+
+const MobileMenu = () => {
+  const { setMobileMenuOpen } = UIStore();
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      className="fixed inset-0 z-40 bg-white pt-24 px-6 md:hidden"
+    >
+      <div className="flex flex-col gap-4 text-center">
+        {navLinks.map((link) => (
+          <Link
+            key={link.name}
+            href={link.href}
+            onClick={() => setMobileMenuOpen(false)}
+            className="font-medium text-gray-800 hover:text-brand-600"
+          >
+            {link.name}
+          </Link>
+        ))}
+        <Button className="w-full mt-4" size="sm">
+          Get Started
+        </Button>
+      </div>
+    </motion.div>
+  )
 }

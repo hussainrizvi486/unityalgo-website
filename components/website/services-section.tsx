@@ -17,9 +17,16 @@ interface ServiceType {
 
 const data: Array<ServiceType> = [
     {
+        title: "ERP Systems",
+        description: "Powerful ERP solutions using Frappe and ERPNext to streamline operations, improve efficiency, and gain real-time insights.",
+        image: "/images/erp-development.png",
+        link: "/services/erp-software",
+        languages: ["Frappe", "ERPNext", "Python", "Integrations"],
+    },
+    {
         title: "Front-End Development",
         description: "We craft responsive, fast, and intuitive user interfaces using modern front-end frameworks. Seamless experiences across all devices.",
-        image: "/images/frontend-development.png", // Ensure these images exist or replace with Icons
+        image: "/images/frontend-development.png",
         languages: ["React", "Next.js", "TypeScript", "Tailwind"],
     },
     {
@@ -34,24 +41,17 @@ const data: Array<ServiceType> = [
         image: "/images/web-development.png",
         languages: ["Full Stack", "React", "Django", "Cloud"],
     },
-    {
-        title: "ERP Systems",
-        description: "Powerful ERP solutions using Frappe and ERPNext to streamline operations, improve efficiency, and gain real-time insights.",
-        image: "/images/erp-development.png",
-        languages: ["Frappe", "ERPNext", "Python", "Integrations"],
-    }
+
 ];
 
 export const Services = () => {
     return (
         <section className="relative min-h-screen bg-background text-foreground py-24 overflow-hidden" id="services">
 
-            {/* Background Grid */}
+
             <div className="absolute inset-0 bg-grid-pattern mask-[linear-gradient(to_bottom,transparent,black_10%,black_90%,transparent)] opacity-30 pointer-events-none" />
 
             <div className="container relative z-10 mx-auto px-4 md:px-6">
-
-                {/* Header */}
                 <div className="mb-20 text-center max-w-3xl mx-auto">
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
@@ -104,7 +104,7 @@ export const Services = () => {
                     </div>
                 </div>
 
-                {/* "Why Us" Section - Rebranded to Red/White */}
+
                 <div className="relative">
                     <div className="text-center mb-16">
                         <h3 className="text-3xl font-bold text-brand-900">
@@ -112,22 +112,20 @@ export const Services = () => {
                         </h3>
                     </div>
 
-                    <div className="grid md:grid-cols-3 gap-6">
-                        {/* Card 1 */}
+                    <div className="grid md:grid-cols-3 gap-2">
                         <FeatureCard
                             icon={MessageSquare}
                             title="Transparent Comms"
                             desc="We foster trust through radical openness. No jargon, just clear updates and honest timelines."
                             delay={0}
                         />
-                        {/* Card 2 */}
                         <FeatureCard
                             icon={Users}
                             title="Customer-First"
                             desc="We don't build for us, we build for you. Your business goals dictate every line of code we write."
                             delay={0.1}
                         />
-                        {/* Card 3 */}
+
                         <FeatureCard
                             icon={Zap}
                             title="Rapid Innovation"
@@ -162,19 +160,19 @@ const ServiceCard = (props: ServiceType & { index: number }) => {
 
                     <div className="flex gap-2 flex-wrap mb-8">
                         {props.languages.map((val, index) => (
-                            <span key={index} className="px-2.5 py-1 text-[11px] font-medium bg-gray-100 text-gray-600 rounded-md border border-gray-200 group-hover:bg-brand-50 group-hover:text-brand-700 group-hover:border-brand-100 transition-colors">
+                            <span key={index} className="px-2.5 py-1 text-xs font-medium bg-gray-100 rounded-full border border-gray-200 group-hover:bg-brand-50 group-hover:text-brand-700 group-hover:border-brand-100 transition-colors">
                                 {val}
                             </span>
                         ))}
                     </div>
 
                     <div className="flex items-center gap-3">
-                        <Button className="rounded-full bg-brand-600 hover:bg-brand-700 text-white shadow-lg shadow-brand-500/20">
+                        <Button className="text-white bg-brand-600 shadow-md shadow-brand-500/20 rounded-md hover:bg-brand-700">
                             Start Project
                         </Button>
                         {props.link && (
                             <Link href={props.link}>
-                                <Button variant="ghost" className="rounded-full hover:bg-gray-100 text-gray-600 group-hover:text-brand-600">
+                                <Button variant="ghost" className="rounded-md hover:bg-gray-100 text-gray-600 group-hover:text-brand-600">
                                     Learn more <ArrowUpRight className="ml-1 w-4 h-4" />
                                 </Button>
                             </Link>
@@ -182,8 +180,8 @@ const ServiceCard = (props: ServiceType & { index: number }) => {
                     </div>
                 </div>
 
-                <div className="relative shrink-0 md:w-40 md:h-40 flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl group-hover:scale-105 transition-transform duration-500">
-                    {/* Replace with actual image or Lucide Icon fallback */}
+                <div className="relative shrink-0 md:w-40 md:h-40 flex items-center justify-center bg-linear-to-br from-gray-50 to-gray-100 rounded-2xl group-hover:scale-105 transition-transform duration-500">
+
                     <Image
                         src={props.image}
                         alt={props.title}
@@ -203,13 +201,13 @@ const FeatureCard = ({ icon: Icon, title, desc, delay }: { icon: any, title: str
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
         transition={{ delay }}
-        className="group p-8 rounded-3xl bg-white border border-gray-100 shadow-sm hover:shadow-xl hover:shadow-brand-900/5 hover:-translate-y-1 transition-all duration-300"
+        className="group p-6 py-12 rounded-md bg-white shadow-sm hover:shadow-xl cursor-pointer transition-all duration-300"
     >
         <div className="w-14 h-14 rounded-2xl bg-brand-50 flex items-center justify-center mb-6 group-hover:bg-brand-600 transition-colors duration-300">
             <Icon className="w-7 h-7 text-brand-600 group-hover:text-white transition-colors" />
         </div>
-        <h4 className="text-xl font-bold text-gray-900 mb-3">{title}</h4>
-        <p className="text-gray-500 text-sm leading-relaxed">
+        <h4 className="text-xl font-bold mb-3">{title}</h4>
+        <p className="text-sm">
             {desc}
         </p>
     </motion.div>
