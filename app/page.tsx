@@ -1,18 +1,19 @@
-import { Header } from '../components/layouts/header';
+import { Header } from '@/components/layouts/header';
+import { Footer } from '@/components/layouts/footer';
+
 import { HeroSection } from '@/components/website/hero-section';
-import { Services } from '../components/website/services-section';
-import { Contact } from '../components/website/contact-section';
-import { Footer } from '../components/layouts/footer';
+import { Services } from '@/components/website/services-section';
+import { Contact } from '@/components/website/contact-section';
+
 import { Toaster } from "react-hot-toast";
 
-export default function HomePage() {
+const Index = () => {
   return (
     <div className="min-h-screen">
       <Header />
       <HeroSection />
       <main>
         <Services />
-        {/* <About /> */}
         <Contact />
       </main>
       <Footer />
@@ -20,3 +21,6 @@ export default function HomePage() {
     </div>
   );
 }
+
+
+export default Index;

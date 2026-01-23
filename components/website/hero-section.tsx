@@ -7,7 +7,7 @@ import { ArrowRight, ShieldCheck, Zap, Layers } from 'lucide-react';
 import { Globe } from '@/components/globe';
 
 export function HeroSection() {
-    const [windowWidth, setWindowWidth] = useState(0);
+    const [windowWidth, setWindowWidth] = useState(1000);
 
     const { scrollY } = useScroll();
     const y1 = useTransform(scrollY, [0, 500], [0, 200]);
@@ -20,10 +20,7 @@ export function HeroSection() {
     const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
 
     useEffect(() => {
-
         const handleResize = () => setWindowWidth(window.innerWidth)
-
-
         const handleMouseMove = (e: MouseEvent) => {
             setMousePosition({
                 x: (e.clientX - window.innerWidth / 2) / 20,
@@ -33,12 +30,15 @@ export function HeroSection() {
 
         window.addEventListener('mousemove', handleMouseMove);
         window.addEventListener("resize", handleResize)
+        window.addEventListener("DOMContentLoaded", handleResize)
 
         return () => {
             window.removeEventListener('mousemove', handleMouseMove);
             window.removeEventListener("resize", handleResize);
+            window.removeEventListener("DOMContentLoaded", handleResize)
         }
     }, []);
+
 
     return (
         <section className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden bg-background pt-32 pb-20">

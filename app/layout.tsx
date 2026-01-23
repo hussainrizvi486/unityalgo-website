@@ -12,60 +12,56 @@ const poppins = Poppins({
   weight: ['100', '200', '300', '400', '500', '600', '700', '800', '900']
 });
 
-const baseUrl = process.env.NEXT_PUBLIC_BASE_URL
-  ? `https://${process.env.NEXT_PUBLIC_BASE_URL}`
-  : 'https://unityalgo.com';
+const baseUrl = "https://www.unityalgo.com"
 
 export const metadata: Metadata = {
-  metadataBase: new URL(baseUrl),
-  title: {
-    default: "Software Development Company | ERP Software | UnityAlgo",
-    template: "%s | UnityAlgo",
+  'metadataBase': new URL(baseUrl),
+  'title': {
+    'default': "Software Development Company | ERP Software | UnityAlgo",
+    'template': "%s | UnityAlgo",
   },
-  description: "UnityAlgo empowers businesses with scalable web solutions, ERPNext implementations, and custom software engineering. Transform your digital presence with our expert team.",
-  keywords: ["Software Engineering", "Web Development", "ERPNext", "Karachi", "Digital Transformation", "React", "Next.js", "App Development", "Software", "Web Services", "ERPNext Pakistan", "Software House", "Software Company"],
-  authors: [{ name: "UnityAlgo Team" }],
-  creator: "UnityAlgo",
-  publisher: "UnityAlgo",
-  formatDetection: {
+  'description': "UnityAlgo offers scalable web solutions, ERP implementations, and software engineering to empower your business. Transform your digital presence with us.",
+  'keywords': ["Software Engineering", "Web Development", "ERPNext", "Karachi", "Digital Transformation", "React", "Next.js", "App Development", "Software", "Web Services", "ERPNext Pakistan", "Software House", "Software Company"],
+  'authors': [{ name: "UnityAlgo Team" }],
+  'creator': "UnityAlgo",
+  'publisher': "UnityAlgo",
+  'formatDetection': {
     email: false,
     address: false,
     telephone: false,
   },
-  openGraph: {
-    type: "website",
-    locale: "en_US",
-    url: baseUrl,
-    siteName: "UnityAlgo",
-    title: "Software Development Company | ERP Software | UnityAlgo",
-    description: "UnityAlgo is a technology partner specializing in scalable software systems, ERP software solutions, and enterprise-grade product development",
-    images: [
+  'openGraph': {
+    'type': "website",
+    'locale': "en_US",
+    'url': baseUrl,
+    'siteName': "UnityAlgo",
+    'title': "Software Development Company | ERP Software | UnityAlgo",
+    'description': "UnityAlgo offers scalable web solutions, ERP implementations, and software engineering to empower your business. Transform your digital presence with us.",
+    'images': [
       {
-        url: "/images/og-image.jpg",
-        width: 1200,
-        height: 630,
-        alt: "UnityAlgo - Empowering Business",
+        'url': "https://www.unityalgo.com/logo.png",
+        'alt': "UnityAlgo - Empowering Business",
       },
     ],
   },
-  twitter: {
-    card: "summary_large_image",
-    title: "Software Development Company | ERP Software | UnityAlgo",
-    description: "We engineer scalable digital ecosystems that drive transformation.",
-    images: ["/images/og-image.jpg"],
+  'twitter': {
+    'card': "summary_large_image",
+    'title': "Software Development Company | ERP Software | UnityAlgo",
+    'description': "We engineer scalable digital ecosystems that drive transformation.",
+    'images': ["https://www.unityalgo.com/logo.png"],
   },
 
-  icons: {
-    icon: "/favicon.ico",
-    shortcut: "/favicon-16x16.png",
-    apple: "/apple-touch-icon.png",
+  'icons': {
+    'icon': "/favicon.ico",
+    'shortcut': "/favicon-16x16.png",
+    'apple': "/apple-touch-icon.png",
   },
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: {
-      index: true,
-      follow: true,
+  'robots': {
+    'index': true,
+    'follow': true,
+    'googleBot': {
+      'index': true,
+      'follow': true,
       'max-video-preview': -1,
       'max-image-preview': 'large',
       'max-snippet': -1,
@@ -73,10 +69,9 @@ export const metadata: Metadata = {
   },
 };
 
-
 const jsonLd = {
   "@context": "https://schema.org",
-  "@type": "Organization",
+  "@type": "ProfessionalService",
   "name": "UnityAlgo",
   "url": baseUrl,
   "logo": `${baseUrl}/logo.png`,
@@ -91,6 +86,7 @@ const jsonLd = {
     "areaServed": "Global"
   }
 };
+
 
 export default function RootLayout({
   children,
