@@ -4,8 +4,8 @@ import { AboutContent } from './client';
 import Script from 'next/script';
 
 export const metadata: Metadata = {
-   title: "",
-   description: "",
+   title: "UnityAlgo | Software Engineering & ERP Solutions",
+   description: "Transform your business with UnityAlgo. We specialize in scalable software engineering and custom ERP solutions to streamline operations and drive digital growth.",
    openGraph: {
       images: ["https://www.unityalgo.com/logo.png"]
 
