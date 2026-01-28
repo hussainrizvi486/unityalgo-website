@@ -1,7 +1,7 @@
 import { Metadata } from 'next';
+import Script from 'next/script';
 import { Header, Footer } from '@/components/layouts';
 import { AboutContent } from './client';
-import Script from 'next/script';
 
 export const metadata: Metadata = {
    title: "UnityAlgo | Software Engineering & ERP Solutions",
