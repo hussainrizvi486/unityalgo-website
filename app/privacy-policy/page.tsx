@@ -13,13 +13,16 @@ export const metadata: Metadata = {
     url: "https://unityalgo.com/privacy-policy",
     type: "website",
   },
+  alternates: {
+    canonical: "/privacy-policy",
+  }
 };
 
 const Page = () => {
   return (
     <main className="bg-background min-h-screen flex flex-col">
       <Header />
-      
+
       <div className="flex-1 pt-32 pb-20">
 
         <div className="absolute inset-0 bg-grid-pattern mask-[linear-gradient(to_bottom,transparent,black_10%,black_90%,transparent)] opacity-20 pointer-events-none -z-10" />
