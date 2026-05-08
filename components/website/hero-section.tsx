@@ -101,7 +101,7 @@ export function HeroSection() {
                 >
                     Empowering Business with <br className="hidden md:block" />
                     <span className="bg-linear-to-r from-brand-500 via-brand-600 to-brand-900 bg-clip-text ">
-                        Intelligent Web Solutions
+                        Intelligent Software Solutions
                     </span>
                 </motion.h1>
 

@@ -20,8 +20,8 @@ export const metadata: Metadata = {
     'default': "Software Development Company | ERP Software | UnityAlgo",
     'template': "%s | UnityAlgo",
   },
-  'description': "UnityAlgo offers scalable web solutions, ERP implementations, and software engineering to empower your business. Transform your digital presence with us.",
-  'keywords': ["Software Engineering", "Web Development", "ERPNext", "Karachi", "Digital Transformation", "React", "Next.js", "App Development", "Software", "Web Services", "ERPNext Pakistan", "Software House", "Software Company"],
+  'description': "UnityAlgo offers scalable software solutions, ERP implementations, and software engineering to empower your business. Transform your digital presence with us.",
+  'keywords': ["Software Engineering", "Web Development", "Software Development", "ERP", "Karachi", "Digital Transformation", "React", "Next.js", "App Development", "Software", "Web Services", "ERP Pakistan", "Software House", "Software Company"],
   'authors': [{ name: "UnityAlgo Team" }],
   'creator': "UnityAlgo",
   'publisher': "UnityAlgo",
@@ -51,21 +51,6 @@ export const metadata: Metadata = {
     'images': ["https://www.unityalgo.com/logo.png"],
   },
 
-  'icons': {
-    'icon': [
-      {
-        "url": "/favicon-16x16.png",
-        "type": "image/png",
-        "sizes": "16x16",
-      },
-      {
-        "url": "/favicon-32x32.png",
-        "type": "image/png",
-        "sizes": "32x32",
-      },
-    ],
-    'apple': "/apple-touch-icon.png",
-  },
   'robots': {
     'index': true,
     'follow': true,
