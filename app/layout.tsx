@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Poppins } from "next/font/google";
+import { Poppins, Geist } from "next/font/google";
 import Script from "next/script";
 import { cn } from "@/utils";
 
@@ -11,6 +11,12 @@ const poppins = Poppins({
   variable: '--font-poppins',
   weight: ['100', '200', '300', '400', '500', '600', '700', '800', '900']
 });
+
+const giest = Geist({
+  display: 'swap',
+  variable: '--font-geist',
+  weight: ['100', '200', '300', '400', '500', '600', '700', '800', '900']
+})
 
 const baseUrl = "https://www.unityalgo.com"
 
@@ -97,7 +103,7 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
       </head>
-      <body className={cn(poppins.className, poppins.variable, "antialiased bg-background text-foreground")}>
+      <body className={cn(poppins.className, poppins.variable, giest.className, giest.variable, "antialiased bg-background text-foreground")}>
         {children}
       </body>
     </html>

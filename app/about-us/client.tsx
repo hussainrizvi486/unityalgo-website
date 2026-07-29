@@ -24,7 +24,7 @@ export const AboutContent = () => {
                             <span className="w-2 h-2 rounded-full bg-brand-600 animate-pulse" />
                             <span className="text-xs font-semibold text-brand-700 tracking-wide uppercase">Our DNA</span>
                         </div>
-                        <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-brand-900 mb-8 text-balance">
+                        <h1 className="text-5xl md:text-7xl font-bold tracking-tight  mb-8 text-balance">
                             Architecting the <br />
                             <span className="bg-linear-to-r from-brand-600 to-brand-400 bg-clip-text ">
                                 Future of Business
@@ -50,7 +50,7 @@ export const AboutContent = () => {
                             viewport={{ once: true }}
                             className="md:col-span-7 bg-gray-50 p-8 md:p-12 rounded-3xl border border-gray-100"
                         >
-                            <h3 className="text-2xl font-bold mb-6 text-brand-900">Who We Are</h3>
+                            <h3 className="text-2xl font-bold mb-6 ">Who We Are</h3>
                             <div className="space-y-4 text-gray-600 leading-relaxed">
                                 <p>
                                     Unity Algo is a digital transformation and software engineering company dedicated to building intelligent,
@@ -113,7 +113,7 @@ export const AboutContent = () => {
                             <h3 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">
                                 Turning complex challenges into seamless <span className="text-brand-500">digital experiences.</span>
                             </h3>
-                            <Button className="bg-white text-brand-900 hover:bg-gray-100 rounded-full px-8 py-6 text-lg font-medium">
+                            <Button className="bg-white  hover:bg-gray-100 rounded-full px-8 py-6 text-lg font-medium">
                                 Work With Us <ArrowRight className="ml-2 w-5 h-5" />
                             </Button>
                         </motion.div>
@@ -163,7 +163,7 @@ export const AboutContent = () => {
             <section className="py-24 bg-background">
                 <div className="container mx-auto px-4 max-w-6xl text-center">
                     <div className="mb-16">
-                        <h2 className="text-3xl font-bold text-brand-900 mb-4">Why Businesses Trust Unity Algo</h2>
+                        <h2 className="text-3xl font-bold  mb-4">Why Businesses Trust Unity Algo</h2>
                         <p className="text-gray-600 max-w-2xl mx-auto">
                             We don&apos;t just deliver software; we deliver certainty in an uncertain digital landscape.
                         </p>

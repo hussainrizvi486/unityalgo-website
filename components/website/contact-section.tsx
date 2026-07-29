@@ -64,7 +64,7 @@ export function Contact() {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
             >
-              <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-brand-900 mb-6">
+              <h1 className="text-4xl md:text-5xl font-bold tracking-tight  mb-6">
                 Let&apos;s Build <br /> Something <span className="text-brand-600">Great.</span>
               </h1>
               <p className="text-lg text-gray-600 mb-12 max-w-lg leading-relaxed">

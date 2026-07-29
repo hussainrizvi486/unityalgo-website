@@ -35,7 +35,7 @@ export const MainContent = () => {
                             <span className="w-2 h-2 rounded-full bg-brand-600 animate-pulse" />
                             <span className="text-xs font-semibold text-brand-700 tracking-wide uppercase">Powered by ERPNext</span>
                         </div>
-                        <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-brand-900 mb-8 text-balance">
+                        <h1 className="text-5xl md:text-7xl font-bold tracking-tight  mb-8 text-balance">
                             The Operating System for <br />
                             Scaling Businesses
 
@@ -66,7 +66,7 @@ export const MainContent = () => {
             <section className="py-24 bg-white relative">
                 <div className="container mx-auto px-4 max-w-6xl">
                     <div className="text-center mb-16">
-                        <h2 className="text-3xl font-bold text-brand-900 mb-4">Eliminate Operational Chaos</h2>
+                        <h2 className="text-3xl font-bold  mb-4">Eliminate Operational Chaos</h2>
                         <p className="text-gray-600 max-w-2xl mx-auto">
                             We replace fragmented tools and manual spreadsheets with a single source of truth.
                         </p>
@@ -167,7 +167,7 @@ export const MainContent = () => {
                 <div className="container mx-auto px-4 max-w-6xl">
                     <div className="text-center mb-20">
                         <span className="text-brand-600 font-semibold tracking-widest uppercase text-sm mb-2 block">Visual Tour</span>
-                        <h2 className="text-3xl md:text-4xl font-bold text-brand-900">Experience the Interface</h2>
+                        <h2 className="text-3xl md:text-4xl font-bold ">Experience the Interface</h2>
                         <p className="text-gray-600 mt-4 max-w-2xl mx-auto">
                             Designed for clarity and speed. Our interface reduces clicks and helps you find what you need instantly.
                         </p>
@@ -356,7 +356,7 @@ export const MainContent = () => {
 
                     {/* Industries Header */}
                     <div className="text-center mb-16">
-                        <h2 className="text-3xl font-bold text-brand-900 mb-4">Tailored for Your Industry</h2>
+                        <h2 className="text-3xl font-bold  mb-4">Tailored for Your Industry</h2>
                         <p className="text-gray-600">Built to handle the unique workflows of diverse sectors.</p>
                     </div>
 
@@ -379,7 +379,7 @@ export const MainContent = () => {
 
                     {/* Key Features Header */}
                     <div className="mb-12">
-                        <h2 className="text-3xl font-bold text-brand-900">Advanced Capabilities</h2>
+                        <h2 className="text-3xl font-bold ">Advanced Capabilities</h2>
                     </div>
 
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-24">
@@ -399,7 +399,7 @@ export const MainContent = () => {
             <section className="py-24 bg-white border-t border-gray-100">
                 <div className="container mx-auto px-4 max-w-6xl">
                     <div className="text-center mb-16">
-                        <h2 className="text-3xl font-bold text-brand-900">We Don&apos;t Just Install, We Partner</h2>
+                        <h2 className="text-3xl font-bold ">We Don&apos;t Just Install, We Partner</h2>
                         <p className="text-gray-600 mt-4">End-to-end support to ensure your success.</p>
                     </div>
 
@@ -439,7 +439,7 @@ export const MainContent = () => {
                         </p>
                         <div className="flex flex-col sm:flex-row gap-4 justify-center">
                             <Link href="/#contact">
-                                <Button size="lg" className="bg-brand-600 hover:bg-brand-500 text-white rounded-full px-8 h-12">
+                                <Button size="lg" className="bg-brand-600 hover:bg-brand-700 text-white rounded-full px-8 h-12">
                                     Get Your Free Consultation
                                 </Button>
                             </Link>

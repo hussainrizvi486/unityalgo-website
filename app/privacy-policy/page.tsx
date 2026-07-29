@@ -33,7 +33,7 @@ const Page = () => {
               <span className="w-2 h-2 rounded-full bg-brand-600"></span>
               <span className="text-xs font-semibold text-gray-600 tracking-wide uppercase">Legal</span>
             </div>
-            <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-brand-900">Privacy Policy</h1>
+            <h1 className="text-4xl md:text-5xl font-bold tracking-tight ">Privacy Policy</h1>
             <p className="text-lg text-gray-600 leading-relaxed">
               At UnityAlgo, we respect your privacy and are committed to protecting your personal information.
               This Privacy Policy explains what data we collect, how we use it, and the rights you have regarding
@@ -193,11 +193,11 @@ const Page = () => {
             </p>
             <div className="flex flex-col md:flex-row gap-6">
               <div className="flex items-center gap-3 text-gray-600">
-                <span className="font-semibold text-brand-900">Email:</span>
+                <span className="font-semibold ">Email:</span>
                 <a href="mailto:info@unityalgo.com" className="hover:text-brand-600 underline decoration-gray-300 underline-offset-4">info@unityalgo.com</a>
               </div>
               <div className="flex items-center gap-3 text-gray-600">
-                <span className="font-semibold text-brand-900">Website:</span>
+                <span className="font-semibold ">Website:</span>
                 <Link href="/" className="hover:text-brand-600 underline decoration-gray-300 underline-offset-4">unityalgo.com</Link>
               </div>
             </div>

@@ -11,8 +11,9 @@ export function Logo({ className = "h-12" }: { className?: string }) {
           className="h-10 w-10 sm:h-12 sm:w-12"
           width='40'
           height='40'
+          loading="eager"
         />
-        <div className="font-bold  sm:text-2xl">UnityAlgo</div>
+        <div className="font-bold sm:text-2xl font-logo">UnityAlgo</div>
       </Link>
     </div>
   );

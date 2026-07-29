@@ -1,26 +1,107 @@
 @import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
 
 @theme {
-  --color-brand-50: oklch(0.98 0.01 20);
-  --color-brand-100: oklch(0.95 0.03 20);
-  --color-brand-500: oklch(0.55 0.20 25);
+  /*
+   * Brand (Primary) — CYAN.
+   *
+   * Chosen as the near-exact complement of the logo mark (#8C181B, hue 358°).
+   * The logo's exact complement sits at hue 178°; cyan-600 lands at ~189°,
+   * i.e. ~10° off. That's why the red mark reads as a deliberate accent
+   * against this palette rather than a leftover from an older brand.
+   * Keeping the token NAME `brand-*` means every existing usage across the
+   * app re-skins from this one block — no per-file color edits needed.
+   *
+   * NOTE ON THE SCALE: this is deliberately shifted ~1 step darker than
+   * stock Tailwind cyan at the working steps. Cyan is a very luminous hue,
+   * so stock cyan-600 only reaches 3.68:1 against white — below WCAG AA
+   * (4.5:1) for both white-on-button and link text, and brand-600 is the
+   * single most-used token in the app. At these values brand-600 hits
+   * 5.36:1 and every step keeps its expected role. Verified ratios in the
+   * comments below; re-check them before changing any value.
+   */
+  --color-brand-50: #ECFEFF;   /* tint background */
+  --color-brand-100: #CFFAFE;  /* tint background */
+  --color-brand-200: #A5F3FC;  /* borders */
+  --color-brand-300: #67E8F9;  /* text on dark only */
+  --color-brand-400: #22D3EE;  /* text on dark only — 6.28:1 on brand-900 */
+  --color-brand-500: #0891B2;  /* decorative: dots, shadows, selection */
+  --color-brand-600: #0E7490;  /* PRIMARY — buttons, links. 5.36:1 on white */
+  --color-brand-700: #155E75;  /* button hover. 7.27:1 on white */
+  --color-brand-800: #164E63;  /* headings. 9.11:1 on white */
+  --color-brand-900: #0E3F52;  /* headings. 11.34:1 on white */
+  --color-brand-950: #072F3D;  /* footer / dark sections. 14.16:1 w/ white */
 
-  --color-brand-600: oklch(0.45 0.20 25);
-  --color-brand-900: oklch(0.25 0.10 25);
+  /*
+   * Ink (Neutral) — cool slate. Carries body text, borders, muted surfaces
+   * and the dark UI chrome. Kept low-chroma so it never competes with either
+   * the cyan primary or the red logo.
+   */
+  --color-ink-50: #F8FAFC;
+  --color-ink-100: #F1F5F9;
+  --color-ink-200: #E2E8F0;
+  --color-ink-300: #CBD5E1;
+  --color-ink-400: #94A3B8;
+  --color-ink-500: #64748B;
+  --color-ink-600: #475569;
+  --color-ink-700: #334155;
+  --color-ink-800: #1E293B;
+  --color-ink-900: #0F172A;
+  --color-ink-950: #020617;
 
-  --color-background: oklch(0.99 0 0);
-  --color-foreground: oklch(0.15 0.02 260);
+  /*
+   * Accent — sky. One step bluer than the cyan primary, used sparingly for
+   * AI/data highlights so it reads as emphasis rather than a second brand.
+   * (No custom `teal-*` scale any more: the previous partial override
+   * shadowed Tailwind's built-in teal at only some steps, which meant
+   * `teal-200`/`teal-400` silently resolved to different hues than
+   * `teal-300`/`teal-500`.)
+   */
+  --color-accent-400: #38BDF8;  /* text on DARK only — 8.28:1 on gray-900, fails on white */
+  --color-accent-500: #0369A1;  /* text on light — 5.93:1 on white */
+  --color-accent-600: #075985;  /* text on light — 7.56:1 on white */
 
+  /* Semantic status colors. Error red is intentionally brighter and cooler
+     than the logo crimson (#8C181B) so a destructive action never reads as
+     branding — the two never appear at the same size or weight. */
+  --color-success-50: #ECFDF5;
+  --color-success-500: #10B981;
+  --color-success-600: #059669;
+  --color-warning-50: #FFFBEB;
+  --color-warning-500: #F59E0B;
+  --color-warning-600: #D97706;
+  --color-error-50: #FEF2F2;
+  --color-error-500: #EF4444;
+  --color-error-600: #DC2626;
+  --color-info-50: #EFF6FF;
+  --color-info-500: #3B82F6;
+  --color-info-600: #2563EB;
 
-  --color-input: #E6E6E6;
-  --color-primary: oklch(0.205 0 0);
-  --color-primary-foreground: oklch(0.98 0.01 20);
+  --color-background: #FFFFFF;
+  --color-foreground: #0F172A;
 
-  --font-display: "Poppins", "Inter", sans-serif;
-  --font-body: "Poppins", sans-serif;
+  --color-input: var(--color-ink-200);
+  --color-primary: var(--color-brand-600);
+  --color-primary-foreground: #FFFFFF;
+  --color-secondary: var(--color-ink-100);
+  --color-secondary-foreground: var(--color-ink-900);
+  --color-accent: var(--color-brand-50);
+  --color-accent-foreground: var(--color-brand-700);
+  --color-destructive: var(--color-error-600);
+  --color-muted: var(--color-ink-50);
+  --color-muted-foreground: var(--color-ink-500);
+  --color-ring: var(--color-brand-500);
+  --color-popover: #FFFFFF;
+  --color-popover-foreground: var(--color-foreground);
 
   --animate-blob: blob 7s infinite;
+  --animate-accordion-down: accordion-down 0.2s ease-out;
+  --animate-accordion-up: accordion-up 0.2s ease-out;
 }
+
+
+
 
 @layer utilities {
   .text-balance {
@@ -58,17 +139,103 @@
   }
 }
 
+@keyframes accordion-down {
+  from {
+    height: 0;
+  }
+
+  to {
+    height: var(--radix-accordion-content-height);
+  }
+}
+
+@keyframes accordion-up {
+  from {
+    height: var(--radix-accordion-content-height);
+  }
+
+  to {
+    height: 0;
+  }
+}
+
 :root {
   color-scheme: light;
 }
 
+/*
+ * Fonts — next/font exposes the real loaded font stacks as
+ * --font-poppins / --font-geist (set via the `variable` option in
+ * app/layout.tsx), scoped to <body>. Reference them directly rather than
+ * indirecting through another @theme token: a custom property's inherited
+ * value is its already-resolved value at the declaring element, so a
+ * var() chain declared at :root (where next/font's variables don't exist
+ * yet) freezes as invalid before it ever reaches body's real values.
+ */
 body {
   @apply bg-background text-foreground antialiased selection:bg-brand-500/20 selection:text-brand-900;
-  font-family: var(--font-body);
+  font-family: var(--font-geist);
 }
 
 h1,
 h2,
 h3 {
-  font-family: var(--font-display);
+  font-family: var(--font-geist);
+}
+
+.font-logo {
+  font-family: var(--font-poppins);
+}
+
+.ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  color: oklch(0.65 0 0);
+  pointer-events: none;
+}
+
+.ProseMirror table {
+  border-collapse: collapse;
+  table-layout: fixed;
+  width: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+.ProseMirror td,
+.ProseMirror th {
+  min-width: 1em;
+  border: 1px solid oklch(0.85 0 0);
+  padding: 6px 10px;
+  vertical-align: top;
+  box-sizing: border-box;
+  position: relative;
+}
+
+.ProseMirror th {
+  font-weight: 600;
+  background-color: oklch(0.97 0 0);
+}
+
+.ProseMirror .selectedCell:after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: oklch(0.55 0.2 25 / 0.08);
+  pointer-events: none;
+}
+
+.ProseMirror .column-resize-handle {
+  position: absolute;
+  right: -2px;
+  top: 0;
+  bottom: -2px;
+  width: 4px;
+  background-color: oklch(0.55 0.2 25);
+  pointer-events: none;
+}
+
+.ProseMirror.resize-cursor {
+  cursor: col-resize;
 }

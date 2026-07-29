@@ -3,16 +3,25 @@
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { TextAlignJustify, X as CloseIcon } from 'lucide-react';
+import { TextAlignJustify, X as CloseIcon, ChevronDown } from 'lucide-react';
 import { create } from 'zustand';
 
 import { Button } from '@/components/ui/button';
 import { Logo } from '@/components/Logo';
 
+const serviceLinks = [
+  { name: 'ERP', href: '/services/erp-software' },
+  { name: 'Accounting', href: '/services/accounting' },
+  { name: 'Stock', href: '/services/stock' },
+  { name: 'Manufacturing', href: '/services/manufacturing' },
+  { name: 'Retail', href: '/services/retail' },
+  { name: 'Enterprise Application Development', href: '/services/enterprise-application-development' },
+];
+
 const navLinks = [
   { name: 'Home', href: '/' },
-  { name: 'Services', href: '/#services' },
   { name: 'About Us', href: '/about-us' },
+  { name: 'Blog', href: '/blog' },
   { name: 'Contact', href: '/#contact' },
 ];
 
@@ -58,24 +67,43 @@ export function Header() {
               <Logo />
             </div>
             <nav className="hidden md:flex items-center gap-1 bg-white/50 backdrop-blur-md px-2 py-1.5 rounded-full border border-white/20 shadow-sm">
-              {navLinks.map((link) => (
-                <Link key={link.name} href={link.href}>
-                  <button className="relative px-5 py-2 text-sm font-medium text-gray-600 transition-colors hover:text-brand-900 rounded-full group overflow-hidden">
-                    <span className="relative z-10">{link.name}</span>
-                    <div className="absolute inset-0 bg-gray-200/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-full" />
-                  </button>
-                </Link>
-              ))}
+              <Link href="/">
+                <button className="relative px-5 py-2 text-sm font-medium text-gray-600 transition-colors hover: rounded-full group overflow-hidden">
+                  <span className="relative z-10">Home</span>
+                  <div className="absolute inset-0 bg-gray-200/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-full" />
+                </button>
+              </Link>
+
+              <ServicesDropdown />
+
+              <Link href="/about-us">
+                <button className="relative px-5 py-2 text-sm font-medium text-gray-600 transition-colors hover: rounded-full group overflow-hidden">
+                  <span className="relative z-10">About Us</span>
+                  <div className="absolute inset-0 bg-gray-200/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-full" />
+                </button>
+              </Link>
+
+              <Link href="/blog">
+                <button className="relative px-5 py-2 text-sm font-medium text-gray-600 transition-colors hover: rounded-full group overflow-hidden">
+                  <span className="relative z-10">Blog</span>
+                  <div className="absolute inset-0 bg-gray-200/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-full" />
+                </button>
+              </Link>
+
+              <Link href="/#contact">
+                <button className="relative px-5 py-2 text-sm font-medium text-gray-600 transition-colors hover: rounded-full group overflow-hidden">
+                  <span className="relative z-10">Contact</span>
+                  <div className="absolute inset-0 bg-gray-200/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-full" />
+                </button>
+              </Link>
             </nav>
 
 
             <div className="hidden md:flex items-center gap-4">
               <Link href="#contact">
+                {/* sm:text-base bg-brand-600 hover:bg-brand-500 text-white rounded-full shadow-lg shadow-brand-500/25 transition-all */}
                 <Button
-                  className={`rounded-full transition-all duration-300 ${isScrolled
-                    ? 'bg-brand-600 hover:bg-brand-700 text-white shadow-md'
-                    : 'bg-white hover:bg-gray-50 text-brand-900 shadow-sm border border-gray-100'
-                    }`}
+                  className="rounded-full transition-all duration-300  bg-brand-600 hover:bg-brand-700 text-white shadow-md "
                 >
                   Get Started
                 </Button>
@@ -91,7 +119,7 @@ export function Header() {
             </button>
           </div>
         </div>
-      </header>
+      </header >
 
 
       <AnimatePresence>
@@ -112,8 +140,17 @@ const MobileMenu = () => {
       exit={{ opacity: 0, y: -20 }}
       className="fixed inset-0 z-40 bg-white pt-24 px-6 md:hidden"
     >
-      <div className="flex flex-col gap-4 text-center">
-        {navLinks.map((link) => (
+      <div className="flex flex-col gap-4 text-center overflow-y-auto pb-10">
+        <Link
+          href="/"
+          onClick={() => setMobileMenuOpen(false)}
+          className="font-medium text-gray-800 hover:text-brand-600"
+        >
+          Home
+        </Link>
+
+        <div className="pt-2 pb-1 text-xs font-semibold text-gray-400 uppercase tracking-wide">Services</div>
+        {serviceLinks.map((link) => (
           <Link
             key={link.name}
             href={link.href}
@@ -123,6 +160,20 @@ const MobileMenu = () => {
             {link.name}
           </Link>
         ))}
+
+        {navLinks
+          .filter((link) => link.name !== 'Home')
+          .map((link) => (
+            <Link
+              key={link.name}
+              href={link.href}
+              onClick={() => setMobileMenuOpen(false)}
+              className="font-medium text-gray-800 hover:text-brand-600"
+            >
+              {link.name}
+            </Link>
+          ))}
+
         <Button className="w-full mt-4" size="sm">
           Get Started
         </Button>
@@ -130,3 +181,45 @@ const MobileMenu = () => {
     </motion.div>
   )
 }
+
+const ServicesDropdown = () => {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div
+      className="relative"
+      onMouseEnter={() => setOpen(true)}
+      onMouseLeave={() => setOpen(false)}
+    >
+      <button className="relative px-5 py-2 text-sm font-medium text-gray-600 transition-colors hover: rounded-full group overflow-hidden flex items-center gap-1">
+        <span className="relative z-10">Services</span>
+        <ChevronDown className={`relative z-10 w-3.5 h-3.5 transition-transform ${open ? 'rotate-180' : ''}`} />
+        <div className="absolute inset-0 bg-gray-200/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-full" />
+      </button>
+
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 8 }}
+            transition={{ duration: 0.15 }}
+            className="absolute top-full left-1/2 -translate-x-1/2 pt-3 w-64"
+          >
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-xl p-2">
+              {serviceLinks.map((link) => (
+                <Link
+                  key={link.name}
+                  href={link.href}
+                  className="block px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-brand-700 rounded-xl transition-colors"
+                >
+                  {link.name}
+                </Link>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};

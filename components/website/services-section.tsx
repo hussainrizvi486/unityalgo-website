@@ -62,7 +62,7 @@ export const Services = () => {
                         <span className="w-2 h-2 rounded-full bg-brand-500 animate-pulse" />
                         <span className="text-xs font-semibold text-brand-700 tracking-wide uppercase">What We Do</span>
                     </motion.div>
-                    <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-brand-900 mb-6">
+                    <h2 className="text-4xl md:text-5xl font-bold tracking-tight  mb-6">
                         Engineering Digital <br />
                         <span className="bg-linear-to-r from-brand-600 to-brand-400 bg-clip-text ">Excellence</span>
                     </h2>
@@ -107,7 +107,7 @@ export const Services = () => {
 
                 <div className="relative">
                     <div className="text-center mb-16">
-                        <h3 className="text-3xl font-bold text-brand-900">
+                        <h3 className="text-3xl font-bold ">
                             The UnityAlgo Standard
                         </h3>
                     </div>
