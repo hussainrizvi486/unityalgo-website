@@ -3,12 +3,19 @@
 import { useFormStatus } from 'react-dom';
 import { useActionState } from 'react';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { TiptapEditor } from '@/components/admin/tiptap-editor';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import { CoverImageField } from '@/components/admin/cover-image-field';
-import { ColorField } from '@/components/admin/color-field';
 import type { PostFormState } from '@/app/admin/actions';
+
+const QuillEditor = dynamic(
+    () => import('@/components/admin/quill-editor').then((mod) => mod.QuillEditor),
+    { ssr: false, loading: () => <div className="w-full rounded-md border border-input h-95 animate-pulse bg-ink-50" /> }
+);
 
 export interface PostFormValues {
     id?: string;
@@ -17,18 +24,15 @@ export interface PostFormValues {
     excerpt: string;
     content: string;
     coverImage: string;
-    tags: string;
     published: boolean;
     metaTitle: string;
     metaDescription: string;
-    bgColor: string;
-    textColor: string;
 }
 
 function SubmitButton({ label }: { label: string }) {
     const { pending } = useFormStatus();
     return (
-        <Button type="submit" disabled={pending} className="rounded-full bg-brand-600 hover:bg-brand-700 text-white px-8">
+        <Button type="submit" disabled={pending} className="rounded-full bg-brand hover:brightness-90 text-white px-8">
             {pending ? 'Saving...' : label}
         </Button>
     );
@@ -46,91 +50,57 @@ export function PostForm({ action, defaultValues, submitLabel }: PostFormProps) 
     return (
         <form action={formAction} className="space-y-6">
             <div>
-                <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1.5">
+                <Label htmlFor="title" className="text-sm text-ink-700 mb-1.5">
                     Title
-                </label>
+                </Label>
                 <Input id="title" name="title" required defaultValue={defaultValues?.title} />
             </div>
 
             <div>
-                <label htmlFor="slug" className="block text-sm font-medium text-gray-700 mb-1.5">
-                    Slug <span className="text-gray-400 font-normal">(optional — auto-generated from title if left blank)</span>
-                </label>
+                <Label htmlFor="slug" className="text-sm text-ink-700 mb-1.5">
+                    Slug <span className="text-ink-400 font-normal">(optional — auto-generated from title if left blank)</span>
+                </Label>
                 <Input id="slug" name="slug" defaultValue={defaultValues?.slug} />
             </div>
 
             <div>
-                <label htmlFor="excerpt" className="block text-sm font-medium text-gray-700 mb-1.5">
+                <Label htmlFor="excerpt" className="text-sm text-ink-700 mb-1.5">
                     Excerpt
-                </label>
-                <textarea
-                    id="excerpt"
-                    name="excerpt"
-                    required
-                    rows={2}
-                    defaultValue={defaultValues?.excerpt}
-                    className="w-full rounded-md border border-input px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
-                />
+                </Label>
+                <Textarea id="excerpt" name="excerpt" required rows={2} defaultValue={defaultValues?.excerpt} />
             </div>
 
             <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Cover Image</label>
+                <Label className="text-sm text-ink-700 mb-1.5">Cover Image</Label>
                 <CoverImageField name="coverImage" defaultValue={defaultValues?.coverImage} />
             </div>
 
             <div>
-                <label htmlFor="tags" className="block text-sm font-medium text-gray-700 mb-1.5">
-                    Tags <span className="text-gray-400 font-normal">(comma-separated)</span>
-                </label>
-                <Input id="tags" name="tags" defaultValue={defaultValues?.tags} placeholder="ERP, Finance, Accounting" />
-            </div>
-
-            <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Content</label>
-                <TiptapEditor name="content" defaultValue={defaultValues?.content} />
+                <Label className="text-sm text-ink-700 mb-1.5">Content</Label>
+                <QuillEditor name="content" defaultValue={defaultValues?.content} />
             </div>
 
             <div className="grid md:grid-cols-2 gap-6">
                 <div>
-                    <label htmlFor="metaTitle" className="block text-sm font-medium text-gray-700 mb-1.5">
-                        Meta Title <span className="text-gray-400 font-normal">(optional)</span>
-                    </label>
+                    <Label htmlFor="metaTitle" className="text-sm text-ink-700 mb-1.5">
+                        Meta Title <span className="text-ink-400 font-normal">(optional)</span>
+                    </Label>
                     <Input id="metaTitle" name="metaTitle" defaultValue={defaultValues?.metaTitle} />
                 </div>
                 <div>
-                    <label htmlFor="metaDescription" className="block text-sm font-medium text-gray-700 mb-1.5">
-                        Meta Description <span className="text-gray-400 font-normal">(optional)</span>
-                    </label>
+                    <Label htmlFor="metaDescription" className="text-sm text-ink-700 mb-1.5">
+                        Meta Description <span className="text-ink-400 font-normal">(optional)</span>
+                    </Label>
                     <Input id="metaDescription" name="metaDescription" defaultValue={defaultValues?.metaDescription} />
                 </div>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-6">
-                <ColorField
-                    name="bgColor"
-                    label="Background Color"
-                    defaultValue={defaultValues?.bgColor}
-                    fallback="#ffffff"
-                />
-                <ColorField
-                    name="textColor"
-                    label="Text Color"
-                    defaultValue={defaultValues?.textColor}
-                    fallback="#374151"
-                />
-            </div>
-
-            <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                <input
-                    type="checkbox"
-                    name="published"
-                    defaultChecked={defaultValues?.published}
-                    className="w-4 h-4 rounded border-gray-300"
-                />
+            <Label htmlFor="published" className="text-sm text-ink-700">
+                <Checkbox id="published" name="published" defaultChecked={defaultValues?.published} />
                 Published
-            </label>
+            </Label>
 
-            {state?.error && <p className="text-sm text-red-600">{state.error}</p>}
+            {state?.error && <p className="text-sm text-error-600">{state.error}</p>}
 
             <div className="flex items-center gap-3">
                 <SubmitButton label={submitLabel} />

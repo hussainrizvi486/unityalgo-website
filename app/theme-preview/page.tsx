@@ -54,8 +54,8 @@ const sections = [
 function SectionHeading({ id, title, description }: { id: string; title: string; description?: string }) {
     return (
         <div id={id} className="scroll-mt-24 mb-8">
-            <h2 className="text-2xl md:text-3xl font-bold text-brand-900">{title}</h2>
-            {description && <p className="text-gray-500 mt-2 max-w-2xl">{description}</p>}
+            <h2 className="text-2xl md:text-3xl font-bold text-ink-900">{title}</h2>
+            {description && <p className="text-ink-500 mt-2 max-w-2xl">{description}</p>}
         </div>
     );
 }
@@ -72,19 +72,19 @@ function Swatch({
     textClassName?: string;
 }) {
     return (
-        <div className="flex flex-col rounded-xl overflow-hidden border border-gray-100">
+        <div className="flex flex-col rounded-xl overflow-hidden border border-ink-100">
             <div className={cn('h-20 flex items-end p-2', className)}>
                 <span className={cn('text-xs font-mono', textClassName)}>{value}</span>
             </div>
             <div className="px-3 py-2 bg-white">
-                <p className="text-xs font-semibold text-gray-800">{name}</p>
+                <p className="text-xs font-semibold text-ink-800">{name}</p>
             </div>
         </div>
     );
 }
 
 function CodeLabel({ children }: { children: React.ReactNode }) {
-    return <code className="text-xs bg-gray-100 text-gray-600 rounded px-1.5 py-0.5 font-mono">{children}</code>;
+    return <code className="text-xs bg-ink-100 text-ink-600 rounded px-1.5 py-0.5 font-mono">{children}</code>;
 }
 
 const faqItems = [
@@ -112,13 +112,13 @@ export default function ThemePreviewPage() {
     return (
         <div className="bg-background text-foreground min-h-screen">
             {/* --- PAGE HEADER --- */}
-            <div className="border-b border-gray-100 bg-white/80 backdrop-blur-md sticky top-0 z-40">
+            <div className="border-b border-ink-100 bg-white/80 backdrop-blur-md sticky top-0 z-40">
                 <div className="container mx-auto px-4 md:px-6 py-4 flex items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
                         <Logo className="h-9" />
-                        <span className="text-sm font-semibold text-gray-400 hidden sm:inline">/ Theme Preview</span>
+                        <span className="text-sm font-semibold text-ink-400 hidden sm:inline">/ Theme Preview</span>
                     </div>
-                    <Link href="/" className="text-sm font-medium text-brand-600 hover:text-brand-700 flex items-center gap-1">
+                    <Link href="/" className="text-sm font-medium text-brand hover:opacity-75 flex items-center gap-1">
                         Back to site <ArrowUpRight className="w-3.5 h-3.5" />
                     </Link>
                 </div>
@@ -128,12 +128,12 @@ export default function ThemePreviewPage() {
                 {/* --- STICKY TOC --- */}
                 <nav className="hidden lg:block w-56 shrink-0">
                     <div className="sticky top-24 space-y-1">
-                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3 px-3">On this page</p>
+                        <p className="text-xs font-semibold text-ink-400 uppercase tracking-wide mb-3 px-3">On this page</p>
                         {sections.map((s) => (
                             <a
                                 key={s.id}
                                 href={`#${s.id}`}
-                                className="block px-3 py-1.5 text-sm text-gray-600 hover:text-brand-700 hover:bg-brand-50 rounded-lg transition-colors"
+                                className="block px-3 py-1.5 text-sm text-ink-600 hover:opacity-75 hover:bg-accent rounded-lg transition-colors"
                             >
                                 {s.label}
                             </a>
@@ -145,14 +145,14 @@ export default function ThemePreviewPage() {
                 <div className="flex-1 min-w-0 space-y-24">
                     {/* OVERVIEW */}
                     <section id="overview" className="scroll-mt-24">
-                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-50 border border-brand-100 mb-6">
-                            <span className="w-2 h-2 rounded-full bg-brand-500 animate-pulse" />
-                            <span className="text-xs font-semibold text-brand-700 tracking-wide uppercase">Design System</span>
+                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent border border-brand/15 mb-6">
+                            <span className="w-2 h-2 rounded-full bg-brand animate-pulse" />
+                            <span className="text-xs font-semibold text-brand tracking-wide uppercase">Design System</span>
                         </div>
-                        <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-brand-900 mb-4 text-balance">
+                        <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-ink-900 mb-4 text-balance">
                             UnityAlgo Theme Preview
                         </h1>
-                        <p className="text-lg text-gray-600 max-w-2xl leading-relaxed">
+                        <p className="text-lg text-ink-600 max-w-2xl leading-relaxed">
                             Every color, type style, and component used across the site, in one place — a living reference
                             for reviewing consistency and branding as the product grows.
                         </p>
@@ -162,39 +162,32 @@ export default function ThemePreviewPage() {
                     <section>
                         <SectionHeading id="branding" title="Logo & Branding" description="components/Logo.tsx — Poppins wordmark + SVG mark, two size presets used across the site." />
                         <div className="grid sm:grid-cols-2 gap-6">
-                            <div className="flex flex-col items-start gap-4 p-8 rounded-2xl border border-gray-100 bg-white">
+                            <div className="flex flex-col items-start gap-4 p-8 rounded-2xl border border-ink-100 bg-white">
                                 <Logo className="h-12" />
                                 <CodeLabel>{'<Logo className="h-12" />'}</CodeLabel>
-                                <span className="text-xs text-gray-400">Used in Header</span>
+                                <span className="text-xs text-ink-400">Used in Header</span>
                             </div>
-                            <div className="flex flex-col items-start gap-4 p-8 rounded-2xl bg-brand-950">
+                            <div className="flex flex-col items-start gap-4 p-8 rounded-2xl bg-ink-950">
                                 <Logo className="h-10" />
                                 <CodeLabel>{'<Logo className="h-10" />'}</CodeLabel>
-                                <span className="text-xs text-gray-300">Used in Footer, on dark background</span>
+                                <span className="text-xs text-ink-300">Used in Footer, on dark background</span>
                             </div>
                         </div>
                     </section>
 
                     {/* COLORS */}
                     <section>
-                        <SectionHeading id="colors" title="Color Palette" description="Cyan primary, chosen as the near-exact complement of the red logo mark (logo hue 358°, its complement 178°, cyan-600 ≈ 189° — about 10° off). Slate carries neutrals, sky is the accent. All defined once in app/globals.css under @theme." />
+                        <SectionHeading id="colors" title="Color Palette" description="Full-light, minimal palette: crimson primary — the logo mark's own color (hue 358°, #8C181B) — true-grayscale neutrals, and white throughout. No secondary accent hue. All defined once in app/globals.css under @theme." />
 
-                        <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Brand (Primary) — cyan, complement of the logo red</h3>
-                        <div className="grid grid-cols-3 sm:grid-cols-6 gap-3 mb-10">
-                            <Swatch name="brand-50" className="bg-brand-50" textClassName="text-brand-900" />
-                            <Swatch name="brand-100" className="bg-brand-100" textClassName="text-brand-900" />
-                            <Swatch name="brand-200" className="bg-brand-200" textClassName="text-brand-900" />
-                            <Swatch name="brand-300" className="bg-brand-300" textClassName="text-brand-900" />
-                            <Swatch name="brand-400" className="bg-brand-400" />
-                            <Swatch name="brand-500" className="bg-brand-500" />
-                            <Swatch name="brand-600" className="bg-brand-600" />
-                            <Swatch name="brand-700" className="bg-brand-700" />
-                            <Swatch name="brand-800" className="bg-brand-800" />
-                            <Swatch name="brand-900" className="bg-brand-900" />
-                            <Swatch name="brand-950" className="bg-brand-950" />
+                        <h3 className="text-sm font-semibold text-ink-500 uppercase tracking-wide mb-3">Brand — one color, the logo mark's own red. No scale: hover/active use brightness/opacity utilities, tints use opacity or the accent pair below</h3>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-10">
+                            <Swatch name="brand" className="bg-brand" value="#8C181B" />
+                            <Swatch name="brand hover:brightness-90" className="bg-brand brightness-90" />
+                            <Swatch name="brand/20 (tints, rings, shadows)" className="bg-brand/20" textClassName="text-ink-900" />
+                            <Swatch name="brand/10" className="bg-brand/10" textClassName="text-ink-900" />
                         </div>
 
-                        <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Ink (Neutral) — cool slate for body text, borders, muted surfaces</h3>
+                        <h3 className="text-sm font-semibold text-ink-500 uppercase tracking-wide mb-3">Ink (Neutral) — true grayscale for body text, borders, muted surfaces</h3>
                         <div className="grid grid-cols-3 sm:grid-cols-6 gap-3 mb-10">
                             <Swatch name="ink-50" className="bg-ink-50" textClassName="text-ink-900" />
                             <Swatch name="ink-100" className="bg-ink-100" textClassName="text-ink-900" />
@@ -209,59 +202,52 @@ export default function ThemePreviewPage() {
                             <Swatch name="ink-950" className="bg-ink-950" />
                         </div>
 
-                        <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Accent (Sky) — one step bluer than the primary, for AI/data highlights only</h3>
-                        <div className="grid grid-cols-3 sm:grid-cols-6 gap-3 mb-10">
-                            <Swatch name="accent-400" className="bg-accent-400" />
-                            <Swatch name="accent-500" className="bg-accent-500" />
-                            <Swatch name="accent-600" className="bg-accent-600" />
-                        </div>
-
-                        <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">The logo against the palette — red mark as the complement</h3>
+                        <h3 className="text-sm font-semibold text-ink-500 uppercase tracking-wide mb-3">The logo against the palette — mark and primary now share one hue</h3>
                         <div className="grid sm:grid-cols-2 gap-4 mb-10">
-                            <div className="flex items-center gap-4 p-6 rounded-2xl border border-gray-100 bg-white">
+                            <div className="flex items-center gap-4 p-6 rounded-2xl border border-ink-100 bg-white">
                                 <Logo className="h-10" />
-                                <span className="text-xs text-gray-400">on light</span>
+                                <span className="text-xs text-ink-400">on light</span>
                             </div>
-                            <div className="flex items-center gap-4 p-6 rounded-2xl bg-brand-950">
+                            <div className="flex items-center gap-4 p-6 rounded-2xl bg-ink-950">
                                 <Logo className="h-10" />
-                                <span className="text-xs text-white/50">on brand-950 (footer)</span>
+                                <span className="text-xs text-white/50">on ink-950 (footer)</span>
                             </div>
                         </div>
 
-                        <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Base Tokens — now wired to the palette above (previously several were undefined/broken)</h3>
+                        <h3 className="text-sm font-semibold text-ink-500 uppercase tracking-wide mb-3">Base Tokens — now wired to the palette above (previously several were undefined/broken)</h3>
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-10">
-                            <Swatch name="background" className="bg-background border" textClassName="text-gray-500" />
+                            <Swatch name="background" className="bg-background border" textClassName="text-ink-500" />
                             <Swatch name="foreground" className="bg-foreground" />
-                            <Swatch name="primary → brand-600" className="bg-primary" />
+                            <Swatch name="primary → brand" className="bg-primary" />
                             <Swatch name="secondary → ink-100" className="bg-secondary" textClassName="text-ink-900" />
-                            <Swatch name="accent → brand-50" className="bg-accent" textClassName="text-brand-900" />
+                            <Swatch name="accent → color-mix(brand 8%, white)" className="bg-accent" textClassName="text-ink-900" />
                             <Swatch name="destructive → error-600" className="bg-destructive" />
                             <Swatch name="muted → ink-50" className="bg-muted" textClassName="text-ink-900" />
                             <Swatch name="input → ink-200" className="bg-input" textClassName="text-ink-900" />
                         </div>
 
-                        <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Neutral Scale (Tailwind gray) — used for body text, borders, muted backgrounds</h3>
+                        <h3 className="text-sm font-semibold text-ink-500 uppercase tracking-wide mb-3">Neutral Scale (Tailwind gray) — used for body text, borders, muted backgrounds</h3>
                         <div className="grid grid-cols-5 sm:grid-cols-10 gap-2 mb-10">
                             {[
-                                { n: 50, cls: 'bg-gray-50' },
-                                { n: 100, cls: 'bg-gray-100' },
-                                { n: 200, cls: 'bg-gray-200' },
-                                { n: 300, cls: 'bg-gray-300' },
-                                { n: 400, cls: 'bg-gray-400' },
-                                { n: 500, cls: 'bg-gray-500' },
-                                { n: 600, cls: 'bg-gray-600' },
-                                { n: 700, cls: 'bg-gray-700' },
-                                { n: 800, cls: 'bg-gray-800' },
-                                { n: 900, cls: 'bg-gray-900' },
+                                { n: 50, cls: 'bg-ink-50' },
+                                { n: 100, cls: 'bg-ink-100' },
+                                { n: 200, cls: 'bg-ink-200' },
+                                { n: 300, cls: 'bg-ink-300' },
+                                { n: 400, cls: 'bg-ink-400' },
+                                { n: 500, cls: 'bg-ink-500' },
+                                { n: 600, cls: 'bg-ink-600' },
+                                { n: 700, cls: 'bg-ink-700' },
+                                { n: 800, cls: 'bg-ink-800' },
+                                { n: 900, cls: 'bg-ink-900' },
                             ].map(({ n, cls }) => (
                                 <div key={n} className="flex flex-col items-center gap-1.5">
                                     <div className={cn('w-full h-14 rounded-lg', cls)} />
-                                    <span className="text-[11px] text-gray-500 font-mono">{n}</span>
+                                    <span className="text-[11px] text-ink-500 font-mono">{n}</span>
                                 </div>
                             ))}
                         </div>
 
-                        <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Status Colors — success / warning / error / info</h3>
+                        <h3 className="text-sm font-semibold text-ink-500 uppercase tracking-wide mb-3">Status Colors — success / warning / error / info</h3>
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                             <Swatch name="success-600" className="bg-success-600" value="Published badges, confirmations" />
                             <Swatch name="warning-600" className="bg-warning-600" value="Caution states" />
@@ -272,41 +258,41 @@ export default function ThemePreviewPage() {
 
                     {/* TYPOGRAPHY */}
                     <section>
-                        <SectionHeading id="typography" title="Typography" description="Geist everywhere (body{} and h1,h2,h3{} both reference next/font's real --font-geist variable directly). The wordmark alone pins Poppins via the .font-logo utility." />
-                        <div className="space-y-5 p-8 rounded-2xl border border-gray-100 bg-white">
+                        <SectionHeading id="typography" title="Typography" description="Inter everywhere (body{} and h1,h2,h3{} both reference next/font's real --font-inter variable directly). The wordmark alone pins Poppins via the .font-logo utility." />
+                        <div className="space-y-5 p-8 rounded-2xl border border-ink-100 bg-white">
                             <div>
-                                <h1 className="text-5xl font-bold tracking-tight text-brand-900">Heading 1 / text-5xl</h1>
+                                <h1 className="text-5xl font-bold tracking-tight text-ink-900">Heading 1 / text-5xl</h1>
                                 <CodeLabel>font-bold · text-5xl</CodeLabel>
                             </div>
                             <div>
-                                <h2 className="text-4xl font-bold text-brand-900">Heading 2 / text-4xl</h2>
+                                <h2 className="text-4xl font-bold text-ink-900">Heading 2 / text-4xl</h2>
                                 <CodeLabel>font-bold · text-4xl</CodeLabel>
                             </div>
                             <div>
-                                <h3 className="text-2xl font-bold text-gray-900">Heading 3 / text-2xl</h3>
+                                <h3 className="text-2xl font-bold text-ink-900">Heading 3 / text-2xl</h3>
                                 <CodeLabel>font-bold · text-2xl</CodeLabel>
                             </div>
                             <div>
-                                <h4 className="text-lg font-bold text-gray-900">Heading 4 / text-lg</h4>
+                                <h4 className="text-lg font-bold text-ink-900">Heading 4 / text-lg</h4>
                                 <CodeLabel>font-bold · text-lg</CodeLabel>
                             </div>
                             <div>
-                                <p className="text-xl text-gray-600 leading-relaxed">
+                                <p className="text-xl text-ink-600 leading-relaxed">
                                     Lead paragraph / text-xl — used under hero headings to set up the value proposition.
                                 </p>
                             </div>
                             <div>
-                                <p className="text-base text-gray-600 leading-relaxed">
+                                <p className="text-base text-ink-600 leading-relaxed">
                                     Body text / text-base — the default reading size for paragraphs across marketing pages.
                                 </p>
                             </div>
                             <div>
-                                <p className="text-sm text-gray-500">Small / text-sm — captions, meta info, helper text.</p>
+                                <p className="text-sm text-ink-500">Small / text-sm — captions, meta info, helper text.</p>
                             </div>
                             <div>
-                                <p className="text-xs text-gray-400 uppercase tracking-widest font-semibold">Eyebrow / text-xs uppercase tracking-widest</p>
+                                <p className="text-xs text-ink-400 uppercase tracking-widest font-semibold">Eyebrow / text-xs uppercase tracking-widest</p>
                             </div>
-                            <div className="flex flex-wrap gap-4 pt-2 border-t border-gray-100">
+                            <div className="flex flex-wrap gap-4 pt-2 border-t border-ink-100">
                                 <span className="font-light">Light 300</span>
                                 <span className="font-normal">Regular 400</span>
                                 <span className="font-medium">Medium 500</span>
@@ -314,7 +300,7 @@ export default function ThemePreviewPage() {
                                 <span className="font-bold">Bold 700</span>
                             </div>
                             <div>
-                                <Link href="#" className="text-brand-600 hover:underline font-semibold">Link text example →</Link>
+                                <Link href="#" className="text-brand hover:underline font-semibold">Link text example →</Link>
                             </div>
                         </div>
                     </section>
@@ -326,7 +312,7 @@ export default function ThemePreviewPage() {
                         <div className="overflow-x-auto">
                             <table className="min-w-full text-sm mb-8">
                                 <thead>
-                                    <tr className="text-left text-gray-400 text-xs uppercase tracking-wide">
+                                    <tr className="text-left text-ink-400 text-xs uppercase tracking-wide">
                                         <th className="py-2 pr-4">Variant</th>
                                         <th className="py-2 pr-4">sm</th>
                                         <th className="py-2 pr-4">default</th>
@@ -337,8 +323,8 @@ export default function ThemePreviewPage() {
                                 </thead>
                                 <tbody>
                                     {(['default', 'secondary', 'outline', 'ghost', 'destructive', 'link'] as const).map((variant) => (
-                                        <tr key={variant} className="border-t border-gray-100">
-                                            <td className="py-3 pr-4 font-mono text-xs text-gray-500">{variant}</td>
+                                        <tr key={variant} className="border-t border-ink-100">
+                                            <td className="py-3 pr-4 font-mono text-xs text-ink-500">{variant}</td>
                                             <td className="py-3 pr-4"><Button variant={variant} size="sm">Button</Button></td>
                                             <td className="py-3 pr-4"><Button variant={variant}>Button</Button></td>
                                             <td className="py-3 pr-4"><Button variant={variant} size="lg">Button</Button></td>
@@ -350,16 +336,16 @@ export default function ThemePreviewPage() {
                             </table>
                         </div>
 
-                        <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Real treatments used on marketing pages</h3>
+                        <h3 className="text-sm font-semibold text-ink-500 uppercase tracking-wide mb-3">Real treatments used on marketing pages</h3>
                         <div className="flex flex-wrap gap-4">
-                            <Button size="lg" className="rounded-full bg-brand-600 hover:bg-brand-700 text-white shadow-lg shadow-brand-500/25 hover:scale-105 transition-all">
+                            <Button size="lg" className="rounded-full bg-brand hover:brightness-90 text-white shadow-lg shadow-brand/25 hover:scale-105 transition-all">
                                 Get Started <ArrowRight className="ml-1 size-4" />
                             </Button>
                             <Button variant="outline" size="lg" className="rounded-full bg-white/60 backdrop-blur-md shadow-md border-input hover:bg-white">
                                 Our Services
                             </Button>
-                            <Button className="rounded-full bg-white text-brand-900 hover:bg-gray-100">CTA on dark background</Button>
-                            <Button variant="ghost" className="rounded-md hover:bg-gray-100 text-gray-600">
+                            <Button className="rounded-full bg-white text-ink-900 hover:bg-ink-100">CTA on dark background</Button>
+                            <Button variant="ghost" className="rounded-md hover:bg-ink-100 text-ink-600">
                                 Learn more <ArrowUpRight className="ml-1 w-4 h-4" />
                             </Button>
                         </div>
@@ -372,19 +358,19 @@ export default function ThemePreviewPage() {
                         <div className="grid md:grid-cols-2 gap-8">
                             <div className="space-y-5">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Text input</label>
+                                    <label className="block text-sm font-medium text-ink-700 mb-1.5">Text input</label>
                                     <Input placeholder="you@example.com" />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Disabled input</label>
+                                    <label className="block text-sm font-medium text-ink-700 mb-1.5">Disabled input</label>
                                     <Input placeholder="Disabled" disabled />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Invalid input</label>
+                                    <label className="block text-sm font-medium text-ink-700 mb-1.5">Invalid input</label>
                                     <Input placeholder="Invalid value" aria-invalid />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Textarea</label>
+                                    <label className="block text-sm font-medium text-ink-700 mb-1.5">Textarea</label>
                                     <textarea
                                         rows={3}
                                         placeholder="Tell us about your project…"
@@ -393,17 +379,17 @@ export default function ThemePreviewPage() {
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <Checkbox id="preview-checkbox" defaultChecked />
-                                    <label htmlFor="preview-checkbox" className="text-sm text-gray-700">Checkbox — checked state</label>
+                                    <label htmlFor="preview-checkbox" className="text-sm text-ink-700">Checkbox — checked state</label>
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <Checkbox id="preview-checkbox-2" />
-                                    <label htmlFor="preview-checkbox-2" className="text-sm text-gray-700">Checkbox — unchecked</label>
+                                    <label htmlFor="preview-checkbox-2" className="text-sm text-ink-700">Checkbox — unchecked</label>
                                 </div>
                             </div>
 
                             <div className="space-y-5">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Native select (admin filters)</label>
+                                    <label className="block text-sm font-medium text-ink-700 mb-1.5">Native select (admin filters)</label>
                                     <select className="h-9 w-full rounded-md border border-input px-3 text-sm bg-white">
                                         <option>All</option>
                                         <option>Published</option>
@@ -411,7 +397,7 @@ export default function ThemePreviewPage() {
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Radix select</label>
+                                    <label className="block text-sm font-medium text-ink-700 mb-1.5">Radix select</label>
                                     <Select defaultValue="basic">
                                         <SelectTrigger>
                                             <SelectValue placeholder="Choose a plan" />
@@ -424,22 +410,22 @@ export default function ThemePreviewPage() {
                                     </Select>
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Color field pattern (admin)</label>
+                                    <label className="block text-sm font-medium text-ink-700 mb-1.5">Color field pattern (admin)</label>
                                     <div className="flex items-center gap-2">
                                         <div className="w-9 h-9 rounded-md border border-input" style={{ backgroundColor: '#B31B1B' }} />
                                         <Input value="#B31B1B" readOnly className="font-mono" />
                                     </div>
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Upload field pattern (admin)</label>
+                                    <label className="block text-sm font-medium text-ink-700 mb-1.5">Upload field pattern (admin)</label>
                                     <Button type="button" variant="outline" className="rounded-full">
                                         <Upload className="w-3.5 h-3.5" /> Choose File
                                     </Button>
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Search input (admin filters)</label>
+                                    <label className="block text-sm font-medium text-ink-700 mb-1.5">Search input (admin filters)</label>
                                     <div className="relative">
-                                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-400" />
                                         <Input placeholder="Search…" className="pl-9" />
                                     </div>
                                 </div>
@@ -451,17 +437,17 @@ export default function ThemePreviewPage() {
                     <section>
                         <SectionHeading id="badges" title="Badges & Tags" description="Status pills, tag chips, and eyebrow badges used across blog, admin, and marketing pages." />
                         <div className="flex flex-wrap gap-3 items-center">
-                            <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-green-50 text-green-700">Published</span>
-                            <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-gray-100 text-gray-500">Draft</span>
-                            <span className="text-xs font-semibold text-brand-700 bg-brand-50 border border-brand-100 rounded-full px-3 py-1 uppercase tracking-wide">Blog Tag</span>
-                            <span className="px-2.5 py-1 text-xs font-medium bg-gray-100 rounded-full border border-gray-200">Tech Chip</span>
-                            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-50 border border-brand-100">
-                                <span className="w-2 h-2 rounded-full bg-brand-500 animate-pulse" />
-                                <span className="text-xs font-semibold text-brand-700 tracking-wide uppercase">Eyebrow Badge</span>
+                            <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-success-50 text-success-600">Published</span>
+                            <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-ink-100 text-ink-500">Draft</span>
+                            <span className="text-xs font-semibold text-brand bg-accent border border-brand/15 rounded-full px-3 py-1 uppercase tracking-wide">Blog Tag</span>
+                            <span className="px-2.5 py-1 text-xs font-medium bg-ink-100 rounded-full border border-ink-200">Tech Chip</span>
+                            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent border border-brand/15">
+                                <span className="w-2 h-2 rounded-full bg-brand animate-pulse" />
+                                <span className="text-xs font-semibold text-brand tracking-wide uppercase">Eyebrow Badge</span>
                             </span>
-                            <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-red-50 text-red-700">Error</span>
-                            <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-amber-50 text-amber-700">Warning</span>
-                            <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-blue-50 text-blue-700">Info</span>
+                            <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-error-50 text-error-700">Error</span>
+                            <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-warning-50 text-warning-700">Warning</span>
+                            <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-info-50 text-info-600">Info</span>
                         </div>
                     </section>
 
@@ -469,19 +455,19 @@ export default function ThemePreviewPage() {
                     <section>
                         <SectionHeading id="alerts" title="Alerts" description="Inline feedback states used in admin forms." />
                         <div className="space-y-3">
-                            <div className="flex items-start gap-3 px-4 py-3 rounded-lg bg-red-50 text-red-700 text-sm">
+                            <div className="flex items-start gap-3 px-4 py-3 rounded-lg bg-error-50 text-error-700 text-sm">
                                 <XCircle className="w-4 h-4 mt-0.5 shrink-0" />
                                 <span>Cannot delete the last remaining admin user.</span>
                             </div>
-                            <div className="flex items-start gap-3 px-4 py-3 rounded-lg bg-green-50 text-green-700 text-sm">
+                            <div className="flex items-start gap-3 px-4 py-3 rounded-lg bg-success-50 text-success-600 text-sm">
                                 <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0" />
                                 <span>Password updated.</span>
                             </div>
-                            <div className="flex items-start gap-3 px-4 py-3 rounded-lg bg-amber-50 text-amber-700 text-sm">
+                            <div className="flex items-start gap-3 px-4 py-3 rounded-lg bg-warning-50 text-warning-700 text-sm">
                                 <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
                                 <span>Colors must be valid hex values, e.g. #ffffff.</span>
                             </div>
-                            <div className="flex items-start gap-3 px-4 py-3 rounded-lg bg-blue-50 text-blue-700 text-sm">
+                            <div className="flex items-start gap-3 px-4 py-3 rounded-lg bg-info-50 text-info-600 text-sm">
                                 <Info className="w-4 h-4 mt-0.5 shrink-0" />
                                 <span>Optional — leave blank to use the site default.</span>
                             </div>
@@ -492,24 +478,24 @@ export default function ThemePreviewPage() {
                     <section>
                         <SectionHeading id="cards" title="Cards" description="The four recurring card treatments found across the site." />
                         <div className="grid sm:grid-cols-2 gap-6">
-                            <div className="p-8 rounded-3xl border border-gray-100 hover:border-brand-200 hover:shadow-xl hover:shadow-brand-900/5 transition-all duration-300">
-                                <h3 className="text-lg font-bold text-gray-900 mb-2">Bordered Card</h3>
-                                <p className="text-sm text-gray-600">rounded-3xl · border-gray-100 · hover:shadow-brand-900/5</p>
+                            <div className="p-8 rounded-3xl border border-ink-100 hover:border-brand/25 hover:shadow-xl hover:shadow-ink-900/5 transition-all duration-300">
+                                <h3 className="text-lg font-bold text-ink-900 mb-2">Bordered Card</h3>
+                                <p className="text-sm text-ink-600">rounded-3xl · border-ink-100 · hover:shadow-ink-900/5</p>
                             </div>
-                            <div className="p-8 rounded-3xl bg-white/60 backdrop-blur-md border border-white/60 hover:bg-white hover:border-brand-100 hover:shadow-2xl hover:shadow-brand-900/5 transition-all duration-300">
-                                <h3 className="text-lg font-bold text-gray-900 mb-2">Glass Card</h3>
-                                <p className="text-sm text-gray-600">bg-white/60 · backdrop-blur-md · border-white/60</p>
+                            <div className="p-8 rounded-3xl bg-white/60 backdrop-blur-md border border-white/60 hover:bg-white hover:border-brand/15 hover:shadow-2xl hover:shadow-ink-900/5 transition-all duration-300">
+                                <h3 className="text-lg font-bold text-ink-900 mb-2">Glass Card</h3>
+                                <p className="text-sm text-ink-600">bg-white/60 · backdrop-blur-md · border-white/60</p>
                             </div>
                             <div className="p-8 rounded-md bg-white shadow-sm hover:shadow-xl transition-all duration-300">
-                                <div className="w-14 h-14 rounded-2xl bg-brand-50 flex items-center justify-center mb-6">
-                                    <Zap className="w-7 h-7 text-brand-600" />
+                                <div className="w-14 h-14 rounded-2xl bg-accent flex items-center justify-center mb-6">
+                                    <Zap className="w-7 h-7 text-brand" />
                                 </div>
-                                <h3 className="text-lg font-bold text-gray-900 mb-2">Feature Card</h3>
-                                <p className="text-sm text-gray-600">rounded-md · shadow-sm → shadow-xl on hover</p>
+                                <h3 className="text-lg font-bold text-ink-900 mb-2">Feature Card</h3>
+                                <p className="text-sm text-ink-600">rounded-md · shadow-sm → shadow-xl on hover</p>
                             </div>
-                            <div className="p-8 rounded-3xl bg-gradient-to-br from-brand-900 to-black text-white">
+                            <div className="p-8 rounded-3xl bg-gradient-to-br from-ink-950 to-black text-white">
                                 <h3 className="text-lg font-bold mb-2">Dark CTA Card</h3>
-                                <p className="text-sm text-white/70">bg-gradient-to-br from-brand-900 to-black</p>
+                                <p className="text-sm text-white/70">bg-gradient-to-br from-ink-950 to-black</p>
                             </div>
                         </div>
                     </section>
@@ -517,9 +503,9 @@ export default function ThemePreviewPage() {
                     {/* TABLES */}
                     <section>
                         <SectionHeading id="tables" title="Tables & Pagination" description="The admin list-view table pattern, plus the shared pagination component (page size: 50)." />
-                        <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden mb-6">
+                        <div className="bg-white border border-ink-100 rounded-2xl overflow-hidden mb-6">
                             <table className="w-full text-sm">
-                                <thead className="bg-gray-50 text-left text-gray-500 uppercase text-xs tracking-wide">
+                                <thead className="bg-ink-50 text-left text-ink-500 uppercase text-xs tracking-wide">
                                     <tr>
                                         <th className="px-6 py-4">Title</th>
                                         <th className="px-6 py-4">Status</th>
@@ -527,22 +513,22 @@ export default function ThemePreviewPage() {
                                         <th className="px-6 py-4 text-right">Actions</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-gray-100">
+                                <tbody className="divide-y divide-ink-100">
                                     {[
                                         { title: 'Finance Transformation', status: 'Published' },
                                         { title: 'Choosing a Modern POS', status: 'Draft' },
                                     ].map((row) => (
                                         <tr key={row.title}>
-                                            <td className="px-6 py-4 font-medium text-gray-900">{row.title}</td>
+                                            <td className="px-6 py-4 font-medium text-ink-900">{row.title}</td>
                                             <td className="px-6 py-4">
                                                 <span className={cn(
                                                     'text-xs font-semibold px-2.5 py-1 rounded-full',
-                                                    row.status === 'Published' ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-500'
+                                                    row.status === 'Published' ? 'bg-success-50 text-success-600' : 'bg-ink-100 text-ink-500'
                                                 )}>
                                                     {row.status}
                                                 </span>
                                             </td>
-                                            <td className="px-6 py-4 text-gray-500">Jul 22, 2026</td>
+                                            <td className="px-6 py-4 text-ink-500">Jul 22, 2026</td>
                                             <td className="px-6 py-4">
                                                 <div className="flex items-center justify-end gap-2">
                                                     <Button size="sm" variant="outline" className="rounded-full">Edit</Button>
@@ -560,14 +546,14 @@ export default function ThemePreviewPage() {
                     {/* NAVIGATION */}
                     <section>
                         <SectionHeading id="navigation" title="Navigation" description="Header nav pill (site) and sidebar pattern (admin) — recreated here since the live Header is fixed-position." />
-                        <div className="p-6 rounded-2xl border border-gray-100 bg-gray-50 mb-6">
+                        <div className="p-6 rounded-2xl border border-ink-100 bg-ink-50 mb-6">
                             <nav className="inline-flex items-center gap-1 bg-white/80 backdrop-blur-md px-2 py-1.5 rounded-full border border-white/20 shadow-sm">
                                 {['Home', 'Services', 'About Us', 'Blog', 'Contact'].map((item, i) => (
                                     <button
                                         key={item}
                                         className={cn(
                                             'relative px-5 py-2 text-sm font-medium rounded-full transition-colors',
-                                            i === 0 ? 'bg-gray-200/50 text-gray-900' : 'text-gray-600 hover:bg-gray-100'
+                                            i === 0 ? 'bg-ink-200/50 text-ink-900' : 'text-ink-600 hover:bg-ink-100'
                                         )}
                                     >
                                         {item}
@@ -575,16 +561,16 @@ export default function ThemePreviewPage() {
                                 ))}
                             </nav>
                         </div>
-                        <div className="flex gap-0 rounded-2xl border border-gray-100 overflow-hidden max-w-xs">
+                        <div className="flex gap-0 rounded-2xl border border-ink-100 overflow-hidden max-w-xs">
                             <aside className="w-full bg-white">
-                                <div className="px-4 py-3 border-b border-gray-100 font-bold text-sm">Admin</div>
+                                <div className="px-4 py-3 border-b border-ink-100 font-bold text-sm">Admin</div>
                                 <nav className="p-2 space-y-1">
                                     {['Blogs', 'Users', 'Contacts'].map((item, i) => (
                                         <div
                                             key={item}
                                             className={cn(
                                                 'px-3 py-2 rounded-lg text-sm font-medium',
-                                                i === 0 ? 'bg-brand-50 text-brand-700' : 'text-gray-600'
+                                                i === 0 ? 'bg-accent text-brand' : 'text-ink-600'
                                             )}
                                         >
                                             {item}
@@ -598,12 +584,12 @@ export default function ThemePreviewPage() {
                     {/* ACCORDION */}
                     <section>
                         <SectionHeading id="accordion" title="Accordion" description="components/ui/accordion.tsx — used for FAQs and the module-page overview sidebar." />
-                        <div className="max-w-2xl bg-white rounded-2xl border border-gray-100 px-4">
+                        <div className="max-w-2xl bg-white rounded-2xl border border-ink-100 px-4">
                             <Accordion type="single" collapsible defaultValue="item-0">
                                 {faqItems.map((item, idx) => (
                                     <AccordionItem key={idx} value={`item-${idx}`}>
-                                        <AccordionTrigger className="text-base text-gray-900">{item.question}</AccordionTrigger>
-                                        <AccordionContent className="text-gray-600 leading-relaxed">{item.answer}</AccordionContent>
+                                        <AccordionTrigger className="text-base text-ink-900">{item.question}</AccordionTrigger>
+                                        <AccordionContent className="text-ink-600 leading-relaxed">{item.answer}</AccordionContent>
                                     </AccordionItem>
                                 ))}
                             </Accordion>
@@ -619,13 +605,13 @@ export default function ThemePreviewPage() {
                                     <Button variant="outline" className="rounded-full">Open Popover</Button>
                                 </PopoverTrigger>
                                 <PopoverContent>
-                                    <p className="text-sm text-gray-600 px-2 py-1">Popover content — bg-popover, shadow-md, border-gray-200.</p>
+                                    <p className="text-sm text-ink-600 px-2 py-1">Popover content — bg-popover, shadow-md, border-ink-200.</p>
                                 </PopoverContent>
                             </Popover>
 
                             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                                 <DialogTrigger asChild>
-                                    <Button className="rounded-full bg-brand-600 hover:bg-brand-700 text-white">Open Dialog</Button>
+                                    <Button className="rounded-full bg-brand hover:brightness-90 text-white">Open Dialog</Button>
                                 </DialogTrigger>
                                 <DialogContent>
                                     <DialogHeader>
@@ -636,7 +622,7 @@ export default function ThemePreviewPage() {
                                         <DialogClose asChild>
                                             <Button variant="outline" className="rounded-full">Cancel</Button>
                                         </DialogClose>
-                                        <Button className="rounded-full bg-brand-600 hover:bg-brand-700 text-white">Confirm</Button>
+                                        <Button className="rounded-full bg-brand hover:brightness-90 text-white">Confirm</Button>
                                     </DialogFooter>
                                 </DialogContent>
                             </Dialog>
@@ -656,8 +642,8 @@ export default function ThemePreviewPage() {
                                 { label: 'rounded-full', cls: 'rounded-full' },
                             ].map((r) => (
                                 <div key={r.label} className="flex flex-col items-center gap-2">
-                                    <div className={cn('w-16 h-16 bg-brand-100 border-2 border-brand-500', r.cls)} />
-                                    <span className="text-xs font-mono text-gray-500">{r.label}</span>
+                                    <div className={cn('w-16 h-16 bg-accent border-2 border-brand', r.cls)} />
+                                    <span className="text-xs font-mono text-ink-500">{r.label}</span>
                                 </div>
                             ))}
                         </div>
@@ -676,18 +662,18 @@ export default function ThemePreviewPage() {
                             ].map((s) => (
                                 <div key={s.label} className="flex flex-col items-center gap-2">
                                     <div className={cn('w-16 h-16 bg-white rounded-xl', s.cls)} />
-                                    <span className="text-xs font-mono text-gray-500">{s.label}</span>
+                                    <span className="text-xs font-mono text-ink-500">{s.label}</span>
                                 </div>
                             ))}
                         </div>
                         <div className="grid grid-cols-2 gap-6 mt-6 max-w-md">
                             <div className="flex flex-col items-center gap-2">
-                                <div className="w-16 h-16 bg-brand-600 rounded-xl shadow-lg shadow-brand-500/25" />
-                                <span className="text-xs font-mono text-gray-500">shadow-brand-500/25</span>
+                                <div className="w-16 h-16 bg-brand rounded-xl shadow-lg shadow-brand/25" />
+                                <span className="text-xs font-mono text-ink-500">shadow-brand/25</span>
                             </div>
                             <div className="flex flex-col items-center gap-2">
-                                <div className="w-16 h-16 bg-white rounded-xl shadow-xl shadow-brand-900/5" />
-                                <span className="text-xs font-mono text-gray-500">shadow-brand-900/5</span>
+                                <div className="w-16 h-16 bg-white rounded-xl shadow-xl shadow-ink-900/5" />
+                                <span className="text-xs font-mono text-ink-500">shadow-ink-900/5</span>
                             </div>
                         </div>
                     </section>
@@ -698,8 +684,8 @@ export default function ThemePreviewPage() {
                         <div className="space-y-3">
                             {[1, 2, 3, 4, 6, 8, 10, 12, 16, 20, 24].map((n) => (
                                 <div key={n} className="flex items-center gap-4">
-                                    <span className="text-xs font-mono text-gray-400 w-10 text-right">{n}</span>
-                                    <div className="h-3 bg-brand-500 rounded" style={{ width: `${n * 4}px` }} />
+                                    <span className="text-xs font-mono text-ink-400 w-10 text-right">{n}</span>
+                                    <div className="h-3 bg-brand rounded" style={{ width: `${n * 4}px` }} />
                                 </div>
                             ))}
                         </div>
@@ -709,26 +695,26 @@ export default function ThemePreviewPage() {
                     <section>
                         <SectionHeading id="backgrounds" title="Backgrounds & Gradients" description="Decorative surfaces layered behind hero and CTA sections." />
                         <div className="grid sm:grid-cols-2 gap-6">
-                            <div className="relative h-32 rounded-2xl overflow-hidden border border-gray-100">
+                            <div className="relative h-32 rounded-2xl overflow-hidden border border-ink-100">
                                 <div className="absolute inset-0 bg-grid-pattern mask-[radial-gradient(ellipse_at_center,black_30%,transparent_70%)] opacity-40" />
-                                <span className="absolute bottom-3 left-3 text-xs font-mono text-gray-500">.bg-grid-pattern</span>
+                                <span className="absolute bottom-3 left-3 text-xs font-mono text-ink-500">.bg-grid-pattern</span>
                             </div>
                             <div className="relative h-32 rounded-2xl overflow-hidden glass border border-white/20">
-                                <span className="absolute bottom-3 left-3 text-xs font-mono text-gray-500">.glass</span>
+                                <span className="absolute bottom-3 left-3 text-xs font-mono text-ink-500">.glass</span>
                             </div>
-                            <div className="relative h-32 rounded-2xl overflow-hidden bg-gradient-to-br from-brand-900 to-black">
-                                <span className="absolute bottom-3 left-3 text-xs font-mono text-white/60">from-brand-900 to-black</span>
+                            <div className="relative h-32 rounded-2xl overflow-hidden bg-gradient-to-br from-ink-950 to-black">
+                                <span className="absolute bottom-3 left-3 text-xs font-mono text-white/60">from-ink-950 to-black</span>
                             </div>
-                            <div className="relative h-32 rounded-2xl overflow-hidden bg-linear-to-r from-brand-600 to-brand-400">
-                                <span className="absolute bottom-3 left-3 text-xs font-mono text-white/80">from-brand-600 to-brand-400</span>
+                            <div className="relative h-32 rounded-2xl overflow-hidden bg-brand">
+                                <span className="absolute bottom-3 left-3 text-xs font-mono text-white/80">bg-brand (solid, no scale)</span>
                             </div>
-                            <div className="relative h-32 rounded-2xl overflow-hidden bg-gray-900">
+                            <div className="relative h-32 rounded-2xl overflow-hidden bg-ink-900">
                                 <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/70 to-black/40" />
                                 <span className="absolute bottom-3 left-3 text-xs font-mono text-white/60">image overlay gradient</span>
                             </div>
-                            <div className="relative h-32 rounded-2xl overflow-hidden bg-brand-50 flex items-center justify-center">
-                                <div className="w-16 h-16 bg-brand-500/20 rounded-full blur-2xl animate-blob" />
-                                <span className="absolute bottom-3 left-3 text-xs font-mono text-gray-500">.animate-blob</span>
+                            <div className="relative h-32 rounded-2xl overflow-hidden bg-accent flex items-center justify-center">
+                                <div className="w-16 h-16 bg-brand/20 rounded-full blur-2xl animate-blob" />
+                                <span className="absolute bottom-3 left-3 text-xs font-mono text-ink-500">.animate-blob</span>
                             </div>
                         </div>
                     </section>
@@ -738,7 +724,7 @@ export default function ThemePreviewPage() {
                         <SectionHeading id="icons" title="Icons" description="lucide-react — the icon set used site-wide. A representative sample." />
                         <div className="grid grid-cols-4 sm:grid-cols-8 gap-4">
                             {[Rocket, ArrowRight, ShieldCheck, Zap, Layers, BrainCircuit, CheckCircle2, Check, Info, AlertTriangle, XCircle, Facebook, Linkedin, ChevronDown, Search, Upload, LinkIcon, TableIcon].map((Icon, i) => (
-                                <div key={i} className="flex items-center justify-center h-14 rounded-xl border border-gray-100 text-brand-600">
+                                <div key={i} className="flex items-center justify-center h-14 rounded-xl border border-ink-100 text-brand">
                                     <Icon className="w-5 h-5" />
                                 </div>
                             ))}
@@ -750,23 +736,23 @@ export default function ThemePreviewPage() {
                         <SectionHeading id="components" title="Composed Components" description="Full site sections, rendered live with sample data, exactly as they appear on real pages." />
 
                         <div className="space-y-16">
-                            <div className="rounded-2xl overflow-hidden border border-gray-100">
-                                <div className="px-6 py-3 bg-gray-50 text-xs font-semibold text-gray-500 uppercase tracking-wide">FaqSection</div>
+                            <div className="rounded-2xl overflow-hidden border border-ink-100">
+                                <div className="px-6 py-3 bg-ink-50 text-xs font-semibold text-ink-500 uppercase tracking-wide">FaqSection</div>
                                 <FaqSection items={faqItems} />
                             </div>
 
-                            <div className="rounded-2xl overflow-hidden border border-gray-100">
-                                <div className="px-6 py-3 bg-gray-50 text-xs font-semibold text-gray-500 uppercase tracking-wide">PricingTable</div>
+                            <div className="rounded-2xl overflow-hidden border border-ink-100">
+                                <div className="px-6 py-3 bg-ink-50 text-xs font-semibold text-ink-500 uppercase tracking-wide">PricingTable</div>
                                 <PricingTable plans={pricingPlans} />
                             </div>
 
-                            <div className="rounded-2xl overflow-hidden border border-gray-100">
-                                <div className="px-6 py-3 bg-gray-50 text-xs font-semibold text-gray-500 uppercase tracking-wide">ProjectFlow</div>
+                            <div className="rounded-2xl overflow-hidden border border-ink-100">
+                                <div className="px-6 py-3 bg-ink-50 text-xs font-semibold text-ink-500 uppercase tracking-wide">ProjectFlow</div>
                                 <ProjectFlow stages={flowStages} />
                             </div>
 
-                            <div className="rounded-2xl overflow-hidden border border-gray-100">
-                                <div className="px-6 py-3 bg-gray-50 text-xs font-semibold text-gray-500 uppercase tracking-wide">FeaturesGrid</div>
+                            <div className="rounded-2xl overflow-hidden border border-ink-100">
+                                <div className="px-6 py-3 bg-ink-50 text-xs font-semibold text-ink-500 uppercase tracking-wide">FeaturesGrid</div>
                                 <FeaturesGrid features={['Financial Management', 'Accounts Receivable', 'Asset Management', 'Cash & Banking', 'Reporting & Analytics', 'Budgeting', 'Tax & Compliance', 'Automation']} />
                             </div>
                         </div>
@@ -777,8 +763,8 @@ export default function ThemePreviewPage() {
             {/* FOOTER */}
             <section id="footer" className="scroll-mt-24 mt-24">
                 <div className="container mx-auto px-4 md:px-6 mb-6">
-                    <h2 className="text-2xl md:text-3xl font-bold text-brand-900">Footer</h2>
-                    <p className="text-gray-500 mt-2">The live Footer component, rendered as-is.</p>
+                    <h2 className="text-2xl md:text-3xl font-bold text-ink-900">Footer</h2>
+                    <p className="text-ink-500 mt-2">The live Footer component, rendered as-is.</p>
                 </div>
                 <Footer />
             </section>

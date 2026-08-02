@@ -52,8 +52,8 @@ export function Contact() {
   return (
     <section id="contact" className="relative py-24 bg-white overflow-hidden">
 
-      <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-brand-500/5 rounded-full blur-[120px] pointer-events-none translate-x-1/3 -translate-y-1/3" />
-      <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-gray-200/20 rounded-full blur-[100px] pointer-events-none -translate-x-1/3 translate-y-1/3" />
+      <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-brand/5 rounded-full blur-[120px] pointer-events-none translate-x-1/3 -translate-y-1/3" />
+      <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-ink-200/20 rounded-full blur-[100px] pointer-events-none -translate-x-1/3 translate-y-1/3" />
 
       <div className="container relative z-10 mx-auto px-4">
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-24 items-start">
@@ -65,40 +65,40 @@ export function Contact() {
               viewport={{ once: true }}
             >
               <h1 className="text-4xl md:text-5xl font-bold tracking-tight  mb-6">
-                Let&apos;s Build <br /> Something <span className="text-brand-600">Great.</span>
+                Let&apos;s Build <br /> Something <span className="text-brand">Great.</span>
               </h1>
-              <p className="text-lg text-gray-600 mb-12 max-w-lg leading-relaxed">
+              <p className="text-lg text-ink-600 mb-12 max-w-lg leading-relaxed">
                 Have an idea? We&apos;re ready to help turn your vision into reality. From concept to execution, we deliver results that truly make an impact.
               </p>
 
               <div className="space-y-8">
                 <div className="flex items-start gap-4 group">
-                  <div className="w-12 h-12 rounded-full bg-brand-50 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-                    <Mail className="w-5 h-5 text-brand-600" />
+                  <div className="w-12 h-12 rounded-full bg-accent flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                    <Mail className="w-5 h-5 text-brand" />
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-gray-900 mb-1">Email Us</p>
-                    <a href="mailto:info@unityalgo.com" className="text-gray-600 hover:text-brand-600 transition-colors">info@unityalgo.com</a>
+                    <p className="text-sm font-semibold text-ink-900 mb-1">Email Us</p>
+                    <a href="mailto:info@unityalgo.com" className="text-ink-600 hover:text-brand transition-colors">info@unityalgo.com</a>
                   </div>
                 </div>
 
                 <div className="flex items-start gap-4 group">
-                  <div className="w-12 h-12 rounded-full bg-brand-50 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-                    <Phone className="w-5 h-5 text-brand-600" />
+                  <div className="w-12 h-12 rounded-full bg-accent flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                    <Phone className="w-5 h-5 text-brand" />
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-gray-900 mb-1">Call Us</p>
-                    <a href="tel:+92317244595" className="text-gray-600 hover:text-brand-600 transition-colors">+92 317 244595</a>
+                    <p className="text-sm font-semibold text-ink-900 mb-1">Call Us</p>
+                    <a href="tel:+92317244595" className="text-ink-600 hover:text-brand transition-colors">+92 317 244595</a>
                   </div>
                 </div>
 
                 <div className="flex items-start gap-4 group">
-                  <div className="w-12 h-12 rounded-full bg-brand-50 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-                    <MapPin className="w-5 h-5 text-brand-600" />
+                  <div className="w-12 h-12 rounded-full bg-accent flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                    <MapPin className="w-5 h-5 text-brand" />
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-gray-900 mb-1">Location</p>
-                    <span className="text-gray-600">Karachi, Pakistan</span>
+                    <p className="text-sm font-semibold text-ink-900 mb-1">Location</p>
+                    <span className="text-ink-600">Karachi, Pakistan</span>
                   </div>
                 </div>
               </div>
@@ -110,7 +110,7 @@ export function Contact() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.2 }}
-            className="bg-white/80 backdrop-blur-xl border border-white/50 p-8 md:p-10 rounded-3xl shadow-2xl shadow-gray-200/50"
+            className="bg-white/80 backdrop-blur-xl border border-white/50 p-8 md:p-10 rounded-3xl shadow-2xl shadow-ink-200/50"
           >
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid md:grid-cols-2 gap-6">
@@ -121,7 +121,7 @@ export function Contact() {
                     value={formData.first_name}
                     onChange={handleChange}
                     required
-                    className="focus-within:ring-brand-500/20"
+                    className="focus-within:ring-brand/20"
                     placeholder="John"
                   />
                 </div>
@@ -132,7 +132,7 @@ export function Contact() {
                     value={formData.last_name}
                     onChange={handleChange}
                     required
-                    className="focus-within:ring-brand-500/20"
+                    className="focus-within:ring-brand/20"
                     placeholder="Doe"
                   />
                 </div>
@@ -146,7 +146,7 @@ export function Contact() {
                   value={formData.email}
                   onChange={handleChange}
                   required
-                  className="focus-within:ring-brand-500/20"
+                  className="focus-within:ring-brand/20"
                   placeholder="john@example.com"
                 />
               </div>
@@ -158,7 +158,7 @@ export function Contact() {
                   value={formData.phone}
                   onChange={handleChange}
                   required
-                  className="focus-within:ring-brand-500/20"
+                  className="focus-within:ring-brand/20"
                   placeholder="+1 (555) 000-0000"
                 />
               </div>
@@ -168,7 +168,7 @@ export function Contact() {
                 <textarea
 
                   id="message"
-                  className="flex w-full rounded-md border border-input px-3 py-3 text-sm ring-offset-white placeholder:text-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-within:ring-brand-500/20 disabled:cursor-not-allowed disabled:opacity-50 min-h-[120px]"
+                  className="flex w-full rounded-md border border-input px-3 py-3 text-sm ring-offset-white placeholder:text-ink-500 focus-visible:outline-none focus-visible:ring-2 focus-within:ring-brand/20 disabled:cursor-not-allowed disabled:opacity-50 min-h-[120px]"
                   placeholder="Tell us about your project..."
                   value={formData.message}
                   onChange={handleChange}
@@ -177,7 +177,7 @@ export function Contact() {
               </div>
 
               <Button
-                className="w-full h-12 bg-brand-600 hover:bg-brand-700 text-white rounded-md font-medium shadow-lg shadow-brand-600/20 transition-all"
+                className="w-full h-12 bg-brand hover:brightness-90 text-white rounded-md font-medium shadow-lg shadow-brand/20 transition-all"
                 type="submit"
                 disabled={isSubmitting}
               >

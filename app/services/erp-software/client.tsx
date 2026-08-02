@@ -23,7 +23,7 @@ export const MainContent = () => {
             <section className="relative pt-40 pb-20 md:pt-52 md:pb-32 px-4">
                 {/* Background Decor */}
                 <div className="absolute inset-0 bg-grid-pattern mask-[radial-gradient(ellipse_at_top,black_30%,transparent_70%)] opacity-30 pointer-events-none" />
-                <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-brand-500/5 rounded-full blur-[120px] pointer-events-none" />
+                <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-brand/5 rounded-full blur-[120px] pointer-events-none" />
 
                 <div className="container mx-auto max-w-6xl text-center relative z-10">
                     <motion.div
@@ -31,29 +31,29 @@ export const MainContent = () => {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.6 }}
                     >
-                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-50 border border-brand-100 mb-6">
-                            <span className="w-2 h-2 rounded-full bg-brand-600 animate-pulse" />
-                            <span className="text-xs font-semibold text-brand-700 tracking-wide uppercase">Powered by ERPNext</span>
+                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent border border-brand/15 mb-6">
+                            <span className="w-2 h-2 rounded-full bg-brand animate-pulse" />
+                            <span className="text-xs font-semibold text-brand tracking-wide uppercase">Powered by ERPNext</span>
                         </div>
                         <h1 className="text-5xl md:text-7xl font-bold tracking-tight  mb-8 text-balance">
                             The Operating System for <br />
                             Scaling Businesses
 
                         </h1>
-                        <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed text-balance mb-10">
+                        <p className="text-xl text-ink-600 max-w-3xl mx-auto leading-relaxed text-balance mb-10">
                             Streamline operations, unify data, and accelerate growth with our tailored ERPNext solutions.
                             The complete enterprise platform built for the modern era.
                         </p>
 
                         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
                             <Link href="/#contact">
-                                <Button size="lg" className="rounded-full bg-brand-600 hover:bg-brand-700 text-white px-8 h-12 text-base shadow-lg shadow-brand-500/20">
+                                <Button size="lg" className="rounded-full bg-brand hover:brightness-90 text-white px-8 h-12 text-base shadow-lg shadow-brand/20">
                                     Book a Free Demo
                                 </Button>
                             </Link>
 
                             <Link href="/services/erp#erp-modules">
-                                <Button variant="outline" size="lg" className="rounded-full border-gray-200 hover:bg-gray-50 text-gray-900 px-8 h-12 text-base">
+                                <Button variant="outline" size="lg" className="rounded-full border-ink-200 hover:bg-ink-50 text-ink-900 px-8 h-12 text-base">
                                     Explore Modules
                                 </Button>
                             </Link>
@@ -67,7 +67,7 @@ export const MainContent = () => {
                 <div className="container mx-auto px-4 max-w-6xl">
                     <div className="text-center mb-16">
                         <h2 className="text-3xl font-bold  mb-4">Eliminate Operational Chaos</h2>
-                        <p className="text-gray-600 max-w-2xl mx-auto">
+                        <p className="text-ink-600 max-w-2xl mx-auto">
                             We replace fragmented tools and manual spreadsheets with a single source of truth.
                         </p>
                     </div>
@@ -106,13 +106,13 @@ export const MainContent = () => {
                                 whileInView={{ opacity: 1, y: 0 }}
                                 viewport={{ once: true }}
                                 transition={{ delay: idx * 0.1 }}
-                                className="p-8 rounded-3xl border border-gray-100 bg-gray-50/50 hover:bg-white hover:shadow-xl hover:shadow-brand-900/5 transition-all duration-300"
+                                className="p-8 rounded-3xl border border-ink-100 bg-ink-50/50 hover:bg-white hover:shadow-xl hover:shadow-ink-900/5 transition-all duration-300"
                             >
                                 <div className={`w-12 h-12 rounded-2xl ${item.color} flex items-center justify-center mb-6`}>
                                     <Zap className="w-6 h-6" />
                                 </div>
-                                <h3 className="text-lg font-bold text-gray-900 mb-3">{item.title}</h3>
-                                <p className="text-sm text-gray-600 leading-relaxed">{item.desc}</p>
+                                <h3 className="text-lg font-bold text-ink-900 mb-3">{item.title}</h3>
+                                <p className="text-sm text-ink-600 leading-relaxed">{item.desc}</p>
                             </motion.div>
                         ))}
                     </div>
@@ -120,12 +120,12 @@ export const MainContent = () => {
             </section>
 
 
-            <section className="py-24 bg-gray-900 text-white relative overflow-hidden" id='erp-modules'>
-                <div className="absolute top-1/2 right-0 w-[600px] h-[600px] bg-brand-600/10 rounded-full blur-[120px] pointer-events-none -translate-y-1/2" />
+            <section className="py-24 bg-ink-900 text-white relative overflow-hidden" id='erp-modules'>
+                <div className="absolute top-1/2 right-0 w-[600px] h-[600px] bg-brand/10 rounded-full blur-[120px] pointer-events-none -translate-y-1/2" />
 
                 <div className="container mx-auto px-4 max-w-6xl relative z-10">
                     <div className="mb-16">
-                        <span className="text-brand-400 font-semibold tracking-widest uppercase text-sm mb-2 block">Comprehensive Suite</span>
+                        <span className="text-white/70 font-semibold tracking-widest uppercase text-sm mb-2 block">Comprehensive Suite</span>
                         <h2 className="text-3xl md:text-4xl font-bold">Core ERP Modules</h2>
                     </div>
 
@@ -147,13 +147,13 @@ export const MainContent = () => {
                             >
 
                                 <div className="flex items-center gap-4 mb-2">
-                                    <div className="w-10 h-10 rounded-lg bg-brand-600 flex items-center justify-center shrink-0">
+                                    <div className="w-10 h-10 rounded-lg bg-brand flex items-center justify-center shrink-0">
                                         <module.icon className="w-5 h-5 text-white" />
                                     </div>
-                                    <h3 className="text-lg font-bold group-hover:text-brand-400 transition-colors">{module.title}</h3>
+                                    <h3 className="text-lg font-bold group-hover:underline transition-colors">{module.title}</h3>
                                 </div>
 
-                                <p className="text-sm text-gray-400 leading-relaxed pl-14">
+                                <p className="text-sm text-ink-400 leading-relaxed pl-14">
                                     {module.desc}
                                 </p>
                             </motion.div>
@@ -163,12 +163,12 @@ export const MainContent = () => {
             </section>
 
             {/* --- INTERFACE SHOWCASE --- */}
-            <section className="py-24 bg-gray-50 overflow-hidden">
+            <section className="py-24 bg-ink-50 overflow-hidden">
                 <div className="container mx-auto px-4 max-w-6xl">
                     <div className="text-center mb-20">
-                        <span className="text-brand-600 font-semibold tracking-widest uppercase text-sm mb-2 block">Visual Tour</span>
+                        <span className="text-brand font-semibold tracking-widest uppercase text-sm mb-2 block">Visual Tour</span>
                         <h2 className="text-3xl md:text-4xl font-bold ">Experience the Interface</h2>
-                        <p className="text-gray-600 mt-4 max-w-2xl mx-auto">
+                        <p className="text-ink-600 mt-4 max-w-2xl mx-auto">
                             Designed for clarity and speed. Our interface reduces clicks and helps you find what you need instantly.
                         </p>
                     </div>
@@ -182,10 +182,10 @@ export const MainContent = () => {
                                 whileInView={{ opacity: 1, x: 0 }}
                                 viewport={{ once: true }}
                                 transition={{ duration: 0.5 }}
-                                className="relative rounded-2xl shadow-2xl overflow-hidden border border-gray-200 group"
+                                className="relative rounded-2xl shadow-2xl overflow-hidden border border-ink-200 group"
                             >
                                 {/* Placeholder for Dashboard Image */}
-                                <div className="aspect-[16/10] bg-gray-200 relative">
+                                <div className="aspect-[16/10] bg-ink-200 relative">
                                     <Image
                                         src="/images/erp-dashboard.png"
                                         alt="ERP Dashboard Interface"
@@ -201,17 +201,17 @@ export const MainContent = () => {
                                 viewport={{ once: true }}
                                 transition={{ duration: 0.5, delay: 0.2 }}
                             >
-                                <div className="w-12 h-12 bg-brand-100 rounded-xl flex items-center justify-center mb-6 text-brand-600">
+                                <div className="w-12 h-12 bg-accent rounded-xl flex items-center justify-center mb-6 text-brand">
                                     <BarChart3 className="w-6 h-6" />
                                 </div>
-                                <h3 className="text-2xl font-bold text-gray-900 mb-4">Real-Time Dashboards</h3>
-                                <p className="text-gray-600 leading-relaxed mb-6">
+                                <h3 className="text-2xl font-bold text-ink-900 mb-4">Real-Time Dashboards</h3>
+                                <p className="text-ink-600 leading-relaxed mb-6">
                                     Get a comprehensive view of your business at a glance. Customizable widgets allow you to track sales trends, project statuses, and financial health in real-time.
                                 </p>
                                 <ul className="space-y-3">
                                     {['Drag-and-drop widgets', 'Role-specific views', 'Instant drill-down'].map((item, i) => (
-                                        <li key={i} className="flex items-center gap-3 text-sm text-gray-700">
-                                            <CheckCircle2 className="w-4 h-4 text-green-500" /> {item}
+                                        <li key={i} className="flex items-center gap-3 text-sm text-ink-700">
+                                            <CheckCircle2 className="w-4 h-4 text-success-500" /> {item}
                                         </li>
                                     ))}
                                 </ul>
@@ -230,14 +230,14 @@ export const MainContent = () => {
                                 <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mb-6 text-blue-600">
                                     <Layers className="w-6 h-6" />
                                 </div>
-                                <h3 className="text-2xl font-bold text-gray-900 mb-4">Dedicated Workspaces</h3>
-                                <p className="text-gray-600 leading-relaxed mb-6">
+                                <h3 className="text-2xl font-bold text-ink-900 mb-4">Dedicated Workspaces</h3>
+                                <p className="text-ink-600 leading-relaxed mb-6">
                                     Clutter-free workspaces designed for focus. Each department gets a tailored home page with quick shortcuts to frequently used modules and pages.
                                 </p>
                                 <ul className="space-y-3">
                                     {['Accounting Workspace', 'HR & Payroll Hub', 'Manufacturing Command'].map((item, i) => (
-                                        <li key={i} className="flex items-center gap-3 text-sm text-gray-700">
-                                            <CheckCircle2 className="w-4 h-4 text-green-500" /> {item}
+                                        <li key={i} className="flex items-center gap-3 text-sm text-ink-700">
+                                            <CheckCircle2 className="w-4 h-4 text-success-500" /> {item}
                                         </li>
                                     ))}
                                 </ul>
@@ -247,9 +247,9 @@ export const MainContent = () => {
                                 whileInView={{ opacity: 1, x: 0 }}
                                 viewport={{ once: true }}
                                 transition={{ duration: 0.5, delay: 0.2 }}
-                                className="order-1 md:order-2 relative rounded-2xl shadow-2xl overflow-hidden border border-gray-200"
+                                className="order-1 md:order-2 relative rounded-2xl shadow-2xl overflow-hidden border border-ink-200"
                             >
-                                <div className="aspect-[16/10] bg-gray-200 relative">
+                                <div className="aspect-[16/10] bg-ink-200 relative">
                                     <Image
                                         src="/images/erp-workspace.png"
                                         alt="ERP Workspace Interface"
@@ -268,9 +268,9 @@ export const MainContent = () => {
                                 whileInView={{ opacity: 1, x: 0 }}
                                 viewport={{ once: true }}
                                 transition={{ duration: 0.5 }}
-                                className="relative rounded-2xl shadow-2xl overflow-hidden border border-gray-200"
+                                className="relative rounded-2xl shadow-2xl overflow-hidden border border-ink-200"
                             >
-                                <div className="aspect-[16/10] bg-gray-200 relative">
+                                <div className="aspect-[16/10] bg-ink-200 relative">
                                     <Image
                                         src="/images/erp-listview.png"
                                         alt="ERP Reports Interface"
@@ -289,14 +289,14 @@ export const MainContent = () => {
                                 <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mb-6 text-purple-600">
                                     <BarChart3 className="w-6 h-6" />
                                 </div>
-                                <h3 className="text-2xl font-bold text-gray-900 mb-4">Smart List Views & Reports</h3>
-                                <p className="text-gray-600 leading-relaxed mb-6">
+                                <h3 className="text-2xl font-bold text-ink-900 mb-4">Smart List Views & Reports</h3>
+                                <p className="text-ink-600 leading-relaxed mb-6">
                                     Turn raw data into insights. Filter, group, and analyze data directly in the list view, or generate report builder charts with a single click.
                                 </p>
                                 <ul className="space-y-3">
                                     {['Gantt & Kanban Views', 'Custom Report Builder', 'Auto-scheduled Email Reports'].map((item, i) => (
-                                        <li key={i} className="flex items-center gap-3 text-sm text-gray-700">
-                                            <CheckCircle2 className="w-4 h-4 text-green-500" /> {item}
+                                        <li key={i} className="flex items-center gap-3 text-sm text-ink-700">
+                                            <CheckCircle2 className="w-4 h-4 text-success-500" /> {item}
                                         </li>
                                     ))}
                                 </ul>
@@ -315,14 +315,14 @@ export const MainContent = () => {
                                 <div className="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center mb-6 text-amber-600">
                                     <ShoppingCart className="w-6 h-6" />
                                 </div>
-                                <h3 className="text-2xl font-bold text-gray-900 mb-4">Modern Point of Sale</h3>
-                                <p className="text-gray-600 leading-relaxed mb-6">
+                                <h3 className="text-2xl font-bold text-ink-900 mb-4">Modern Point of Sale</h3>
+                                <p className="text-ink-600 leading-relaxed mb-6">
                                     A touch-friendly POS interface that works offline. Manage inventory, apply discounts, and handle multi-currency payments seamlessly.
                                 </p>
                                 <ul className="space-y-3">
                                     {['Offline Capability', 'Touch-Optimized UI', 'Integrated Loyalty Program'].map((item, i) => (
-                                        <li key={i} className="flex items-center gap-3 text-sm text-gray-700">
-                                            <CheckCircle2 className="w-4 h-4 text-green-500" /> {item}
+                                        <li key={i} className="flex items-center gap-3 text-sm text-ink-700">
+                                            <CheckCircle2 className="w-4 h-4 text-success-500" /> {item}
                                         </li>
                                     ))}
                                 </ul>
@@ -332,9 +332,9 @@ export const MainContent = () => {
                                 whileInView={{ opacity: 1, x: 0 }}
                                 viewport={{ once: true }}
                                 transition={{ duration: 0.5, delay: 0.2 }}
-                                className="order-1 md:order-2 relative rounded-2xl shadow-2xl overflow-hidden border border-gray-200"
+                                className="order-1 md:order-2 relative rounded-2xl shadow-2xl overflow-hidden border border-ink-200"
                             >
-                                <div className="aspect-[16/10] bg-gray-200 relative">
+                                <div className="aspect-[16/10] bg-ink-200 relative">
                                     <Image
                                         src="/images/erp-pos.png"
                                         alt="ERP POS Interface"
@@ -357,7 +357,7 @@ export const MainContent = () => {
                     {/* Industries Header */}
                     <div className="text-center mb-16">
                         <h2 className="text-3xl font-bold  mb-4">Tailored for Your Industry</h2>
-                        <p className="text-gray-600">Built to handle the unique workflows of diverse sectors.</p>
+                        <p className="text-ink-600">Built to handle the unique workflows of diverse sectors.</p>
                     </div>
 
                     <div className="grid md:grid-cols-4 gap-4 mb-32">
@@ -369,10 +369,10 @@ export const MainContent = () => {
                             { icon: Truck, name: "Distribution", desc: "Logistics & Fulfillment" },
                             { icon: Briefcase, name: "Services", desc: "Project Mgmt & Billing" }
                         ].map((industry, idx) => (
-                            <div key={idx} className={`p-6 rounded-2xl bg-white border border-gray-100 flex flex-col items-center text-center hover:border-brand-200 transition-colors ${idx === 0 || idx === 5 ? 'md:col-span-2' : ''}`}>
-                                <industry.icon className="w-8 h-8 text-brand-600 mb-3" />
-                                <h4 className="font-bold text-gray-900">{industry.name}</h4>
-                                <p className="text-xs text-gray-500 mt-1">{industry.desc}</p>
+                            <div key={idx} className={`p-6 rounded-2xl bg-white border border-ink-100 flex flex-col items-center text-center hover:border-brand/25 transition-colors ${idx === 0 || idx === 5 ? 'md:col-span-2' : ''}`}>
+                                <industry.icon className="w-8 h-8 text-brand mb-3" />
+                                <h4 className="font-bold text-ink-900">{industry.name}</h4>
+                                <p className="text-xs text-ink-500 mt-1">{industry.desc}</p>
                             </div>
                         ))}
                     </div>
@@ -396,11 +396,11 @@ export const MainContent = () => {
             </section>
 
             {/* --- SERVICES & SUPPORT --- */}
-            <section className="py-24 bg-white border-t border-gray-100">
+            <section className="py-24 bg-white border-t border-ink-100">
                 <div className="container mx-auto px-4 max-w-6xl">
                     <div className="text-center mb-16">
                         <h2 className="text-3xl font-bold ">We Don&apos;t Just Install, We Partner</h2>
-                        <p className="text-gray-600 mt-4">End-to-end support to ensure your success.</p>
+                        <p className="text-ink-600 mt-4">End-to-end support to ensure your success.</p>
                     </div>
 
                     <div className="grid md:grid-cols-3 gap-8">
@@ -413,7 +413,7 @@ export const MainContent = () => {
             </section>
 
             {/* --- WHY CHOOSE US & CTA --- */}
-            <section className="py-24 bg-gradient-to-br from-brand-900 to-black text-white text-center px-4">
+            <section className="py-24 bg-gradient-to-br from-ink-950 to-black text-white text-center px-4">
                 <div className="container mx-auto max-w-4xl">
                     <h2 className="text-4xl font-bold mb-8">Why Choose UnityAlgo?</h2>
 
@@ -425,21 +425,21 @@ export const MainContent = () => {
                             { title: "Security", desc: "Enterprise-grade protection." }
                         ].map((item, idx) => (
                             <div key={idx} className="bg-white/10 p-4 rounded-xl backdrop-blur-sm border border-white/10">
-                                <CheckCircle2 className="w-5 h-5 text-brand-400 mb-2" />
+                                <CheckCircle2 className="w-5 h-5 text-white/80 mb-2" />
                                 <h4 className="font-bold">{item.title}</h4>
-                                <p className="text-xs text-gray-400 mt-1">{item.desc}</p>
+                                <p className="text-xs text-ink-400 mt-1">{item.desc}</p>
                             </div>
                         ))}
                     </div>
 
                     <div className="bg-white/5 border border-white/10 p-8 md:p-12 rounded-3xl">
                         <h3 className="text-2xl md:text-3xl font-bold mb-4">Ready to Transform Your Business?</h3>
-                        <p className="text-gray-300 mb-8 max-w-2xl mx-auto">
+                        <p className="text-ink-300 mb-8 max-w-2xl mx-auto">
                             Schedule a free consultation to see how our ERP solutions can streamline your operations and drive growth.
                         </p>
                         <div className="flex flex-col sm:flex-row gap-4 justify-center">
                             <Link href="/#contact">
-                                <Button size="lg" className="bg-brand-600 hover:bg-brand-700 text-white rounded-full px-8 h-12">
+                                <Button size="lg" className="bg-brand hover:brightness-90 text-white rounded-full px-8 h-12">
                                     Get Your Free Consultation
                                 </Button>
                             </Link>
@@ -455,13 +455,13 @@ export const MainContent = () => {
 
 function FeatureCard({ title, desc }: { title: string, desc: string }) {
     return (
-        <div className="flex gap-4 p-4 hover:bg-gray-50 rounded-xl transition-colors">
-            <div className="w-10 h-10 rounded-full bg-brand-50 flex items-center justify-center shrink-0">
-                <CheckCircle2 className="w-5 h-5 text-brand-600" />
+        <div className="flex gap-4 p-4 hover:bg-ink-50 rounded-xl transition-colors">
+            <div className="w-10 h-10 rounded-full bg-accent flex items-center justify-center shrink-0">
+                <CheckCircle2 className="w-5 h-5 text-brand" />
             </div>
             <div>
-                <h4 className="font-bold text-gray-900">{title}</h4>
-                <p className="text-sm text-gray-600 leading-relaxed">{desc}</p>
+                <h4 className="font-bold text-ink-900">{title}</h4>
+                <p className="text-sm text-ink-600 leading-relaxed">{desc}</p>
             </div>
         </div>
     )
@@ -469,12 +469,12 @@ function FeatureCard({ title, desc }: { title: string, desc: string }) {
 
 function ServiceCard({ icon: Icon, title, desc }: { icon: LucideIcon, title: string, desc: string }) {
     return (
-        <div className="text-center p-8 border border-gray-100 rounded-3xl hover:shadow-xl hover:shadow-brand-900/5 transition-all">
-            <div className="w-14 h-14 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6 text-brand-600">
+        <div className="text-center p-8 border border-ink-100 rounded-3xl hover:shadow-xl hover:shadow-ink-900/5 transition-all">
+            <div className="w-14 h-14 bg-ink-50 rounded-full flex items-center justify-center mx-auto mb-6 text-brand">
                 <Icon className="w-7 h-7" />
             </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-3">{title}</h3>
-            <p className="text-gray-500 leading-relaxed">{desc}</p>
+            <h3 className="text-xl font-bold text-ink-900 mb-3">{title}</h3>
+            <p className="text-ink-500 leading-relaxed">{desc}</p>
         </div>
     )
 }

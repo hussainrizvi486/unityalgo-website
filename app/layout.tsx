@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Poppins, Geist } from "next/font/google";
+import { Poppins, Inter } from "next/font/google";
 import Script from "next/script";
 import { cn } from "@/utils";
 
@@ -12,9 +12,10 @@ const poppins = Poppins({
   weight: ['100', '200', '300', '400', '500', '600', '700', '800', '900']
 });
 
-const giest = Geist({
+const inter = Inter({
+  subsets: ['latin'],
   display: 'swap',
-  variable: '--font-geist',
+  variable: '--font-inter',
   weight: ['100', '200', '300', '400', '500', '600', '700', '800', '900']
 })
 
@@ -103,7 +104,7 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
       </head>
-      <body className={cn(poppins.className, poppins.variable, giest.className, giest.variable, "antialiased bg-background text-foreground")}>
+      <body className={cn(inter.className, inter.variable, poppins.variable, "antialiased bg-background text-foreground")}>
         {children}
       </body>
     </html>

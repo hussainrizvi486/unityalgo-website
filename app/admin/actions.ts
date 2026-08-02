@@ -48,21 +48,6 @@ function slugify(value: string) {
         .replace(/(^-|-$)+/g, '');
 }
 
-function parseTags(raw: string) {
-    return raw
-        .split(',')
-        .map((tag) => tag.trim())
-        .filter(Boolean);
-}
-
-const HEX_COLOR_RE = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i;
-
-function parseHexColor(raw: FormDataEntryValue | null) {
-    const value = String(raw ?? '').trim();
-    if (!value) return null;
-    return HEX_COLOR_RE.test(value) ? value : undefined;
-}
-
 export interface PostFormState {
     error?: string;
 }
@@ -73,19 +58,12 @@ export async function createPostAction(_prevState: PostFormState | undefined, fo
     const excerpt = String(formData.get('excerpt') ?? '').trim();
     const content = String(formData.get('content') ?? '');
     const coverImage = String(formData.get('coverImage') ?? '').trim();
-    const tags = parseTags(String(formData.get('tags') ?? ''));
     const published = formData.get('published') === 'on';
     const metaTitle = String(formData.get('metaTitle') ?? '').trim() || null;
     const metaDescription = String(formData.get('metaDescription') ?? '').trim() || null;
-    const bgColor = parseHexColor(formData.get('bgColor'));
-    const textColor = parseHexColor(formData.get('textColor'));
 
     if (!title || !excerpt || !content || !coverImage) {
         return { error: 'Title, excerpt, content, and cover image are required.' };
-    }
-
-    if (bgColor === undefined || textColor === undefined) {
-        return { error: 'Colors must be valid hex values, e.g. #ffffff.' };
     }
 
     const slug = slugInput ? slugify(slugInput) : slugify(title);
@@ -102,13 +80,10 @@ export async function createPostAction(_prevState: PostFormState | undefined, fo
             excerpt,
             content,
             coverImage,
-            tags,
             published,
             publishedAt: published ? new Date() : null,
             metaTitle,
             metaDescription,
-            bgColor,
-            textColor,
         },
     });
 
@@ -127,19 +102,12 @@ export async function updatePostAction(
     const excerpt = String(formData.get('excerpt') ?? '').trim();
     const content = String(formData.get('content') ?? '');
     const coverImage = String(formData.get('coverImage') ?? '').trim();
-    const tags = parseTags(String(formData.get('tags') ?? ''));
     const published = formData.get('published') === 'on';
     const metaTitle = String(formData.get('metaTitle') ?? '').trim() || null;
     const metaDescription = String(formData.get('metaDescription') ?? '').trim() || null;
-    const bgColor = parseHexColor(formData.get('bgColor'));
-    const textColor = parseHexColor(formData.get('textColor'));
 
     if (!title || !excerpt || !content || !coverImage) {
         return { error: 'Title, excerpt, content, and cover image are required.' };
-    }
-
-    if (bgColor === undefined || textColor === undefined) {
-        return { error: 'Colors must be valid hex values, e.g. #ffffff.' };
     }
 
     const slug = slugify(slugInput || title);
@@ -159,13 +127,10 @@ export async function updatePostAction(
             excerpt,
             content,
             coverImage,
-            tags,
             published,
             publishedAt: published ? current?.publishedAt ?? new Date() : null,
             metaTitle,
             metaDescription,
-            bgColor,
-            textColor,
         },
     });
 

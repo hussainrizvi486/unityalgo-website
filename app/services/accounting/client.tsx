@@ -89,7 +89,7 @@ export const MainContent = () => {
             {/* --- HERO / LANDING SECTION --- */}
             <section className="relative pt-40 pb-20 md:pt-52 md:pb-32 px-4">
                 <div className="absolute inset-0 bg-grid-pattern mask-[radial-gradient(ellipse_at_top,black_30%,transparent_70%)] opacity-30 pointer-events-none" />
-                <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-brand-500/5 rounded-full blur-[120px] pointer-events-none" />
+                <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-brand/5 rounded-full blur-[120px] pointer-events-none" />
 
                 <div className="container mx-auto max-w-6xl relative z-10">
                     <div className="grid md:grid-cols-2 gap-12 items-center">
@@ -98,19 +98,19 @@ export const MainContent = () => {
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.6 }}
                         >
-                            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-50 border border-brand-100 mb-6">
-                                <span className="w-2 h-2 rounded-full bg-brand-600 animate-pulse" />
-                                <span className="text-xs font-semibold text-brand-700 tracking-wide uppercase">Financial Management</span>
+                            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent border border-brand/15 mb-6">
+                                <span className="w-2 h-2 rounded-full bg-brand animate-pulse" />
+                                <span className="text-xs font-semibold text-brand tracking-wide uppercase">Financial Management</span>
                             </div>
                             <h1 className="text-5xl md:text-6xl font-bold tracking-tight  mb-8 text-balance">
                                 Finance Transformation
                             </h1>
-                            <p className="text-xl text-gray-600 leading-relaxed text-balance mb-10">
+                            <p className="text-xl text-ink-600 leading-relaxed text-balance mb-10">
                                 Accelerate business outcomes and achieve operational excellence through connected and automated finance operations.
                             </p>
 
                             <Link href="/#contact">
-                                <Button size="lg" className="rounded-full bg-brand-600 hover:bg-brand-700 text-white px-8 h-12 text-base shadow-lg shadow-brand-500/20">
+                                <Button size="lg" className="rounded-full bg-brand hover:brightness-90 text-white px-8 h-12 text-base shadow-lg shadow-brand/20">
                                     Request Demo
                                 </Button>
                             </Link>
@@ -120,9 +120,9 @@ export const MainContent = () => {
                             initial={{ opacity: 0, x: 40 }}
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ duration: 0.6, delay: 0.2 }}
-                            className="relative rounded-2xl shadow-2xl overflow-hidden border border-gray-200"
+                            className="relative rounded-2xl shadow-2xl overflow-hidden border border-ink-200"
                         >
-                            <div className="aspect-[16/10] bg-gray-200 relative">
+                            <div className="aspect-[16/10] bg-ink-200 relative">
                                 <Image
                                     src="/images/erp-dashboard.png"
                                     alt="Financial Management Dashboard"
@@ -158,14 +158,14 @@ export const MainContent = () => {
             <FaqSection items={faqItems} />
 
             {/* --- CTA --- */}
-            <section className="py-24 bg-gradient-to-br from-brand-900 to-black text-white text-center px-4">
+            <section className="py-24 bg-gradient-to-br from-ink-950 to-black text-white text-center px-4">
                 <div className="container mx-auto max-w-3xl">
                     <h2 className="text-4xl font-bold mb-6">Ready to Transform Your Finance Operations?</h2>
-                    <p className="text-gray-300 mb-8 max-w-2xl mx-auto">
+                    <p className="text-ink-300 mb-8 max-w-2xl mx-auto">
                         Schedule a free consultation to see how our financial management solution can streamline your operations.
                     </p>
                     <Link href="/#contact">
-                        <Button size="lg" className="bg-white  hover:bg-gray-100 rounded-full px-8 h-12">
+                        <Button size="lg" className="bg-white  hover:bg-ink-100 rounded-full px-8 h-12">
                             Request Demo
                         </Button>
                     </Link>

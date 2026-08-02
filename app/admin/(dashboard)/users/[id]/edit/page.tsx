@@ -26,9 +26,9 @@ export default async function EditUserPage({ params }: { params: Promise<{ id: s
                 />
             </div>
 
-            <div className="max-w-lg pt-8 border-t border-gray-200">
+            <div className="max-w-lg pt-8 border-t border-ink-200">
                 <h2 className="text-lg font-bold mb-1">Change Password</h2>
-                <p className="text-sm text-gray-500 mb-6">Set a new password for {user.email}.</p>
+                <p className="text-sm text-ink-500 mb-6">Set a new password for {user.email}.</p>
                 <ChangePasswordForm action={boundPasswordAction} />
             </div>
         </div>

@@ -48,7 +48,7 @@ export default async function BlogListingPage({
                         <h1 className="text-xl md:text-3xl font-bold">
                             Browse our thoughts
                         </h1>
-                        <div className='h-1 w-36 bg-brand-600'></div>
+                        <div className='h-1 w-36 bg-brand'></div>
 
                     </div>
                 </section>
@@ -56,7 +56,7 @@ export default async function BlogListingPage({
                 <section className="pb-24 px-4">
                     <div className="container mx-auto max-w-6xl">
                         {posts.length === 0 ? (
-                            <p className="text-center text-gray-500 py-24">
+                            <p className="text-center text-ink-500 py-24">
                                 No blog posts published yet. Check back soon.
                             </p>
                         ) : (
@@ -76,8 +76,8 @@ export default async function BlogListingPage({
                                                 className={cn(
                                                     'w-10 h-10 flex items-center justify-center rounded-full text-sm font-bold transition-colors ',
                                                     page === currentPage
-                                                        ? 'bg-brand-600 text-white'
-                                                        : 'text-gray-600 hover:bg-gray-100'
+                                                        ? 'bg-brand text-white'
+                                                        : 'text-ink-600 hover:bg-ink-100'
                                                 )}
                                             >
                                                 {page}

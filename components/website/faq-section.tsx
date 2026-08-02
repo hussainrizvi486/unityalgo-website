@@ -25,7 +25,7 @@ export function FaqSection({
     items,
 }: FaqSectionProps) {
     return (
-        <section className="py-24 bg-white border-t border-gray-100">
+        <section className="py-24 bg-white border-t border-ink-100">
             <div className="container mx-auto px-4 max-w-3xl">
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
@@ -34,7 +34,7 @@ export function FaqSection({
                     className="text-center mb-16"
                 >
                     <h2 className="text-3xl font-bold  mb-4">{heading}</h2>
-                    <p className="text-gray-600">{subheading}</p>
+                    <p className="text-ink-600">{subheading}</p>
                 </motion.div>
 
                 <motion.div
@@ -46,10 +46,10 @@ export function FaqSection({
                     <Accordion type="single" collapsible className="w-full">
                         {items.map((item, idx) => (
                             <AccordionItem key={idx} value={`item-${idx}`}>
-                                <AccordionTrigger className="text-base text-gray-900">
+                                <AccordionTrigger className="text-base text-ink-900">
                                     {item.question}
                                 </AccordionTrigger>
-                                <AccordionContent className="text-gray-600 leading-relaxed">
+                                <AccordionContent className="text-ink-600 leading-relaxed">
                                     {item.answer}
                                 </AccordionContent>
                             </AccordionItem>

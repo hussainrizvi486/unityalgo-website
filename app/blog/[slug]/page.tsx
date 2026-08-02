@@ -114,23 +114,12 @@ export default async function BlogDetailsPage({
             <Header />
 
             <main>
-                <article className="pt-40 pb-20 md:pt-52 px-4" style={articleStyle}>
+                <article className="pt-32 pb-20 px-4" style={articleStyle}>
                     <div className="container mx-auto max-w-3xl">
-                        {post.tags.length > 0 && (
-                            <div className="flex flex-wrap gap-2 mb-6">
-                                {post.tags.map((tag) => (
-                                    <span
-                                        key={tag}
-                                        className="text-xs font-semibold text-brand-700 bg-brand-50 border border-brand-100 rounded-full px-3 py-1 uppercase tracking-wide"
-                                    >
-                                        {tag}
-                                    </span>
-                                ))}
-                            </div>
-                        )}
+            
 
                         <h1
-                            className="text-4xl md:text-5xl font-bold tracking-tight  mb-6 text-balance"
+                            className="text-lg md:text-3xl font-bold tracking-tight  mb-6 text-balance"
                             style={post.textColor ? { color: post.textColor } : undefined}
                         >
                             {post.title}
@@ -138,14 +127,12 @@ export default async function BlogDetailsPage({
 
                         {post.publishedAt && (
                             <p
-                                className="text-sm text-gray-400 mb-10"
-                                style={post.textColor ? { color: post.textColor, opacity: 0.7 } : undefined}
-                            >
+                                className="text-sm text-ink-400 mb-10"                            >
                                 {formatDate(post.publishedAt)}
                             </p>
                         )}
 
-                        <div className="aspect-[16/9] bg-gray-100 rounded-2xl overflow-hidden mb-12">
+                        <div className="aspect-[16/9] bg-ink-100 rounded-2xl overflow-hidden mb-12">
                             <img
                                 src={post.coverImage}
                                 alt={post.title}
@@ -154,7 +141,7 @@ export default async function BlogDetailsPage({
                         </div>
 
                         <div
-                            className="prose prose-lg max-w-none text-gray-700 leading-relaxed [&_h2]: [&_h2]:font-bold [&_h2]:text-2xl [&_h2]:mt-10 [&_h2]:mb-4 [&_p]:mb-4 [&_a]:text-brand-600"
+                            className="prose prose-lg max-w-none text-ink-700 leading-relaxed [&_h2]: [&_h2]:font-bold [&_h2]:text-2xl [&_h2]:mt-10 [&_h2]:mb-4 [&_p]:mb-4 [&_a]:text-brand"
                             style={proseStyle}
                             dangerouslySetInnerHTML={{ __html: post.content }}
                         />
@@ -162,7 +149,7 @@ export default async function BlogDetailsPage({
                 </article>
 
                 {relatedPosts.length > 0 && (
-                    <section className="py-24 bg-gray-50 border-t border-gray-100 px-4">
+                    <section className="py-24 bg-ink-50 border-t border-ink-100 px-4">
                         <div className="container mx-auto max-w-6xl">
                             <h2 className="text-3xl font-bold  mb-12">Related Blogs</h2>
                             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -175,7 +162,7 @@ export default async function BlogDetailsPage({
                 )}
 
                 <section className="py-16 px-4 text-center">
-                    <Link href="/blog" className="text-brand-600 font-semibold hover:underline">
+                    <Link href="/blog" className="text-brand font-semibold hover:underline">
                         &larr; Back to all posts
                     </Link>
                 </section>

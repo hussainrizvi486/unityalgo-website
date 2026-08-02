@@ -57,7 +57,7 @@ const Page = () => {
                         <h1 className="text-5xl md:text-6xl font-bold tracking-tight  mb-6 text-balance">
                             Our Services
                         </h1>
-                        <p className="text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed text-balance">
+                        <p className="text-xl text-ink-600 max-w-2xl mx-auto leading-relaxed text-balance">
                             End-to-end ERP modules and enterprise application development, built to scale with your business.
                         </p>
                     </div>
@@ -69,13 +69,13 @@ const Page = () => {
                             <Link
                                 key={service.name}
                                 href={service.href}
-                                className="group p-8 rounded-3xl border border-gray-100 hover:border-brand-200 hover:shadow-xl hover:shadow-brand-900/5 transition-all duration-300"
+                                className="group p-8 rounded-3xl border border-ink-100 hover:border-brand/25 hover:shadow-xl hover:shadow-ink-900/5 transition-all duration-300"
                             >
-                                <h2 className="text-xl font-bold text-gray-900 group-hover:text-brand-700 transition-colors mb-3">
+                                <h2 className="text-xl font-bold text-ink-900 group-hover:opacity-75 transition-colors mb-3">
                                     {service.name}
                                 </h2>
-                                <p className="text-sm text-gray-600 leading-relaxed mb-6">{service.description}</p>
-                                <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-600">
+                                <p className="text-sm text-ink-600 leading-relaxed mb-6">{service.description}</p>
+                                <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand">
                                     Learn more <ArrowRight className="w-4 h-4" />
                                 </span>
                             </Link>

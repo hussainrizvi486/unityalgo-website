@@ -61,49 +61,49 @@ export function Header() {
       >
         <div className="container mx-auto px-4 md:px-6">
           <div className="flex items-center justify-between">
-
-
-            <div className="shrink-0">
+            <div className="shrink-0 flex items-center">
               <Logo />
+
+              <nav className="hidden md:flex items-center px-2 py-1.5 rounded-full ml-12">
+                <Link href="/">
+                  <button className="relative px-5 py-2 text-sm font-medium text-ink-600 transition-colors hover: rounded-full group overflow-hidden">
+                    <span className="relative z-10 font-semibold text-black">Home</span>
+                    <div className="absolute inset-0 bg-ink-200/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-full" />
+                  </button>
+                </Link>
+
+                <ServicesDropdown />
+
+                <Link href="/about-us">
+                  <button className="relative px-5 py-2 text-sm font-medium text-ink-600 transition-colors hover: rounded-full group overflow-hidden">
+                    <span className="relative z-10 font-semibold text-black">About Us</span>
+                    <div className="absolute inset-0 bg-ink-200/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-full" />
+                  </button>
+                </Link>
+
+                <Link href="/blog">
+                  <button className="relative px-5 py-2 text-sm font-medium text-ink-600 transition-colors hover: rounded-full group overflow-hidden">
+                    <span className="relative z-10 font-semibold text-black">Blog</span>
+                    <div className="absolute inset-0 bg-ink-200/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-full" />
+                  </button>
+                </Link>
+
+                <Link href="/#contact">
+                  <button className="relative px-5 py-2 text-sm font-medium text-ink-600 transition-colors hover: rounded-full group overflow-hidden">
+                    <span className="relative z-10 font-semibold text-black">Contact</span>
+                    <div className="absolute inset-0 bg-ink-200/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-full" />
+                  </button>
+                </Link>
+              </nav>
+
             </div>
-            <nav className="hidden md:flex items-center gap-1 bg-white/50 backdrop-blur-md px-2 py-1.5 rounded-full border border-white/20 shadow-sm">
-              <Link href="/">
-                <button className="relative px-5 py-2 text-sm font-medium text-gray-600 transition-colors hover: rounded-full group overflow-hidden">
-                  <span className="relative z-10">Home</span>
-                  <div className="absolute inset-0 bg-gray-200/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-full" />
-                </button>
-              </Link>
-
-              <ServicesDropdown />
-
-              <Link href="/about-us">
-                <button className="relative px-5 py-2 text-sm font-medium text-gray-600 transition-colors hover: rounded-full group overflow-hidden">
-                  <span className="relative z-10">About Us</span>
-                  <div className="absolute inset-0 bg-gray-200/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-full" />
-                </button>
-              </Link>
-
-              <Link href="/blog">
-                <button className="relative px-5 py-2 text-sm font-medium text-gray-600 transition-colors hover: rounded-full group overflow-hidden">
-                  <span className="relative z-10">Blog</span>
-                  <div className="absolute inset-0 bg-gray-200/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-full" />
-                </button>
-              </Link>
-
-              <Link href="/#contact">
-                <button className="relative px-5 py-2 text-sm font-medium text-gray-600 transition-colors hover: rounded-full group overflow-hidden">
-                  <span className="relative z-10">Contact</span>
-                  <div className="absolute inset-0 bg-gray-200/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-full" />
-                </button>
-              </Link>
-            </nav>
 
 
             <div className="hidden md:flex items-center gap-4">
               <Link href="#contact">
-                {/* sm:text-base bg-brand-600 hover:bg-brand-500 text-white rounded-full shadow-lg shadow-brand-500/25 transition-all */}
+                {/* sm:text-base bg-brand hover:bg-brand text-white rounded-full shadow-lg shadow-brand/25 transition-all */}
                 <Button
-                  className="rounded-full transition-all duration-300  bg-brand-600 hover:bg-brand-700 text-white shadow-md "
+                  className="rounded-full transition-all duration-300  bg-brand hover:brightness-90 text-white shadow-md "
                 >
                   Get Started
                 </Button>
@@ -112,7 +112,7 @@ export function Header() {
 
 
             <button
-              className="md:hidden p-2 text-gray-600"
+              className="md:hidden p-2 text-ink-600"
               onClick={() => state.setMobileMenuOpen(!state.mobileMenuOpen)}
             >
               {state.mobileMenuOpen ? <CloseIcon className='stroke-3 size-6' /> : <TextAlignJustify className='stroke-3 size-6' />}
@@ -144,18 +144,18 @@ const MobileMenu = () => {
         <Link
           href="/"
           onClick={() => setMobileMenuOpen(false)}
-          className="font-medium text-gray-800 hover:text-brand-600"
+          className="font-medium text-ink-800 hover:text-brand"
         >
           Home
         </Link>
 
-        <div className="pt-2 pb-1 text-xs font-semibold text-gray-400 uppercase tracking-wide">Services</div>
+        <div className="pt-2 pb-1 text-xs font-semibold text-ink-400 uppercase tracking-wide">Services</div>
         {serviceLinks.map((link) => (
           <Link
             key={link.name}
             href={link.href}
             onClick={() => setMobileMenuOpen(false)}
-            className="font-medium text-gray-800 hover:text-brand-600"
+            className="font-medium text-ink-800 hover:text-brand"
           >
             {link.name}
           </Link>
@@ -168,7 +168,7 @@ const MobileMenu = () => {
               key={link.name}
               href={link.href}
               onClick={() => setMobileMenuOpen(false)}
-              className="font-medium text-gray-800 hover:text-brand-600"
+              className="font-medium text-ink-800 hover:text-brand"
             >
               {link.name}
             </Link>
@@ -191,10 +191,10 @@ const ServicesDropdown = () => {
       onMouseEnter={() => setOpen(true)}
       onMouseLeave={() => setOpen(false)}
     >
-      <button className="relative px-5 py-2 text-sm font-medium text-gray-600 transition-colors hover: rounded-full group overflow-hidden flex items-center gap-1">
-        <span className="relative z-10">Services</span>
+      <button className="relative px-5 py-2 text-sm font-medium text-ink-600 transition-colors hover: rounded-full group overflow-hidden flex items-center gap-1">
+        <span className="relative z-10 font-semibold text-black">Services</span>
         <ChevronDown className={`relative z-10 w-3.5 h-3.5 transition-transform ${open ? 'rotate-180' : ''}`} />
-        <div className="absolute inset-0 bg-gray-200/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-full" />
+        <div className="absolute inset-0 bg-ink-200/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-full" />
       </button>
 
       <AnimatePresence>
@@ -206,12 +206,12 @@ const ServicesDropdown = () => {
             transition={{ duration: 0.15 }}
             className="absolute top-full left-1/2 -translate-x-1/2 pt-3 w-64"
           >
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-xl p-2">
+            <div className="bg-white rounded-2xl border border-ink-100 shadow-xl p-2">
               {serviceLinks.map((link) => (
                 <Link
                   key={link.name}
                   href={link.href}
-                  className="block px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-brand-700 rounded-xl transition-colors"
+                  className="block px-4 py-2.5 text-sm font-medium text-ink-700 hover:bg-ink-50 hover:opacity-75 rounded-xl transition-colors"
                 >
                   {link.name}
                 </Link>

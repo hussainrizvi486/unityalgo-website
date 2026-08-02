@@ -5,6 +5,7 @@ import { useActionState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import type { UserFormState } from '@/app/admin/actions';
 
 export interface UserFormValues {
@@ -16,7 +17,7 @@ export interface UserFormValues {
 function SubmitButton({ label }: { label: string }) {
     const { pending } = useFormStatus();
     return (
-        <Button type="submit" disabled={pending} className="rounded-full bg-brand-600 hover:bg-brand-700 text-white px-8">
+        <Button type="submit" disabled={pending} className="rounded-full bg-brand hover:brightness-90 text-white px-8">
             {pending ? 'Saving...' : label}
         </Button>
     );
@@ -35,29 +36,29 @@ export function UserForm({ action, defaultValues, submitLabel, includePassword }
     return (
         <form action={formAction} className="space-y-6 max-w-lg">
             <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1.5">
+                <Label htmlFor="email" className="text-sm text-ink-700 mb-1.5">
                     Email
-                </label>
+                </Label>
                 <Input id="email" name="email" type="email" required defaultValue={defaultValues?.email} />
             </div>
 
             <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1.5">
-                    Name <span className="text-gray-400 font-normal">(optional)</span>
-                </label>
+                <Label htmlFor="name" className="text-sm text-ink-700 mb-1.5">
+                    Name <span className="text-ink-400 font-normal">(optional)</span>
+                </Label>
                 <Input id="name" name="name" defaultValue={defaultValues?.name} />
             </div>
 
             {includePassword && (
                 <div>
-                    <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1.5">
+                    <Label htmlFor="password" className="text-sm text-ink-700 mb-1.5">
                         Password
-                    </label>
+                    </Label>
                     <Input id="password" name="password" type="password" required minLength={8} autoComplete="new-password" />
                 </div>
             )}
 
-            {state?.error && <p className="text-sm text-red-600">{state.error}</p>}
+            {state?.error && <p className="text-sm text-error-600">{state.error}</p>}
 
             <div className="flex items-center gap-3">
                 <SubmitButton label={submitLabel} />

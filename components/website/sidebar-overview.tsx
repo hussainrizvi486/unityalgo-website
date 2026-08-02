@@ -35,12 +35,12 @@ export function SidebarOverview({
                     className="text-center mb-16"
                 >
                     <h2 className="text-3xl font-bold  mb-4">{heading}</h2>
-                    <p className="text-gray-600 max-w-2xl mx-auto">{subheading}</p>
+                    <p className="text-ink-600 max-w-2xl mx-auto">{subheading}</p>
                 </motion.div>
 
                 <div className="grid md:grid-cols-12 gap-8 items-start">
                     {/* Sidebar options */}
-                    <div className="md:col-span-4 flex flex-col divide-y divide-gray-100 border border-gray-100 rounded-2xl overflow-hidden">
+                    <div className="md:col-span-4 flex flex-col divide-y divide-ink-100 border border-ink-100 rounded-2xl overflow-hidden">
                         {options.map((option, idx) => {
                             const isActive = idx === activeIndex;
                             return (
@@ -49,7 +49,7 @@ export function SidebarOverview({
                                     onClick={() => setActiveIndex(idx)}
                                     className={cn(
                                         'w-full text-left px-6 py-5 transition-colors flex items-center justify-between gap-3',
-                                        isActive ? 'bg-brand-50 ' : 'bg-white text-gray-700 hover:bg-gray-50'
+                                        isActive ? 'bg-accent ' : 'bg-white text-ink-700 hover:bg-ink-50'
                                     )}
                                 >
                                     <span className="font-semibold text-sm md:text-base">{option.title}</span>
@@ -73,9 +73,9 @@ export function SidebarOverview({
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, y: -10 }}
                                 transition={{ duration: 0.3 }}
-                                className="rounded-2xl overflow-hidden border border-gray-100"
+                                className="rounded-2xl overflow-hidden border border-ink-100"
                             >
-                                <div className="aspect-[16/9] bg-gray-100 relative">
+                                <div className="aspect-[16/9] bg-ink-100 relative">
                                     <Image
                                         src={options[activeIndex].image}
                                         alt={options[activeIndex].title}
@@ -85,10 +85,10 @@ export function SidebarOverview({
                                     />
                                 </div>
                                 <div className="p-6 md:p-8">
-                                    <h3 className="text-xl font-bold text-gray-900 mb-3">
+                                    <h3 className="text-xl font-bold text-ink-900 mb-3">
                                         {options[activeIndex].title}
                                     </h3>
-                                    <p className="text-gray-600 leading-relaxed">
+                                    <p className="text-ink-600 leading-relaxed">
                                         {options[activeIndex].description}
                                     </p>
                                 </div>

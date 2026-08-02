@@ -25,12 +25,9 @@ export default async function EditPostPage({ params }: { params: Promise<{ id: s
                     excerpt: post.excerpt,
                     content: post.content,
                     coverImage: post.coverImage,
-                    tags: post.tags.join(', '),
                     published: post.published,
                     metaTitle: post.metaTitle ?? '',
                     metaDescription: post.metaDescription ?? '',
-                    bgColor: post.bgColor ?? '',
-                    textColor: post.textColor ?? '',
                 }}
             />
         </div>

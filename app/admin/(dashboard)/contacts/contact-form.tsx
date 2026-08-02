@@ -5,6 +5,8 @@ import { useActionState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import type { ContactFormState } from '@/app/admin/actions';
 
 export interface ContactFormValues {
@@ -18,7 +20,7 @@ export interface ContactFormValues {
 function SubmitButton({ label }: { label: string }) {
     const { pending } = useFormStatus();
     return (
-        <Button type="submit" disabled={pending} className="rounded-full bg-brand-600 hover:bg-brand-700 text-white px-8">
+        <Button type="submit" disabled={pending} className="rounded-full bg-brand hover:brightness-90 text-white px-8">
             {pending ? 'Saving...' : label}
         </Button>
     );
@@ -37,48 +39,41 @@ export function ContactForm({ action, defaultValues, submitLabel }: ContactFormP
         <form action={formAction} className="space-y-6 max-w-2xl">
             <div className="grid md:grid-cols-2 gap-6">
                 <div>
-                    <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1.5">
+                    <Label htmlFor="firstName" className="text-sm text-ink-700 mb-1.5">
                         First Name
-                    </label>
+                    </Label>
                     <Input id="firstName" name="firstName" required defaultValue={defaultValues?.firstName} />
                 </div>
                 <div>
-                    <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-1.5">
+                    <Label htmlFor="lastName" className="text-sm text-ink-700 mb-1.5">
                         Last Name
-                    </label>
+                    </Label>
                     <Input id="lastName" name="lastName" required defaultValue={defaultValues?.lastName} />
                 </div>
             </div>
 
             <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1.5">
+                <Label htmlFor="email" className="text-sm text-ink-700 mb-1.5">
                     Email
-                </label>
+                </Label>
                 <Input id="email" name="email" type="email" required defaultValue={defaultValues?.email} />
             </div>
 
             <div>
-                <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1.5">
+                <Label htmlFor="phone" className="text-sm text-ink-700 mb-1.5">
                     Phone
-                </label>
+                </Label>
                 <Input id="phone" name="phone" required defaultValue={defaultValues?.phone} />
             </div>
 
             <div>
-                <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-1.5">
+                <Label htmlFor="message" className="text-sm text-ink-700 mb-1.5">
                     Message
-                </label>
-                <textarea
-                    id="message"
-                    name="message"
-                    required
-                    rows={5}
-                    defaultValue={defaultValues?.message}
-                    className="w-full rounded-md border border-input px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
-                />
+                </Label>
+                <Textarea id="message" name="message" required rows={5} defaultValue={defaultValues?.message} />
             </div>
 
-            {state?.error && <p className="text-sm text-red-600">{state.error}</p>}
+            {state?.error && <p className="text-sm text-error-600">{state.error}</p>}
 
             <div className="flex items-center gap-3">
                 <SubmitButton label={submitLabel} />

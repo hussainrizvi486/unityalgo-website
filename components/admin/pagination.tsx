@@ -32,7 +32,7 @@ export function AdminPagination({ basePath, currentPage, totalPages, searchParam
                 aria-disabled={currentPage === 1}
                 className={cn(
                     'px-3 py-2 text-sm font-medium rounded-lg transition-colors',
-                    currentPage === 1 ? 'text-gray-300 pointer-events-none' : 'text-gray-600 hover:bg-gray-100'
+                    currentPage === 1 ? 'text-ink-300 pointer-events-none' : 'text-ink-600 hover:bg-ink-100'
                 )}
             >
                 Prev
@@ -40,10 +40,10 @@ export function AdminPagination({ basePath, currentPage, totalPages, searchParam
 
             {windowStart > 1 && (
                 <>
-                    <Link href={buildHref(basePath, 1, searchParams)} className="w-9 h-9 flex items-center justify-center rounded-lg text-sm text-gray-600 hover:bg-gray-100">
+                    <Link href={buildHref(basePath, 1, searchParams)} className="w-9 h-9 flex items-center justify-center rounded-lg text-sm text-ink-600 hover:bg-ink-100">
                         1
                     </Link>
-                    {windowStart > 2 && <span className="text-gray-400 px-1">…</span>}
+                    {windowStart > 2 && <span className="text-ink-400 px-1">…</span>}
                 </>
             )}
 
@@ -53,7 +53,7 @@ export function AdminPagination({ basePath, currentPage, totalPages, searchParam
                     href={buildHref(basePath, page, searchParams)}
                     className={cn(
                         'w-9 h-9 flex items-center justify-center rounded-lg text-sm font-medium transition-colors',
-                        page === currentPage ? 'bg-brand-600 text-white' : 'text-gray-600 hover:bg-gray-100'
+                        page === currentPage ? 'bg-brand text-white' : 'text-ink-600 hover:bg-ink-100'
                     )}
                 >
                     {page}
@@ -62,8 +62,8 @@ export function AdminPagination({ basePath, currentPage, totalPages, searchParam
 
             {windowEnd < totalPages && (
                 <>
-                    {windowEnd < totalPages - 1 && <span className="text-gray-400 px-1">…</span>}
-                    <Link href={buildHref(basePath, totalPages, searchParams)} className="w-9 h-9 flex items-center justify-center rounded-lg text-sm text-gray-600 hover:bg-gray-100">
+                    {windowEnd < totalPages - 1 && <span className="text-ink-400 px-1">…</span>}
+                    <Link href={buildHref(basePath, totalPages, searchParams)} className="w-9 h-9 flex items-center justify-center rounded-lg text-sm text-ink-600 hover:bg-ink-100">
                         {totalPages}
                     </Link>
                 </>
@@ -74,7 +74,7 @@ export function AdminPagination({ basePath, currentPage, totalPages, searchParam
                 aria-disabled={currentPage === totalPages}
                 className={cn(
                     'px-3 py-2 text-sm font-medium rounded-lg transition-colors',
-                    currentPage === totalPages ? 'text-gray-300 pointer-events-none' : 'text-gray-600 hover:bg-gray-100'
+                    currentPage === totalPages ? 'text-ink-300 pointer-events-none' : 'text-ink-600 hover:bg-ink-100'
                 )}
             >
                 Next

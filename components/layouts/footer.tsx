@@ -13,7 +13,7 @@ export function Footer() {
   };
 
   return (
-    <footer className="bg-brand-950 text-white py-12">
+    <footer className="bg-ink-950 text-white py-12">
       <div className="container mx-auto px-2 md:px-4">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-5">
           {/* Company Info */}
@@ -21,7 +21,7 @@ export function Footer() {
             <div className="mb-4 text-white">
               <Logo className="h-10" />
             </div>
-            <p className="text-gray-300 max-w-md" style={{ lineHeight: '1.6' }}>
+            <p className="text-ink-300 max-w-md" style={{ lineHeight: '1.6' }}>
               Empowering businesses with cutting-edge web and enterprise solutions.
               Building the future, one line of code at a time.
             </p>
@@ -37,7 +37,7 @@ export function Footer() {
                 <Link
                   href='/'
                   onClick={() => scrollToSection('#Hero')}
-                  className="text-gray-300 hover:text-white transition-colors cursor-pointer"
+                  className="text-ink-300 hover:text-white transition-colors cursor-pointer"
                 >
                   Home
                 </Link>
@@ -45,7 +45,7 @@ export function Footer() {
               <li>
                 <button
                   onClick={() => scrollToSection('#services')}
-                  className="text-gray-300 hover:text-white transition-colors cursor-pointer"
+                  className="text-ink-300 hover:text-white transition-colors cursor-pointer"
                 >
                   Services
                 </button>
@@ -53,7 +53,7 @@ export function Footer() {
               <li>
                 <Link
                   href='/about-us'
-                  className="text-gray-300 hover:text-white transition-colors cursor-pointer"
+                  className="text-ink-300 hover:text-white transition-colors cursor-pointer"
                 >
                   About Us
                 </Link>
@@ -61,13 +61,13 @@ export function Footer() {
               <li>
                 <button
                   onClick={() => scrollToSection('#contact')}
-                  className="text-gray-300 hover:text-white transition-colors cursor-pointer"
+                  className="text-ink-300 hover:text-white transition-colors cursor-pointer"
                 >
                   Contact
                 </button>
               </li>
               <li>
-                <Link href="/privacy-policy" className="text-gray-300 hover:text-white transition-colors cursor-pointer">
+                <Link href="/privacy-policy" className="text-ink-300 hover:text-white transition-colors cursor-pointer">
                   Privacy Policy
                 </Link>
               </li>
@@ -81,7 +81,7 @@ export function Footer() {
             <div className="flex gap-3">
               <Link
                 href="https://www.facebook.com/profile.php?id=61583797718151"
-                className="w-10 h-10 rounded-full bg-white/10 hover:bg-brand-700 flex items-center justify-center transition-colors"
+                className="w-10 h-10 rounded-full bg-white/10 hover:brightness-90 flex items-center justify-center transition-colors"
                 aria-label="Facebook"
                 target='_blank'
               >
@@ -89,7 +89,7 @@ export function Footer() {
               </Link>
               <Link
                 href="https://www.linkedin.com/company/unityalgo/posts/?feedView=all"
-                className="w-10 h-10 rounded-full bg-white/10 hover:bg-brand-700 flex items-center justify-center transition-colors"
+                className="w-10 h-10 rounded-full bg-white/10 hover:brightness-90 flex items-center justify-center transition-colors"
                 aria-label="LinkedIn"
                 target='_blank'
               >
@@ -97,7 +97,7 @@ export function Footer() {
               </Link>
               {/* <Link
                 href="https://github.com/orgs/UnityAlgo/dashboard"
-                className="w-10 h-10 rounded-full bg-white/10 hover:bg-brand-700 flex items-center justify-center transition-colors"
+                className="w-10 h-10 rounded-full bg-white/10 hover:brightness-90 flex items-center justify-center transition-colors"
                 aria-label="GitHub"
               >
                 <Github className="w-5 h-5" />

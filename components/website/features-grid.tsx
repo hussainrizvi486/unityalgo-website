@@ -24,7 +24,7 @@ export function FeaturesGrid({
                     className="text-center mb-16"
                 >
                     <h2 className="text-3xl font-bold  mb-4">{heading}</h2>
-                    {subheading && <p className="text-gray-600 max-w-2xl mx-auto">{subheading}</p>}
+                    {subheading && <p className="text-ink-600 max-w-2xl mx-auto">{subheading}</p>}
                 </motion.div>
 
                 <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -35,10 +35,10 @@ export function FeaturesGrid({
                             whileInView={{ opacity: 1, y: 0 }}
                             viewport={{ once: true }}
                             transition={{ delay: idx * 0.05 }}
-                            className="flex items-center gap-3 p-5 rounded-2xl border border-gray-100 hover:border-brand-200 hover:bg-brand-50/40 transition-colors"
+                            className="flex items-center gap-3 p-5 rounded-2xl border border-ink-100 hover:border-brand/25 hover:bg-accent/40 transition-colors"
                         >
-                            <CheckCircle2 className="w-5 h-5 text-brand-600 shrink-0" />
-                            <span className="text-sm font-medium text-gray-800">{feature}</span>
+                            <CheckCircle2 className="w-5 h-5 text-brand shrink-0" />
+                            <span className="text-sm font-medium text-ink-800">{feature}</span>
                         </motion.div>
                     ))}
                 </div>

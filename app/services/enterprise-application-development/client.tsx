@@ -80,12 +80,12 @@ export const MainContent = () => {
                         <h1 className="text-5xl md:text-6xl font-bold tracking-tight mb-8 text-balance">
                             Enterprise Application Development
                         </h1>
-                        <p className="text-xl text-gray-200 leading-relaxed text-balance mb-10">
+                        <p className="text-xl text-ink-200 leading-relaxed text-balance mb-10">
                             UnityAlgo builds and improves enterprise applications to help scale your business, offering expert design, development, and support services.
                         </p>
 
                         <Link href="/#contact">
-                            <Button size="lg" className="rounded-full bg-brand-600 hover:bg-brand-700 text-white px-8 h-12 text-base shadow-lg shadow-brand-500/20">
+                            <Button size="lg" className="rounded-full bg-brand hover:brightness-90 text-white px-8 h-12 text-base shadow-lg shadow-brand/20">
                                 Let&apos;s Chat
                             </Button>
                         </Link>
@@ -97,7 +97,7 @@ export const MainContent = () => {
             <ProjectFlow stages={stages} />
 
             {/* --- DEVELOPMENT FORMATS & BILLING --- */}
-            <section className="py-24 bg-gray-50">
+            <section className="py-24 bg-ink-50">
                 <div className="container mx-auto px-4 max-w-6xl">
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
@@ -113,13 +113,13 @@ export const MainContent = () => {
                             initial={{ opacity: 0, y: 20 }}
                             whileInView={{ opacity: 1, y: 0 }}
                             viewport={{ once: true }}
-                            className="bg-white p-8 md:p-10 rounded-3xl border border-gray-100"
+                            className="bg-white p-8 md:p-10 rounded-3xl border border-ink-100"
                         >
-                            <div className="w-12 h-12 bg-brand-50 rounded-xl flex items-center justify-center mb-6 text-brand-600">
+                            <div className="w-12 h-12 bg-accent rounded-xl flex items-center justify-center mb-6 text-brand">
                                 <Clock className="w-6 h-6" />
                             </div>
-                            <h3 className="text-xl font-bold text-gray-900 mb-4">Time & Materials</h3>
-                            <p className="text-gray-600 leading-relaxed">
+                            <h3 className="text-xl font-bold text-ink-900 mb-4">Time & Materials</h3>
+                            <p className="text-ink-600 leading-relaxed">
                                 An exceptional, user-friendly front-end environment requires agile, flexible ideation, and an ability to pivot and adapt according to changing needs. With our &apos;time and materials&apos; approach, you won&apos;t need to overpay for risk contingencies you may not need.
                             </p>
                         </motion.div>
@@ -129,13 +129,13 @@ export const MainContent = () => {
                             whileInView={{ opacity: 1, y: 0 }}
                             viewport={{ once: true }}
                             transition={{ delay: 0.1 }}
-                            className="bg-white p-8 md:p-10 rounded-3xl border border-gray-100"
+                            className="bg-white p-8 md:p-10 rounded-3xl border border-ink-100"
                         >
-                            <div className="w-12 h-12 bg-brand-50 rounded-xl flex items-center justify-center mb-6 text-brand-600">
+                            <div className="w-12 h-12 bg-accent rounded-xl flex items-center justify-center mb-6 text-brand">
                                 <TrendingUp className="w-6 h-6" />
                             </div>
-                            <h3 className="text-xl font-bold text-gray-900 mb-4">Agile</h3>
-                            <p className="text-gray-600 leading-relaxed">
+                            <h3 className="text-xl font-bold text-ink-900 mb-4">Agile</h3>
+                            <p className="text-ink-600 leading-relaxed">
                                 We believe in Agile development. Agile front-end development involves the use of a series of short sprints, which allow for quick and transparent progress in your project. We apply our nimble and responsive ideologies to each project, rather than relying on the restrictive linear Waterfall approach, resulting in a flexible solution that earns your approval at every stage.
                             </p>
                         </motion.div>
@@ -147,17 +147,17 @@ export const MainContent = () => {
             <FaqSection items={faqItems} />
 
             {/* --- CTA --- */}
-            <section className="py-24 bg-gradient-to-br from-brand-900 to-black text-white text-center px-4">
+            <section className="py-24 bg-gradient-to-br from-ink-950 to-black text-white text-center px-4">
                 <div className="container mx-auto max-w-3xl">
                     <div className="w-14 h-14 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-6">
                         <Layers className="w-7 h-7" />
                     </div>
                     <h2 className="text-4xl font-bold mb-6">Have a Project in Mind?</h2>
-                    <p className="text-gray-300 mb-8 max-w-2xl mx-auto">
+                    <p className="text-ink-300 mb-8 max-w-2xl mx-auto">
                         Let&apos;s talk through your goals and find the most effective plan to launch or evolve your enterprise application.
                     </p>
                     <Link href="/#contact">
-                        <Button size="lg" className="bg-white  hover:bg-gray-100 rounded-full px-8 h-12">
+                        <Button size="lg" className="bg-white  hover:bg-ink-100 rounded-full px-8 h-12">
                             Let&apos;s Chat
                         </Button>
                     </Link>
