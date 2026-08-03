@@ -112,11 +112,11 @@ export function Footer() {
             <p className="text-center md:text-left">
               &copy; 2026 UnityAlgo. All rights reserved.
             </p>
-            <div className="flex gap-6">
+            {/* <div className="flex gap-6">
               <Link href="/privacy-policy">
                 Privacy Policy
               </Link>
-            </div>
+            </div> */}
           </div>
         </div>
       </div>

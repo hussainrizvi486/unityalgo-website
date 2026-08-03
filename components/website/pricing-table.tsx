@@ -91,7 +91,7 @@ export function PricingTable({
                                     className={cn(
                                         'w-full rounded-full h-11',
                                         plan.highlighted
-                                            ? 'bg-white  hover:bg-ink-100'
+                                            ? 'bg-white  hover:bg-ink-100 text-brand'
                                             : 'bg-brand hover:brightness-90 text-white'
                                     )}
                                 >

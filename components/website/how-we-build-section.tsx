@@ -1,8 +1,10 @@
 'use client';
 
+import React, { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import { motion } from 'motion/react';
 import { cn } from '@/utils';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 
 type BuildRole = 'Human + AI' | 'AI' | 'Human';
 
@@ -73,6 +75,21 @@ function RoleBadge({ role }: { role: BuildRole }) {
 }
 
 export function HowWeBuildSection() {
+    const scrollRef = useRef<HTMLDivElement>(null);
+    const [isAtBottom, setIsAtBottom] = useState(false);
+
+    useEffect(() => {
+        const handleScroll = () => {
+            if (!scrollRef.current) return;
+            const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
+            setIsAtBottom(scrollHeight - scrollTop - clientHeight < 10);
+        };
+
+        const scrollContainer = scrollRef.current;
+        scrollContainer?.addEventListener('scroll', handleScroll);
+        return () => scrollContainer?.removeEventListener('scroll', handleScroll);
+    }, []);
+
     return (
         <section className="relative py-24 md:py-32 overflow-hidden bg-ink-950">
             <Image
@@ -102,31 +119,56 @@ export function HowWeBuildSection() {
                         </p>
                     </motion.div>
 
-                    <div className="flex flex-col gap-3 max-h-180 overflow-y-auto pr-2">
-                        {stages.map((stage, idx) => (
-                            <motion.div
-                                key={stage.number}
-                                initial={{ opacity: 0, y: 20 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                viewport={{ once: true }}
-                                transition={{ delay: idx * 0.08, duration: 0.5 }}
+                    <div className="relative">{/* wrapper made relative to position the absolute arrow button */}
+                        {/* Scrollable list container */}
+                        <div ref={scrollRef} className="flex flex-col gap-3 max-h-180 overflow-y-auto pr-2 scrollbar-none " onScroll={() => { /* handler assigned in effect */ }}>
+                            {stages.map((stage, idx) => (
+                                <motion.div
+                                    key={stage.number}
+                                    initial={{ opacity: 0, y: 20 }}
+                                    whileInView={{ opacity: 1, y: 0 }}
+                                    viewport={{ once: true }}
+                                    transition={{ delay: idx * 0.08, duration: 0.5 }}
+                                    className={cn(
+                                        'p-6 md:p-8 rounded-2xl',
+                                        'bg-black/30 backdrop-blur-sm border border-white/10'
+                                    )}
+                                >
+                                    <div className="flex items-center justify-between gap-4 mb-3">
+                                        <div className="flex items-center gap-3">
+                                            <span className={cn('text-sm font-bold', roleStyles[stage.role].split(' ')[0])}>
+                                                {stage.number}
+                                            </span>
+                                            <h3 className="text-xl font-bold text-white">{stage.title}</h3>
+                                        </div>
+                                        <RoleBadge role={stage.role} />
+                                    </div>
+                                    <p className="text-sm text-white/70 leading-relaxed">{stage.description}</p>
+                                </motion.div>
+                            ))}
+                            <button
+                                aria-label={isAtBottom ? 'Scroll to top' : 'Scroll to bottom'}
+                                onClick={() => {
+                                    if (!scrollRef.current) return;
+                                    if (isAtBottom) {
+                                        scrollRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+                                    } else {
+                                        scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
+                                    }
+                                }}
                                 className={cn(
-                                    'p-6 md:p-8 rounded-2xl',
-                                   'bg-black/30 backdrop-blur-sm border border-white/10'
+                                    'absolute right-3 bottom-3 w-12 h-12 rounded-full flex items-center justify-center bg-white/8 border border-white/10 shadow-backdrop transition-transform',
+                                    'hover:scale-105',
+                                    !isAtBottom ? 'animate-bob' : ''
                                 )}
                             >
-                                <div className="flex items-center justify-between gap-4 mb-3">
-                                    <div className="flex items-center gap-3">
-                                        <span className={cn('text-sm font-bold', roleStyles[stage.role].split(' ')[0])}>
-                                            {stage.number}
-                                        </span>
-                                        <h3 className="text-xl font-bold text-white">{stage.title}</h3>
-                                    </div>
-                                    <RoleBadge role={stage.role} />
-                                </div>
-                                <p className="text-sm text-white/70 leading-relaxed">{stage.description}</p>
-                            </motion.div>
-                        ))}
+                                {!isAtBottom ? (
+                                    <ChevronDown size={20} className="text-white" />
+                                ) : (
+                                    <ChevronUp size={20} className="text-white" />
+                                )}
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>

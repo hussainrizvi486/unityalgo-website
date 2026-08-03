@@ -13,10 +13,10 @@ function readThemeColor(cssVar: string, fallback: string) {
 
 export function WavyBackground({
     className,
-    waveCount = 9,
-    waveWidth = 1.5,
-    waveOpacity = 0.3,
-    blur = 12,
+    waveCount = 7,
+    waveWidth = 2,
+    waveOpacity = 8,
+    blur = 2,
     speed = 'slow',
 }: {
     className?: string;

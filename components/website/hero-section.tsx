@@ -12,8 +12,9 @@ export function HeroSection() {
     };
 
     return (
-        <section className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden bg-background pt-32 pb-20">
+            <section className="px-4 relative min-h-screen flex flex-col items-center justify-center overflow-hidden bg-background pt-32 pb-20">
             <WavyBackground className="z-0 pointer-events-none" />
+            <div className='backdrop-blur-xs min-h-screen min-w-screen absolute z-2 top-0 left-0 bg-white/0.1'></div>
 
             <div className='container'>
 
@@ -47,7 +48,7 @@ export function HeroSection() {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.7, delay: 0.2, ease: "easeOut" }}
-                        className="relative text-ink-600 mb-6 text-balance backdrop-blur-sm"
+                        className="relative text-ink-600 mb-6 text-balance"
                     >
                         We build AI-powered web, mobile, and enterprise software that streamlines <br /> operations, accelerates growth, and helps businesses stay ahead in a rapidly evolving digital world.
                     </motion.p>

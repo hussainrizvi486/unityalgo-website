@@ -58,16 +58,17 @@ export const MainContent = () => {
     return (
         <>
             {/* --- HERO SECTION (full background image) --- */}
-            <section className="relative min-h-[70vh] flex items-center pt-32 pb-20 px-4 overflow-hidden">
+            <section className="relative min-h-[100vh] flex items-center pt-32 pb-20 px-4 overflow-hidden">
                 <div className="absolute inset-0">
                     <Image
-                        src="/images/erp-development.png"
+                        src="/images/enterprise-application-development.png"
                         alt="Enterprise Application Development"
                         fill
                         className="object-cover"
                         priority
                     />
-                    <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/70 to-black/40" />
+                    {/* <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/70 to-black/40" /> */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-black/30 via-black/30 to-black/1" />
                 </div>
 
                 <div className="container mx-auto max-w-6xl relative z-10">
@@ -77,7 +78,7 @@ export const MainContent = () => {
                         transition={{ duration: 0.6 }}
                         className="max-w-2xl text-white"
                     >
-                        <h1 className="text-5xl md:text-6xl font-bold tracking-tight mb-8 text-balance">
+                        <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-8 text-balance">
                             Enterprise Application Development
                         </h1>
                         <p className="text-xl text-ink-200 leading-relaxed text-balance mb-10">
@@ -157,7 +158,7 @@ export const MainContent = () => {
                         Let&apos;s talk through your goals and find the most effective plan to launch or evolve your enterprise application.
                     </p>
                     <Link href="/#contact">
-                        <Button size="lg" className="bg-white  hover:bg-ink-100 rounded-full px-8 h-12">
+                        <Button size="lg" className="bg-white text-ink-600 hover:bg-ink-100 rounded-full px-8 h-12">
                             Let&apos;s Chat
                         </Button>
                     </Link>

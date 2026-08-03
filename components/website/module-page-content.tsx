@@ -94,7 +94,7 @@ export function ModulePageContent({ config }: { config: ModulePageConfig }) {
                     <h2 className="text-4xl font-bold mb-6">{config.ctaHeading}</h2>
                     <p className="text-ink-300 mb-8 max-w-2xl mx-auto">{config.ctaDescription}</p>
                     <Link href="/#contact">
-                        <Button size="lg" className="bg-white  hover:bg-ink-100 rounded-full px-8 h-12">
+                        <Button size="lg" className="bg-white text-ink-600 hover:bg-ink-100 rounded-full px-8 h-12">
                             Request Demo
                         </Button>
                     </Link>

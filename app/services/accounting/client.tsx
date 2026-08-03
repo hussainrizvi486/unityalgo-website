@@ -39,7 +39,7 @@ const overviewOptions = [
         title: 'Make Analytics Accessible',
         description:
             'Easily create reports, dashboards, and insights with business performance analytics to help you make informed decisions and optimize your operational workflow.',
-        image: '/images/erp-development.png',
+        image: '/images/erp-development.jpg',
     },
 ];
 
@@ -165,7 +165,7 @@ export const MainContent = () => {
                         Schedule a free consultation to see how our financial management solution can streamline your operations.
                     </p>
                     <Link href="/#contact">
-                        <Button size="lg" className="bg-white  hover:bg-ink-100 rounded-full px-8 h-12">
+                        <Button size="lg" className="bg-white text-ink-600 hover:bg-ink-100 rounded-full px-8 h-12">
                             Request Demo
                         </Button>
                     </Link>
