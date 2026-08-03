@@ -9,7 +9,7 @@ const config: ModulePageConfig = {
     heading: 'Manufacturing Operations',
     subheading:
         'Plan production, manage bills of materials, and track work orders from raw material to finished goods in one connected system.',
-    heroImage: '/images/erp-development.png',
+    heroImage: '/images/manufacturing-operations.png',
     overviewOptions: [
         {
             title: 'Production Planning',

@@ -58,7 +58,8 @@ export const MainContent = () => {
     return (
         <>
             {/* --- HERO SECTION (full background image) --- */}
-            <section className="relative min-h-[100vh] flex items-center pt-32 pb-20 px-4 overflow-hidden">
+            <section className="relative min-h-screen flex items-center pt-32 pb-20 px-4 overflow-hidden">
+                <div className='backdrop-blur-xs min-h-screen min-w-screen absolute z-2 top-0 left-0 bg-white/50 block md:hidden'></div>
                 <div className="absolute inset-0">
                     <Image
                         src="/images/enterprise-application-development.png"
@@ -67,8 +68,7 @@ export const MainContent = () => {
                         className="object-cover"
                         priority
                     />
-                    {/* <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/70 to-black/40" /> */}
-                    <div className="absolute inset-0 bg-gradient-to-r from-black/30 via-black/30 to-black/1" />
+                    <div className="absolute inset-0" />
                 </div>
 
                 <div className="container mx-auto max-w-6xl relative z-10">
@@ -76,12 +76,16 @@ export const MainContent = () => {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.6 }}
-                        className="max-w-2xl text-white"
+                        className="max-w-2xl"
                     >
-                        <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-8 text-balance">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent border border-brand/15 mb-6">
+                            <span className="w-2 h-2 rounded-full bg-brand animate-pulse" />
+                            <span className="text-xs font-semibold text-brand tracking-wide uppercase">Enterprise Development</span>
+                        </div>
+                        <h1 className="text-5xl md:text-6xl font-bold tracking-tight mb-8 text-balance">
                             Enterprise Application Development
                         </h1>
-                        <p className="text-xl text-ink-200 leading-relaxed text-balance mb-10">
+                        <p className="text-xl text-ink-600 leading-relaxed text-balance mb-10">
                             UnityAlgo builds and improves enterprise applications to help scale your business, offering expert design, development, and support services.
                         </p>
 

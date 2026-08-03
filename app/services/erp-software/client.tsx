@@ -35,7 +35,7 @@ export const MainContent = () => {
                             <span className="w-2 h-2 rounded-full bg-brand animate-pulse" />
                             <span className="text-xs font-semibold text-brand tracking-wide uppercase">Powered by ERPNext</span>
                         </div>
-                        <h1 className="text-5xl md:text-7xl font-bold tracking-tight  mb-8 text-balance">
+                        <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-8 text-balance">
                             The Operating System for <br />
                             Scaling Businesses
 
