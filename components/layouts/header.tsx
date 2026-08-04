@@ -18,6 +18,11 @@ const serviceLinks = [
   { name: 'Enterprise Application Development', href: '/services/enterprise-application-development' },
 ];
 
+const productLinks = [
+  { name: 'Unity Commerce', href: '/products/unitycommerce' },
+  { name: 'UnityERP', href: '/products/unityerp' },
+];
+
 const navLinks = [
   { name: 'Home', href: '/' },
   { name: 'About Us', href: '/about-us' },
@@ -73,6 +78,8 @@ export function Header() {
                 </Link>
 
                 <ServicesDropdown />
+
+                <ProductsDropdown />
 
                 <Link href="/about-us">
                   <button className="relative px-5 py-2 text-sm font-medium text-ink-600 transition-colors hover: rounded-full group overflow-hidden">
@@ -133,54 +140,88 @@ export function Header() {
 
 const MobileMenu = () => {
   const { setMobileMenuOpen } = UIStore();
+  const [servicesOpen, setServicesOpen] = useState(false);
+  const [productsOpen, setProductsOpen] = useState(false);
+  const closeMenu = () => setMobileMenuOpen(false);
+
   return (
     <motion.div
-      initial={{ opacity: 0, y: -20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      className="fixed inset-0 z-40 bg-white pt-24 px-6 md:hidden"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.2 }}
+      className="fixed inset-0 z-40 bg-white pt-24 md:hidden"
     >
-      <div className="flex flex-col gap-4 text-center overflow-y-auto pb-10">
-        <Link
-          href="/"
-          onClick={() => setMobileMenuOpen(false)}
-          className="font-medium text-ink-800 hover:text-brand"
-        >
-          Home
-        </Link>
-
-        <div className="pt-2 pb-1 text-xs font-semibold text-ink-400 uppercase tracking-wide">Services</div>
-        {serviceLinks.map((link) => (
-          <Link
-            key={link.name}
-            href={link.href}
-            onClick={() => setMobileMenuOpen(false)}
-            className="font-medium text-ink-800 hover:text-brand"
-          >
-            {link.name}
+      <motion.div
+        initial={{ opacity: 0, y: -12 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -12 }}
+        transition={{ duration: 0.25 }}
+        className="h-full overflow-y-auto border-t border-ink-100"
+      >
+        <nav className="container mx-auto max-w-lg px-4 py-6 pb-10">
+          <Link href="/" onClick={closeMenu} className="flex items-center px-4 py-3.5 rounded-xl text-base font-semibold text-ink-900 hover:bg-ink-50 transition-colors">
+            Home
           </Link>
-        ))}
 
-        {navLinks
-          .filter((link) => link.name !== 'Home')
-          .map((link) => (
-            <Link
-              key={link.name}
-              href={link.href}
-              onClick={() => setMobileMenuOpen(false)}
-              className="font-medium text-ink-800 hover:text-brand"
-            >
-              {link.name}
-            </Link>
-          ))}
+          <MobileNavGroup label="Services" open={servicesOpen} onToggle={() => setServicesOpen((open) => !open)} links={serviceLinks} onNavigate={closeMenu} />
+          <MobileNavGroup label="Products" open={productsOpen} onToggle={() => setProductsOpen((open) => !open)} links={productLinks} onNavigate={closeMenu} />
 
-        <Button className="w-full mt-4" size="sm">
-          Get Started
-        </Button>
-      </div>
+          <div className="my-5 h-px bg-ink-100" />
+
+          {navLinks
+            .filter((link) => link.name !== 'Home')
+            .map((link) => (
+              <Link key={link.name} href={link.href} onClick={closeMenu} className="flex items-center px-4 py-3.5 rounded-xl text-base font-semibold text-ink-900 hover:bg-ink-50 transition-colors">
+                {link.name}
+              </Link>
+            ))}
+
+          <Link href="/#contact" onClick={closeMenu} className="block mt-6">
+            <Button className="w-full h-12 rounded-full bg-brand hover:brightness-90 text-white shadow-md" size="sm">
+              Get Started
+            </Button>
+          </Link>
+        </nav>
+      </motion.div>
     </motion.div>
   )
 }
+
+const MobileNavGroup = ({
+  label,
+  open,
+  onToggle,
+  links,
+  onNavigate,
+}: {
+  label: string;
+  open: boolean;
+  onToggle: () => void;
+  links: { name: string; href: string }[];
+  onNavigate: () => void;
+}) => (
+  <div className="mt-3 rounded-2xl border border-ink-100 bg-ink-50/70 overflow-hidden">
+    <button type="button" onClick={onToggle} aria-expanded={open} className="w-full flex items-center justify-between px-4 py-3.5 text-left text-base font-semibold text-ink-900 hover:bg-ink-100/70 transition-colors">
+      <span>{label}</span>
+      <ChevronDown className={`w-4 h-4 text-ink-500 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
+    </button>
+
+    <AnimatePresence initial={false}>
+      {open && (
+        <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2 }} className="overflow-hidden">
+          <div className="px-2 pb-2 border-t border-ink-100">
+            {links.map((link) => (
+              <Link key={link.name} href={link.href} onClick={onNavigate} className="block px-3 py-3 rounded-xl text-sm font-medium text-ink-700 hover:bg-white hover:text-brand transition-colors">
+                {link.name}
+              </Link>
+            ))}
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  </div>
+)
 
 const ServicesDropdown = () => {
   const [open, setOpen] = useState(false);
@@ -208,6 +249,48 @@ const ServicesDropdown = () => {
           >
             <div className="bg-white rounded-2xl border border-ink-100 shadow-xl p-2">
               {serviceLinks.map((link) => (
+                <Link
+                  key={link.name}
+                  href={link.href}
+                  className="block px-4 py-2.5 text-sm font-medium text-ink-700 hover:bg-ink-50 hover:opacity-75 rounded-xl transition-colors"
+                >
+                  {link.name}
+                </Link>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
+const ProductsDropdown = () => {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div
+      className="relative"
+      onMouseEnter={() => setOpen(true)}
+      onMouseLeave={() => setOpen(false)}
+    >
+      <button className="relative px-5 py-2 text-sm font-medium text-ink-600 transition-colors hover: rounded-full group overflow-hidden flex items-center gap-1">
+        <span className="relative z-10 font-semibold text-black">Products</span>
+        <ChevronDown className={`relative z-10 w-3.5 h-3.5 transition-transform ${open ? 'rotate-180' : ''}`} />
+        <div className="absolute inset-0 bg-ink-200/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-full" />
+      </button>
+
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 8 }}
+            transition={{ duration: 0.15 }}
+            className="absolute top-full left-1/2 -translate-x-1/2 pt-3 w-64"
+          >
+            <div className="bg-white rounded-2xl border border-ink-100 shadow-xl p-2">
+              {productLinks.map((link) => (
                 <Link
                   key={link.name}
                   href={link.href}
