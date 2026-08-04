@@ -74,7 +74,7 @@ const data: Array<ServiceType> = [
         title: "ERP Systems",
         description:
             "Custom ERP solutions that unify business processes, automate workflows, and provide real-time visibility across finance, inventory, sales, and operations.",
-        image: "/images/icons/erp.jpeg",
+        image: "/images/icons/erp.png",
         link: "/services/erp-software",
         languages: ["ERP", "Python", "Golang", "SQL"],
     },
