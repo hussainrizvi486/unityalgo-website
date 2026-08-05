@@ -16,6 +16,7 @@ import {
     ShoppingBag,
     Smartphone,
     Store,
+    TrendingUp,
     Users,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -118,80 +119,85 @@ const faqItems = [
 export const MainContent = () => {
     return (
         <>
-            <section className="relative pt-40 pb-20 md:pt-52 md:pb-32 px-4">
-                <div className="absolute inset-0 bg-grid-pattern mask-[radial-gradient(ellipse_at_top,black_30%,transparent_70%)] opacity-30 pointer-events-none" />
-                <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-brand/5 rounded-full blur-[120px] pointer-events-none" />
+            <section className="relative isolate overflow-hidden bg-ink-950 px-4 pb-16 pt-36 text-white sm:pb-20 md:pt-44 lg:min-h-[880px] lg:pb-24">
+                <div className="pointer-events-none absolute inset-x-0 top-0 z-20 h-22 border-b border-ink-100 bg-white" />
+                <div className="pointer-events-none absolute inset-0 opacity-35 [background-image:linear-gradient(rgba(255,255,255,.055)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.055)_1px,transparent_1px)] [background-size:64px_64px] [mask-image:linear-gradient(to_bottom,black,transparent_88%)]" />
+                <div className="pointer-events-none absolute -left-32 top-24 h-96 w-96 rounded-full bg-brand/30 blur-[140px]" />
+                <div className="pointer-events-none absolute -right-24 top-12 h-[34rem] w-[34rem] rounded-full bg-brand/20 blur-[160px]" />
+                <div className="pointer-events-none absolute left-1/2 top-32 h-px w-[90%] -translate-x-1/2 bg-gradient-to-r from-transparent via-white/15 to-transparent" />
 
-                <div className="container mx-auto max-w-6xl relative z-10">
-                    <div className="grid md:grid-cols-2 gap-12 items-center">
-                        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
-                            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent border border-brand/15 mb-6">
-                                <ShoppingBag className="w-3.5 h-3.5 text-brand" />
-                                <span className="text-xs font-semibold text-brand tracking-wide uppercase">Unity Commerce</span>
+                <div className="container relative z-10 mx-auto max-w-7xl">
+                    <div className="grid items-center gap-16 lg:grid-cols-[0.83fr_1.17fr] lg:gap-10">
+                        <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.65 }} className="relative z-20 max-w-2xl">
+                            <div className="mb-7 inline-flex items-center gap-2.5 rounded-full border border-white/10 bg-white/[0.06] px-3.5 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,.08)] backdrop-blur-xl">
+                                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-brand">
+                                    <ShoppingBag className="h-3.5 w-3.5 text-white" />
+                                </span>
+                                <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/80">Unity Commerce</span>
+                                <span className="h-1 w-1 rounded-full bg-white/30" />
+                                <span className="text-[11px] text-white/50">Built to sell</span>
                             </div>
-                            <h1 className="text-5xl md:text-6xl font-bold tracking-tight mb-8 text-balance">
-                                Your store. Your brand. Your growth.
+                            <h1 className="max-w-xl text-balance text-5xl font-bold leading-[0.98] tracking-[-0.055em] sm:text-6xl lg:text-[4.7rem]">
+                                Your store. <span className="text-white/45">Your brand.</span>{' '}
+                                <span className="relative whitespace-nowrap text-white">
+                                    Your growth.
+                                    <motion.span initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ duration: 0.7, delay: 0.55 }} className="absolute -bottom-2 left-0 h-1 w-full origin-left rounded-full bg-brand" />
+                                </span>
                             </h1>
-                            <p className="text-xl text-ink-600 leading-relaxed text-balance mb-10">
+                            <p className="mb-9 mt-8 max-w-xl text-balance text-lg leading-relaxed text-white/60 sm:text-xl">
                                 Launch and manage your online store with professional themes, powerful commerce tools and complete control over your brand.
                             </p>
-                            <div className="flex flex-col sm:flex-row gap-4">
+                            <div className="flex flex-col gap-3 sm:flex-row">
                                 <Link href="/#contact">
-                                    <Button size="lg" className="rounded-full bg-brand hover:brightness-90 text-white px-8 h-12 text-base shadow-lg shadow-brand/20">
-                                        Start Your Store <ArrowRight className="ml-1 w-4 h-4" />
+                                    <Button size="lg" className="group h-13 w-full rounded-full bg-brand px-7 text-base text-white shadow-[0_14px_40px_rgba(140,24,27,.35)] transition-all hover:-translate-y-0.5 hover:brightness-110 sm:w-auto">
+                                        Start Your Store <ArrowRight className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" />
                                     </Button>
                                 </Link>
                                 <Link href="#pricing">
-                                    <Button variant="outline" size="lg" className="rounded-full bg-white px-8 h-12 text-base">
+                                    <Button variant="outline" size="lg" className="h-13 w-full rounded-full border-white/15 bg-white/[0.06] px-7 text-base text-white backdrop-blur-sm hover:bg-white/12 hover:text-white sm:w-auto">
                                         View Pricing
                                     </Button>
                                 </Link>
                             </div>
+                            <div className="mt-9 flex flex-wrap items-center gap-x-6 gap-y-3 text-xs text-white/45">
+                                {['Secure cloud hosting', 'No transaction fee', 'Mobile-ready'].map((item) => (
+                                    <span key={item} className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-white/75" />{item}</span>
+                                ))}
+                            </div>
                         </motion.div>
 
-                        <motion.div
-                            initial={{ opacity: 0, x: 40 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ duration: 0.6, delay: 0.2 }}
-                            className="relative"
-                        >
-                            <div className="rounded-3xl border border-ink-200 bg-white shadow-2xl p-3">
-                                <div className="rounded-2xl bg-ink-950 overflow-hidden">
-                                    <div className="flex items-center gap-2 px-5 py-4 border-b border-white/10">
-                                        <span className="w-2.5 h-2.5 rounded-full bg-brand" />
-                                        <span className="w-2.5 h-2.5 rounded-full bg-ink-500" />
-                                        <span className="w-2.5 h-2.5 rounded-full bg-ink-300" />
-                                        <span className="ml-auto text-xs text-ink-400">yourstore.com</span>
-                                    </div>
-                                    <div className="grid grid-cols-[1fr_1.15fr] min-h-80">
-                                        <div className="p-6 flex flex-col justify-center">
-                                            <span className="text-xs uppercase tracking-widest text-ink-400 mb-3">New collection</span>
-                                            <h2 className="text-3xl font-bold text-white mb-4">Commerce that feels like you.</h2>
-                                            <div className="w-24 h-9 bg-brand rounded-full" />
+                        <motion.div initial={{ opacity: 0, x: 40, rotateY: -4 }} animate={{ opacity: 1, x: 0, rotateY: 0 }} transition={{ duration: 0.8, delay: 0.15 }} className="relative mx-auto w-full max-w-[720px] [perspective:1200px]">
+                            <div className="absolute -inset-8 rounded-[3rem] bg-brand/15 blur-3xl" />
+                            <div className="relative overflow-hidden rounded-[1.75rem] border border-white/15 bg-[#f7f7f7] shadow-[0_40px_100px_rgba(0,0,0,.55)] ring-1 ring-black/20">
+                                <div className="flex h-12 items-center gap-2 border-b border-black/10 bg-white px-4">
+                                    <span className="h-2.5 w-2.5 rounded-full bg-brand" /><span className="h-2.5 w-2.5 rounded-full bg-ink-200" /><span className="h-2.5 w-2.5 rounded-full bg-ink-200" />
+                                    <div className="mx-auto flex h-7 w-52 items-center justify-center rounded-lg bg-ink-50 text-[10px] text-ink-500">admin.yourstore.com</div>
+                                </div>
+                                <div className="grid min-h-[420px] grid-cols-[58px_1fr] sm:grid-cols-[170px_1fr]">
+                                    <aside className="border-r border-black/5 bg-ink-950 p-3 sm:p-4">
+                                        <div className="mb-7 flex items-center gap-2 text-white"><span className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand"><ShoppingBag className="h-3.5 w-3.5" /></span><span className="hidden text-xs font-semibold sm:block">My Store</span></div>
+                                        <div className="space-y-2">
+                                            {['Overview', 'Orders', 'Products', 'Customers'].map((item, index) => <div key={item} className={cn('flex h-8 items-center gap-2 rounded-lg px-2 text-[10px]', index === 0 ? 'bg-white/10 text-white' : 'text-white/40')}><span className={cn('h-1.5 w-1.5 rounded-full', index === 0 ? 'bg-brand' : 'bg-white/20')} /><span className="hidden sm:block">{item}</span></div>)}
                                         </div>
-                                        <div className="bg-ink-100 p-5 grid grid-cols-2 gap-3 content-center">
-                                            {[1, 2, 3, 4].map((item) => (
-                                                <div key={item} className="rounded-xl bg-white border border-ink-200 p-3">
-                                                    <div className="aspect-square rounded-lg bg-accent mb-3 flex items-center justify-center">
-                                                        <ShoppingBag className="w-7 h-7 text-brand" />
-                                                    </div>
-                                                    <div className="h-2 rounded-full bg-ink-200 mb-2" />
-                                                    <div className="h-2 w-1/2 rounded-full bg-brand/20" />
-                                                </div>
-                                            ))}
+                                    </aside>
+                                    <div className="overflow-hidden p-4 text-ink-900 sm:p-6">
+                                        <div className="mb-5 flex items-start justify-between"><div><p className="text-[10px] font-medium text-ink-400">STORE OVERVIEW</p><h2 className="mt-1 text-xl font-bold tracking-tight sm:text-2xl">Good morning, John.</h2></div><span className="rounded-full border border-ink-200 bg-white px-3 py-1.5 text-[10px] font-medium">Last 30 days</span></div>
+                                        <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-3">
+                                            {[['Total sales', 'PKR 284k', '+18.4%'], ['Orders', '1,429', '+12.8%'], ['Customers', '892', '+9.2%']].map(([label, value, change], index) => <div key={label} className={cn('rounded-xl border border-ink-100 bg-white p-3.5 sm:p-4', index === 2 && 'hidden lg:block')}><p className="text-[10px] text-ink-500">{label}</p><p className="mt-2 text-lg font-bold sm:text-xl">{value}</p><p className="mt-1 flex items-center gap-1 text-[9px] font-semibold text-success-600"><TrendingUp className="h-3 w-3" />{change}</p></div>)}
+                                        </div>
+                                        <div className="grid gap-3 lg:grid-cols-[1.45fr_.85fr]">
+                                            <div className="rounded-xl border border-ink-100 bg-white p-4"><div className="flex items-center justify-between"><p className="text-xs font-semibold">Revenue</p><BarChart3 className="h-4 w-4 text-ink-400" /></div><div className="mt-6 flex h-28 items-end gap-2">{[38, 55, 47, 72, 58, 88, 68, 96, 78, 100, 83, 112].map((height, index) => <motion.span key={index} initial={{ height: 0 }} animate={{ height }} transition={{ duration: .45, delay: .55 + index * .035 }} className={cn('min-w-1 flex-1 rounded-t-sm', index > 8 ? 'bg-brand' : 'bg-brand/20')} />)}</div><div className="mt-3 flex justify-between text-[8px] text-ink-400"><span>01 Jul</span><span>15 Jul</span><span>30 Jul</span></div></div>
+                                            <div className="hidden rounded-xl bg-ink-950 p-4 text-white lg:block"><div className="flex items-center justify-between"><p className="text-xs font-semibold">Live store</p><span className="h-2 w-2 rounded-full bg-success-500 ring-4 ring-success-500/15" /></div><div className="mt-5 rounded-xl bg-white/5 p-3"><div className="mx-auto flex aspect-square max-w-24 items-center justify-center rounded-xl bg-brand/20"><ShoppingBag className="h-9 w-9 text-brand" /></div><p className="mt-3 text-center text-[10px] font-medium">New collection</p></div></div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                            <div className="absolute -bottom-6 -left-6 bg-white border border-ink-100 shadow-xl rounded-2xl p-4 flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-full bg-accent flex items-center justify-center">
-                                    <BarChart3 className="w-5 h-5 text-brand" />
-                                </div>
-                                <div>
-                                    <div className="text-xs text-ink-500">Store performance</div>
-                                    <div className="font-bold text-ink-900">One dashboard</div>
-                                </div>
-                            </div>
+                            <motion.div animate={{ y: [0, -8, 0] }} transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }} className="absolute -bottom-7 -left-3 flex items-center gap-3 rounded-2xl border border-white/60 bg-white/95 p-3.5 pr-5 text-ink-900 shadow-2xl backdrop-blur-xl sm:-left-8 sm:p-4 sm:pr-6">
+                                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-success-100"><CheckCircle2 className="h-5 w-5 text-success-600" /></span><div><p className="text-[10px] text-ink-500">New order received</p><p className="text-sm font-bold">PKR 12,450</p></div>
+                            </motion.div>
+                            <motion.div animate={{ y: [0, 7, 0] }} transition={{ duration: 4.5, repeat: Infinity, ease: 'easeInOut', delay: .4 }} className="absolute -right-2 -top-7 hidden items-center gap-3 rounded-2xl border border-white/10 bg-ink-800/90 p-4 shadow-2xl backdrop-blur-xl sm:flex lg:-right-7">
+                                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand"><Store className="h-4 w-4" /></span><div><p className="text-[10px] text-white/45">Store status</p><p className="text-xs font-semibold">Online & selling</p></div>
+                            </motion.div>
                         </motion.div>
                     </div>
                 </div>
