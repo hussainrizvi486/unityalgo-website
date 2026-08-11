@@ -148,7 +148,7 @@ export const MainContent = () => {
                                 Launch and manage your online store with professional themes, powerful commerce tools and complete control over your brand.
                             </p>
                             <div className="flex flex-col gap-3 sm:flex-row">
-                                <Link href="/#contact">
+                                <Link href="/customer/register?next=/customer/onboarding&plan=Growth">
                                     <Button size="lg" className="group h-13 w-full rounded-full bg-brand px-7 text-base text-white shadow-[0_14px_40px_rgba(140,24,27,.35)] transition-all hover:-translate-y-0.5 hover:brightness-110 sm:w-auto">
                                         Start Your Store <ArrowRight className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" />
                                     </Button>
@@ -264,7 +264,7 @@ export const MainContent = () => {
                                         </li>
                                     ))}
                                 </ul>
-                                <Link href="/#contact">
+                                <Link href={`/customer/login?next=/customer/onboarding&plan=${encodeURIComponent(plan.name)}`}>
                                     <Button className={cn('w-full rounded-full h-11', plan.highlighted ? 'bg-white hover:bg-ink-100 text-brand' : 'bg-brand hover:brightness-90 text-white')}>
                                         Choose {plan.name}
                                     </Button>
