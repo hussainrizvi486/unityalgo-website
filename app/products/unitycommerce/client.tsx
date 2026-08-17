@@ -1,23 +1,37 @@
 'use client';
 
+import { useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import {
     ArrowRight,
     BarChart3,
     Check,
     CheckCircle2,
+    Clock,
     CreditCard,
     Globe2,
+    Headphones,
+    Heart,
+    HelpCircle,
     LayoutTemplate,
     LockKeyhole,
+    MessageSquare,
     PackageCheck,
     Palette,
+    RotateCcw,
+    Search,
+    ShieldCheck,
     ShoppingBag,
     Smartphone,
+    Sparkles,
     Store,
     TrendingUp,
+    Truck,
+    UserRound,
     Users,
+    Zap,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { FaqSection } from '@/components/website/faq-section';
@@ -29,9 +43,9 @@ const includedFeatures = [
     { icon: CheckCircle2, label: 'Automatic platform updates' },
     { icon: LayoutTemplate, label: '10 professionally designed themes' },
     { icon: Smartphone, label: 'Mobile-responsive storefront' },
-    { icon: Palette, label: 'Theme editor' },
+    { icon: Palette, label: 'Visual theme editor' },
     { icon: Globe2, label: 'Custom domain support' },
-    { icon: LockKeyhole, label: 'SSL certificate' },
+    { icon: ShieldCheck, label: 'Free SSL certificate' },
     { icon: PackageCheck, label: 'Order and customer management' },
     { icon: CreditCard, label: 'No platform transaction fee' },
 ];
@@ -39,52 +53,105 @@ const includedFeatures = [
 const plans = [
     {
         name: 'Starter',
-        price: '3,500',
+        monthlyPrice: '3,500',
+        annualPrice: '2,800',
         audience: 'For Solo Entrepreneurs',
-        features: ['1 Staff Account', 'Reporting and Analytics'],
+        features: [
+            '1 Staff Account',
+            'Full Product Catalog',
+            '10 Included Themes',
+            'Basic Sales & Inventory Reports',
+            'Free SSL & Custom Domain Support',
+            'Standard Email Support',
+        ],
     },
     {
         name: 'Growth',
-        price: '7,000',
-        audience: 'For Small Teams',
-        features: ['5 Staff Accounts', 'WhatsApp integration', 'Payment Gateway Integration', 'Point Of Sale'],
+        monthlyPrice: '7,000',
+        annualPrice: '5,600',
+        audience: 'For Growing Online Stores',
+        features: [
+            '5 Staff Accounts',
+            'WhatsApp Order Integration',
+            'Payment Gateway & COD Support',
+            'Point of Sale (POS) Module',
+            'Advanced Sales & Inventory Analytics',
+            'Priority Customer Support',
+        ],
         highlighted: true,
     },
     {
         name: 'Professional',
-        price: '42,000',
-        audience: 'For Global Reach',
+        monthlyPrice: '42,000',
+        annualPrice: '33,600',
+        audience: 'For Established Brands',
         features: [
             '15 Staff Accounts',
-            'Priority On Boarding',
-            'Dedicated Support',
-            'API access',
-            'Custom integrations',
-            'Custom Reports',
-            'Custom Theme Design',
+            'Priority Technical Onboarding',
+            'Dedicated Account Manager',
+            'Full REST API & Webhook Access',
+            'Custom ERP & CRM Integrations',
+            'Custom Theme Customization',
+            'Custom Analytics Reports',
         ],
     },
     {
         name: 'Enterprise',
-        price: '250,000',
-        audience: 'For Complex Businesses',
+        monthlyPrice: '250,000',
+        annualPrice: '200,000',
+        audience: 'For Large Scale Operations',
         features: [
             'Everything in Professional',
             'Unlimited Staff Accounts',
-            'Priority 24/7 Support on Call',
-            'Fully customizable',
+            'Priority 24/7 Direct Call Support',
+            'Fully Customizable Architecture',
+            'SLA Guarantee & Dedicated Servers',
         ],
     },
 ];
 
 const addOns = [
-    ['Professional store setup', 'PKR 20,000 one-time'],
-    ['Product upload service', 'Starting from PKR 10,000'],
-    ['Custom theme design', 'Starting from PKR 40,000'],
-    ['Custom feature development', 'Quoted separately'],
-    ['Additional staff accounts', 'PKR 1000/account/month'],
-    ['Additional storage', 'PKR 1,000 / month'],
-    ['Priority migration from another platform', 'Starting from PKR 50,000'],
+    ['Professional Store Setup', 'PKR 20,000 one-time'],
+    ['Product Upload & Catalog Service', 'Starting from PKR 10,000'],
+    ['Custom Theme Design & Layout', 'Starting from PKR 40,000'],
+    ['Custom Feature Development', 'Quoted separately'],
+    ['Additional Staff Accounts', 'PKR 1,000 / account / month'],
+    ['Additional Cloud Storage', 'PKR 1,000 / month'],
+    ['Priority Migration from Shopify / WooCommerce', 'Starting from PKR 50,000'],
+];
+
+const commerceHighlights = [
+    { icon: Truck, title: 'Flexible Shipping Rules', text: 'Set nationwide COD & custom rate zones.' },
+    { icon: RotateCcw, title: 'Hassle-Free Returns', text: 'Build buyer confidence with smooth policies.' },
+    { icon: ShieldCheck, title: 'Encrypted Checkout', text: 'Bank-grade SSL security for every sale.' },
+    { icon: Headphones, title: 'Local 24/7 Support', text: 'Direct help when your business needs it.' },
+];
+
+const comparisonHighlights = [
+    {
+        title: 'Platform Transaction Fees',
+        unityCommerce: '0% Surcharge (Keep 100% profit)',
+        others: '2% to 3.5% fee per sale',
+        benefit: 'Save thousands as your sales grow',
+    },
+    {
+        title: 'Local Payments & COD',
+        unityCommerce: 'Native Cash on Delivery & Local Gateways',
+        others: 'Requires paid plugins & complex setup',
+        benefit: 'Ready for regional buyers day one',
+    },
+    {
+        title: 'WhatsApp Commerce',
+        unityCommerce: 'Direct WhatsApp Checkout & Chat',
+        others: 'Third-party paid extensions only',
+        benefit: 'Higher conversion for local traffic',
+    },
+    {
+        title: 'Curated Premium Themes',
+        unityCommerce: '10 Themes Included Free',
+        others: '$180 - $350 per premium theme',
+        benefit: 'Zero extra frontend costs',
+    },
 ];
 
 const faqItems = [
@@ -117,211 +184,763 @@ const faqItems = [
 ];
 
 export const MainContent = () => {
-    return (
-        <>
-            <section className="relative isolate overflow-hidden bg-ink-950 px-4 pb-16 pt-36 text-white sm:pb-20 md:pt-44 lg:min-h-[880px] lg:pb-24">
-                <div className="pointer-events-none absolute inset-x-0 top-0 z-20 h-22 border-b border-ink-100 bg-white" />
-                <div className="pointer-events-none absolute inset-0 opacity-35 [background-image:linear-gradient(rgba(255,255,255,.055)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.055)_1px,transparent_1px)] [background-size:64px_64px] [mask-image:linear-gradient(to_bottom,black,transparent_88%)]" />
-                <div className="pointer-events-none absolute -left-32 top-24 h-96 w-96 rounded-full bg-brand/30 blur-[140px]" />
-                <div className="pointer-events-none absolute -right-24 top-12 h-[34rem] w-[34rem] rounded-full bg-brand/20 blur-[160px]" />
-                <div className="pointer-events-none absolute left-1/2 top-32 h-px w-[90%] -translate-x-1/2 bg-gradient-to-r from-transparent via-white/15 to-transparent" />
+    const [isAnnual, setIsAnnual] = useState(false);
+    const [activeTab, setActiveTab] = useState<'storefront' | 'checkout' | 'whatsapp' | 'analytics'>('storefront');
+    const [showcaseMode, setShowcaseMode] = useState<'desktop' | 'mobile'>('desktop');
 
-                <div className="container relative z-10 mx-auto max-w-7xl">
-                    <div className="grid items-center gap-16 lg:grid-cols-[0.83fr_1.17fr] lg:gap-10">
-                        <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.65 }} className="relative z-20 max-w-2xl">
-                            <div className="mb-7 inline-flex items-center gap-2.5 rounded-full border border-white/10 bg-white/[0.06] px-3.5 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,.08)] backdrop-blur-xl">
-                                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-brand">
-                                    <ShoppingBag className="h-3.5 w-3.5 text-white" />
-                                </span>
-                                <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/80">Unity Commerce</span>
-                                <span className="h-1 w-1 rounded-full bg-white/30" />
-                                <span className="text-[11px] text-white/50">Built to sell</span>
-                            </div>
-                            <h1 className="max-w-xl text-balance text-5xl font-bold leading-[0.98] tracking-[-0.055em] sm:text-6xl lg:text-[4.7rem]">
-                                Your store. <span className="text-white/45">Your brand.</span>{' '}
-                                <span className="relative whitespace-nowrap text-white">
-                                    Your growth.
-                                    <motion.span initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ duration: 0.7, delay: 0.55 }} className="absolute -bottom-2 left-0 h-1 w-full origin-left rounded-full bg-brand" />
-                                </span>
-                            </h1>
-                            <p className="mb-9 mt-8 max-w-xl text-balance text-lg leading-relaxed text-white/60 sm:text-xl">
-                                Launch and manage your online store with professional themes, powerful commerce tools and complete control over your brand.
-                            </p>
-                            <div className="flex flex-col gap-3 sm:flex-row">
-                                <Link href="/customer/register?next=/customer/onboarding&plan=Growth">
-                                    <Button size="lg" className="group h-13 w-full rounded-full bg-brand px-7 text-base text-white shadow-[0_14px_40px_rgba(140,24,27,.35)] transition-all hover:-translate-y-0.5 hover:brightness-110 sm:w-auto">
-                                        Start Your Store <ArrowRight className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" />
-                                    </Button>
-                                </Link>
-                                <Link href="#pricing">
-                                    <Button variant="outline" size="lg" className="h-13 w-full rounded-full border-white/15 bg-white/[0.06] px-7 text-base text-white backdrop-blur-sm hover:bg-white/12 hover:text-white sm:w-auto">
-                                        View Pricing
-                                    </Button>
-                                </Link>
-                            </div>
-                            <div className="mt-9 flex flex-wrap items-center gap-x-6 gap-y-3 text-xs text-white/45">
-                                {['Secure cloud hosting', 'No transaction fee', 'Mobile-ready'].map((item) => (
-                                    <span key={item} className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-white/75" />{item}</span>
-                                ))}
-                            </div>
+    return (
+        <main className="relative bg-[#faf9f6] text-ink-950">
+            {/* HERO SECTION */}
+            <section className="relative isolate overflow-hidden px-4 pb-20 pt-28 sm:pb-28 sm:pt-36">
+                <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_70%_20%,rgba(140,24,27,0.12),transparent_35%),radial-gradient(circle_at_20%_80%,rgba(240,230,220,0.6),transparent_40%)]" />
+                <div className="pointer-events-none absolute inset-0 bg-grid-pattern opacity-40 [mask-image:linear-gradient(to_bottom,black_40%,transparent_90%)]" />
+                
+                <div className="container relative mx-auto max-w-7xl">
+                    <div className="flex flex-col items-center text-center">
+                        <motion.div
+                            initial={{ opacity: 0, y: 16 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.5 }}
+                            className="inline-flex items-center gap-2 rounded-full border border-brand/20 bg-white/80 px-4 py-2 text-xs font-bold tracking-wide text-brand shadow-sm backdrop-blur-md"
+                        >
+                            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-brand text-white">
+                                <Sparkles className="h-3 w-3" />
+                            </span>
+                            <span>The Next-Gen Store Builder for Modern Brands</span>
                         </motion.div>
 
-                        <motion.div initial={{ opacity: 0, x: 40, rotateY: -4 }} animate={{ opacity: 1, x: 0, rotateY: 0 }} transition={{ duration: 0.8, delay: 0.15 }} className="relative mx-auto w-full max-w-[720px] [perspective:1200px]">
-                            <div className="absolute -inset-8 rounded-[3rem] bg-brand/15 blur-3xl" />
-                            <div className="relative overflow-hidden rounded-[1.75rem] border border-white/15 bg-[#f7f7f7] shadow-[0_40px_100px_rgba(0,0,0,.55)] ring-1 ring-black/20">
-                                <div className="flex h-12 items-center gap-2 border-b border-black/10 bg-white px-4">
-                                    <span className="h-2.5 w-2.5 rounded-full bg-brand" /><span className="h-2.5 w-2.5 rounded-full bg-ink-200" /><span className="h-2.5 w-2.5 rounded-full bg-ink-200" />
-                                    <div className="mx-auto flex h-7 w-52 items-center justify-center rounded-lg bg-ink-50 text-[10px] text-ink-500">admin.yourstore.com</div>
+                        <motion.h1
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.6, delay: 0.1 }}
+                            className="mt-6 max-w-4xl text-balance text-4xl font-extrabold leading-[1.05] tracking-[-0.05em] sm:text-6xl lg:text-7xl"
+                        >
+                            Build an online store that looks <span className="bg-gradient-to-r from-brand via-[#a32226] to-brand bg-clip-text text-transparent">unmistakably yours.</span>
+                        </motion.h1>
+
+                        <motion.p
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.6, delay: 0.2 }}
+                            className="mt-6 max-w-2xl text-balance text-base leading-relaxed text-ink-600 sm:text-xl"
+                        >
+                            Launch a high-converting storefront, deliver 2-minute checkout experiences, and manage orders, inventory, and WhatsApp sales with zero platform transaction fees.
+                        </motion.p>
+
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.6, delay: 0.3 }}
+                            className="mt-8 flex flex-col items-center justify-center gap-3.5 sm:flex-row"
+                        >
+                            <Link href="/customer/register?next=/customer/onboarding&plan=Growth" className="w-full sm:w-auto">
+                                <Button size="lg" className="group h-13 w-full rounded-full bg-brand px-8 text-base font-semibold text-white shadow-lg shadow-brand/25 transition-all hover:bg-brand/90 hover:shadow-xl hover:shadow-brand/30 sm:w-auto">
+                                    Start Building Your Store
+                                    <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                                </Button>
+                            </Link>
+                            <Link href="#pricing" className="w-full sm:w-auto">
+                                <Button variant="outline" size="lg" className="h-13 w-full rounded-full border-ink-300 bg-white px-8 text-base font-semibold text-ink-800 shadow-sm hover:bg-ink-50 sm:w-auto">
+                                    View Pricing & Plans
+                                </Button>
+                            </Link>
+                        </motion.div>
+
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ duration: 0.6, delay: 0.4 }}
+                            className="mt-8 flex flex-wrap items-center justify-center gap-6 text-xs font-semibold text-ink-600 sm:text-sm"
+                        >
+                            <span className="flex items-center gap-2">
+                                <CheckCircle2 className="h-4 w-4 text-brand" />
+                                0% Transaction Fees
+                            </span>
+                            <span className="flex items-center gap-2">
+                                <CheckCircle2 className="h-4 w-4 text-brand" />
+                                10 Free Premium Themes
+                            </span>
+                            <span className="flex items-center gap-2">
+                                <CheckCircle2 className="h-4 w-4 text-brand" />
+                                Mobile & COD Ready
+                            </span>
+                            <span className="flex items-center gap-2">
+                                <CheckCircle2 className="h-4 w-4 text-brand" />
+                                Free SSL & Domain Support
+                            </span>
+                        </motion.div>
+                    </div>
+
+                    {/* HERO DUAL DEVICE SHOWCASE */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 40 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.8, delay: 0.4 }}
+                        className="relative mx-auto mt-14 max-w-6xl"
+                    >
+                        <div className="absolute -inset-4 rounded-[3.5rem] bg-gradient-to-r from-brand/15 via-brand/5 to-brand/15 blur-3xl" />
+                        
+                        <div className="relative rounded-2xl border border-ink-200/80 bg-white/90 p-2.5 shadow-[0_32px_90px_rgba(21,21,21,0.14)] backdrop-blur-xl sm:p-4 md:rounded-3xl">
+                            {/* Browser Header Bar */}
+                            <div className="mb-3 flex items-center justify-between border-b border-ink-100 pb-3 px-2">
+                                <div className="flex items-center gap-2">
+                                    <span className="h-3 w-3 rounded-full bg-red-400" />
+                                    <span className="h-3 w-3 rounded-full bg-yellow-400" />
+                                    <span className="h-3 w-3 rounded-full bg-green-400" />
                                 </div>
-                                <div className="grid min-h-[420px] grid-cols-[58px_1fr] sm:grid-cols-[170px_1fr]">
-                                    <aside className="border-r border-black/5 bg-ink-950 p-3 sm:p-4">
-                                        <div className="mb-7 flex items-center gap-2 text-white"><span className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand"><ShoppingBag className="h-3.5 w-3.5" /></span><span className="hidden text-xs font-semibold sm:block">My Store</span></div>
-                                        <div className="space-y-2">
-                                            {['Overview', 'Orders', 'Products', 'Customers'].map((item, index) => <div key={item} className={cn('flex h-8 items-center gap-2 rounded-lg px-2 text-[10px]', index === 0 ? 'bg-white/10 text-white' : 'text-white/40')}><span className={cn('h-1.5 w-1.5 rounded-full', index === 0 ? 'bg-brand' : 'bg-white/20')} /><span className="hidden sm:block">{item}</span></div>)}
+                                <div className="flex items-center gap-2 rounded-lg bg-ink-50 px-4 py-1.5 text-xs text-ink-500 font-medium border border-ink-200/60 max-w-sm w-full justify-center">
+                                    <LockKeyhole className="h-3 w-3 text-brand" />
+                                    <span>https://store.ansa-collections.com</span>
+                                </div>
+                                <div className="hidden sm:flex items-center gap-2">
+                                    <span className="rounded-full bg-success-50 px-2.5 py-1 text-[10px] font-bold text-success-700">Live Demo</span>
+                                </div>
+                            </div>
+
+                            {/* Main Desktop Image Container */}
+                            <div className="relative overflow-hidden rounded-xl border border-ink-100 bg-ink-50 aspect-[16/9.5]">
+                                <Image
+                                    src="/images/unitycommerce/desktop-storefront.png"
+                                    alt="Unity Commerce Desktop Storefront - ANSA Collections"
+                                    fill
+                                    priority
+                                    className="object-cover object-top"
+                                />
+
+                                {/* Floating Phone Screenshot Overlay */}
+                                <motion.div
+                                    initial={{ y: 20, opacity: 0 }}
+                                    animate={{ y: 0, opacity: 1 }}
+                                    transition={{ duration: 0.6, delay: 0.7 }}
+                                    className="absolute -bottom-4 right-4 sm:right-8 w-36 sm:w-56 md:w-64 rounded-[1.8rem] sm:rounded-[2.2rem] border-4 sm:border-[6px] border-ink-950 bg-ink-950 shadow-2xl overflow-hidden"
+                                >
+                                    <div className="relative aspect-[9/18.5] w-full">
+                                        <Image
+                                            src="/images/unitycommerce/mobile-storefront.png"
+                                            alt="Unity Commerce Mobile Storefront"
+                                            fill
+                                            className="object-cover object-top"
+                                        />
+                                    </div>
+                                </motion.div>
+
+                                {/* Floating Live Sales Badge */}
+                                <motion.div
+                                    animate={{ y: [0, -6, 0] }}
+                                    transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+                                    className="absolute top-4 left-4 sm:top-6 sm:left-6 flex items-center gap-3 rounded-2xl border border-white/80 bg-white/95 p-3 shadow-xl backdrop-blur-md"
+                                >
+                                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-success-100 text-success-600 shrink-0">
+                                        <CheckCircle2 className="h-5 w-5" />
+                                    </div>
+                                    <div>
+                                        <p className="text-[10px] font-bold uppercase tracking-wider text-ink-400">Order Completed</p>
+                                        <p className="text-xs sm:text-sm font-extrabold text-ink-950">PKR 8,529.40 <span className="text-[10px] font-medium text-success-600">• COD</span></p>
+                                    </div>
+                                </motion.div>
+
+                                {/* Floating Zero Fee Chip */}
+                                <motion.div
+                                    animate={{ y: [0, 6, 0] }}
+                                    transition={{ duration: 4.5, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}
+                                    className="absolute bottom-6 left-6 hidden sm:flex items-center gap-2.5 rounded-xl border border-brand/20 bg-ink-950/90 px-3.5 py-2.5 text-white shadow-xl backdrop-blur-md"
+                                >
+                                    <Zap className="h-4 w-4 text-amber-400 fill-amber-400" />
+                                    <div className="text-xs">
+                                        <p className="font-bold">0% Transaction Fee</p>
+                                        <p className="text-[10px] text-ink-300">You keep 100% of your store sales</p>
+                                    </div>
+                                </motion.div>
+                            </div>
+                        </div>
+                    </motion.div>
+
+                    {/* HIGHLIGHT STRIP */}
+                    <div className="mt-16 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 border-t border-ink-200/80 pt-8">
+                        {commerceHighlights.map((highlight) => (
+                            <div key={highlight.title} className="flex items-center gap-3.5 rounded-2xl border border-ink-100 bg-white p-4 shadow-sm">
+                                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-brand/15 bg-brand/10 text-brand">
+                                    <highlight.icon className="h-5 w-5" />
+                                </span>
+                                <div>
+                                    <p className="text-sm font-bold text-ink-900">{highlight.title}</p>
+                                    <p className="mt-0.5 text-xs text-ink-500">{highlight.text}</p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </section>
+
+            {/* SHOPIFY-STYLE INTERACTIVE CAPABILITY SHOWCASE */}
+            <section className="relative overflow-hidden bg-ink-950 px-4 py-20 text-white sm:py-28">
+                <div className="pointer-events-none absolute inset-0 opacity-20 bg-grid-pattern" />
+                <div className="container relative mx-auto max-w-7xl">
+                    <div className="text-center max-w-3xl mx-auto mb-14">
+                        <span className="text-xs font-extrabold uppercase tracking-[0.2em] text-brand">Engineered for Merchants</span>
+                        <h2 className="mt-3 text-3xl font-extrabold tracking-[-0.04em] text-white sm:text-5xl">
+                            Everything you need to sell online &amp; grow.
+                        </h2>
+                        <p className="mt-4 text-base text-ink-300 sm:text-lg">
+                            From your initial product upload to instant mobile checkout, Unity Commerce puts complete operational power in your hands.
+                        </p>
+                    </div>
+
+                    {/* Interactive Tab Controls */}
+                    <div className="flex flex-wrap justify-center gap-2 mb-10">
+                        {[
+                            { id: 'storefront', label: 'Storefront & Design', icon: LayoutTemplate },
+                            { id: 'checkout', label: 'High-Converting Checkout', icon: LockKeyhole },
+                            { id: 'whatsapp', label: 'WhatsApp & Customer Chat', icon: MessageSquare },
+                            { id: 'analytics', label: 'Order & Inventory Control', icon: BarChart3 },
+                        ].map((tab) => {
+                            const TabIcon = tab.icon;
+                            const isActive = activeTab === tab.id;
+                            return (
+                                <button
+                                    key={tab.id}
+                                    onClick={() => setActiveTab(tab.id as any)}
+                                    className={cn(
+                                        'flex items-center gap-2 rounded-full px-5 py-3 text-xs sm:text-sm font-semibold transition-all duration-200 cursor-pointer',
+                                        isActive
+                                            ? 'bg-brand text-white shadow-lg shadow-brand/30'
+                                            : 'bg-white/10 text-ink-300 hover:bg-white/15 hover:text-white'
+                                    )}
+                                >
+                                    <TabIcon className="h-4 w-4" />
+                                    {tab.label}
+                                </button>
+                            );
+                        })}
+                    </div>
+
+                    {/* Tab Content Panels */}
+                    <div className="relative rounded-3xl border border-white/10 bg-white/5 p-4 sm:p-8 backdrop-blur-xl">
+                        <AnimatePresence mode="wait">
+                            {activeTab === 'storefront' && (
+                                <motion.div
+                                    key="storefront"
+                                    initial={{ opacity: 0, y: 15 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -15 }}
+                                    transition={{ duration: 0.3 }}
+                                    className="grid lg:grid-cols-[1fr_1.3fr] gap-8 items-center"
+                                >
+                                    <div>
+                                        <span className="rounded-full bg-brand/20 px-3 py-1 text-[10px] font-bold text-brand uppercase tracking-widest">Store Builder</span>
+                                        <h3 className="mt-4 text-2xl sm:text-4xl font-extrabold tracking-tight text-white">
+                                            A storefront that matches your brand aesthetics.
+                                        </h3>
+                                        <p className="mt-4 text-sm sm:text-base leading-relaxed text-ink-300">
+                                            Customize colors, typography, hero section banners, and product showcase grids without touching code. Pick from 10 included responsive themes.
+                                        </p>
+                                        <ul className="mt-6 space-y-3 text-sm text-ink-200">
+                                            <li className="flex items-center gap-2.5">
+                                                <CheckCircle2 className="h-4 w-4 text-brand shrink-0" />
+                                                Visual theme editor with live instant preview
+                                            </li>
+                                            <li className="flex items-center gap-2.5">
+                                                <CheckCircle2 className="h-4 w-4 text-brand shrink-0" />
+                                                100% mobile-responsive design for smartphone buyers
+                                            </li>
+                                            <li className="flex items-center gap-2.5">
+                                                <CheckCircle2 className="h-4 w-4 text-brand shrink-0" />
+                                                Custom domain support with automatic SSL encryption
+                                            </li>
+                                        </ul>
+                                    </div>
+                                    <div className="relative overflow-hidden rounded-2xl border border-white/10 aspect-[16/10] bg-ink-900">
+                                        <Image
+                                            src="/images/unitycommerce/desktop-storefront.png"
+                                            alt="Desktop Storefront Preview"
+                                            fill
+                                            className="object-cover object-top"
+                                        />
+                                    </div>
+                                </motion.div>
+                            )}
+
+                            {activeTab === 'checkout' && (
+                                <motion.div
+                                    key="checkout"
+                                    initial={{ opacity: 0, y: 15 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -15 }}
+                                    transition={{ duration: 0.3 }}
+                                    className="grid lg:grid-cols-[1fr_1.3fr] gap-8 items-center"
+                                >
+                                    <div>
+                                        <span className="rounded-full bg-success-500/20 px-3 py-1 text-[10px] font-bold text-success-400 uppercase tracking-widest">Frictionless Checkout</span>
+                                        <h3 className="mt-4 text-2xl sm:text-4xl font-extrabold tracking-tight text-white">
+                                            Turn store visitors into paying buyers.
+                                        </h3>
+                                        <p className="mt-4 text-sm sm:text-base leading-relaxed text-ink-300">
+                                            A clean, 3-step checkout experience built specifically for quick completions. Native Cash on Delivery (COD) and Credit/Debit Card options built-in.
+                                        </p>
+                                        <ul className="mt-6 space-y-3 text-sm text-ink-200">
+                                            <li className="flex items-center gap-2.5">
+                                                <CheckCircle2 className="h-4 w-4 text-success-400 shrink-0" />
+                                                Clear 3-step progress bar (Info, Shipping, Payment)
+                                            </li>
+                                            <li className="flex items-center gap-2.5">
+                                                <CheckCircle2 className="h-4 w-4 text-success-400 shrink-0" />
+                                                Native Cash on Delivery &amp; Credit/Debit Card support
+                                            </li>
+                                            <li className="flex items-center gap-2.5">
+                                                <CheckCircle2 className="h-4 w-4 text-success-400 shrink-0" />
+                                                Instant tax, shipping rate, and order total calculations
+                                            </li>
+                                        </ul>
+                                    </div>
+                                    <div className="relative overflow-hidden rounded-2xl border border-white/10 aspect-[16/10] bg-ink-900">
+                                        <Image
+                                            src="/images/unitycommerce/desktop-checkout.png"
+                                            alt="Desktop Checkout Preview"
+                                            fill
+                                            className="object-cover object-top"
+                                        />
+                                    </div>
+                                </motion.div>
+                            )}
+
+                            {activeTab === 'whatsapp' && (
+                                <motion.div
+                                    key="whatsapp"
+                                    initial={{ opacity: 0, y: 15 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -15 }}
+                                    transition={{ duration: 0.3 }}
+                                    className="grid lg:grid-cols-[1fr_1.3fr] gap-8 items-center"
+                                >
+                                    <div>
+                                        <span className="rounded-full bg-emerald-500/20 px-3 py-1 text-[10px] font-bold text-emerald-400 uppercase tracking-widest">WhatsApp Direct</span>
+                                        <h3 className="mt-4 text-2xl sm:text-4xl font-extrabold tracking-tight text-white">
+                                            Receive orders straight on WhatsApp.
+                                        </h3>
+                                        <p className="mt-4 text-sm sm:text-base leading-relaxed text-ink-300">
+                                            Connect directly with customers where they spend their time. Enable 1-click WhatsApp order confirmation and pre-filled customer cart details.
+                                        </p>
+                                        <ul className="mt-6 space-y-3 text-sm text-ink-200">
+                                            <li className="flex items-center gap-2.5">
+                                                <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
+                                                Instant cart export directly into WhatsApp chat
+                                            </li>
+                                            <li className="flex items-center gap-2.5">
+                                                <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
+                                                Higher conversion rates for regional shoppers
+                                            </li>
+                                            <li className="flex items-center gap-2.5">
+                                                <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
+                                                Available from Growth plan onwards
+                                            </li>
+                                        </ul>
+                                    </div>
+                                    <div className="relative overflow-hidden rounded-2xl border border-white/10 aspect-[16/10] bg-ink-900 flex items-center justify-center p-4">
+                                        <div className="relative w-48 sm:w-64 aspect-[9/18.5] rounded-3xl border-4 border-ink-800 shadow-2xl overflow-hidden">
+                                            <Image
+                                                src="/images/unitycommerce/mobile-checkout.png"
+                                                alt="Mobile Checkout Preview"
+                                                fill
+                                                className="object-cover object-top"
+                                            />
                                         </div>
-                                    </aside>
-                                    <div className="overflow-hidden p-4 text-ink-900 sm:p-6">
-                                        <div className="mb-5 flex items-start justify-between"><div><p className="text-[10px] font-medium text-ink-400">STORE OVERVIEW</p><h2 className="mt-1 text-xl font-bold tracking-tight sm:text-2xl">Good morning, John.</h2></div><span className="rounded-full border border-ink-200 bg-white px-3 py-1.5 text-[10px] font-medium">Last 30 days</span></div>
-                                        <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-3">
-                                            {[['Total sales', 'PKR 284k', '+18.4%'], ['Orders', '1,429', '+12.8%'], ['Customers', '892', '+9.2%']].map(([label, value, change], index) => <div key={label} className={cn('rounded-xl border border-ink-100 bg-white p-3.5 sm:p-4', index === 2 && 'hidden lg:block')}><p className="text-[10px] text-ink-500">{label}</p><p className="mt-2 text-lg font-bold sm:text-xl">{value}</p><p className="mt-1 flex items-center gap-1 text-[9px] font-semibold text-success-600"><TrendingUp className="h-3 w-3" />{change}</p></div>)}
+                                    </div>
+                                </motion.div>
+                            )}
+
+                            {activeTab === 'analytics' && (
+                                <motion.div
+                                    key="analytics"
+                                    initial={{ opacity: 0, y: 15 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -15 }}
+                                    transition={{ duration: 0.3 }}
+                                    className="grid lg:grid-cols-[1fr_1.3fr] gap-8 items-center"
+                                >
+                                    <div>
+                                        <span className="rounded-full bg-blue-500/20 px-3 py-1 text-[10px] font-bold text-blue-400 uppercase tracking-widest">Back-Office Control</span>
+                                        <h3 className="mt-4 text-2xl sm:text-4xl font-extrabold tracking-tight text-white">
+                                            Manage orders, stock &amp; team access.
+                                        </h3>
+                                        <p className="mt-4 text-sm sm:text-base leading-relaxed text-ink-300">
+                                            Track incoming store orders, get real-time stock notifications, manage customer details, and grant staff permissions effortlessly.
+                                        </p>
+                                        <ul className="mt-6 space-y-3 text-sm text-ink-200">
+                                            <li className="flex items-center gap-2.5">
+                                                <CheckCircle2 className="h-4 w-4 text-blue-400 shrink-0" />
+                                                Centralized inventory &amp; product catalog manager
+                                            </li>
+                                            <li className="flex items-center gap-2.5">
+                                                <CheckCircle2 className="h-4 w-4 text-blue-400 shrink-0" />
+                                                Multi-staff account roles (Up to Unlimited on Enterprise)
+                                            </li>
+                                            <li className="flex items-center gap-2.5">
+                                                <CheckCircle2 className="h-4 w-4 text-blue-400 shrink-0" />
+                                                Sales analytics &amp; performance dashboards
+                                            </li>
+                                        </ul>
+                                    </div>
+                                    <div className="relative overflow-hidden rounded-2xl border border-white/10 aspect-[16/10] bg-ink-900 flex items-center justify-center p-6 text-center">
+                                        <div className="max-w-md p-6 rounded-2xl bg-white/5 border border-white/10">
+                                            <BarChart3 className="h-10 w-10 text-brand mx-auto mb-3" />
+                                            <h4 className="text-lg font-bold text-white">Real-Time Business Intelligence</h4>
+                                            <p className="mt-2 text-xs text-ink-300">Monitor overall daily revenue, best-selling product items, customer retention, and shipping statuses from your unified dashboard.</p>
                                         </div>
-                                        <div className="grid gap-3 lg:grid-cols-[1.45fr_.85fr]">
-                                            <div className="rounded-xl border border-ink-100 bg-white p-4"><div className="flex items-center justify-between"><p className="text-xs font-semibold">Revenue</p><BarChart3 className="h-4 w-4 text-ink-400" /></div><div className="mt-6 flex h-28 items-end gap-2">{[38, 55, 47, 72, 58, 88, 68, 96, 78, 100, 83, 112].map((height, index) => <motion.span key={index} initial={{ height: 0 }} animate={{ height }} transition={{ duration: .45, delay: .55 + index * .035 }} className={cn('min-w-1 flex-1 rounded-t-sm', index > 8 ? 'bg-brand' : 'bg-brand/20')} />)}</div><div className="mt-3 flex justify-between text-[8px] text-ink-400"><span>01 Jul</span><span>15 Jul</span><span>30 Jul</span></div></div>
-                                            <div className="hidden rounded-xl bg-ink-950 p-4 text-white lg:block"><div className="flex items-center justify-between"><p className="text-xs font-semibold">Live store</p><span className="h-2 w-2 rounded-full bg-success-500 ring-4 ring-success-500/15" /></div><div className="mt-5 rounded-xl bg-white/5 p-3"><div className="mx-auto flex aspect-square max-w-24 items-center justify-center rounded-xl bg-brand/20"><ShoppingBag className="h-9 w-9 text-brand" /></div><p className="mt-3 text-center text-[10px] font-medium">New collection</p></div></div>
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </div>
+                </div>
+            </section>
+
+            {/* LIVE MERCHANT SHOWCASE SECTION */}
+            {/* <section className="bg-white px-4 py-20 sm:py-28">
+                <div className="container mx-auto max-w-7xl">
+                    <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+                        <div>
+                            <span className="text-xs font-extrabold uppercase tracking-[0.18em] text-brand">Real Merchant Showcase</span>
+                            <h2 className="mt-2 text-3xl font-extrabold tracking-tight text-ink-950 sm:text-5xl">
+                                Built with Unity Commerce.
+                            </h2>
+                            <p className="mt-3 max-w-xl text-base text-ink-600">
+                                See how brand store <span className="font-bold text-ink-900">ANSA Collections</span> delivers a modern shopping and checkout experience to thousands of customers.
+                            </p>
+                        </div>
+                        <div className="flex items-center gap-2 rounded-full border border-ink-200 bg-ink-50 p-1">
+                            <button
+                                onClick={() => setShowcaseMode('desktop')}
+                                className={cn(
+                                    'rounded-full px-4 py-2 text-xs font-bold transition-all cursor-pointer',
+                                    showcaseMode === 'desktop' ? 'bg-ink-950 text-white shadow-md' : 'text-ink-600 hover:text-ink-900'
+                                )}
+                            >
+                                Desktop Storefront
+                            </button>
+                            <button
+                                onClick={() => setShowcaseMode('mobile')}
+                                className={cn(
+                                    'rounded-full px-4 py-2 text-xs font-bold transition-all cursor-pointer',
+                                    showcaseMode === 'mobile' ? 'bg-ink-950 text-white shadow-md' : 'text-ink-600 hover:text-ink-900'
+                                )}
+                            >
+                                Mobile Experience
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="relative overflow-hidden rounded-3xl border border-ink-200 bg-[#fbfaf8] p-4 sm:p-8 shadow-xl">
+                        {showcaseMode === 'desktop' ? (
+                            <div className="grid lg:grid-cols-2 gap-8 items-center">
+                                <div className="relative rounded-2xl overflow-hidden border border-ink-200 aspect-[16/10] bg-white shadow-md">
+                                    <Image
+                                        src="/images/unitycommerce/desktop-storefront.png"
+                                        alt="ANSA Collections Desktop Homepage"
+                                        fill
+                                        className="object-cover object-top"
+                                    />
+                                </div>
+                                <div className="space-y-6">
+                                    <div className="rounded-2xl border border-ink-100 bg-white p-5 shadow-sm">
+                                        <div className="flex items-center gap-3">
+                                            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-100 text-amber-700 font-black text-sm">50%</span>
+                                            <div>
+                                                <h4 className="text-sm font-bold text-ink-950">Promotional Offer Banners</h4>
+                                                <p className="text-xs text-ink-500">Run site-wide discount sales, countdown timers, and highlight featured collections effortlessly.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="rounded-2xl border border-ink-100 bg-white p-5 shadow-sm">
+                                        <div className="flex items-center gap-3">
+                                            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand/10 text-brand font-black text-sm">
+                                                <ShoppingBag className="h-4 w-4" />
+                                            </span>
+                                            <div>
+                                                <h4 className="text-sm font-bold text-ink-950">Product Cards &amp; Grid</h4>
+                                                <p className="text-xs text-ink-500">Display item tags (Best Sellers, New Season), price formatting, and wishlist icons with quick image load times.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="rounded-2xl border border-ink-100 bg-white p-5 shadow-sm">
+                                        <div className="flex items-center gap-3">
+                                            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-success-100 text-success-700 font-black text-sm">
+                                                <ShieldCheck className="h-4 w-4" />
+                                            </span>
+                                            <div>
+                                                <h4 className="text-sm font-bold text-ink-950">Integrated Checkout</h4>
+                                                <p className="text-xs text-ink-500">Seamless transition from product page directly to checkout with auto-calculated subtotal and shipping fees.</p>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                            <motion.div animate={{ y: [0, -8, 0] }} transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }} className="absolute -bottom-7 -left-3 flex items-center gap-3 rounded-2xl border border-white/60 bg-white/95 p-3.5 pr-5 text-ink-900 shadow-2xl backdrop-blur-xl sm:-left-8 sm:p-4 sm:pr-6">
-                                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-success-100"><CheckCircle2 className="h-5 w-5 text-success-600" /></span><div><p className="text-[10px] text-ink-500">New order received</p><p className="text-sm font-bold">PKR 12,450</p></div>
-                            </motion.div>
-                            <motion.div animate={{ y: [0, 7, 0] }} transition={{ duration: 4.5, repeat: Infinity, ease: 'easeInOut', delay: .4 }} className="absolute -right-2 -top-7 hidden items-center gap-3 rounded-2xl border border-white/10 bg-ink-800/90 p-4 shadow-2xl backdrop-blur-xl sm:flex lg:-right-7">
-                                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand"><Store className="h-4 w-4" /></span><div><p className="text-[10px] text-white/45">Store status</p><p className="text-xs font-semibold">Online & selling</p></div>
-                            </motion.div>
-                        </motion.div>
+                        ) : (
+                            <div className="grid lg:grid-cols-2 gap-8 items-center">
+                                <div className="flex items-center justify-center">
+                                    <div className="relative w-full max-w-sm aspect-[4/7] rounded-[2.5rem] border-[8px] border-ink-950 bg-ink-950 shadow-2xl overflow-hidden">
+                                        <Image
+                                            src="/images/unitycommerce/mobile-storefront.png"
+                                            alt="ANSA Collections Mobile Storefront"
+                                            fill
+                                            className="object-cover object-top"
+                                        />
+                                    </div>
+                                </div>
+                                <div className="space-y-6">
+                                    <div className="rounded-2xl border border-ink-100 bg-white p-5 shadow-sm bg-amber-600">
+                                        <h4 className="text-sm font-bold text-ink-950 flex items-center gap-2">
+                                            <Smartphone className="h-4 w-4 text-brand" /> Mobile-First Navigation
+                                        </h4>
+                                        <p className="mt-1 text-xs text-ink-500">Includes mobile hamburger navigation, quick cart access, instant search bar, and optimized touch targets for shoppers.</p>
+                                    </div>
+                                    <div className="rounded-2xl border border-ink-100 bg-white p-5 shadow-sm">
+                                        <h4 className="text-sm font-bold text-ink-950 flex items-center gap-2">
+                                            <LockKeyhole className="h-4 w-4 text-brand" /> Mobile Checkout Perfection
+                                        </h4>
+                                        <p className="mt-1 text-xs text-ink-500">Order form fields, delivery option selectors, and single-tap order placement designed specifically for smartphones.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
-            </section>
+            </section> */}
 
+            {/* FEATURES LIST SECTION */}
             <section className="py-24 bg-ink-50">
-                <div className="container mx-auto px-4 max-w-6xl">
+                <div className="container mx-auto px-4 max-w-7xl">
                     <div className="text-center mb-16">
-                        <h2 className="text-3xl font-bold mb-4">Included With Every Plan</h2>
-                        <p className="text-ink-600 max-w-2xl mx-auto">Everything you need to launch, operate and grow a professional online store.</p>
+                        <span className="text-xs font-extrabold uppercase tracking-[0.18em] text-brand">All-Inclusive Platform</span>
+                        <h2 className="mt-2 text-3xl font-extrabold text-ink-950 sm:text-4xl">Included With Every Plan</h2>
+                        <p className="mt-2 text-ink-600 max-w-2xl mx-auto text-sm sm:text-base">
+                            Everything required to launch, host, operate and grow a professional e-commerce store with zero hidden catches.
+                        </p>
                     </div>
+
                     <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-4">
                         {includedFeatures.map((feature, idx) => (
                             <motion.div
                                 key={feature.label}
-                                initial={{ opacity: 0, y: 20 }}
+                                initial={{ opacity: 0, y: 15 }}
                                 whileInView={{ opacity: 1, y: 0 }}
                                 viewport={{ once: true }}
-                                transition={{ delay: idx * 0.05 }}
-                                className="bg-white rounded-2xl border border-ink-100 p-5 hover:border-brand/25 transition-colors"
+                                transition={{ delay: idx * 0.04 }}
+                                className="bg-white rounded-2xl border border-ink-100 p-5 hover:border-brand/30 hover:shadow-md transition-all"
                             >
-                                <feature.icon className="w-6 h-6 text-brand mb-5" />
-                                <p className="text-sm font-medium text-ink-800 leading-relaxed">{feature.label}</p>
+                                <feature.icon className="w-6 h-6 text-brand mb-4" />
+                                <p className="text-sm font-bold text-ink-900 leading-snug">{feature.label}</p>
                             </motion.div>
                         ))}
                     </div>
                 </div>
             </section>
 
-            <section id="pricing" className="py-24 bg-background scroll-mt-20">
-                <div className="container mx-auto px-4 max-w-7xl">
-                    <div className="text-center mb-16">
-                        <h2 className="text-3xl font-bold mb-4">Unity Commerce Pricing</h2>
-                        <p className="text-ink-600 max-w-2xl mx-auto">Choose the plan that fits your business today. Annual plans include approximately two months free.</p>
-                    </div>
-                    <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-6 items-start">
-                        {plans.map((plan, idx) => (
-                            <motion.div
-                                key={plan.name}
-                                initial={{ opacity: 0, y: 20 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                viewport={{ once: true }}
-                                transition={{ delay: idx * 0.08 }}
-                                className={cn(
-                                    'rounded-3xl p-7 border transition-all duration-300',
-                                    plan.highlighted
-                                        ? 'bg-brand border-brand text-white shadow-xl shadow-brand/20 xl:-mt-3'
-                                        : 'bg-white border-ink-100 hover:border-brand/25 hover:shadow-lg'
-                                )}
-                            >
-                                {plan.highlighted && <span className="inline-block text-xs font-semibold uppercase tracking-wide bg-white/15 rounded-full px-3 py-1 mb-4">Popular</span>}
-                                <h3 className={cn('text-xl font-bold mb-2', plan.highlighted ? 'text-white' : 'text-ink-900')}>{plan.name}</h3>
-                                <p className={cn('text-sm mb-6', plan.highlighted ? 'text-white/70' : 'text-ink-500')}>{plan.audience}</p>
-                                <div className="mb-7">
-                                    <span className="text-sm font-semibold">PKR</span>
-                                    <span className="text-4xl font-bold ml-2">{plan.price}</span>
-                                    <span className={cn('text-sm ml-1', plan.highlighted ? 'text-white/60' : 'text-ink-500')}>/month</span>
-                                </div>
-                                <ul className="space-y-3 mb-8 border-t border-current/10 pt-7">
-                                    {plan.features.map((feature) => (
-                                        <li key={feature} className="flex items-start gap-3 text-sm">
-                                            <Check className={cn('w-4 h-4 mt-0.5 shrink-0', plan.highlighted ? 'text-white' : 'text-brand')} />
-                                            <span className={plan.highlighted ? 'text-white/90' : 'text-ink-700'}>{feature}</span>
-                                        </li>
-                                    ))}
-                                </ul>
-                                <Link href={`/customer/login?next=/customer/onboarding&plan=${encodeURIComponent(plan.name)}`}>
-                                    <Button className={cn('w-full rounded-full h-11', plan.highlighted ? 'bg-white hover:bg-ink-100 text-brand' : 'bg-brand hover:brightness-90 text-white')}>
-                                        Choose {plan.name}
-                                    </Button>
-                                </Link>
-                            </motion.div>
-                        ))}
-                    </div>
-                </div>
-            </section>
-
-            <section className="py-24 bg-ink-50">
+            {/* COMPARISON vs TRADITIONAL BUILDERS */}
+            <section className="py-24 bg-white border-t border-ink-100">
                 <div className="container mx-auto px-4 max-w-6xl">
-                    <div className="grid lg:grid-cols-[0.8fr_1.2fr] gap-12 items-start">
-                        <div>
-                            <span className="text-xs font-semibold text-brand tracking-wide uppercase">Build beyond the plan</span>
-                            <h2 className="text-3xl font-bold mt-3 mb-5">Optional Add-ons</h2>
-                            <p className="text-ink-600 leading-relaxed">Add professional setup, migration, design and development services whenever your store needs more support.</p>
+                    <div className="text-center max-w-3xl mx-auto mb-16">
+                        <span className="text-xs font-extrabold uppercase tracking-[0.18em] text-brand">Why Unity Commerce</span>
+                        <h2 className="mt-2 text-3xl font-extrabold text-ink-950 sm:text-4xl">
+                            Designed for modern growth vs traditional builders.
+                        </h2>
+                        <p className="mt-3 text-ink-600 text-sm sm:text-base">
+                            Stop losing profit to hidden fees, expensive plugin subscriptions, and complex developer setups.
+                        </p>
+                    </div>
+
+                    <div className="grid md:grid-cols-2 gap-6">
+                        {comparisonHighlights.map((item) => (
+                            <div key={item.title} className="rounded-3xl border border-ink-200 bg-[#fbfaf8] p-6 sm:p-8 flex flex-col justify-between shadow-sm">
+                                <div>
+                                    <h3 className="text-lg font-bold text-ink-950 mb-4">{item.title}</h3>
+                                    <div className="space-y-3">
+                                        <div className="flex items-start gap-3 rounded-xl bg-success-50 p-3 text-xs sm:text-sm border border-success-100">
+                                            <CheckCircle2 className="h-4 w-4 text-success-600 shrink-0 mt-0.5" />
+                                            <div>
+                                                <span className="font-bold text-success-900">Unity Commerce: </span>
+                                                <span className="text-success-800">{item.unityCommerce}</span>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-start gap-3 rounded-xl bg-ink-100 p-3 text-xs sm:text-sm border border-ink-200 text-ink-700">
+                                            <span className="h-2 w-2 rounded-full bg-ink-400 shrink-0 mt-1.5" />
+                                            <div>
+                                                <span className="font-bold text-ink-900">Others (Shopify / WP): </span>
+                                                <span>{item.others}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <p className="mt-6 text-xs font-bold uppercase tracking-wider text-brand">
+                                    💡 Impact: {item.benefit}
+                                </p>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </section>
+
+            {/* PRICING SECTION */}
+            <section id="pricing" className="py-24 bg-[#faf9f6] scroll-mt-20 border-t border-ink-100">
+                <div className="container mx-auto px-4 max-w-7xl">
+                    <div className="text-center mb-12">
+                        <span className="text-xs font-extrabold uppercase tracking-[0.18em] text-brand">Transparent Pricing</span>
+                        <h2 className="mt-2 text-3xl font-extrabold text-ink-950 sm:text-5xl">Simple, predictable pricing plans.</h2>
+                        <p className="mt-3 text-ink-600 max-w-2xl mx-auto text-sm sm:text-base">
+                            Choose the right subscription for your business scale. No transaction fees ever.
+                        </p>
+
+                        {/* Billing Switcher */}
+                        <div className="mt-8 flex items-center justify-center gap-3">
+                            <span className={cn('text-xs sm:text-sm font-bold', !isAnnual ? 'text-ink-950' : 'text-ink-500')}>Monthly Billing</span>
+                            <button
+                                onClick={() => setIsAnnual(!isAnnual)}
+                                className="relative inline-flex h-7 w-13 shrink-0 cursor-pointer rounded-full border-2 border-transparent bg-ink-950 transition-colors duration-200 ease-in-out"
+                            >
+                                <span
+                                    className={cn(
+                                        'pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out',
+                                        isAnnual ? 'translate-x-6' : 'translate-x-0'
+                                    )}
+                                />
+                            </button>
+                            <span className={cn('text-xs sm:text-sm font-bold flex items-center gap-1.5', isAnnual ? 'text-ink-950' : 'text-ink-500')}>
+                                Annual Billing
+                                <span className="rounded-full bg-brand/10 px-2 py-0.5 text-[10px] font-extrabold text-brand uppercase">Save ~20%</span>
+                            </span>
                         </div>
-                        <div className="bg-white rounded-3xl border border-ink-100 overflow-hidden">
-                            {addOns.map(([name, price]) => (
-                                <div key={name} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-6 py-5 border-b border-ink-100 last:border-b-0">
-                                    <span className="font-medium text-ink-800">{name}</span>
-                                    <span className="text-sm font-semibold text-brand">{price}</span>
+                    </div>
+
+                    {/* Pricing Grid */}
+                    <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-6 items-stretch">
+                        {plans.map((plan, idx) => {
+                            const price = isAnnual ? plan.annualPrice : plan.monthlyPrice;
+                            return (
+                                <motion.div
+                                    key={plan.name}
+                                    initial={{ opacity: 0, y: 20 }}
+                                    whileInView={{ opacity: 1, y: 0 }}
+                                    viewport={{ once: true }}
+                                    transition={{ delay: idx * 0.08 }}
+                                    className={cn(
+                                        'rounded-3xl p-7 border transition-all duration-300 flex flex-col justify-between',
+                                        plan.highlighted
+                                            ? 'bg-brand border-brand text-white shadow-2xl shadow-brand/25 xl:-mt-3 relative z-10'
+                                            : 'bg-white border-ink-200 hover:border-brand/30 hover:shadow-xl'
+                                    )}
+                                >
+                                    <div>
+                                        {plan.highlighted && (
+                                            <span className="inline-block text-[10px] font-extrabold uppercase tracking-widest bg-white/20 text-white rounded-full px-3 py-1 mb-4">
+                                                Most Popular Choice
+                                            </span>
+                                        )}
+                                        <h3 className={cn('text-2xl font-bold mb-1', plan.highlighted ? 'text-white' : 'text-ink-950')}>
+                                            {plan.name}
+                                        </h3>
+                                        <p className={cn('text-xs mb-6', plan.highlighted ? 'text-white/80' : 'text-ink-500')}>
+                                            {plan.audience}
+                                        </p>
+                                        <div className="mb-7 pb-6 border-b border-current/10">
+                                            <span className="text-xs font-bold uppercase tracking-wider">PKR</span>
+                                            <span className="text-4xl font-extrabold ml-2 tracking-tight">{price}</span>
+                                            <span className={cn('text-xs ml-1 font-medium', plan.highlighted ? 'text-white/70' : 'text-ink-500')}>/month</span>
+                                            {isAnnual && <p className="mt-1 text-[10px] font-semibold text-white/80">Billed annually</p>}
+                                        </div>
+                                        <ul className="space-y-3 mb-8">
+                                            {plan.features.map((feature) => (
+                                                <li key={feature} className="flex items-start gap-2.5 text-xs sm:text-sm">
+                                                    <Check className={cn('w-4 h-4 mt-0.5 shrink-0', plan.highlighted ? 'text-white' : 'text-brand')} />
+                                                    <span className={plan.highlighted ? 'text-white/90 font-medium' : 'text-ink-700'}>{feature}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                    <Link href={`/customer/register?next=/customer/onboarding&plan=${encodeURIComponent(plan.name)}`}>
+                                        <Button
+                                            className={cn(
+                                                'w-full rounded-full h-12 font-bold text-xs sm:text-sm cursor-pointer',
+                                                plan.highlighted
+                                                    ? 'bg-white hover:bg-ink-100 text-brand shadow-md'
+                                                    : 'bg-ink-950 hover:bg-brand text-white shadow-md'
+                                            )}
+                                        >
+                                            Start with {plan.name}
+                                        </Button>
+                                    </Link>
+                                </motion.div>
+                            );
+                        })}
+                    </div>
+
+                    {/* Add-ons & Billing Policy */}
+                    <div className="mt-20 grid lg:grid-cols-[0.8fr_1.2fr] gap-10 items-start">
+                        <div>
+                            <span className="text-xs font-extrabold text-brand tracking-widest uppercase">Tailored Enhancements</span>
+                            <h3 className="text-2xl sm:text-3xl font-extrabold mt-2 mb-4 text-ink-950">Optional Setup &amp; Add-ons</h3>
+                            <p className="text-ink-600 text-sm leading-relaxed">
+                                Accelerate your store launch with professional data migration, catalog upload, and custom theme engineering services.
+                            </p>
+                        </div>
+                        <div className="bg-white rounded-3xl border border-ink-200 overflow-hidden shadow-sm">
+                            {addOns.map(([name, price], i) => (
+                                <div key={name} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-6 py-4.5 border-b border-ink-100 last:border-b-0">
+                                    <span className="text-sm font-bold text-ink-800">{name}</span>
+                                    <span className="text-xs font-extrabold text-brand">{price}</span>
                                 </div>
                             ))}
                         </div>
                     </div>
 
-                    <div className="mt-12 rounded-3xl bg-ink-950 text-white p-8 md:p-10 flex flex-col md:flex-row md:items-center gap-6 justify-between">
+                    <div className="mt-10 rounded-3xl bg-ink-950 text-white p-6 sm:p-8 flex flex-col md:flex-row md:items-center gap-6 justify-between shadow-xl">
                         <div className="max-w-3xl">
-                            <div className="flex items-center gap-3 mb-3">
-                                <CreditCard className="w-5 h-5 text-white/80" />
-                                <h3 className="text-xl font-bold">Billing Policy</h3>
+                            <div className="flex items-center gap-2.5 mb-2">
+                                <CreditCard className="w-5 h-5 text-brand" />
+                                <h4 className="text-base font-bold text-white">Clear Billing Policy</h4>
                             </div>
-                            <p className="text-ink-300 leading-relaxed">Monthly plans can be cancelled at any time. Annual plans include approximately two months free. Domain registration, payment-gateway charges, SMS usage and custom development are billed separately.</p>
+                            <p className="text-xs sm:text-sm text-ink-300 leading-relaxed">
+                                Monthly plans can be cancelled at any time before your next billing cycle. Annual plans include approximately two months free. Domain registration, SMS gateways, third-party payment provider fees, and custom development are billed separately.
+                            </p>
                         </div>
                         <Link href="/#contact" className="shrink-0">
-                            <Button className="rounded-full bg-white text-ink-800 hover:bg-ink-100 px-7">Talk to Sales</Button>
+                            <Button className="rounded-full bg-white text-ink-950 hover:bg-brand hover:text-white px-7 font-bold text-xs">
+                                Contact Sales Team
+                            </Button>
                         </Link>
                     </div>
                 </div>
             </section>
 
+            {/* FAQ SECTION */}
             <FaqSection items={faqItems} />
 
-            <section className="py-24 bg-gradient-to-br from-ink-950 to-black text-white text-center px-4">
-                <div className="container mx-auto max-w-3xl">
-                    <div className="w-14 h-14 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                        <Users className="w-7 h-7" />
+            {/* FINAL CALL TO ACTION */}
+            <section className="relative overflow-hidden bg-gradient-to-br from-ink-950 via-ink-900 to-black px-4 py-24 text-white text-center">
+                <div className="pointer-events-none absolute inset-0 opacity-25 bg-grid-pattern" />
+                <div className="container relative mx-auto max-w-3xl">
+                    <div className="w-14 h-14 bg-brand/20 border border-brand/40 rounded-full flex items-center justify-center mx-auto mb-6 text-brand">
+                        <Store className="w-7 h-7" />
                     </div>
-                    <h2 className="text-4xl font-bold mb-6">Ready to Launch Your Online Store?</h2>
-                    <p className="text-ink-300 mb-8 max-w-2xl mx-auto">Choose the right Unity Commerce plan and build a professional storefront around your brand.</p>
-                    <Link href="/#contact">
-                        <Button size="lg" className="bg-white text-ink-600 hover:bg-ink-100 rounded-full px-8 h-12">Start Your Store</Button>
-                    </Link>
+                    <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight mb-4">
+                        Ready to Launch Your Online Store?
+                    </h2>
+                    <p className="text-ink-300 text-sm sm:text-lg mb-8 max-w-xl mx-auto leading-relaxed">
+                        Join modern merchants building high-converting e-commerce experiences with zero platform transaction fees.
+                    </p>
+                    <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                        <Link href="/customer/register?next=/customer/onboarding&plan=Growth" className="w-full sm:w-auto">
+                            <Button size="lg" className="w-full sm:w-auto rounded-full bg-brand hover:bg-brand/90 text-white font-bold px-8 h-13 text-base shadow-xl shadow-brand/30">
+                                Get Started Free
+                                <ArrowRight className="ml-2 h-4 w-4" />
+                            </Button>
+                        </Link>
+                        <Link href="/#contact" className="w-full sm:w-auto">
+                            <Button variant="outline" size="lg" className="w-full sm:w-auto rounded-full border-white/20 bg-white/10 text-white hover:bg-white/20 font-bold px-8 h-13 text-base">
+                                Talk to Commerce Expert
+                            </Button>
+                        </Link>
+                    </div>
                 </div>
             </section>
-        </>
+        </main>
     );
 };
