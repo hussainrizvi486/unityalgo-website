@@ -40,16 +40,25 @@ export function SidebarOverview({
 
                 <div className="grid md:grid-cols-12 gap-8 items-start">
                     {/* Sidebar options */}
-                    <div className="md:col-span-4 flex flex-col divide-y divide-ink-100 border border-ink-100 rounded-2xl overflow-hidden">
+                    <div className="md:col-span-4 flex flex-col divide-y divide-ink-100 border border-ink-100 rounded-xl overflow-hidden">
                         {options.map((option, idx) => {
                             const isActive = idx === activeIndex;
                             return (
                                 <button
                                     key={option.title}
                                     onClick={() => setActiveIndex(idx)}
+                                    aria-current={isActive ? 'true' : undefined}
                                     className={cn(
                                         'w-full text-left px-6 py-5 transition-colors flex items-center justify-between gap-3',
-                                        isActive ? 'bg-accent ' : 'bg-white text-ink-700 hover:bg-ink-50'
+                                        // Selection is carried by weight, ink and a
+                                        // leading rule rather than a colour wash. A
+                                        // tinted fill on the selected row reads as a
+                                        // warning or an error, and pairs badly with
+                                        // the focus ring landing on top of it.
+                                        'border-l-2 outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:relative',
+                                        isActive
+                                            ? 'border-l-ink-900 bg-ink-50 text-ink-950'
+                                            : 'border-l-transparent bg-white text-ink-600 hover:bg-ink-50/70 hover:text-ink-900'
                                     )}
                                 >
                                     <span className="font-semibold text-sm md:text-base">{option.title}</span>
@@ -73,7 +82,7 @@ export function SidebarOverview({
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, y: -10 }}
                                 transition={{ duration: 0.3 }}
-                                className="rounded-2xl overflow-hidden border border-ink-100"
+                                className="rounded-xl overflow-hidden border border-ink-100"
                             >
                                 <div className="aspect-[16/9] bg-ink-100 relative">
                                     <Image

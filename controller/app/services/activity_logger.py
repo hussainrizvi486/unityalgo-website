@@ -1,0 +1,234 @@
+"""Structured, step-by-step activity logging.
+
+Every multi-step process (provisioning a tenant, bootstrapping a node) opens
+an `Operation` and records an ordered `ActivityLog` row per step, so the admin
+panel can replay the whole thing as a timeline instead of showing one terminal
+success/failure line.
+
+Autonomous sessions
+-------------------
+Log rows are written on their *own* session and committed immediately, never
+on the caller's session. That is the whole point: when provisioning blows up,
+the caller's transaction rolls back, and any log rows written on that session
+would roll back with it -- destroying exactly the diagnostics you need. Paying
+one short transaction per step buys durable forensics.
+"""
+
+import time
+import uuid
+from contextlib import contextmanager
+from datetime import datetime, timezone
+
+from app.models.activity import ActivityLog, Operation
+
+
+def _uuid_or_none(value):
+    if value is None:
+        return None
+    if isinstance(value, uuid.UUID):
+        return value
+    try:
+        return uuid.UUID(str(value))
+    except (ValueError, AttributeError, TypeError):
+        return None
+
+
+class OperationRecorder:
+    """Records steps against one Operation. Yielded by ActivityLogger.operation()."""
+
+    def __init__(self, logger, operation_id, context):
+        self.logger = logger
+        self.operation_id = operation_id
+        self.context = context
+        self.step_index = 0
+        self._step_started = time.monotonic()
+
+    # ------------------------------------------------------------------
+    def step(self, step_name, status="success", message=None, details=None,
+             error=None, action=None, **context):
+        """Record one step. Returns the created log row's id."""
+        self.step_index += 1
+        now = time.monotonic()
+        duration_ms = int((now - self._step_started) * 1000)
+        self._step_started = now
+
+        merged = {**self.context, **{k: v for k, v in context.items() if v is not None}}
+        # These two are named parameters on write(), so they must not also
+        # arrive via **subject or Python raises "multiple values for keyword".
+        resolved_action = action or merged.pop("action", None) or "system.event"
+        resolved_category = merged.pop("category", None) or "system"
+
+        return self.logger.write(
+            category=resolved_category,
+            action=resolved_action,
+            operation_id=self.operation_id,
+            step_index=self.step_index,
+            step_name=step_name,
+            status=status,
+            message=message,
+            details=details,
+            error=error,
+            duration_ms=duration_ms,
+            **merged,
+        )
+
+    def started(self, step_name, message=None, **kw):
+        return self.step(step_name, status="in_progress", message=message, **kw)
+
+    def ok(self, step_name, message=None, **kw):
+        return self.step(step_name, status="success", message=message, **kw)
+
+    def warn(self, step_name, message=None, **kw):
+        return self.step(step_name, status="warning", message=message, **kw)
+
+    def fail(self, step_name, error, message=None, **kw):
+        return self.step(
+            step_name, status="failed", message=message, error=str(error), **kw
+        )
+
+    def bind(self, **context):
+        """Attach subject info discovered mid-operation (e.g. the new tenant id)."""
+        self.context.update({k: v for k, v in context.items() if v is not None})
+        self.logger.update_operation(self.operation_id, **self.context)
+
+
+class ActivityLogger:
+    """Entry point for writing operations and their steps.
+
+    `db` defaults to the module-level Database singleton; tests inject their own.
+    """
+
+    def __init__(self, db=None, actor=None):
+        if db is None:
+            from app.db import database as default_db
+
+            db = default_db
+        self.db = db
+        self.actor = actor
+
+    # ------------------------------------------------------------------
+    @staticmethod
+    def _subject_columns(context):
+        """Split loose kwargs into the log table's subject columns."""
+        return {
+            "tenant_id": _uuid_or_none(context.get("tenant_id")),
+            "server_id": _uuid_or_none(context.get("server_id")),
+            "customer_id": _uuid_or_none(context.get("customer_id")),
+            "billing_record_id": _uuid_or_none(context.get("billing_record_id")),
+            "tenant_slug": context.get("tenant_slug"),
+            "server_name": context.get("server_name"),
+            "customer_name": context.get("customer_name"),
+        }
+
+    def write(self, category="system", action="system.event", step_name="event",
+              status="success", message=None, details=None, error=None,
+              operation_id=None, step_index=0, duration_ms=None, **context):
+        """Write a single standalone log row and commit it."""
+        row = ActivityLog(
+            operation_id=_uuid_or_none(operation_id),
+            category=category,
+            action=action,
+            step_name=step_name,
+            step_index=step_index,
+            status=status,
+            message=message,
+            details=details,
+            error_message=str(error) if error else None,
+            duration_ms=duration_ms,
+            actor=context.get("actor") or self.actor,
+            **self._subject_columns(context),
+        )
+        with self.db.session() as session:
+            session.add(row)
+            session.flush()
+            row_id = row.id
+            if row.operation_id is not None:
+                op = session.get(Operation, row.operation_id)
+                if op is not None:
+                    op.step_count = (op.step_count or 0) + 1
+        return row_id
+
+    # ------------------------------------------------------------------
+    def start_operation(self, kind, label, category=None, **context):
+        operation = Operation(
+            kind=kind,
+            category=category or kind.split(".")[0],
+            label=label,
+            status="in_progress",
+            actor=context.get("actor") or self.actor,
+            started_at=datetime.now(timezone.utc),
+            **self._subject_columns(context),
+        )
+        with self.db.session() as session:
+            session.add(operation)
+            session.flush()
+            return operation.id
+
+    def update_operation(self, operation_id, **context):
+        subjects = self._subject_columns(context)
+        with self.db.session() as session:
+            op = session.get(Operation, _uuid_or_none(operation_id))
+            if op is None:
+                return
+            for field, value in subjects.items():
+                if value is not None:
+                    setattr(op, field, value)
+
+    def finish_operation(self, operation_id, status, error=None, started_monotonic=None):
+        with self.db.session() as session:
+            op = session.get(Operation, _uuid_or_none(operation_id))
+            if op is None:
+                return
+            op.status = status
+            op.error_message = str(error) if error else None
+            op.completed_at = datetime.now(timezone.utc)
+            if started_monotonic is not None:
+                op.duration_ms = int((time.monotonic() - started_monotonic) * 1000)
+
+    # ------------------------------------------------------------------
+    @contextmanager
+    def operation(self, kind, label, category=None, operation_id=None, **context):
+        """Run a block as one tracked operation.
+
+        Marks the operation failed (and records a terminating step) if the
+        block raises, then re-raises -- the caller's own error handling is
+        unchanged, it just gets logged on the way past.
+
+        Pass `operation_id` when the row already exists (a route pre-created
+        it via `start_operation()` before handing the id to a Celery task) --
+        steps resume against that row instead of a freshly minted one.
+        """
+        started = time.monotonic()
+        resolved_category = category or kind.split(".")[0]
+        if operation_id is None:
+            operation_id = self.start_operation(
+                kind, label, category=resolved_category, **context
+            )
+        recorder = OperationRecorder(
+            self,
+            operation_id,
+            dict(context, action=kind, category=resolved_category),
+        )
+        try:
+            yield recorder
+        except Exception as exc:
+            recorder.step(
+                "Operation failed",
+                status="failed",
+                message=type(exc).__name__,
+                error=exc,
+            )
+            self.finish_operation(
+                operation_id, "failed", error=exc, started_monotonic=started
+            )
+            raise
+        else:
+            self.finish_operation(operation_id, "success", started_monotonic=started)
+
+    # ------------------------------------------------------------------
+    # one-shot events (no multi-step operation around them)
+    # ------------------------------------------------------------------
+    def event(self, category, action, step_name, status="success", **kw):
+        return self.write(
+            category=category, action=action, step_name=step_name, status=status, **kw
+        )

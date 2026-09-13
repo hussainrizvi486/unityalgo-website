@@ -46,7 +46,7 @@ export const AboutContent = () => {
                             initial={{ opacity: 0, x: -20 }}
                             whileInView={{ opacity: 1, x: 0 }}
                             viewport={{ once: true }}
-                            className="md:col-span-7 bg-ink-50 p-8 md:p-12 rounded-3xl border border-ink-100"
+                            className="md:col-span-7 bg-ink-50 p-8 md:p-12 rounded-2xl border border-ink-100"
                         >
                             <h3 className="text-2xl font-bold mb-6 ">Who We Are</h3>
                             <div className="space-y-4 text-ink-600 leading-relaxed">
@@ -72,7 +72,7 @@ export const AboutContent = () => {
                             transition={{ delay: 0.1 }}
                             className="md:col-span-5 flex flex-col gap-6"
                         >
-                            <div className="flex-1 bg-brand p-8 rounded-3xl text-white flex flex-col justify-center relative overflow-hidden group">
+                            <div className="flex-1 bg-ink-900 p-8 rounded-2xl text-white flex flex-col justify-center relative overflow-hidden group">
                                 <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-[50px] -translate-y-1/2 translate-x-1/2" />
                                 <Rocket className="w-10 h-10 mb-4 text-white" />
                                 <h4 className="text-3xl font-bold mb-2">IS360 Framework</h4>
@@ -81,7 +81,7 @@ export const AboutContent = () => {
                                 </p>
                             </div>
 
-                            <div className="flex-1 bg-white border border-ink-200 p-8 rounded-3xl shadow-sm flex items-center gap-4 hover:border-brand/25 transition-colors">
+                            <div className="flex-1 bg-white border border-ink-200 p-8 rounded-2xl shadow-sm flex items-center gap-4 hover:border-brand/25 transition-colors">
                                 <div className="w-12 h-12 bg-success-100 rounded-full flex items-center justify-center shrink-0">
                                     <CheckCircle className="w-6 h-6 text-success-500" />
                                 </div>
@@ -111,7 +111,7 @@ export const AboutContent = () => {
                             <h3 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">
                                 Turning complex challenges into seamless <span className="underline decoration-brand decoration-2 underline-offset-4">digital experiences.</span>
                             </h3>
-                            <Button className="bg-white  hover:bg-ink-100 rounded-full px-8 py-6 text-lg font-medium">
+                            <Button className="bg-white hover:bg-ink-100 px-8 py-6 text-lg font-medium">
                                 Work With Us <ArrowRight className="ml-2 w-5 h-5" />
                             </Button>
                         </motion.div>
@@ -122,7 +122,7 @@ export const AboutContent = () => {
                                 whileInView={{ opacity: 1, x: 0 }}
                                 viewport={{ once: true }}
                                 transition={{ delay: 0.1 }}
-                                className="bg-white/5 backdrop-blur-sm border border-white/10 p-8 rounded-2xl hover:bg-white/10 transition-colors"
+                                className="bg-white/5 backdrop-blur-sm border border-white/10 p-8 rounded-xl hover:bg-white/10 transition-colors"
                             >
                                 <div className="flex items-start gap-4">
                                     <Target className="w-8 h-8 text-white/80 shrink-0 mt-1" />
@@ -140,10 +140,10 @@ export const AboutContent = () => {
                                 whileInView={{ opacity: 1, x: 0 }}
                                 viewport={{ once: true }}
                                 transition={{ delay: 0.2 }}
-                                className="bg-white/5 backdrop-blur-sm border border-white/10 p-8 rounded-2xl hover:bg-white/10 transition-colors"
+                                className="bg-white/5 backdrop-blur-sm border border-white/10 p-8 rounded-xl hover:bg-white/10 transition-colors"
                             >
                                 <div className="flex items-start gap-4">
-                                    <Lightbulb className="w-8 h-8 text-yellow-400 shrink-0 mt-1" />
+                                    <Lightbulb className="w-8 h-8 text-warning-500 shrink-0 mt-1" />
                                     <div>
                                         <h4 className="text-xl font-bold mb-2">Our Vision</h4>
                                         <p className="text-ink-300 leading-relaxed text-sm">
@@ -191,7 +191,7 @@ export const AboutContent = () => {
                                 whileInView={{ opacity: 1, y: 0 }}
                                 viewport={{ once: true }}
                                 transition={{ delay: idx * 0.1 }}
-                                className="p-8 rounded-md bg-white shadow-sm hover:shadow-xl hover:cursor-pointer hover:shadow-ink-900/5 transition-all duration-300 group"
+                                className="p-8 rounded bg-white shadow-sm hover:shadow-xl hover:cursor-pointer hover:shadow-ink-900/5 transition-all duration-300 group"
                             >
                                 <div className="w-14 h-14 bg-accent rounded-full flex items-center justify-center mx-auto mb-6 group-hover:bg-brand transition-colors">
                                     <item.icon className="w-7 h-7 text-brand group-hover:text-white transition-colors" />

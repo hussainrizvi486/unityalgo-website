@@ -76,7 +76,7 @@ export default async function BlogListingPage({
                                                 className={cn(
                                                     'w-10 h-10 flex items-center justify-center rounded-full text-sm font-bold transition-colors ',
                                                     page === currentPage
-                                                        ? 'bg-brand text-white'
+                                                        ? 'bg-ink-900 text-white'
                                                         : 'text-ink-600 hover:bg-ink-100'
                                                 )}
                                             >

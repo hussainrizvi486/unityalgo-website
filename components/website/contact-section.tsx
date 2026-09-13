@@ -1,6 +1,7 @@
 'use client'
+import Link from "next/link"
 import { useState } from 'react';
-import { Mail, Phone, MapPin } from 'lucide-react';
+import { Mail, Phone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import toast from 'react-hot-toast';
@@ -50,7 +51,7 @@ export function Contact() {
   };
 
   return (
-    <section id="contact" className="relative py-24 bg-white overflow-hidden">
+    <section id="contact" className="relative py-24  overflow-hidden">
 
       <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-brand/5 rounded-full blur-[120px] pointer-events-none translate-x-1/3 -translate-y-1/3" />
       <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-ink-200/20 rounded-full blur-[100px] pointer-events-none -translate-x-1/3 translate-y-1/3" />
@@ -64,43 +65,31 @@ export function Contact() {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
             >
-              <h1 className="text-4xl md:text-5xl font-bold tracking-tight  mb-6">
-                Let&apos;s Build <br /> Something <span className="text-brand">Great.</span>
-              </h1>
-              <p className="text-lg text-ink-600 mb-12 max-w-lg leading-relaxed">
-                Have an idea? We&apos;re ready to help turn your vision into reality. From concept to execution, we deliver results that truly make an impact.
+              {/* h2, not h1: the hero owns the page's single h1, and a second
+                  one leaves the document with no unambiguous title for search
+                  engines or a screen reader's heading list. */}
+              <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-6">
+                Great things start when we build together.
+              </h2>
+              <p className="text-base text-ink-600 mb-12 max-w-lg leading-relaxed">
+                Have an idea you’re excited about? We’re here to help transform your vision into something meaningful, impactful, and built to last. From shaping the initial concept and defining the right strategy to bringing every detail to life, we work closely with you throughout the entire journey. Our goal is to turn great ideas into thoughtful, high-quality solutions that not only meet your expectations but create lasting value and make a real difference.
+
+
+
+
               </p>
 
-              <div className="space-y-8">
-                <div className="flex items-start gap-4 group">
-                  <div className="w-12 h-12 rounded-full bg-accent flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-                    <Mail className="w-5 h-5 text-brand" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-ink-900 mb-1">Email Us</p>
-                    <a href="mailto:info@unityalgo.com" className="text-ink-600 hover:text-brand transition-colors">info@unityalgo.com</a>
-                  </div>
+              <div className="">
+                <div className="flex items-center gap-3 mb-4">
+                  <Mail className="w-5 h-" />
+                  <a href="mailto:info@unityalgo.com" className="font-medium text-sm hover:underline">info@unityalgo.com</a>
                 </div>
 
-                <div className="flex items-start gap-4 group">
-                  <div className="w-12 h-12 rounded-full bg-accent flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-                    <Phone className="w-5 h-5 text-brand" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-ink-900 mb-1">Call Us</p>
-                    <a href="tel:+92317244595" className="text-ink-600 hover:text-brand transition-colors">+92 317 244595</a>
-                  </div>
+                <div className="flex items-center gap-3">
+                  <Phone className="w-5 h-" />
+                  <a href="tel:+92317244595" className="font-medium text-sm hover:underline">+92 317 244595</a>
                 </div>
 
-                <div className="flex items-start gap-4 group">
-                  <div className="w-12 h-12 rounded-full bg-accent flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-                    <MapPin className="w-5 h-5 text-brand" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-ink-900 mb-1">Location</p>
-                    <span className="text-ink-600">Karachi, Pakistan</span>
-                  </div>
-                </div>
               </div>
             </motion.div>
           </div>
@@ -110,86 +99,146 @@ export function Contact() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.2 }}
-            className="bg-white/80 backdrop-blur-xl border border-white/50 p-8 md:p-10 rounded-3xl shadow-2xl shadow-ink-200/50"
+            className="bg-white/80  p-4 md:p-8 rounded shadow-md"
           >
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-8">
+             <div>
+               <div className="font-bold text-lg">Let’s Stay in Touch</div>
+               <div className="text-sm text-ink-600">Share your details below and we’ll reach out to you shortly.</div>
+             </div>
               <div className="grid md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label htmlFor="first_name" className="text-xs font-semibold uppercase tracking-wider">First Name</label>
-                  <Input
+                <div className="relative mt-6">
+                  <input
+                    type="text"
                     id="first_name"
                     value={formData.first_name}
                     onChange={handleChange}
                     required
-                    className="focus-within:ring-brand/20"
-                    placeholder="John"
+                    placeholder=" "
+                    className="peer h-10 w-full border-b-2 border-ink-300 text-ink-900 focus:outline-none focus:border-ink-900 transition-colors bg-transparent"
                   />
+                  <label
+                    htmlFor="first_name"
+                    className="absolute left-0 -top-3.5 text-ink-600 text-xs font-semibold  tracking-wider transition-all
+                     peer-placeholder-shown:text-sm peer-placeholder-shown:font-normal peer-placeholder-shown:normal-case peer-placeholder-shown:tracking-normal peer-placeholder-shown:text-ink-400 peer-placeholder-shown:top-2
+                     peer-focus:-top-3.5 peer-focus:text-black peer-focus:text-xs peer-focus:font-semibold  peer-focus:tracking-wider
+                     pointer-events-none"
+                  >
+                    First Name
+                  </label>
                 </div>
-                <div className="space-y-2">
-                  <label htmlFor="last_name" className="text-xs font-semibold uppercase tracking-wider">Last Name</label>
-                  <Input
+
+                <div className="relative mt-6">
+                  <input
+                    type="text"
                     id="last_name"
                     value={formData.last_name}
                     onChange={handleChange}
                     required
-                    className="focus-within:ring-brand/20"
-                    placeholder="Doe"
+                    placeholder=" "
+                    className="peer h-10 w-full border-b-2 border-ink-300 text-ink-900 focus:outline-none focus:border-ink-900 transition-colors bg-transparent"
                   />
+                  <label
+                    htmlFor="last_name"
+                    className="absolute left-0 -top-3.5 text-ink-600 text-xs font-semibold  tracking-wider transition-all
+                     peer-placeholder-shown:text-sm peer-placeholder-shown:font-normal peer-placeholder-shown:normal-case peer-placeholder-shown:tracking-normal peer-placeholder-shown:text-ink-400 peer-placeholder-shown:top-2
+                     peer-focus:-top-3.5 peer-focus:text-black peer-focus:text-xs peer-focus:font-semibold  peer-focus:tracking-wider
+                     pointer-events-none"
+                  >
+                    Last Name
+                  </label>
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <label htmlFor="email" className="text-xs font-semibold uppercase tracking-wider">Email Address</label>
-                <Input
-                  id="email"
+              <div className="relative mt-6">
+                <input
                   type="email"
+                  id="email"
                   value={formData.email}
                   onChange={handleChange}
                   required
-                  className="focus-within:ring-brand/20"
-                  placeholder="john@example.com"
+                  placeholder=" "
+                  className="peer h-10 w-full border-b-2 border-ink-300 text-ink-900 focus:outline-none focus:border-ink-900 transition-colors bg-transparent"
                 />
+                <label
+                  htmlFor="email"
+                  className="absolute left-0 -top-3.5 text-ink-600 text-sm font-medium tracking-wider transition-all
+                   peer-placeholder-shown:text-sm peer-placeholder-shown:font-normal peer-placeholder-shown:normal-case peer-placeholder-shown:tracking-normal peer-placeholder-shown:text-ink-400 peer-placeholder-shown:top-2
+                   peer-focus:-top-3.5 peer-focus:text-black peer-focus:text-xs peer-focus:font-semibold  peer-focus:tracking-wider
+                   pointer-events-none"
+                >
+                  Email Address
+                </label>
               </div>
 
-              <div className="space-y-2">
-                <label htmlFor="phone" className="text-xs font-semibold uppercase tracking-wider">Phone Number</label>
-                <Input
+              <div className="relative mt-6">
+                <input
+                  type="text"
                   id="phone"
                   value={formData.phone}
                   onChange={handleChange}
                   required
-                  className="focus-within:ring-brand/20"
-                  placeholder="+1 (555) 000-0000"
+                  placeholder=" "
+                  className="peer h-10 w-full border-b-2 border-ink-300 text-ink-900 focus:outline-none focus:border-ink-900 transition-colors bg-transparent"
                 />
+                <label
+                  htmlFor="phone"
+                  className="absolute left-0 -top-3.5 text-ink-600 text-xs font-semibold tracking-wider transition-all
+                   peer-placeholder-shown:text-sm peer-placeholder-shown:font-normal peer-placeholder-shown:normal-case peer-placeholder-shown:tracking-normal peer-placeholder-shown:text-ink-400 peer-placeholder-shown:top-2
+                   peer-focus:-top-3.5 peer-focus:text-black peer-focus:text-xs peer-focus:font-semibold  peer-focus:tracking-wider
+                   pointer-events-none"
+                >
+                  Phone Number
+                </label>
               </div>
 
-              <div className="space-y-2">
-                <label htmlFor="message" className="text-xs font-semibold uppercase tracking-wider">Message</label>
-                <textarea
-
+              <div className="relative mt-6">
+                <input
+                  type="text"
                   id="message"
-                  className="flex w-full rounded-md border border-input px-3 py-3 text-sm ring-offset-white placeholder:text-ink-500 focus-visible:outline-none focus-visible:ring-2 focus-within:ring-brand/20 disabled:cursor-not-allowed disabled:opacity-50 min-h-[120px]"
-                  placeholder="Tell us about your project..."
                   value={formData.message}
                   onChange={handleChange}
                   required
+                  placeholder=""
+                  className="peer h-10 w-full border-b-2 border-input text-ink-900 focus:outline-none focus:border-ink-900 transition-colors bg-transparent"
                 />
+                {/* <input
+                  id="message"
+                  value={formData.message}
+                  onChange={handleChange}
+                  required
+                  placeholder=" "
+                  className="peer w-full border-b-2 border-ink-300 text-ink-900 focus:outline-none focus:border-ink-900 transition-colors bg-transparent min-h-[100px] resize-none pt-2"
+                /> */}
+                <label
+                  htmlFor="message"
+                  className="absolute left-0 -top-3.5 text-ink-600 text-xs font-semibold  tracking-wider transition-all
+                   peer-placeholder-shown:text-sm peer-placeholder-shown:font-normal peer-placeholder-shown:normal-case peer-placeholder-shown:tracking-normal peer-placeholder-shown:text-ink-400 peer-placeholder-shown:top-2
+                   peer-focus:-top-3.5 peer-focus:text-black peer-focus:text-xs peer-focus:font-semibold  peer-focus:tracking-wider
+                   pointer-events-none"
+                >
+                  Message
+                </label>
               </div>
 
-              <Button
-                className="w-full h-12 bg-brand hover:brightness-90 text-white rounded-md font-medium shadow-lg shadow-brand/20 transition-all"
-                type="submit"
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? (
-                  <span >Sending...</span>
-                ) : (
-                  <span >Send Message </span>
-                )}
-              </Button>
+
+              <div className='flex gap-2 items-center '>
+                <Button
+                  className="py-4 bg-ink-900 hover:bg-ink-800 text-white text-sm rounded font-bold flex-auto"
+                  type="submit"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? <span>Sending...</span> : <span>Send Request</span>}
+                </Button>
+               
+              </div>
+               <div className='text-[0.65rem] text-center'>
+                  By sending this form,  I confirm that I have read <br /> and accepted the &nbsp;
+                  <Link href={"/privacy-policy"} className="underline">Privacy Policy.
+                  </Link>
+                </div>
             </form>
           </motion.div>
-
         </div>
       </div>
     </section>

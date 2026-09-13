@@ -45,8 +45,9 @@ function ToolbarButton({
             aria-label={label}
             title={label}
             className={cn(
-                'p-2 rounded-md text-ink-600 hover:bg-ink-100 disabled:opacity-40 disabled:pointer-events-none transition-colors',
-                active && 'bg-accent text-brand'
+                'p-2 rounded text-ink-600 hover:bg-ink-100 disabled:opacity-40 disabled:pointer-events-none transition-colors',
+                // Pressed state, not a status: neutral fill, darker ink.
+                active && 'bg-ink-200 text-ink-950'
             )}
         >
             {children}
@@ -163,7 +164,7 @@ export function QuillEditor({ name, defaultValue }: QuillEditorProps) {
     }
 
     return (
-        <div className="w-full rounded-md border border-input overflow-hidden">
+        <div className="w-full rounded border border-input overflow-hidden">
             <div className="flex flex-wrap items-center gap-1 border-b border-input bg-ink-50/60 px-2 py-1.5">
                 <ToolbarButton label="Bold" active={!!format.bold} onClick={() => toggleInline('bold')}>
                     <Bold className="w-4 h-4" />

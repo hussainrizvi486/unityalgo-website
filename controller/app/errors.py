@@ -1,0 +1,107 @@
+from .status_codes import (
+    HTTP_400_BAD_REQUEST,
+    HTTP_401_UNAUTHORIZED,
+    HTTP_403_FORBIDDEN,
+    HTTP_404_NOT_FOUND,
+    HTTP_409_CONFLICT,
+    HTTP_422_UNPROCESSABLE_ENTITY,
+    HTTP_500_INTERNAL_SERVER_ERROR,
+    HTTP_502_BAD_GATEWAY,
+    HTTP_503_SERVICE_UNAVAILABLE,
+)
+
+
+class ApiError(Exception):
+    """Base error raised by controllers and rendered as a JSON response."""
+
+    status_code = HTTP_400_BAD_REQUEST
+
+    def __init__(self, message, status_code=None, field=None):
+        super().__init__(message)
+        self.message = message
+        self.field = field
+        if status_code is not None:
+            self.status_code = status_code
+
+    def to_dict(self):
+        body = {"error": self.message}
+        if self.field:
+            body["field"] = self.field
+        return body
+
+
+class ValidationError(ApiError):
+    status_code = HTTP_422_UNPROCESSABLE_ENTITY
+
+
+class NotFoundError(ApiError):
+    status_code = HTTP_404_NOT_FOUND
+
+
+class ConflictError(ApiError):
+    status_code = HTTP_409_CONFLICT
+
+
+class NodeUnreachableError(ApiError):
+    """A worker node could not be reached or authenticated over SSH."""
+
+    status_code = HTTP_502_BAD_GATEWAY
+
+
+class DependencyMissingError(ApiError):
+    """A required external tool (pg_dump, docker, ...) isn't available."""
+
+    status_code = HTTP_500_INTERNAL_SERVER_ERROR
+
+
+class DatabaseUnreachableError(ApiError):
+    """The control-plane database could not be reached (DNS, network, TLS).
+
+    Distinct from a SQLAlchemy error on the request's own session: this is the
+    admin connection used for tenant provisioning.
+    """
+
+    status_code = HTTP_503_SERVICE_UNAVAILABLE
+
+
+class BackupError(ApiError):
+    """A tenant database backup or restore failed."""
+
+    status_code = HTTP_500_INTERNAL_SERVER_ERROR
+
+
+class UnauthorizedError(ApiError):
+    """Missing or invalid credentials."""
+
+    status_code = HTTP_401_UNAUTHORIZED
+
+
+class ForbiddenError(ApiError):
+    """Authenticated, but not allowed to do this."""
+
+    status_code = HTTP_403_FORBIDDEN
+
+
+class ConfigurationError(ApiError):
+    """A feature was used but the server isn't configured for it (e.g. a
+    required setting like ENCRYPTION_KEY is unset) -- distinct from a
+    ValidationError, which means the caller's own input was wrong."""
+
+    status_code = HTTP_500_INTERNAL_SERVER_ERROR
+
+
+class QueryExecutionError(ApiError):
+    """An ad-hoc SQL statement against a registered database failed (syntax
+    error, constraint violation, ...) -- distinct from DatabaseUnreachableError,
+    which means the connection itself failed."""
+
+    status_code = HTTP_400_BAD_REQUEST
+
+
+class ProxyConfigurationError(ApiError):
+    """Caddy's admin API was reached (the SSH tunnel opened fine) but
+    rejected the request -- a bad config document, an invalid route, etc.
+    Distinct from NodeUnreachableError, which means the tunnel itself
+    couldn't be opened."""
+
+    status_code = HTTP_502_BAD_GATEWAY

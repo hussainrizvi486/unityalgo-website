@@ -1,0 +1,6 @@
+"cd /home/frappe/products/controller-server
+git pull
+
+.venv/bin/pip install -r requirements.txt
+cd admin-ui && npm install && npm run build && cd ..
+sudo systemctl restart controller.service controller-worker.service"

@@ -1,0 +1,41 @@
+import React from 'react';
+import Script from 'next/script';
+import { Header, Footer } from '@/components/layouts';
+import { generateBreadcrumbJsonLd, generatePageMetadata } from '@/lib/metadata';
+import { MainContent } from './client';
+
+const breadcrumbs = generateBreadcrumbJsonLd([
+    { name: 'Home', path: '/' },
+    { name: 'AlgoSuite', path: '/products/algosuite' },
+]);
+
+export const metadata = generatePageMetadata({
+    title: 'AlgoSuite Coming Soon | UnityAlgo',
+    description:
+        'AlgoSuite is a complete business management platform for modern companies, currently under development by UnityAlgo.',
+    keywords: [
+        'AlgoSuite',
+        'ERP Software',
+        'Business Management Platform',
+        'Enterprise Resource Planning',
+        'UnityAlgo Products',
+    ],
+    path: '/products/algosuite',
+});
+
+const Page = () => {
+    return (
+        <div className="bg-background text-foreground min-h-screen overflow-hidden">
+            <Script
+                id="algosuite-breadcrumbs"
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbs) }}
+            />
+            <Header />
+            <MainContent />
+            <Footer />
+        </div>
+    );
+};
+
+export default Page;

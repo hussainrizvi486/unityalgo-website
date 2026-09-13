@@ -46,7 +46,7 @@ const Page = () => {
           <section className="space-y-4 py-4">
             <h2 className="text-2xl font-bold text-ink-900">Information We Collect</h2>
 
-            <div className="bg-ink-50/50 p-6 rounded-2xl border border-ink-100">
+            <div className="bg-ink-50/50 p-6 rounded-xl border border-ink-100">
               <h3 className="text-xl font-semibold text-ink-800 mb-3">Personal Information</h3>
               <p className="text-ink-600 mb-4">
                 We may collect certain personal details when you interact with our website or submit information
@@ -124,7 +124,7 @@ const Page = () => {
             <h2 className="text-2xl font-bold text-ink-900">Disclosure of Your Personal Data</h2>
 
             <div className="grid md:grid-cols-2 gap-6 mt-4">
-              <div className="bg-white p-6 rounded-xl border border-ink-100 shadow-sm">
+              <div className="bg-white p-6 rounded-lg border border-ink-100 shadow-sm">
                 <h3 className="text-lg font-semibold text-ink-800 mb-2">Business Transactions</h3>
                 <p className="text-ink-600 text-sm">
                   In the event of a merger, acquisition, or sale of assets, your Personal Data may be transferred.
@@ -132,7 +132,7 @@ const Page = () => {
                 </p>
               </div>
 
-              <div className="bg-white p-6 rounded-xl border border-ink-100 shadow-sm">
+              <div className="bg-white p-6 rounded-lg border border-ink-100 shadow-sm">
                 <h3 className="text-lg font-semibold text-ink-800 mb-2">Legal Requirements</h3>
                 <ul className="list-disc pl-5 space-y-1 text-ink-600 text-sm">
                   <li>Comply with legal obligations</li>
@@ -194,11 +194,11 @@ const Page = () => {
             <div className="flex flex-col md:flex-row gap-6">
               <div className="flex items-center gap-3 text-ink-600">
                 <span className="font-semibold ">Email:</span>
-                <a href="mailto:info@unityalgo.com" className="hover:text-brand underline decoration-ink-300 underline-offset-4">info@unityalgo.com</a>
+                <a href="mailto:info@unityalgo.com" className="text-link hover:text-link/80 underline decoration-ink-300 underline-offset-4">info@unityalgo.com</a>
               </div>
               <div className="flex items-center gap-3 text-ink-600">
                 <span className="font-semibold ">Website:</span>
-                <Link href="/" className="hover:text-brand underline decoration-ink-300 underline-offset-4">unityalgo.com</Link>
+                <Link href="/" className="text-link hover:text-link/80 underline decoration-ink-300 underline-offset-4">unityalgo.com</Link>
               </div>
             </div>
           </section>

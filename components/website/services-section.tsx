@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import Link from 'next/link';
@@ -35,54 +34,54 @@ const features: FeatureType[] = [
         icon: Zap,
         title: 'Product-Oriented Approach',
         desc: 'We think like product owners, not just vendors. We research your users, challenge assumptions, and help you prioritize features that move the metrics that matter.',
-        color: 'bg-orange-600',
+        color: 'bg-brand',
         rotate: '-rotate-3',
     },
     {
         icon: PersonStanding,
         title: 'AI-First by Default',
         desc: 'Every project runs on our Production-Ready AI Engineering practice — senior engineers paired with AI agents, shipping faster without lowering the bar. AI is the engine, not the marketing.',
-        color: 'bg-amber-600',
+        color: 'bg-ink-900',
         rotate: 'rotate-2',
     },
     {
         icon: MessageSquare,
         title: 'Clear Communication',
         desc: 'We build relationships on integrity and trust, with transparent processes and proactive communication at every stage of the work.',
-        color: 'bg-rose-600',
+        color: 'bg-brand-deep',
         rotate: '-rotate-2',
     },
     {
         icon: PersonStanding,
         title: 'Customer-Centric Approach',
         desc: 'We start from your business goals, not our tech stack, and deliver tailored solutions that drive measurable impact for your team and customers.',
-        color: 'bg-red-500',
+        color: 'bg-ink-950',
         rotate: 'rotate-3',
     },
 ];
 
 const data: Array<ServiceType> = [
     {
-        title: "AI-Native Software Engineering",
+        title: "Tailored Software Development",
         description:
-            "End-to-end AI-native web, mobile, and SaaS products with intelligence embedded throughout—from conversational interfaces and recommendation engines to agent-driven workflows and rescued AI-generated codebases.",
-        image: "/images/icons/ai.png",
-        link: "/services/ai-native-software-engineering",
-        languages: ["AI-Native", "SaaS", "Web", "Mobile", "Vibecode Rescue"],
+            "Design and build tailored software products that solve complex business challenges with scalable architecture, modern technology, and long-term flexibility.",
+        image: "/images/icons/ai_development.png",
+        link: "/services/digital-product-engineering",
+        languages: ["SaaS", "Platforms", "APIs", "Automation", "AI"],
     },
     {
-        title: "ERP Systems",
+        title: "Cloud & DevOps",
         description:
-            "Custom ERP solutions that unify business processes, automate workflows, and provide real-time visibility across finance, inventory, sales, and operations.",
-        image: "/images/icons/erp.png",
-        link: "/services/erp-software",
-        languages: ["ERP", "Python", "Golang", "SQL"],
+            "Modernize your infrastructure with scalable cloud architecture, automated deployments, reliable CI/CD pipelines, monitoring, and secure DevOps practices.",
+        image: "/images/icons/devops_icon.png",
+        link: "/services/cloud-devops",
+        languages: ["AWS", "Docker", "Kubernetes", "CI/CD"],
     },
     {
         title: "Web App Development",
         description:
-            "Secure, scalable, and high-performance web applications engineered around your business requirements, users, and long-term growth objectives.",
-        image: "/images/icons/web-development.png",
+            "Build secure, scalable web applications tailored to your business, with fast performance, intuitive experiences, and architecture made for long-term growth.",
+        image: "/images/icons/web_icon.png",
         link: "/services/web-development",
         languages: ["Full Stack", "React", "Django", "Cloud"],
         width: 40,
@@ -90,13 +89,13 @@ const data: Array<ServiceType> = [
     {
         title: "Mobile Development",
         description:
-            "High-quality mobile applications with intuitive interfaces, reliable performance, and seamless experiences across iOS and Android devices.",
-        image: "/images/icons/mobile-development.png",
+            "Create high-quality mobile applications for iOS and Android with intuitive interfaces, reliable performance, and seamless experiences across modern devices.",
+        image: "/images/icons/app_icon.png",
         link: "/services/mobile-development",
         languages: ["React Native", "Flutter", "iOS", "Android"],
     },
-
 ];
+
 
 export const Services = () => {
     return (
@@ -107,20 +106,12 @@ export const Services = () => {
 
             <div className="container relative z-10 mx-auto px-4 md:px-6">
                 <div className="mb-20 text-center max-w-3xl mx-auto">
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent border border-brand/15 mb-6"
-                    >
-                        <span className="w-2 h-2 rounded-full bg-brand animate-pulse" />
-                        <span className="text-xs font-semibold text-brand tracking-wide uppercase">OUR SERVICES</span>
-                    </motion.div>
+     
                     <h2 className="text-4xl md:text-5xl font-bold tracking-tight  mb-6">
-                        Building Digital Products That Matter
+                        What We Provide
                     </h2>
                     <p className="text-lg text-ink-600 leading-relaxed text-balance">
-                        From strategy and design to development and deployment, we create reliable digital solutions that drive measurable business results.                    </p>
+                        Comprehensive solutions tailored to your business needs.</p>
                 </div>
 
                 <div className="grid md:grid-cols-2 gap-3 mb-32">
@@ -180,13 +171,14 @@ export const Services = () => {
 }
 
 const ServiceCard = (props: ServiceType & { index: number }) => {
+    const width = props.index == 0 ? "w-32": "w-40"
     return (
         <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: props.index * 0.1 }}
-            className="group relative p-8 rounded-2xl bg-white hover:shadow-sm hover:cursor-pointer transition-all duration-300"
+            className="group relative p-8 rounded-xl bg-white hover:shadow-sm hover:cursor-pointer transition-all duration-300"
         >
             <div className="flex flex-col-reverse md:flex-row md:items-start gap-6">
                 <div className="flex-1 z-10">
@@ -199,19 +191,19 @@ const ServiceCard = (props: ServiceType & { index: number }) => {
 
                     <div className="flex gap-2 flex-wrap mb-8">
                         {props.languages.map((val, index) => (
-                            <span key={index} className="px-2.5 py-0.5 text-xs font-bold bg-ink-50 rounded-full">
+                            <span key={index} className="px-2.5 py-0.5 text-[0.65rem] font-bold bg-ink-50 rounded-full">
                                 {val}
                             </span>
                         ))}
                     </div>
 
                     <div className="flex items-center gap-3">
-                        <Button className="py-1.5 h-[\auto] text-xs rounded-md font-bold text-white bg-brand ">
-                            Let's Chat
+                        <Button className="py-1.5 h-auto text-xs rounded font-bold text-white bg-ink-900 hover:bg-ink-800">
+                            Let&apos;s Chat
                         </Button>
                         {props.link && (
                             <Link href={props.link}>
-                                <Button variant="ghost" className="py-1.5 h-[\auto] text-xs rounded-md font-bold text-ink-600 hover:bg-secondary">
+                                <Button variant="ghost" className="py-1.5 h-auto text-xs rounded font-bold text-ink-600 hover:bg-secondary">
                                     Learn more <ArrowUpRight className="ml-1 w-4 h-4" />
                                 </Button>
                             </Link>
@@ -220,12 +212,19 @@ const ServiceCard = (props: ServiceType & { index: number }) => {
                 </div>
 
                 <div className="relative shrink-0 md:w-50">
-                    <img
+                    {/* next/image, not a raw <img>: these source files are
+                        1254x1254 PNGs rendered at 128-160px, so served raw they
+                        cost 3.5MB on the landing page — more than everything
+                        else on it combined. `sizes` caps the generated variant
+                        at the largest size the card actually uses. */}
+                    <Image
                         src={props.image}
                         alt={props.title}
-                        // width={160}
-                        // height={160}
-                        className={cn("object-contain ml-auto", props.width ? `w-${props.width}`: "")} />
+                        width={200}
+                        height={200}
+                        sizes="200px"
+                        className={cn("object-contain ml-auto h-auto", width)}
+                    />
                 </div>
             </div>
         </motion.div>
@@ -239,7 +238,7 @@ const FeatureCard = ({ icon: Icon, title, desc, color, rotate, delay }: FeatureT
         viewport={{ once: true }}
         transition={{ delay }}
         className={cn(
-            'group relative p-8 rounded-3xl shadow-lg cursor-pointer transition-transform duration-300 hover:rotate-0 hover:z-10',
+            'group relative p-8 rounded-2xl shadow-lg cursor-pointer transition-transform duration-300 hover:rotate-0 hover:z-10',
             color,
             rotate
         )}

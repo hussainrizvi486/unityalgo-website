@@ -14,7 +14,7 @@ import type { PostFormState } from '@/app/admin/actions';
 
 const QuillEditor = dynamic(
     () => import('@/components/admin/quill-editor').then((mod) => mod.QuillEditor),
-    { ssr: false, loading: () => <div className="w-full rounded-md border border-input h-95 animate-pulse bg-ink-50" /> }
+    { ssr: false, loading: () => <div className="w-full rounded border border-input h-95 animate-pulse bg-ink-50" /> }
 );
 
 export interface PostFormValues {
@@ -32,7 +32,7 @@ export interface PostFormValues {
 function SubmitButton({ label }: { label: string }) {
     const { pending } = useFormStatus();
     return (
-        <Button type="submit" disabled={pending} className="rounded-full bg-brand hover:brightness-90 text-white px-8">
+        <Button type="submit" disabled={pending} className="bg-ink-900 hover:bg-ink-800 text-white px-8">
             {pending ? 'Saving...' : label}
         </Button>
     );
@@ -105,7 +105,7 @@ export function PostForm({ action, defaultValues, submitLabel }: PostFormProps) 
             <div className="flex items-center gap-3">
                 <SubmitButton label={submitLabel} />
                 <Link href="/admin/blogs">
-                    <Button type="button" variant="outline" className="rounded-full">
+                    <Button type="button" variant="outline" >
                         Cancel
                     </Button>
                 </Link>

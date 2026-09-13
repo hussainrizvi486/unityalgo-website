@@ -10,7 +10,7 @@ import type { UserFormState } from '@/app/admin/actions';
 function SubmitButton() {
     const { pending } = useFormStatus();
     return (
-        <Button type="submit" disabled={pending} className="rounded-full bg-brand hover:brightness-90 text-white px-8">
+        <Button type="submit" disabled={pending} className="bg-ink-900 hover:bg-ink-800 text-white px-8">
             {pending ? 'Updating...' : 'Update Password'}
         </Button>
     );

@@ -50,9 +50,9 @@ export function PricingTable({
                             viewport={{ once: true }}
                             transition={{ delay: idx * 0.1 }}
                             className={cn(
-                                'rounded-3xl p-8 border transition-all duration-300',
+                                'rounded-2xl p-8 border transition-all duration-300',
                                 plan.highlighted
-                                    ? 'bg-brand border-brand text-white shadow-xl shadow-brand/20 scale-105'
+                                    ? 'bg-ink-900 border-ink-900 text-white shadow-xl shadow-ink-900/20 scale-105'
                                     : 'bg-white border-ink-100 hover:border-brand/25 hover:shadow-lg'
                             )}
                         >
@@ -89,10 +89,10 @@ export function PricingTable({
                             <Link href={plan.ctaHref ?? '/#contact'}>
                                 <Button
                                     className={cn(
-                                        'w-full rounded-full h-11',
+                                        'w-full h-11',
                                         plan.highlighted
-                                            ? 'bg-white  hover:bg-ink-100 text-brand'
-                                            : 'bg-brand hover:brightness-90 text-white'
+                                            ? 'bg-white hover:bg-ink-100 text-brand'
+                                            : 'bg-ink-900 hover:bg-ink-800 text-white',
                                     )}
                                 >
                                     {plan.ctaLabel ?? (plan.price === 'Contact' ? 'Contact Sales' : 'Request Demo')}

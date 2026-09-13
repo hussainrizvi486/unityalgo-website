@@ -14,12 +14,27 @@ export interface ModulePageConfig {
     heading: string;
     subheading: string;
     heroImage: string;
+    /** Alt text for the hero image. Falls back to the heading, which is
+     *  better than nothing but describes the page rather than the picture. */
+    heroAlt?: string;
     overviewOptions: OverviewOption[];
     features: string[];
-    pricingPlans: PricingPlan[];
+    /**
+     * Omit for a service sold as a project rather than a subscription.
+     * Engagements are scoped and quoted, so showing fixed tiers on one would
+     * be inventing a price list that does not exist.
+     */
+    pricingPlans?: PricingPlan[];
     faqItems: FaqItem[];
     ctaHeading: string;
     ctaDescription: string;
+    /** Label on both call-to-action buttons. "Request Demo" is wrong for a
+     *  service where the next step is a conversation, not a walkthrough of a
+     *  product that does not exist yet. */
+    ctaLabel?: string;
+    /** Heading above the overview panel, and the line under it. */
+    overviewHeading?: string;
+    overviewSubheading?: string;
 }
 
 export function ModulePageContent({ config }: { config: ModulePageConfig }) {
@@ -38,7 +53,7 @@ export function ModulePageContent({ config }: { config: ModulePageConfig }) {
                             transition={{ duration: 0.6 }}
                         >
                             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent border border-brand/15 mb-6">
-                                <span className="w-2 h-2 rounded-full bg-brand animate-pulse" />
+                                <span className="w-2 h-2 rounded-full bg-brand motion-safe:animate-pulse" />
                                 <span className="text-xs font-semibold text-brand tracking-wide uppercase">{config.badge}</span>
                             </div>
                             <h1 className="text-5xl md:text-6xl font-bold tracking-tight  mb-8 text-balance">
@@ -49,8 +64,8 @@ export function ModulePageContent({ config }: { config: ModulePageConfig }) {
                             </p>
 
                             <Link href="/#contact">
-                                <Button size="lg" className="rounded-full bg-brand hover:brightness-90 text-white px-8 h-12 text-base shadow-lg shadow-brand/20">
-                                    Request Demo
+                                <Button size="lg" className="bg-ink-900 hover:bg-ink-800 text-white px-8 h-12 text-base shadow-lg shadow-ink-900/10">
+                                    {config.ctaLabel ?? 'Request Demo'}
                                 </Button>
                             </Link>
                         </motion.div>
@@ -59,12 +74,12 @@ export function ModulePageContent({ config }: { config: ModulePageConfig }) {
                             initial={{ opacity: 0, x: 40 }}
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ duration: 0.6, delay: 0.2 }}
-                            className="relative rounded-2xl shadow-2xl overflow-hidden border border-ink-200"
+                            className="relative rounded-xl shadow-2xl overflow-hidden border border-ink-200"
                         >
                             <div className="aspect-[16/10] bg-ink-200 relative">
                                 <Image
                                     src={config.heroImage}
-                                    alt={config.heading}
+                                    alt={config.heroAlt ?? config.heading}
                                     fill
                                     className="object-cover"
                                     sizes="(max-width: 768px) 100vw, 50vw"
@@ -77,13 +92,17 @@ export function ModulePageContent({ config }: { config: ModulePageConfig }) {
             </section>
 
             {/* --- OVERVIEW SECTION --- */}
-            <SidebarOverview options={config.overviewOptions} />
+            <SidebarOverview
+                options={config.overviewOptions}
+                {...(config.overviewHeading ? { heading: config.overviewHeading } : {})}
+                {...(config.overviewSubheading ? { subheading: config.overviewSubheading } : {})}
+            />
 
             {/* --- FEATURES SECTION --- */}
             <FeaturesGrid features={config.features} />
 
             {/* --- PRICING SECTION --- */}
-            <PricingTable plans={config.pricingPlans} />
+            {config.pricingPlans ? <PricingTable plans={config.pricingPlans} /> : null}
 
             {/* --- FAQ SECTION --- */}
             <FaqSection items={config.faqItems} />
@@ -94,8 +113,8 @@ export function ModulePageContent({ config }: { config: ModulePageConfig }) {
                     <h2 className="text-4xl font-bold mb-6">{config.ctaHeading}</h2>
                     <p className="text-ink-300 mb-8 max-w-2xl mx-auto">{config.ctaDescription}</p>
                     <Link href="/#contact">
-                        <Button size="lg" className="bg-white text-ink-600 hover:bg-ink-100 rounded-full px-8 h-12">
-                            Request Demo
+                        <Button size="lg" className="bg-white text-ink-600 hover:bg-ink-100 px-8 h-12">
+                            {config.ctaLabel ?? 'Request Demo'}
                         </Button>
                     </Link>
                 </div>

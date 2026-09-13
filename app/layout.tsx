@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Poppins, Inter } from "next/font/google";
+import { Poppins, Geist } from "next/font/google";
 import Script from "next/script";
 import { cn } from "@/utils";
 
@@ -12,11 +12,11 @@ const poppins = Poppins({
   weight: ['100', '200', '300', '400', '500', '600', '700', '800', '900']
 });
 
-const inter = Inter({
+
+const geist = Geist({
   subsets: ['latin'],
   display: 'swap',
-  variable: '--font-inter',
-  weight: ['100', '200', '300', '400', '500', '600', '700', '800', '900']
+  variable: '--font-geist',
 })
 
 const baseUrl = "https://www.unityalgo.com"
@@ -28,7 +28,7 @@ export const metadata: Metadata = {
     'template': "%s | UnityAlgo",
   },
   'description': "UnityAlgo offers scalable software solutions, ERP implementations, and software engineering to empower your business. Transform your digital presence with us.",
-  'keywords': ["Software Engineering", "Web Development", "Software Development", "ERP", "Karachi", "Digital Transformation", "React", "Next.js", "App Development", "Software", "Web Services", "ERP Pakistan", "Software House", "Software Company"],
+  'keywords': ["Software Engineering", "Web Development", "Software Development", "ERP", "AlgoSuite", "UnityCommerce", "Karachi", "Digital Transformation", "React", "Next.js", "App Development", "Software", "Web Services", "ERP Pakistan", "Software House", "Software Company"],
   'authors': [{ name: "UnityAlgo Team" }],
   'creator': "UnityAlgo",
   'publisher': "UnityAlgo",
@@ -96,7 +96,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="scroll-smooth">
+    <html lang="en" className="scroll-smooth light" >
       <head>
         <Script
           id="organization-schema"
@@ -104,7 +104,7 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
       </head>
-      <body className={cn(inter.className, inter.variable, poppins.variable, "antialiased bg-background text-foreground")}>
+      <body className={cn(geist.className, poppins.variable, geist.variable, "antialiased bg-background text-foreground")}>
         {children}
       </body>
     </html>

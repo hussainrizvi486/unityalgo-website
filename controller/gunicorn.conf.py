@@ -1,0 +1,9 @@
+bind = "unix:/run/controller-server/gunicorn.sock"
+workers = 4
+worker_class = "sync"
+timeout = 120
+graceful_timeout = 30
+keepalive = 5
+umask = 0o007
+accesslog = "-"
+errorlog = "-"

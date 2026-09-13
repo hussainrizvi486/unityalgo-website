@@ -9,17 +9,26 @@ export async function POST(req: Request) {
     }
 
     try {
-        await prisma.contactSubmission.create({
+        // Linked to an account when one already exists on this address, so the
+        // admin can see at a glance that the enquiry is from a customer.
+        const account = await prisma.user.findUnique({
+            where: { email: String(email).toLowerCase() },
+            select: { id: true },
+        });
+
+        await prisma.lead.create({
             data: {
                 firstName: first_name,
                 lastName: last_name,
                 email,
                 phone,
                 message,
+                source: 'CONTACT_FORM',
+                userId: account?.id ?? null,
             },
         });
     } catch (error) {
-        console.error('Failed to save contact submission:', error);
+        console.error('Failed to save lead:', error);
         return Response.json({ success: false, message: 'Failed to save your message.' }, { status: 500 });
     }
 

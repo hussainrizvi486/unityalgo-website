@@ -18,7 +18,7 @@ export const NotFoundClient = () => {
                     opacity: [0.3, 0.5, 0.3],
                 }}
                 transition={{ duration: 8, repeat: Infinity }}
-                className="absolute top-1/3 left-1/4 w-[500px] h-[500px] bg-brand/5 rounded-full blur-[120px] pointer-events-none"
+                className="absolute top-1/3 left-1/4 w-[500px] h-[500px] rounded-full blur-[120px] pointer-events-none"
             />
 
 
@@ -30,7 +30,7 @@ export const NotFoundClient = () => {
                     transition={{ duration: 0.5 }}
                     className="relative"
                 >
-                    <h1 className="text-[120px] md:text-[200px] font-black text-ink-600 leading-none select-none">
+                    <h1 className="text-[120px] md:text-[200px] font-black leading-none select-none">
                         404
                     </h1>
                     <motion.div
@@ -48,10 +48,7 @@ export const NotFoundClient = () => {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.3 }}
                 >
-                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-error-50 border border-error-100 mb-6">
-                        <span className="w-2 h-2 rounded-full bg-error-500 animate-pulse" />
-                        <span className="text-xs font-semibold text-error-700 tracking-wide uppercase">Signal Lost</span>
-                    </div>
+                    
 
                     <h2 className="text-3xl md:text-4xl font-bold text-ink-900 mb-4">
                         Page Not Found
@@ -63,9 +60,9 @@ export const NotFoundClient = () => {
 
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                         <Link href="/">
-                            <Button size="lg" className="rounded-full bg-brand hover:brightness-90 text-white shadow-lg shadow-brand/20 px-8 h-12">
-                                <Home className="w-4 h-4 mr-2" /> Back to Home
-                            </Button>
+                            <div className="hover:text-link text-black  flex items-center gap-2">
+                                <Home className="size-8" /> <div className="text-lg font-medium">Back to Home</div>
+                            </div>
                         </Link>
                     </div>
                 </motion.div>

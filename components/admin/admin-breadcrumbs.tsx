@@ -10,12 +10,16 @@ import {
     BreadcrumbPage,
     BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb';
+import { adminNavItems } from '@/components/admin/admin-sidebar';
 
-const SECTION_LABELS: Record<string, string> = {
-    blogs: 'Blogs',
-    contacts: 'Contacts',
-    users: 'Users',
-};
+/**
+ * Section names come from the sidebar, so a new nav entry is labelled here
+ * without a second edit. This map only covers the handful whose breadcrumb
+ * label differs from their nav label.
+ */
+const SECTION_LABELS: Record<string, string> = Object.fromEntries(
+    adminNavItems.map((item) => [item.href.replace('/admin/', ''), item.name]),
+);
 
 const NEW_LABELS: Record<string, string> = {
     blogs: 'New Post',
@@ -47,11 +51,11 @@ export function AdminBreadcrumbs() {
     }
 
     return (
-        <Breadcrumb className="mb-6">
+        <Breadcrumb>
             <BreadcrumbList>
                 <BreadcrumbItem>
                     <BreadcrumbLink asChild>
-                        <Link href="/admin/blogs">Admin</Link>
+                        <Link href="/admin">Admin</Link>
                     </BreadcrumbLink>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator />

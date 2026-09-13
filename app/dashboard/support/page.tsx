@@ -1,17 +1,71 @@
-'use client';
-
-import { FormEvent, useState } from 'react';
-import { CheckCircle2, Clock3, Headphones, Mail, MessageSquareText, Send } from 'lucide-react';
+import Link from 'next/link';
+import { CalendarClock, MessageCircle, MessageSquareText, Plus } from 'lucide-react';
+import { prisma } from '@/lib/db';
+import { requireCustomerSession } from '@/lib/customer-session';
+import { TICKET_STATUS_BADGE_VARIANT, TICKET_STATUS_LABEL } from '@/lib/tickets';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
 
-export default function SupportPage() {
-  const [sent, setSent] = useState(false);
-  function submit(event: FormEvent) { event.preventDefault(); setSent(true); }
-  return <div className="mx-auto max-w-6xl"><p className="text-xs font-bold uppercase tracking-[.18em] text-brand">Support</p><h1 className="mt-2 text-3xl font-bold tracking-tight text-ink-950">How can we help?</h1><p className="mt-2 text-sm text-ink-500">Send a request or review your recent support activity.</p>
-    <div className="mt-8 grid gap-6 lg:grid-cols-[1.1fr_.9fr]"><section className="rounded-2xl border border-ink-200 bg-white p-5 sm:p-7"><div className="mb-6 flex items-center gap-3"><span className="flex h-11 w-11 items-center justify-center rounded-xl bg-accent text-brand"><MessageSquareText className="h-5 w-5" /></span><div><h2 className="font-bold text-ink-900">Create support request</h2><p className="text-xs text-ink-400">We usually reply within one business day.</p></div></div>{sent ? <div className="flex min-h-80 flex-col items-center justify-center text-center"><CheckCircle2 className="h-12 w-12 text-success-600" /><h3 className="mt-4 text-xl font-bold text-ink-900">Request received</h3><p className="mt-2 max-w-sm text-sm text-ink-500">Your mock support request has been added to the activity list.</p><Button onClick={() => setSent(false)} variant="outline" className="mt-5 rounded-full">Send another request</Button></div> : <form onSubmit={submit} className="space-y-4"><div><Label htmlFor="subject" className="mb-1.5 text-sm text-ink-700">Subject</Label><Input id="subject" required className="h-11 rounded-xl" placeholder="What do you need help with?" /></div><div><Label htmlFor="category" className="mb-1.5 text-sm text-ink-700">Category</Label><select id="category" className="h-11 w-full rounded-xl border border-ink-200 bg-white px-4 text-sm"><option>Store setup</option><option>Subscription & billing</option><option>Technical issue</option><option>Account access</option></select></div><div><Label htmlFor="message" className="mb-1.5 text-sm text-ink-700">Message</Label><Textarea id="message" required className="min-h-32 rounded-xl" placeholder="Tell us what happened and how we can help." /></div><Button type="submit" className="h-11 rounded-full bg-brand px-6 text-white hover:brightness-90">Send request<Send className="h-4 w-4" /></Button></form>}</section>
-      <div className="space-y-6"><section className="rounded-2xl bg-ink-950 p-6 text-white"><Headphones className="h-6 w-6" /><h2 className="mt-5 text-xl font-bold">Priority support</h2><p className="mt-2 text-sm leading-6 text-white/50">Your Growth plan includes priority email support from the UnityAlgo team.</p><div className="mt-5 flex items-center gap-2 text-sm"><Mail className="h-4 w-4 text-white/50" />support@unityalgo.com</div></section><section className="rounded-2xl border border-ink-200 bg-white p-6"><h2 className="font-bold text-ink-900">Recent requests</h2><div className="mt-4 space-y-4">{[['#SUP-204','Payment gateway setup','Open'],['#SUP-198','Custom domain connection','Resolved']].map(([id,title,status]) => <div key={id} className="border-t border-ink-100 pt-4 first:border-0 first:pt-0"><div className="flex items-start justify-between gap-3"><div><p className="text-sm font-semibold text-ink-800">{title}</p><p className="mt-1 text-xs text-ink-400">{id}</p></div><span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold ${status === 'Open' ? 'bg-warning-50 text-warning-700' : 'bg-success-50 text-success-700'}`}>{status}</span></div><p className="mt-2 flex items-center gap-1 text-[10px] text-ink-400"><Clock3 className="h-3 w-3" />Updated 2 days ago</p></div>)}</div></section></div></div>
-  </div>;
+export default async function SupportPage() {
+  const session = await requireCustomerSession();
+
+  const tickets = await prisma.supportTicket.findMany({
+    where: { userId: session.userId },
+    orderBy: { updatedAt: 'desc' },
+  });
+
+  const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER;
+
+  return (
+    <div className="mx-auto max-w-4xl">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[.18em] text-brand">Support</p>
+          <h1 className="mt-2 text-3xl font-bold tracking-tight text-ink-950">Support tickets</h1>
+          <p className="mt-2 text-sm text-ink-500">Raise a request and track its progress here.</p>
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
+          {whatsappNumber ? (
+            <Link href={`https://wa.me/${whatsappNumber}`} target="_blank" rel="noopener noreferrer">
+              <Button variant="outline" className="gap-2 border-success-600 text-success-700 hover:bg-success-50">
+                <MessageCircle className="h-4 w-4" />Chat on WhatsApp
+              </Button>
+            </Link>
+          ) : null}
+          <Link href="/dashboard/support/new">
+            <Button className="gap-2 bg-ink-900 text-white hover:bg-ink-800">
+              <Plus className="h-4 w-4" />New ticket
+            </Button>
+          </Link>
+        </div>
+      </div>
+
+      {tickets.length === 0 ? (
+        <section className="mt-8 flex min-h-64 flex-col items-center justify-center rounded-xl border border-dashed border-ink-300 bg-white p-6 text-center">
+          <MessageSquareText className="h-10 w-10 text-ink-300" />
+          <h2 className="mt-4 text-lg font-bold text-ink-900">No support tickets yet</h2>
+          <p className="mt-2 max-w-sm text-sm text-ink-500">Raise a ticket and our team will get back to you.</p>
+        </section>
+      ) : (
+        <div className="mt-8 overflow-hidden rounded-xl border border-ink-200 bg-white">
+          {tickets.map((ticket) => (
+            <Link
+              key={ticket.id}
+              href={`/dashboard/support/${ticket.id}`}
+              className="flex items-center justify-between gap-4 border-b border-ink-100 px-5 py-4 last:border-0 hover:bg-ink-50/60 sm:px-6"
+            >
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-ink-900">{ticket.subject}</p>
+                <p className="mt-1 flex items-center gap-1.5 text-xs text-ink-400">
+                  <CalendarClock className="h-3.5 w-3.5" />
+                  Updated {new Intl.DateTimeFormat('en-US', { dateStyle: 'medium' }).format(ticket.updatedAt)}
+                </p>
+              </div>
+              <Badge variant={TICKET_STATUS_BADGE_VARIANT[ticket.status]}>{TICKET_STATUS_LABEL[ticket.status]}</Badge>
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }

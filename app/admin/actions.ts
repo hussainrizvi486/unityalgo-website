@@ -5,14 +5,17 @@ import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/db';
-import { createSessionToken, verifySessionToken, SESSION_COOKIE, SESSION_DURATION_SECONDS } from '@/lib/auth';
+import { createSessionToken, SESSION_COOKIE, SESSION_DURATION_SECONDS } from '@/lib/auth';
+import { CommentEntityType, createComment } from '@/lib/comments';
+import { getCurrentAdminEmail, requireAdmin } from '@/lib/admin-session';
+import { syncPlanToPaddle } from '@/lib/paddle-catalog';
 
 export async function loginAction(_prevState: { error?: string } | undefined, formData: FormData) {
     const email = String(formData.get('email') ?? '').trim().toLowerCase();
     const password = String(formData.get('password') ?? '');
 
-    const adminUser = await prisma.adminUser.findUnique({ where: { email } });
-    if (!adminUser) {
+    const adminUser = await prisma.user.findUnique({ where: { email } });
+    if (!adminUser || adminUser.role !== 'ADMIN') {
         return { error: 'Invalid email or password.' };
     }
 
@@ -37,7 +40,7 @@ export async function loginAction(_prevState: { error?: string } | undefined, fo
 export async function logoutAction() {
     const cookieStore = await cookies();
     cookieStore.delete(SESSION_COOKIE);
-    redirect('/admin/login');
+    redirect('/login');
 }
 
 function slugify(value: string) {
@@ -234,14 +237,6 @@ export interface UserFormState {
     success?: boolean;
 }
 
-async function getCurrentAdminEmail() {
-    const cookieStore = await cookies();
-    const token = cookieStore.get(SESSION_COOKIE)?.value;
-    if (!token) return null;
-    const session = await verifySessionToken(token);
-    return session?.email ?? null;
-}
-
 export async function createUserAction(
     _prevState: UserFormState | undefined,
     formData: FormData
@@ -258,14 +253,17 @@ export async function createUserAction(
         return { error: 'Password must be at least 8 characters.' };
     }
 
-    const existing = await prisma.adminUser.findUnique({ where: { email } });
+    const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) {
         return { error: `A user with email "${email}" already exists.` };
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
 
-    await prisma.adminUser.create({ data: { email, name, passwordHash } });
+    // Admin-panel "New User" always creates an ADMIN account — customer accounts
+    // can only be created through the public registration flow (app/customer/actions.ts),
+    // which hardcodes role: 'CUSTOMER' and never reads a role from the form.
+    await prisma.user.create({ data: { email, name, passwordHash, role: 'ADMIN' } });
 
     revalidatePath('/admin/users');
     redirect('/admin/users');
@@ -283,12 +281,14 @@ export async function updateUserAction(
         return { error: 'Email is required.' };
     }
 
-    const existing = await prisma.adminUser.findUnique({ where: { email } });
+    const existing = await prisma.user.findUnique({ where: { email } });
     if (existing && existing.id !== id) {
         return { error: `A user with email "${email}" already exists.` };
     }
 
-    await prisma.adminUser.update({ where: { id }, data: { email, name } });
+    // Role is intentionally never accepted from this form — it's not part of
+    // UserFormValues, so there's nothing here for an admin to elevate/change.
+    await prisma.user.update({ where: { id }, data: { email, name } });
 
     revalidatePath('/admin/users');
     redirect('/admin/users');
@@ -312,7 +312,7 @@ export async function updateUserPasswordAction(
 
     const passwordHash = await bcrypt.hash(password, 10);
 
-    await prisma.adminUser.update({ where: { id }, data: { passwordHash } });
+    await prisma.user.update({ where: { id }, data: { passwordHash } });
 
     return { success: true };
 }
@@ -321,10 +321,9 @@ export async function deleteUserAction(formData: FormData) {
     const id = String(formData.get('id') ?? '');
     if (!id) return;
 
-    const [user, currentEmail, totalUsers] = await Promise.all([
-        prisma.adminUser.findUnique({ where: { id } }),
+    const [user, currentEmail] = await Promise.all([
+        prisma.user.findUnique({ where: { id } }),
         getCurrentAdminEmail(),
-        prisma.adminUser.count(),
     ]);
 
     if (!user) return;
@@ -333,11 +332,360 @@ export async function deleteUserAction(formData: FormData) {
         redirect('/admin/users?error=' + encodeURIComponent('You cannot delete your own account.'));
     }
 
-    if (totalUsers <= 1) {
-        redirect('/admin/users?error=' + encodeURIComponent('Cannot delete the last remaining admin user.'));
+    // Only the "last remaining admin" lockout applies to admins — deleting the
+    // last customer is always fine, it just means there are no customers left.
+    if (user.role === 'ADMIN') {
+        const totalAdmins = await prisma.user.count({ where: { role: 'ADMIN' } });
+        if (totalAdmins <= 1) {
+            redirect('/admin/users?error=' + encodeURIComponent('Cannot delete the last remaining admin user.'));
+        }
     }
 
-    await prisma.adminUser.delete({ where: { id } });
+    await prisma.user.delete({ where: { id } });
 
     revalidatePath('/admin/users');
+}
+
+function parseOptionalFloat(value: FormDataEntryValue | null) {
+    const trimmed = String(value ?? '').trim();
+    if (!trimmed) return null;
+    const parsed = Number(trimmed);
+    return Number.isFinite(parsed) ? parsed : null;
+}
+
+function parseOptionalInt(value: FormDataEntryValue | null) {
+    const trimmed = String(value ?? '').trim();
+    if (!trimmed) return null;
+    const parsed = Number.parseInt(trimmed, 10);
+    return Number.isFinite(parsed) ? parsed : null;
+}
+
+function parseFeatureLines(value: FormDataEntryValue | null) {
+    return String(value ?? '')
+        .split('\n')
+        .map((line) => line.trim())
+        .filter(Boolean);
+}
+
+export interface PlanFormState {
+    error?: string;
+}
+
+function readPlanFields(formData: FormData) {
+    return {
+        product: String(formData.get('product') ?? ''),
+        name: String(formData.get('name') ?? '').trim(),
+        slugInput: String(formData.get('slug') ?? '').trim(),
+        tagline: String(formData.get('tagline') ?? '').trim() || null,
+        priceUnit: String(formData.get('priceUnit') ?? 'FLAT_MONTHLY') as 'PER_USER_MONTHLY' | 'FLAT_MONTHLY',
+        priceAmount: parseOptionalFloat(formData.get('priceAmount')),
+        transactionFeePercent: parseOptionalFloat(formData.get('transactionFeePercent')),
+        // Blank means the plan is not sold online — checkout refuses rather
+        // than falling back to some other plan's price.
+        paddlePriceId: String(formData.get('paddlePriceId') ?? '').trim() || null,
+        currencyId: String(formData.get('currencyId') ?? '').trim() || null,
+        userLimit: parseOptionalInt(formData.get('userLimit')),
+        features: parseFeatureLines(formData.get('features')),
+        isActive: formData.get('isActive') === 'on',
+        sortOrder: parseOptionalInt(formData.get('sortOrder')) ?? 0,
+    };
+}
+
+export async function createPlanAction(_prevState: PlanFormState | undefined, formData: FormData): Promise<PlanFormState> {
+    const fields = readPlanFields(formData);
+
+    if (!fields.product || !fields.name) {
+        return { error: 'Product and name are required.' };
+    }
+
+    const slug = slugify(fields.slugInput || fields.name);
+
+    const existing = await prisma.plan.findUnique({ where: { productId_slug: { productId: fields.product, slug } } });
+    if (existing) {
+        return { error: `A plan with slug "${slug}" already exists for this product.` };
+    }
+
+    await prisma.plan.create({
+        data: {
+            productId: fields.product,
+            name: fields.name,
+            slug,
+            tagline: fields.tagline,
+            priceUnit: fields.priceUnit,
+            priceAmount: fields.priceAmount,
+            paddlePriceId: fields.paddlePriceId,
+            currencyId: fields.currencyId,
+            transactionFeePercent: fields.transactionFeePercent,
+            userLimit: fields.userLimit,
+            features: fields.features,
+            isActive: fields.isActive,
+            sortOrder: fields.sortOrder,
+        },
+    });
+
+    revalidatePath('/admin/plans');
+    revalidatePath('/dashboard/subscription');
+    redirect('/admin/plans');
+}
+
+export async function updatePlanAction(
+    id: string,
+    _prevState: PlanFormState | undefined,
+    formData: FormData
+): Promise<PlanFormState> {
+    const fields = readPlanFields(formData);
+
+    if (!fields.product || !fields.name) {
+        return { error: 'Product and name are required.' };
+    }
+
+    const slug = slugify(fields.slugInput || fields.name);
+
+    const existing = await prisma.plan.findUnique({ where: { productId_slug: { productId: fields.product, slug } } });
+    if (existing && existing.id !== id) {
+        return { error: `A plan with slug "${slug}" already exists for this product.` };
+    }
+
+    await prisma.plan.update({
+        where: { id },
+        data: {
+            productId: fields.product,
+            name: fields.name,
+            slug,
+            tagline: fields.tagline,
+            priceUnit: fields.priceUnit,
+            priceAmount: fields.priceAmount,
+            paddlePriceId: fields.paddlePriceId,
+            currencyId: fields.currencyId,
+            transactionFeePercent: fields.transactionFeePercent,
+            userLimit: fields.userLimit,
+            features: fields.features,
+            isActive: fields.isActive,
+            sortOrder: fields.sortOrder,
+        },
+    });
+
+    revalidatePath('/admin/plans');
+    revalidatePath('/dashboard/subscription');
+    redirect('/admin/plans');
+}
+
+export async function deletePlanAction(formData: FormData) {
+    const id = String(formData.get('id') ?? '');
+    if (!id) return;
+
+    const subscriberCount = await prisma.subscription.count({ where: { planId: id } });
+    if (subscriberCount > 0) {
+        redirect('/admin/plans?error=' + encodeURIComponent('This plan still has active subscriptions and cannot be deleted. Disable it instead.'));
+    }
+
+    await prisma.plan.delete({ where: { id } });
+
+    revalidatePath('/admin/plans');
+}
+
+export async function togglePlanActiveAction(formData: FormData) {
+    const id = String(formData.get('id') ?? '');
+    if (!id) return;
+
+    const plan = await prisma.plan.findUnique({ where: { id } });
+    if (!plan) return;
+
+    await prisma.plan.update({ where: { id }, data: { isActive: !plan.isActive } });
+
+    revalidatePath('/admin/plans');
+    revalidatePath('/dashboard/subscription');
+}
+
+export interface AddOnFormState {
+    error?: string;
+}
+
+function readAddOnFields(formData: FormData) {
+    return {
+        product: String(formData.get('product') ?? ''),
+        name: String(formData.get('name') ?? '').trim(),
+        slugInput: String(formData.get('slug') ?? '').trim(),
+        description: String(formData.get('description') ?? '').trim() || null,
+        pricingType: String(formData.get('pricingType') ?? 'FLAT_MONTHLY') as 'FLAT_MONTHLY' | 'ONE_TIME',
+        priceAmount: parseOptionalFloat(formData.get('priceAmount')),
+        isActive: formData.get('isActive') === 'on',
+        sortOrder: parseOptionalInt(formData.get('sortOrder')) ?? 0,
+    };
+}
+
+export async function createAddOnAction(_prevState: AddOnFormState | undefined, formData: FormData): Promise<AddOnFormState> {
+    const fields = readAddOnFields(formData);
+
+    if (!fields.product || !fields.name) {
+        return { error: 'Product and name are required.' };
+    }
+
+    const slug = slugify(fields.slugInput || fields.name);
+
+    const existing = await prisma.addOn.findUnique({ where: { productId_slug: { productId: fields.product, slug } } });
+    if (existing) {
+        return { error: `An add-on with slug "${slug}" already exists for this product.` };
+    }
+
+    await prisma.addOn.create({
+        data: {
+            productId: fields.product,
+            name: fields.name,
+            slug,
+            description: fields.description,
+            pricingType: fields.pricingType,
+            priceAmount: fields.priceAmount,
+            isActive: fields.isActive,
+            sortOrder: fields.sortOrder,
+        },
+    });
+
+    revalidatePath('/admin/addons');
+    revalidatePath('/dashboard/subscription');
+    redirect('/admin/addons');
+}
+
+export async function updateAddOnAction(
+    id: string,
+    _prevState: AddOnFormState | undefined,
+    formData: FormData
+): Promise<AddOnFormState> {
+    const fields = readAddOnFields(formData);
+
+    if (!fields.product || !fields.name) {
+        return { error: 'Product and name are required.' };
+    }
+
+    const slug = slugify(fields.slugInput || fields.name);
+
+    const existing = await prisma.addOn.findUnique({ where: { productId_slug: { productId: fields.product, slug } } });
+    if (existing && existing.id !== id) {
+        return { error: `An add-on with slug "${slug}" already exists for this product.` };
+    }
+
+    await prisma.addOn.update({
+        where: { id },
+        data: {
+            productId: fields.product,
+            name: fields.name,
+            slug,
+            description: fields.description,
+            pricingType: fields.pricingType,
+            priceAmount: fields.priceAmount,
+            isActive: fields.isActive,
+            sortOrder: fields.sortOrder,
+        },
+    });
+
+    revalidatePath('/admin/addons');
+    revalidatePath('/dashboard/subscription');
+    redirect('/admin/addons');
+}
+
+export async function deleteAddOnAction(formData: FormData) {
+    const id = String(formData.get('id') ?? '');
+    if (!id) return;
+
+    const attachedCount = await prisma.subscriptionAddOn.count({ where: { addOnId: id } });
+    if (attachedCount > 0) {
+        redirect('/admin/addons?error=' + encodeURIComponent('This add-on is attached to active subscriptions and cannot be deleted. Disable it instead.'));
+    }
+
+    await prisma.addOn.delete({ where: { id } });
+
+    revalidatePath('/admin/addons');
+}
+
+export async function toggleAddOnActiveAction(formData: FormData) {
+    const id = String(formData.get('id') ?? '');
+    if (!id) return;
+
+    const addOn = await prisma.addOn.findUnique({ where: { id } });
+    if (!addOn) return;
+
+    await prisma.addOn.update({ where: { id }, data: { isActive: !addOn.isActive } });
+
+    revalidatePath('/admin/addons');
+    revalidatePath('/dashboard/subscription');
+}
+
+const TICKET_STATUSES = ['OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED'] as const;
+
+export async function updateTicketStatusAction(formData: FormData) {
+    await requireAdmin();
+    const id = String(formData.get('id') ?? '');
+    const status = String(formData.get('status') ?? '');
+    if (!id || !TICKET_STATUSES.includes(status as (typeof TICKET_STATUSES)[number])) return;
+
+    await prisma.supportTicket.update({
+        where: { id },
+        data: { status: status as (typeof TICKET_STATUSES)[number] },
+    });
+
+    revalidatePath('/admin/tickets');
+    revalidatePath(`/admin/tickets/${id}`);
+}
+
+export async function addAdminTicketCommentAction(formData: FormData) {
+    const admin = await requireAdmin();
+    const ticketId = String(formData.get('ticketId') ?? '');
+    const body = String(formData.get('body') ?? '').trim();
+    if (!ticketId || !body) return;
+
+    const ticket = await prisma.supportTicket.findUnique({ where: { id: ticketId } });
+    if (!ticket) return;
+
+    await createComment(CommentEntityType.SUPPORT_TICKET, ticketId, admin.id, body);
+
+    revalidatePath(`/admin/tickets/${ticketId}`);
+}
+
+/**
+ * Pushes a plan's price into Paddle, creating it if it has none yet.
+ *
+ * The plan is the source of truth: whatever amount and currency an admin has
+ * set here is what Paddle is made to charge. It is deliberately one direction —
+ * pulling from Paddle would let a change made in their dashboard silently
+ * contradict what the site displays.
+ */
+export async function syncPlanWithPaddleAction(formData: FormData) {
+    await requireAdmin();
+    const id = String(formData.get('id') ?? '');
+    if (!id) return;
+
+    const plan = await prisma.plan.findUnique({
+        where: { id },
+        include: { product: true, currency: true },
+    });
+    if (!plan) return;
+
+    const back = `/admin/plans?synced=${encodeURIComponent(plan.name)}`;
+    const fail = (message: string) =>
+        redirect(`/admin/plans?syncError=${encodeURIComponent(message)}`);
+
+    if (plan.priceAmount == null) {
+        fail(`${plan.name} is a custom-quote plan, so there is no price to sync.`);
+        return;
+    }
+
+    try {
+        const { priceId, created } = await syncPlanToPaddle({
+            productLabel: plan.product.label,
+            planName: plan.name,
+            amount: plan.priceAmount,
+            currencyCode: plan.currency?.code ?? 'USD',
+            perSeat: plan.priceUnit === 'PER_USER_MONTHLY',
+            existingPriceId: plan.paddlePriceId,
+        });
+        if (created) {
+            await prisma.plan.update({ where: { id }, data: { paddlePriceId: priceId } });
+        }
+    } catch (error) {
+        fail(error instanceof Error ? error.message : 'Paddle rejected the sync.');
+        return;
+    }
+
+    revalidatePath('/admin/plans');
+    redirect(back);
 }

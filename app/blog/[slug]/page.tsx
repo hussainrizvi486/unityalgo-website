@@ -1,4 +1,4 @@
-// import Image from 'next/image';
+import Image from 'next/image';
 import type { CSSProperties } from 'react';
 import Link from 'next/link';
 import Script from 'next/script';
@@ -132,12 +132,19 @@ export default async function BlogDetailsPage({
                             </p>
                         )}
 
-                        <div className="aspect-[16/9] bg-ink-100 rounded-2xl overflow-hidden mb-12">
-                            <img
-                                src={post.coverImage}
-                                alt={post.title}
-                                className="w-full h-full object-cover"
-                            />
+                        <div className="relative aspect-[16/9] bg-ink-100 rounded-xl overflow-hidden mb-12">
+                            {/* The post's LCP element — priority so it is not
+                                queued behind the rest of the page's requests. */}
+                            {post.coverImage ? (
+                                <Image
+                                    src={post.coverImage}
+                                    alt={post.title}
+                                    fill
+                                    priority
+                                    sizes="(min-width: 768px) 768px, 100vw"
+                                    className="object-cover"
+                                />
+                            ) : null}
                         </div>
 
                         <div
@@ -162,7 +169,7 @@ export default async function BlogDetailsPage({
                 )}
 
                 <section className="py-16 px-4 text-center">
-                    <Link href="/blog" className="text-brand font-semibold hover:underline">
+                    <Link href="/blog" className="text-link font-semibold hover:underline">
                         &larr; Back to all posts
                     </Link>
                 </section>

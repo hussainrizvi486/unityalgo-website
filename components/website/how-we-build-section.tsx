@@ -130,7 +130,7 @@ export function HowWeBuildSection() {
                                     viewport={{ once: true }}
                                     transition={{ delay: idx * 0.08, duration: 0.5 }}
                                     className={cn(
-                                        'p-6 md:p-8 rounded-2xl',
+                                        'p-6 md:p-8 rounded-xl',
                                         'bg-black/30 backdrop-blur-sm border border-white/10'
                                     )}
                                 >

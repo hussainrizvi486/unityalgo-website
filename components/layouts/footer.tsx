@@ -1,6 +1,6 @@
 'use client';
 
-import { Facebook, Linkedin, Github } from 'lucide-react';
+import { Facebook, Linkedin } from 'lucide-react';
 import { Logo } from '../Logo';
 import Link from 'next/link';
 

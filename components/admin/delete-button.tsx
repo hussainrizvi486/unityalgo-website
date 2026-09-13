@@ -25,7 +25,7 @@ export function DeleteButton({ action, id, title, description, disabled }: Delet
     return (
         <AlertDialog>
             <AlertDialogTrigger asChild>
-                <Button size="sm" variant="destructive" className="rounded-full" disabled={disabled}>
+                <Button size="sm" variant="destructive" disabled={disabled}>
                     Delete
                 </Button>
             </AlertDialogTrigger>

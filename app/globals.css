@@ -1,114 +1,158 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
-
+@plugin "tailwindcss-animate";
 
 @theme {
-  /*
-   * Brand — ONE color, the logo's own crimson (#8C181B, hue 358°, 9.29:1 on
-   * white). No scale anymore: the old brand-50...950 steps were doing two
-   * different jobs that had no business sharing a name —
-   *   - actual branding (buttons, links, icons, focus rings) → still `brand`,
-   *     now flat; hover/active states come from `brightness-*`/`opacity-*`
-   *     utilities instead of a separate darker swatch.
-   *   - "near-black, mostly for headings and dark sections" → that's not
-   *     brand, that's neutral, and ink-900/950 already cover it. Anything
-   *     that used brand-900/950 for that purpose now uses ink-900/950.
-   * Tints/borders that need a light brand wash use opacity (`brand/10`,
-   * `border-brand/15`) or the `accent`/`accent-foreground` pair below
-   * (color-mix'd off this one value) instead of precomputed 50/100 swatches.
-   */
   --color-brand: #8C181B;
+  --color-brand-deep: #711316;
+  --color-brand-press: #591013;
+  --color-brand-soft: #BC292E;
+  --color-brand-subdued: #F8E9EA;
 
-  /*
-   * Ink (Neutral) — true grayscale (0% saturation), for a full-light,
-   * minimal look: no warm or cool undertone competing with the crimson
-   * brand. Anchored at ink-900 (#1F1F1F, heading/body text) and ink-950
-   * (#151515, darkest chrome/footer) — both hit huge contrast margins
-   * (16.48:1 / 18.26:1 on white) so every lighter step clears WCAG AA by
-   * an even wider margin; ink-500/600 (4.95:1 / 7.23:1) cover "muted text"
-   * and "secondary text" roles respectively.
-   *
-   * The old navy `accent-*` scale is gone — it was never used outside the
-   * theme-preview demo, and a minimal 4-color brief (white / two near-blacks
-   * / one crimson) has no room for a second decorative hue.
-   */
+  --color-gold: #B45309;
+  --color-link: #0066CC;
+
   --color-ink-50: #F7F7F7;
   --color-ink-100: #F0F0F0;
   --color-ink-200: #E0E0E0;
   --color-ink-300: #CCCCCC;
   --color-ink-400: #9E9E9E;
-  --color-ink-500: #707070;  /* muted text — 4.95:1 on white */
-  --color-ink-600: #575757;  /* secondary text — 7.23:1 on white */
+  --color-ink-500: #707070;
+  --color-ink-600: #575757;
   --color-ink-700: #404040;
   --color-ink-800: #2B2B2B;
-  --color-ink-900: #1F1F1F;  /* heading/body text — 16.48:1 on white */
-  --color-ink-950: #151515;  /* darkest chrome/footer — 18.26:1 on white */
+  --color-ink-900: #1F1F1F;
+  --color-ink-950: #151515;
 
-  /* Semantic status colors. Error red is intentionally brighter and more
-     saturated than the brand crimson (hue ~0° vs. brand's ~358° — nearly the
-     same family, but error's higher lightness/chroma keeps a destructive
-     action from reading as a muted version of the primary button. Success
-     stays true green (not near brand's hue) so it can't be confused with
-     brand either. -100/-700 added for tint backgrounds and high-emphasis
-     text alongside error/warning's own -700 step. */
   --color-success-50: #F0FDF4;
   --color-success-100: #DCFCE7;
-  --color-success-500: #16A34A;  /* icons/checkmarks — 3.30:1 on white */
-  --color-success-600: #15803D;  /* text, e.g. badges — 5.01:1 on white */
-  --color-success-700: #166534;  /* high-emphasis text — 7.13:1 on white */
+  --color-success-500: #16A34A;
+  --color-success-600: #15803D;
+  --color-success-700: #166534;
   --color-warning-50: #FFFBEB;
   --color-warning-500: #F59E0B;
   --color-warning-600: #D97706;
-  --color-warning-700: #B45309;  /* text — 5.02:1 on white */
+  --color-warning-700: #B45309;
   --color-error-50: #FEF2F2;
   --color-error-100: #FEE2E2;
   --color-error-500: #EF4444;
   --color-error-600: #DC2626;
-  --color-error-700: #B91C1C;  /* text — 6.47:1 on white */
+  --color-error-700: #B91C1C;
   --color-info-50: #EFF6FF;
   --color-info-500: #3B82F6;
   --color-info-600: #2563EB;
 
-  --color-background: #FFFFFF;  /* full light — page bg and Surface/popover are now the same white */
+  --color-background: #FFFFFF;
   --color-foreground: var(--color-ink-900);
-
   --color-input: var(--color-ink-200);
-  --color-primary: var(--color-brand);
+  --color-primary: var(--color-ink-900);
   --color-primary-foreground: #FFFFFF;
   --color-secondary: var(--color-ink-100);
   --color-secondary-foreground: var(--color-ink-900);
-  --color-accent: color-mix(in srgb, var(--color-brand) 8%, white);  /* badge/active-item tint, derived not precomputed */
+  --color-accent: var(--color-brand-subdued);
   --color-accent-foreground: var(--color-brand);
   --color-destructive: var(--color-error-600);
+  --color-destructive-foreground: #FFFFFF;
   --color-muted: var(--color-ink-50);
   --color-muted-foreground: var(--color-ink-500);
-  --color-ring: var(--color-brand);
+  --color-border: var(--color-ink-200);
+  --color-ring: var(--color-ink-500);
   --color-popover: #FFFFFF;
   --color-popover-foreground: var(--color-foreground);
 
+  --color-sidebar: #FFFFFF;
+  --color-sidebar-foreground: var(--color-ink-700);
+  --color-sidebar-primary: var(--color-ink-900);
+  --color-sidebar-primary-foreground: #FFFFFF;
+  --color-sidebar-accent: var(--color-accent);
+  --color-sidebar-accent-foreground: var(--color-brand);
+  --color-sidebar-border: var(--color-ink-200);
+  --color-sidebar-ring: var(--color-ring);
+
+  --radius: 0.5rem;
+  --radius-xs: calc(var(--radius) - 6px);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 16px);
+
+  --shadow-color: 21 21 21;
+  --shadow-2xs: 0 1px rgb(var(--shadow-color) / 0.05);
+  --shadow-xs: 0 1px 2px 0 rgb(var(--shadow-color) / 0.05);
+  --shadow-sm: 0 1px 3px 0 rgb(var(--shadow-color) / 0.08), 0 1px 2px -1px rgb(var(--shadow-color) / 0.08);
+  --shadow-md: 0 4px 6px -1px rgb(var(--shadow-color) / 0.08), 0 2px 4px -2px rgb(var(--shadow-color) / 0.08);
+  --shadow-lg: 0 10px 15px -3px rgb(var(--shadow-color) / 0.08), 0 4px 6px -4px rgb(var(--shadow-color) / 0.08);
+  --shadow-xl: 0 20px 25px -5px rgb(var(--shadow-color) / 0.10), 0 8px 10px -6px rgb(var(--shadow-color) / 0.10);
+  --shadow-2xl: 0 25px 50px -12px rgb(var(--shadow-color) / 0.20);
+
   --animate-blob: blob 7s infinite;
+  --animate-drift: drift 24s ease-in-out infinite;
+  --animate-cell-fade: cell-fade 7s ease-in-out infinite;
+  --animate-scroll-cue: scroll-cue 2.4s ease-in-out infinite;
   --animate-accordion-down: accordion-down 0.2s ease-out;
   --animate-accordion-up: accordion-up 0.2s ease-out;
+  --animate-caret-blink: caret-blink 1.25s ease-out infinite;
 }
-
-
-
 
 @layer utilities {
   .text-balance {
     text-wrap: balance;
   }
 
-
   .bg-grid-pattern {
     background-size: 40px 40px;
-    background-image: linear-gradient(to right, rgba(0, 0, 0, 0.05) 1px, transparent 1px),
-      linear-gradient(to bottom, rgba(0, 0, 0, 0.05) 1px, transparent 1px);
+    background-image: linear-gradient(to right, rgb(var(--shadow-color) / 0.05) 1px, transparent 1px),
+      linear-gradient(to bottom, rgb(var(--shadow-color) / 0.05) 1px, transparent 1px);
   }
-
 
   .glass {
     @apply bg-white/70 backdrop-blur-lg border border-white/20;
+  }
+
+  .scrollbar-none {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+}
+
+@keyframes scroll-cue {
+  0% {
+    transform: translateY(-100%);
+  }
+
+  60%,
+  100% {
+    transform: translateY(1000%);
+  }
+}
+
+@keyframes cell-fade {
+  0%,
+  62%,
+  100% {
+    opacity: 0;
+  }
+
+  18%,
+  40% {
+    opacity: 1;
+  }
+}
+
+@keyframes drift {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+
+  50% {
+    transform: translate3d(-3%, 2.5%, 0) scale(1.09);
   }
 }
 
@@ -150,83 +194,35 @@
   }
 }
 
+@keyframes caret-blink {
+  0%, 70%, 100% {
+    opacity: 1;
+  }
+
+  20%, 50% {
+    opacity: 0;
+  }
+}
+
 :root {
   color-scheme: light;
 }
 
 body {
-  @apply bg-background text-foreground antialiased selection:bg-brand/20 selection:text-ink-900;
-  font-family: var(--font-inter);
+  @apply bg-background text-foreground antialiased;
+  font-family: var(--font-geist);
 }
 
 h1,
 h2,
 h3 {
-  font-family: var(--font-inter);
+  font-family: var(--font-geist);
 }
 
 .font-logo {
   font-family: var(--font-poppins);
 }
 
-.ProseMirror p.is-editor-empty:first-child::before {
-  content: attr(data-placeholder);
-  float: left;
-  height: 0;
-  color: oklch(0.65 0 0);
-  pointer-events: none;
-}
-
-.ProseMirror table {
-  border-collapse: collapse;
-  table-layout: fixed;
-  width: 100%;
-  margin: 0;
-  overflow: hidden;
-}
-
-.ProseMirror td,
-.ProseMirror th {
-  min-width: 1em;
-  border: 1px solid oklch(0.85 0 0);
-  padding: 6px 10px;
-  vertical-align: top;
-  box-sizing: border-box;
-  position: relative;
-}
-
-.ProseMirror th {
-  font-weight: 600;
-  background-color: oklch(0.97 0 0);
-}
-
-.ProseMirror .selectedCell:after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: oklch(0.55 0.2 25 / 0.08);
-  pointer-events: none;
-}
-
-.ProseMirror .column-resize-handle {
-  position: absolute;
-  right: -2px;
-  top: 0;
-  bottom: -2px;
-  width: 4px;
-  background-color: oklch(0.55 0.2 25);
-  pointer-events: none;
-}
-
-.ProseMirror.resize-cursor {
-  cursor: col-resize;
-}
-
-.scrollbar-none {
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE and Edge */
-  
-  &::-webkit-scrollbar {
-    display: none; /* Chrome, Safari and Opera */
-  }
+.font-display {
+  font-family: var(--font-display, var(--font-geist));
 }

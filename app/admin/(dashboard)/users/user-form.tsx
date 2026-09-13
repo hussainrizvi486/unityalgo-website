@@ -17,7 +17,7 @@ export interface UserFormValues {
 function SubmitButton({ label }: { label: string }) {
     const { pending } = useFormStatus();
     return (
-        <Button type="submit" disabled={pending} className="rounded-full bg-brand hover:brightness-90 text-white px-8">
+        <Button type="submit" disabled={pending} className="bg-ink-900 hover:bg-ink-800 text-white px-8">
             {pending ? 'Saving...' : label}
         </Button>
     );
@@ -63,7 +63,7 @@ export function UserForm({ action, defaultValues, submitLabel, includePassword }
             <div className="flex items-center gap-3">
                 <SubmitButton label={submitLabel} />
                 <Link href="/admin/users">
-                    <Button type="button" variant="outline" className="rounded-full">
+                    <Button type="button" variant="outline" >
                         Cancel
                     </Button>
                 </Link>

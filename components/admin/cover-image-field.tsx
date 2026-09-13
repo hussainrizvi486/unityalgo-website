@@ -62,7 +62,6 @@ export function CoverImageField({ name, defaultValue }: CoverImageFieldProps) {
                         <Button
                             type="button"
                             variant="outline"
-                            className="rounded-full"
                             disabled={uploading}
                             onClick={() => fileInputRef.current?.click()}
                         >
@@ -83,7 +82,7 @@ export function CoverImageField({ name, defaultValue }: CoverImageFieldProps) {
             {error && <p className="text-xs text-error-600 mt-1.5">{error}</p>}
 
             {value && (
-                <div className="mt-3 w-40 aspect-video rounded-lg overflow-hidden border border-ink-100 bg-ink-50">
+                <div className="mt-3 w-40 aspect-video rounded-md overflow-hidden border border-ink-100 bg-ink-50">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={value} alt="Cover preview" className="w-full h-full object-cover" />
                 </div>

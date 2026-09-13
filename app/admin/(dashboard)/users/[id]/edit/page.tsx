@@ -6,7 +6,7 @@ import { ChangePasswordForm } from '../../change-password-form';
 
 export default async function EditUserPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
-    const user = await prisma.adminUser.findUnique({ where: { id } });
+    const user = await prisma.user.findUnique({ where: { id } });
 
     if (!user) {
         notFound();

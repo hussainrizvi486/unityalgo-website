@@ -3,24 +3,27 @@
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { TextAlignJustify, X as CloseIcon, ChevronDown } from 'lucide-react';
+import { TextAlignJustify, X as CloseIcon, ChevronDown, ArrowRight } from 'lucide-react';
 import { create } from 'zustand';
 
 import { Button } from '@/components/ui/button';
 import { Logo } from '@/components/Logo';
+import {
+  NavigationMenu, NavigationMenuList, NavigationMenuItem, NavigationMenuTrigger,
+  NavigationMenuContent, NavigationMenuLink, navigationMenuTriggerStyle,
+} from '@/components/ui/navigation-menu';
+import { cn } from '@/utils';
 
 const serviceLinks = [
-  { name: 'ERP', href: '/services/erp-software' },
-  { name: 'Accounting', href: '/services/accounting' },
-  { name: 'Stock', href: '/services/stock' },
-  { name: 'Manufacturing', href: '/services/manufacturing' },
-  { name: 'Retail', href: '/services/retail' },
-  { name: 'Enterprise Application Development', href: '/services/enterprise-application-development' },
+  { name: 'Tailored Software Development', href: '/services/digital-product-engineering', desc: 'Bespoke systems built around how your business already works.' },
+  { name: 'Cloud & DevOps', href: '/services/cloud-devops', desc: 'Scalable infrastructure, automated deploys and real monitoring.' },
+  { name: 'Web App Development', href: '/services/web-development', desc: 'Fast, secure web applications built to keep growing.' },
+  { name: 'Mobile Development', href: '/services/mobile-development', desc: 'iOS and Android apps that feel native on both.' },
 ];
 
 const productLinks = [
-  { name: 'Unity Commerce', href: '/products/unitycommerce' },
-  { name: 'UnityERP', href: '/products/unityerp' },
+  { name: 'AlgoSuite', href: '/products/algosuite', desc: 'Our ERP platform — accounting, HR, inventory and CRM.', status: null },
+  { name: 'UnityCommerce', href: '/products/unitycommerce', desc: 'Launch and run an online store, built in-house.'},
 ];
 
 const navLinks = [
@@ -43,6 +46,84 @@ export const UIStore = create<UIState>((set) => ({
 
 }))
 
+
+/**
+ * Desktop navigation.
+ *
+ * Services and Products are Radix navigation-menu panels rather than the pair
+ * of hover-only dropdowns this file used to carry: those could not be reached
+ * by keyboard, and each duplicated the other's markup. The single shared
+ * viewport resizes between the two panels, so moving from one trigger to the
+ * other reads as one surface travelling rather than two panels swapping.
+ */
+const DesktopNav = ({ isScrolled }: { isScrolled: boolean }) => (
+  <NavigationMenu
+    className={cn(
+      'rounded-lg px-1 py-1 transition-colors duration-300',
+      isScrolled ? 'bg-white/60' : 'bg-white/70',
+    )}
+  >
+    <NavigationMenuList>
+      <NavigationMenuItem>
+        <NavigationMenuTrigger>Services</NavigationMenuTrigger>
+        <NavigationMenuContent>
+          <ul className="grid w-[34rem] grid-cols-2 gap-1 p-2">
+            {serviceLinks.map((link) => (
+              <li key={link.name}>
+                <NavigationMenuLink asChild>
+                  <Link href={link.href}>
+                    <span className="font-medium text-ink-900">{link.name}</span>
+                    <span className="text-xs leading-snug text-ink-500">{link.desc}</span>
+                  </Link>
+                </NavigationMenuLink>
+              </li>
+            ))}
+          </ul>
+          <div className="border-t border-ink-100 p-2">
+            <NavigationMenuLink asChild>
+              <Link href="/services" className="flex-row items-center justify-between">
+                <span className="font-medium text-ink-900">All services</span>
+                <ArrowRight className="size-3.5 text-ink-400" />
+              </Link>
+            </NavigationMenuLink>
+          </div>
+        </NavigationMenuContent>
+      </NavigationMenuItem>
+
+      <NavigationMenuItem>
+        <NavigationMenuTrigger>Products</NavigationMenuTrigger>
+        <NavigationMenuContent>
+          <ul className="grid w-[26rem] gap-1 p-2">
+            {productLinks.map((link) => (
+              <li key={link.name}>
+                <NavigationMenuLink asChild>
+                  <Link href={link.href}>
+                    <span className="flex items-center gap-2 font-medium text-ink-900">
+                      {link.name}
+                    </span>
+                    <span className="text-xs leading-snug text-ink-500">{link.desc}</span>
+                  </Link>
+                </NavigationMenuLink>
+              </li>
+            ))}
+          </ul>
+        </NavigationMenuContent>
+      </NavigationMenuItem>
+
+      {[
+        { name: 'About', href: '/about-us' },
+        { name: 'Blog', href: '/blog' },
+      ].map((link) => (
+        <NavigationMenuItem key={link.name}>
+          <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
+            <Link href={link.href}>{link.name}</Link>
+          </NavigationMenuLink>
+        </NavigationMenuItem>
+      ))}
+    </NavigationMenuList>
+  </NavigationMenu>
+);
+
 export function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
   const state = UIStore();
@@ -60,7 +141,7 @@ export function Header() {
     <>
       <header
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ease-in-out border-b ${isScrolled
-          ? 'bg-white/70 backdrop-blur-xl border-white/20 shadow-sm py-3'
+          ? 'bg-white/40 backdrop-blur-xl border-white/20 shadow-sm py-3'
           : 'bg-transparent border-transparent py-5'
           }`}
       >
@@ -69,49 +150,16 @@ export function Header() {
             <div className="shrink-0 flex items-center">
               <Logo />
 
-              <nav className="hidden md:flex items-center px-2 py-1.5 rounded-full ml-12">
-                <Link href="/">
-                  <button className="relative px-5 py-2 text-sm font-medium text-ink-600 transition-colors hover: rounded-full group overflow-hidden">
-                    <span className="relative z-10 font-semibold text-black">Home</span>
-                    <div className="absolute inset-0 bg-ink-200/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-full" />
-                  </button>
-                </Link>
-
-                <ServicesDropdown />
-
-                <ProductsDropdown />
-
-                <Link href="/about-us">
-                  <button className="relative px-5 py-2 text-sm font-medium text-ink-600 transition-colors hover: rounded-full group overflow-hidden">
-                    <span className="relative z-10 font-semibold text-black">About Us</span>
-                    <div className="absolute inset-0 bg-ink-200/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-full" />
-                  </button>
-                </Link>
-
-                <Link href="/blog">
-                  <button className="relative px-5 py-2 text-sm font-medium text-ink-600 transition-colors hover: rounded-full group overflow-hidden">
-                    <span className="relative z-10 font-semibold text-black">Blog</span>
-                    <div className="absolute inset-0 bg-ink-200/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-full" />
-                  </button>
-                </Link>
-
-                <Link href="/#contact">
-                  <button className="relative px-5 py-2 text-sm font-medium text-ink-600 transition-colors hover: rounded-full group overflow-hidden">
-                    <span className="relative z-10 font-semibold text-black">Contact</span>
-                    <div className="absolute inset-0 bg-ink-200/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-full" />
-                  </button>
-                </Link>
-              </nav>
-
             </div>
 
 
+            <div className='hidden md:block'>
+              <DesktopNav isScrolled={isScrolled} />
+            </div>
             <div className="hidden md:flex items-center gap-4">
               <Link href="#contact">
-                {/* sm:text-base bg-brand hover:bg-brand text-white rounded-full shadow-lg shadow-brand/25 transition-all */}
-                <Button
-                  className="rounded-full transition-all duration-300  bg-brand hover:brightness-90 text-white shadow-md "
-                >
+                {/* sm:text-base bg-brand hover:bg-brand text-white rounded-full shadow-lg shadow-ink-900/10 transition-all */}
+                <Button className="transition-all duration-300 bg-ink-900 hover:bg-ink-800 text-white shadow-md">
                   Get Started
                 </Button>
               </Link>
@@ -160,7 +208,7 @@ const MobileMenu = () => {
         className="h-full overflow-y-auto border-t border-ink-100"
       >
         <nav className="container mx-auto max-w-lg px-4 py-6 pb-10">
-          <Link href="/" onClick={closeMenu} className="flex items-center px-4 py-3.5 rounded-xl text-base font-semibold text-ink-900 hover:bg-ink-50 transition-colors">
+          <Link href="/" onClick={closeMenu} className="flex items-center px-4 py-3.5 rounded-lg text-base font-semibold text-ink-900 hover:bg-ink-50 transition-colors">
             Home
           </Link>
 
@@ -172,13 +220,13 @@ const MobileMenu = () => {
           {navLinks
             .filter((link) => link.name !== 'Home')
             .map((link) => (
-              <Link key={link.name} href={link.href} onClick={closeMenu} className="flex items-center px-4 py-3.5 rounded-xl text-base font-semibold text-ink-900 hover:bg-ink-50 transition-colors">
+              <Link key={link.name} href={link.href} onClick={closeMenu} className="flex items-center px-4 py-3.5 rounded-lg text-base font-semibold text-ink-900 hover:bg-ink-50 transition-colors">
                 {link.name}
               </Link>
             ))}
 
           <Link href="/#contact" onClick={closeMenu} className="block mt-6">
-            <Button className="w-full h-12 rounded-full bg-brand hover:brightness-90 text-white shadow-md" size="sm">
+            <Button className="w-full h-12 bg-ink-900 hover:bg-ink-800 text-white shadow-md" size="sm">
               Get Started
             </Button>
           </Link>
@@ -201,7 +249,7 @@ const MobileNavGroup = ({
   links: { name: string; href: string }[];
   onNavigate: () => void;
 }) => (
-  <div className="mt-3 rounded-2xl border border-ink-100 bg-ink-50/70 overflow-hidden">
+  <div className="mt-3 rounded-xl border border-ink-100 bg-ink-50/70 overflow-hidden">
     <button type="button" onClick={onToggle} aria-expanded={open} className="w-full flex items-center justify-between px-4 py-3.5 text-left text-base font-semibold text-ink-900 hover:bg-ink-100/70 transition-colors">
       <span>{label}</span>
       <ChevronDown className={`w-4 h-4 text-ink-500 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
@@ -212,7 +260,7 @@ const MobileNavGroup = ({
         <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2 }} className="overflow-hidden">
           <div className="px-2 pb-2 border-t border-ink-100">
             {links.map((link) => (
-              <Link key={link.name} href={link.href} onClick={onNavigate} className="block px-3 py-3 rounded-xl text-sm font-medium text-ink-700 hover:bg-white hover:text-brand transition-colors">
+              <Link key={link.name} href={link.href} onClick={onNavigate} className="block px-3 py-3 rounded-lg text-sm font-medium text-ink-700 hover:bg-white hover:text-ink-950 transition-colors">
                 {link.name}
               </Link>
             ))}
@@ -223,86 +271,4 @@ const MobileNavGroup = ({
   </div>
 )
 
-const ServicesDropdown = () => {
-  const [open, setOpen] = useState(false);
 
-  return (
-    <div
-      className="relative"
-      onMouseEnter={() => setOpen(true)}
-      onMouseLeave={() => setOpen(false)}
-    >
-      <button className="relative px-5 py-2 text-sm font-medium text-ink-600 transition-colors hover: rounded-full group overflow-hidden flex items-center gap-1">
-        <span className="relative z-10 font-semibold text-black">Services</span>
-        <ChevronDown className={`relative z-10 w-3.5 h-3.5 transition-transform ${open ? 'rotate-180' : ''}`} />
-        <div className="absolute inset-0 bg-ink-200/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-full" />
-      </button>
-
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 8 }}
-            transition={{ duration: 0.15 }}
-            className="absolute top-full left-1/2 -translate-x-1/2 pt-3 w-64"
-          >
-            <div className="bg-white rounded-2xl border border-ink-100 shadow-xl p-2">
-              {serviceLinks.map((link) => (
-                <Link
-                  key={link.name}
-                  href={link.href}
-                  className="block px-4 py-2.5 text-sm font-medium text-ink-700 hover:bg-ink-50 hover:opacity-75 rounded-xl transition-colors"
-                >
-                  {link.name}
-                </Link>
-              ))}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-};
-
-const ProductsDropdown = () => {
-  const [open, setOpen] = useState(false);
-
-  return (
-    <div
-      className="relative"
-      onMouseEnter={() => setOpen(true)}
-      onMouseLeave={() => setOpen(false)}
-    >
-      <button className="relative px-5 py-2 text-sm font-medium text-ink-600 transition-colors hover: rounded-full group overflow-hidden flex items-center gap-1">
-        <span className="relative z-10 font-semibold text-black">Products</span>
-        <ChevronDown className={`relative z-10 w-3.5 h-3.5 transition-transform ${open ? 'rotate-180' : ''}`} />
-        <div className="absolute inset-0 bg-ink-200/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-full" />
-      </button>
-
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 8 }}
-            transition={{ duration: 0.15 }}
-            className="absolute top-full left-1/2 -translate-x-1/2 pt-3 w-64"
-          >
-            <div className="bg-white rounded-2xl border border-ink-100 shadow-xl p-2">
-              {productLinks.map((link) => (
-                <Link
-                  key={link.name}
-                  href={link.href}
-                  className="block px-4 py-2.5 text-sm font-medium text-ink-700 hover:bg-ink-50 hover:opacity-75 rounded-xl transition-colors"
-                >
-                  {link.name}
-                </Link>
-              ))}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-};

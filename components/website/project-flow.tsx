@@ -34,7 +34,7 @@ export function ProjectFlow({
                     <p className="text-ink-400">{subheading}</p>
                 </motion.div>
 
-                <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-px bg-white/10 rounded-2xl overflow-hidden">
+                <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-px bg-white/10 rounded-xl overflow-hidden">
                     {stages.map((stage, idx) => (
                         <motion.div
                             key={stage.number}

@@ -23,10 +23,10 @@ async function main() {
       const [email, password, name] = args;
       if (!email || !password) usage();
       const passwordHash = await bcrypt.hash(password, 10);
-      const user = await prisma.adminUser.upsert({
+      const user = await prisma.user.upsert({
         where: { email: email.toLowerCase() },
-        update: { passwordHash, name },
-        create: { email: email.toLowerCase(), passwordHash, name },
+        update: { passwordHash, name, role: 'ADMIN' },
+        create: { email: email.toLowerCase(), passwordHash, name, role: 'ADMIN' },
       });
       console.log(`Admin user ready: ${user.email}`);
       break;
@@ -35,7 +35,7 @@ async function main() {
       const [email, password] = args;
       if (!email || !password) usage();
       const passwordHash = await bcrypt.hash(password, 10);
-      const user = await prisma.adminUser.update({
+      const user = await prisma.user.update({
         where: { email: email.toLowerCase() },
         data: { passwordHash },
       });
@@ -43,7 +43,7 @@ async function main() {
       break;
     }
     case 'list': {
-      const users = await prisma.adminUser.findMany({ orderBy: { createdAt: 'asc' } });
+      const users = await prisma.user.findMany({ where: { role: 'ADMIN' }, orderBy: { createdAt: 'asc' } });
       if (users.length === 0) {
         console.log('No admin users yet.');
         break;
@@ -56,7 +56,7 @@ async function main() {
     case 'delete': {
       const [email] = args;
       if (!email) usage();
-      await prisma.adminUser.delete({ where: { email: email.toLowerCase() } });
+      await prisma.user.delete({ where: { email: email.toLowerCase(), role: 'ADMIN' } });
       console.log(`Deleted admin user: ${email}`);
       break;
     }
