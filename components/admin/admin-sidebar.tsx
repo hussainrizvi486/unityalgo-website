@@ -44,6 +44,7 @@ const navGroups = [
             { name: 'Blogs', href: '/admin/blogs', icon: FileText },
             { name: 'Plans', href: '/admin/plans', icon: Layers },
             { name: 'Add-ons', href: '/admin/addons', icon: PackagePlus },
+            { name: 'Applications', href: '/admin/apps', icon: Boxes },
             { name: 'Currencies', href: '/admin/currencies', icon: Coins },
             { name: 'Tickets', href: '/admin/tickets', icon: MessageSquareText },
             { name: 'Users', href: '/admin/users', icon: Users },

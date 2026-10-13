@@ -9,7 +9,6 @@ import { prisma } from '@/lib/db';
 import { sendVerificationEmail } from '@/lib/email';
 import { CommentEntityType, createComment } from '@/lib/comments';
 import {
-    createCustomerSessionToken,
     verifyCustomerSessionToken,
     CUSTOMER_SESSION_COOKIE,
     CUSTOMER_SESSION_DURATION_SECONDS,
@@ -28,6 +27,8 @@ import {
     RESET_PENDING_DURATION_SECONDS,
     RESET_VERIFIED_DURATION_SECONDS,
 } from '@/lib/customer-auth';
+import { createTrackedCustomerSession } from '@/lib/login-sessions';
+import { requireCustomerSession } from '@/lib/customer-session';
 import {
     isValidEmail,
     validateRegistration,
@@ -71,11 +72,14 @@ async function issueOtp(email: string, purpose: VerificationPurpose) {
 
     // Invalidate any earlier unverified codes for this email + purpose before issuing a new one.
     await prisma.emailVerification.deleteMany({ where: { email, purpose, verifiedAt: null } });
-    await prisma.emailVerification.create({ data: { email, otp, purpose, expiresAt } });
+    const verification = await prisma.emailVerification.create({ data: { email, otp, purpose, expiresAt } });
 
     try {
         await sendVerificationEmail(email, otp);
     } catch (error) {
+        // A failed send must not leave an undelivered code active. Limit this
+        // cleanup to this attempt so a concurrent successful resend survives.
+        await prisma.emailVerification.deleteMany({ where: { id: verification.id, verifiedAt: null } });
         console.error('Failed to send verification email:', error);
         throw new Error('We could not send a verification email right now. Please try again shortly.');
     }
@@ -235,7 +239,7 @@ export async function createCustomerAction(
     cookieStore.delete(REG_VERIFIED_COOKIE);
     cookieStore.delete(REG_PENDING_COOKIE);
 
-    const sessionToken = await createCustomerSessionToken({ userId: user.id, email: user.email });
+    const sessionToken = await createTrackedCustomerSession(user);
     cookieStore.set(CUSTOMER_SESSION_COOKIE, sessionToken, { ...COOKIE_BASE, maxAge: CUSTOMER_SESSION_DURATION_SECONDS });
 
     redirect('/dashboard');
@@ -375,6 +379,8 @@ export async function resetPasswordAction(
     cookieStore.delete(RESET_VERIFIED_COOKIE);
     cookieStore.delete(RESET_PENDING_COOKIE);
 
+    await prisma.loginSession.updateMany({ where: { userId: user.id, revokedAt: null }, data: { revokedAt: new Date() } });
+
     redirect('/login?reset=success');
 }
 
@@ -389,6 +395,11 @@ export async function restartPasswordResetAction() {
 // so this customer-only version would have been a second, diverging copy.
 export async function customerLogoutAction() {
     const cookieStore = await cookies();
+    const token = cookieStore.get(CUSTOMER_SESSION_COOKIE)?.value;
+    const session = token ? await verifyCustomerSessionToken(token) : null;
+    if (session?.sessionId) {
+        await prisma.loginSession.updateMany({ where: { id: session.sessionId, userId: session.userId }, data: { revokedAt: new Date() } });
+    }
     cookieStore.delete(CUSTOMER_SESSION_COOKIE);
     redirect('/login');
 }
@@ -399,6 +410,8 @@ const SUBSCRIPTION_INCLUDE = { plan: true, addOns: { include: { addOn: true } } 
 // plan + one Unity Commerce plan at the same time) — enforced by the
 // [userId, product] unique index on Subscription, not just app logic.
 export async function getSubscriptions(userId: string) {
+    const session = await requireCustomerSession();
+    if (session.userId !== userId) throw new Error('You cannot access another customer account.');
     return prisma.subscription.findMany({
         where: { userId },
         include: SUBSCRIPTION_INCLUDE,
@@ -407,18 +420,12 @@ export async function getSubscriptions(userId: string) {
 }
 
 export async function getSubscriptionForProduct(userId: string, product: string) {
+    const session = await requireCustomerSession();
+    if (session.userId !== userId) throw new Error('You cannot access another customer account.');
     return prisma.subscription.findUnique({
         where: { userId_productId: { userId, productId: product } },
         include: SUBSCRIPTION_INCLUDE,
     });
-}
-
-async function requireCustomerSession() {
-    const cookieStore = await cookies();
-    const token = cookieStore.get(CUSTOMER_SESSION_COOKIE)?.value;
-    const session = token ? await verifyCustomerSessionToken(token) : null;
-    if (!session) redirect('/login');
-    return session;
 }
 
 // Purchase (or switch) a plan. Custom-quote plans (no price) aren't
@@ -672,10 +679,17 @@ export async function updateCustomerPasswordAction(
         return { error: 'Current password is incorrect.' };
     }
 
-    const passwordHash = await bcrypt.hash(newPassword, 10);
-    await prisma.user.update({ where: { id: user.id }, data: { passwordHash } });
+    if (currentPassword === newPassword) {
+        return { error: 'Choose a password different from your current password.' };
+    }
 
-    return { success: 'Password updated.' };
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+    await prisma.$transaction([
+        prisma.user.update({ where: { id: user.id }, data: { passwordHash } }),
+        prisma.loginSession.updateMany({ where: { userId: user.id, id: { not: session.sessionId }, revokedAt: null }, data: { revokedAt: new Date() } }),
+    ]);
+
+    return { success: 'Password updated. Other login sessions have been signed out.' };
 }
 
 function readAddressFields(formData: FormData) {

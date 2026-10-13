@@ -1,6 +1,7 @@
 import * as PopoverPrimitive from "@radix-ui/react-popover";
 import { cn } from "@/utils/index";
 import React from "react";
+import { useThemeScope } from './theme-scope';
 
 const Popover = PopoverPrimitive.Root;
 const PopoverAnchor = PopoverPrimitive.Anchor;
@@ -10,6 +11,7 @@ const PopoverContent = React.forwardRef<
   React.ElementRef<typeof PopoverPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof PopoverPrimitive.Content>
 >(({ className = "", align = "center", sideOffset = 8, ...props }, ref) => {
+  const themeScope = useThemeScope();
   return (
     <PopoverPrimitive.Portal>
       <PopoverPrimitive.Content
@@ -25,6 +27,7 @@ const PopoverContent = React.forwardRef<
           "data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
           // Grow from the edge nearest the trigger rather than the centre.
           "origin-[--radix-popover-content-transform-origin]",
+          themeScope,
           className
         )}
         {...props}

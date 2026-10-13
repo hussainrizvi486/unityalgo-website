@@ -2,7 +2,10 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import type { User } from '@prisma/client';
 import { prisma } from '@/lib/db';
-import { verifyCustomerSessionToken, CUSTOMER_SESSION_COOKIE } from '@/lib/customer-auth';
+import {
+    verifyCustomerSessionToken,
+    CUSTOMER_SESSION_COOKIE,
+} from '@/lib/customer-auth';
 
 /**
  * Server-side guards for customer pages.
@@ -17,12 +20,30 @@ import { verifyCustomerSessionToken, CUSTOMER_SESSION_COOKIE } from '@/lib/custo
  * on the edge runtime and must not pull in Prisma.
  */
 
-/** Verified session payload, without a DB round-trip. */
+/** Revocation is checked in the database on every authenticated request. */
 export async function getCustomerSession() {
     const cookieStore = await cookies();
     const token = cookieStore.get(CUSTOMER_SESSION_COOKIE)?.value;
     if (!token) return null;
-    return verifyCustomerSessionToken(token);
+    const payload = await verifyCustomerSessionToken(token);
+    if (!payload?.sessionId || typeof payload.userId !== 'string') return null;
+    const session = await prisma.loginSession.findFirst({
+        where: {
+            id: payload.sessionId,
+            userId: payload.userId,
+            revokedAt: null,
+            expiresAt: { gt: new Date() },
+            user: { role: 'CUSTOMER' },
+        },
+    });
+    if (!session) return null;
+    if (Date.now() - session.lastSeenAt.getTime() > 5 * 60 * 1000) {
+        await prisma.loginSession.updateMany({
+            where: { id: session.id, revokedAt: null },
+            data: { lastSeenAt: new Date() },
+        });
+    }
+    return { ...payload, sessionId: session.id };
 }
 
 /**
@@ -38,7 +59,9 @@ export async function requireCustomer(): Promise<User> {
     const session = await getCustomerSession();
     if (!session) redirect('/login');
 
-    const user = await prisma.user.findUnique({ where: { id: session.userId } });
+    const user = await prisma.user.findUnique({
+        where: { id: session.userId },
+    });
     if (!user || user.role !== 'CUSTOMER') redirect('/login');
 
     return user;

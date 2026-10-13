@@ -23,6 +23,7 @@ class ServerSerializer(BaseSerializer):
         data = {
             "id": str(server.id),
             "name": server.name,
+            "frappe_enabled": server.frappe_enabled,
             "ip_address": server.ip_address,
             "ssh_port": server.ssh_port,
             "ssh_user": server.ssh_user,

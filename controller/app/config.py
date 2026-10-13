@@ -173,6 +173,19 @@ class Settings:
         # Headroom left for the OS: max_memory_mb comes from `free -m`, i.e.
         # total physical RAM, so placing against it unreserved invites OOM.
         self.node_memory_reserve_mb = self._int("NODE_MEMORY_RESERVE_MB", 1024)
+        self.frappe_image = self._str("FRAPPE_IMAGE", "frappe/erpnext:v16.50.0")
+        self.frappe_site_domain = self._str("FRAPPE_SITE_DOMAIN", "").strip().lower()
+        self.frappe_available_apps = [app.strip() for app in self._str("FRAPPE_AVAILABLE_APPS", "erpnext").split(",") if app.strip()]
+        self.frappe_port_start = self._int("FRAPPE_PORT_START", 30000)
+        self.frappe_port_end = self._int("FRAPPE_PORT_END", 31999)
+        self.frappe_customer_site_limit = self._int("FRAPPE_CUSTOMER_SITE_LIMIT", 3)
+        if not (1 <= self.frappe_port_start <= self.frappe_port_end < 32768):
+            raise ConfigError('Frappe ports must be below the Linux ephemeral range (32768).')
+        if self.frappe_site_domain:
+            import re
+            if not re.fullmatch(r'[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?', self.frappe_site_domain) or '..' in self.frappe_site_domain or len(self.frappe_site_domain) > 200:
+                raise ConfigError('FRAPPE_SITE_DOMAIN must be a valid base domain without a protocol or path.')
+        self.platform_internal_url = self._str("PLATFORM_INTERNAL_URL", "http://127.0.0.1:3000")
 
         # -- Worker nodes (SSH / Docker) ----------------------------------
         self.ssh_user = self._str("SSH_USER", "root")

@@ -37,19 +37,26 @@ function apiKey() {
 }
 
 interface RequestOptions {
+    timeoutMs?: number;
     method?: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE';
     body?: unknown;
     /** Seconds to cache a GET for. Omit to always hit the API. */
     revalidate?: number;
 }
 
-async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
+async function request<T>(
+    path: string,
+    options: RequestOptions = {},
+): Promise<T> {
     const { method = 'GET', body, revalidate } = options;
 
     let response: Response;
     try {
         response = await fetch(`${BASE_URL}${path}`, {
             method,
+            signal: options.timeoutMs
+                ? AbortSignal.timeout(options.timeoutMs)
+                : undefined,
             headers: {
                 'X-Controller-Key': apiKey(),
                 ...(body ? { 'Content-Type': 'application/json' } : {}),
@@ -60,7 +67,7 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
             cache: revalidate === undefined ? 'no-store' : undefined,
             next: revalidate === undefined ? undefined : { revalidate },
         });
-    } catch (cause) {
+    } catch {
         // A refused connection here means the Python service is down, which
         // is worth saying plainly rather than surfacing "fetch failed".
         throw new ControllerError(
@@ -98,6 +105,7 @@ function safeJson(text: string): unknown {
 export type ServerRole = 'worker' | 'proxy';
 
 export interface ControllerServer {
+    frappe_enabled: boolean;
     id: string;
     name: string;
     ip_address: string;
@@ -228,13 +236,13 @@ export interface DbSchema {
  */
 export type DbQueryResult =
     | {
-        kind: 'rows';
-        columns: string[];
-        rows: (string | number | boolean | null)[][];
-        row_count: number;
-        truncated: boolean;
-        duration_ms: number;
-    }
+          kind: 'rows';
+          columns: string[];
+          rows: (string | number | boolean | null)[][];
+          row_count: number;
+          truncated: boolean;
+          duration_ms: number;
+      }
     | { kind: 'status'; affected_rows: number; duration_ms: number };
 
 export interface ControllerDbMigration {
@@ -323,34 +331,108 @@ export interface AsyncAccepted {
 
 // ------------------------------------------------------------- endpoints
 
+export interface CustomerSite {
+    id: string;
+    name: string;
+    slug: string;
+    domain: string;
+    server_id: string;
+    server_name: string;
+    status: string;
+    progress: number;
+    message: string;
+    apps: string[];
+    created_at: string;
+    updated_at: string;
+}
+
 export const controller = {
+    sites: {
+        list: (userId: string) =>
+            request<{ results: CustomerSite[] }>(
+                `/api/v1/sites?user_id=${encodeURIComponent(userId)}`,
+                { timeoutMs: 20_000 },
+            ),
+        get: (id: string, userId: string) =>
+            request<CustomerSite>(
+                `/api/v1/sites/${encodeURIComponent(id)}?user_id=${encodeURIComponent(userId)}`,
+                { timeoutMs: 20_000 },
+            ),
+        create: (body: Record<string, unknown>) =>
+            request<CustomerSite>('/api/v1/sites', {
+                method: 'POST',
+                body,
+                timeoutMs: 20_000,
+            }),
+        retry: (id: string, userId: string) =>
+            request<{ queued: boolean }>(
+                `/api/v1/sites/${encodeURIComponent(id)}/retry`,
+                {
+                    method: 'POST',
+                    body: { user_id: userId },
+                    timeoutMs: 20_000,
+                },
+            ),
+        capabilities: () =>
+            request<{ apps: string[]; configured: boolean }>(
+                '/api/v1/sites/capabilities',
+                { timeoutMs: 20_000 },
+            ),
+    },
     servers: {
         list: () => request<Paginated<ControllerServer>>('/api/v1/servers'),
         get: (id: string) => request<ControllerServer>(`/api/v1/servers/${id}`),
         create: (body: Record<string, unknown>) =>
-            request<ControllerServer>('/api/v1/servers', { method: 'POST', body }),
+            request<ControllerServer>('/api/v1/servers', {
+                method: 'POST',
+                body,
+            }),
         update: (id: string, body: Record<string, unknown>) =>
-            request<ControllerServer>(`/api/v1/servers/${id}`, { method: 'PATCH', body }),
-        remove: (id: string) => request<void>(`/api/v1/servers/${id}`, { method: 'DELETE' }),
+            request<ControllerServer>(`/api/v1/servers/${id}`, {
+                method: 'PATCH',
+                body,
+            }),
+        remove: (id: string) =>
+            request<void>(`/api/v1/servers/${id}`, { method: 'DELETE' }),
 
         /** SSH reachability probe. */
-        check: (id: string) => request<unknown>(`/api/v1/servers/${id}/check`, { method: 'POST' }),
+        check: (id: string) =>
+            request<unknown>(`/api/v1/servers/${id}/check`, { method: 'POST' }),
         /** Probe + persist hardware/OS/Docker specs. */
-        connect: (id: string) => request<ControllerServer>(`/api/v1/servers/${id}/connect`, { method: 'POST' }),
+        connect: (id: string) =>
+            request<ControllerServer>(`/api/v1/servers/${id}/connect`, {
+                method: 'POST',
+            }),
         /** Install Docker Engine from scratch. */
-        bootstrap: (id: string) => request<AsyncAccepted>(`/api/v1/servers/${id}/bootstrap`, { method: 'POST' }),
+        bootstrap: (id: string) =>
+            request<AsyncAccepted>(`/api/v1/servers/${id}/bootstrap`, {
+                method: 'POST',
+            }),
         /** Proxy-role nodes only: run the Caddy edge container. */
         bootstrapCaddy: (id: string) =>
-            request<AsyncAccepted>(`/api/v1/servers/${id}/bootstrap-caddy`, { method: 'POST' }),
+            request<AsyncAccepted>(`/api/v1/servers/${id}/bootstrap-caddy`, {
+                method: 'POST',
+            }),
         /** Worker-role nodes only: restrict the tenant port range to the proxy. */
-        lockdown: (id: string) => request<AsyncAccepted>(`/api/v1/servers/${id}/lockdown`, { method: 'POST' }),
-        containers: (id: string) => request<unknown>(`/api/v1/servers/${id}/containers`),
+        lockdown: (id: string) =>
+            request<AsyncAccepted>(`/api/v1/servers/${id}/lockdown`, {
+                method: 'POST',
+            }),
+        containers: (id: string) =>
+            request<unknown>(`/api/v1/servers/${id}/containers`),
     },
 
     tenants: {
-        list: (filters?: { user_id?: string; subscription_id?: string; status?: string }) => {
+        list: (filters?: {
+            user_id?: string;
+            subscription_id?: string;
+            status?: string;
+        }) => {
             const query = new URLSearchParams(
-                Object.entries(filters ?? {}).filter(([, v]) => v) as [string, string][],
+                Object.entries(filters ?? {}).filter(([, v]) => v) as [
+                    string,
+                    string,
+                ][],
             ).toString();
             return request<Paginated<ControllerTenant>>(
                 `/api/v1/tenants${query ? `?${query}` : ''}`,
@@ -358,49 +440,109 @@ export const controller = {
         },
         get: (id: string) => request<ControllerTenant>(`/api/v1/tenants/${id}`),
         create: (body: Record<string, unknown>) =>
-            request<ControllerTenant>('/api/v1/tenants', { method: 'POST', body }),
+            request<ControllerTenant>('/api/v1/tenants', {
+                method: 'POST',
+                body,
+            }),
         update: (id: string, body: Record<string, unknown>) =>
-            request<ControllerTenant>(`/api/v1/tenants/${id}`, { method: 'PATCH', body }),
-        remove: (id: string) => request<void>(`/api/v1/tenants/${id}`, { method: 'DELETE' }),
+            request<ControllerTenant>(`/api/v1/tenants/${id}`, {
+                method: 'PATCH',
+                body,
+            }),
+        remove: (id: string) =>
+            request<void>(`/api/v1/tenants/${id}`, { method: 'DELETE' }),
 
-        provision: (id: string) => request<AsyncAccepted>(`/api/v1/tenants/${id}/provision`, { method: 'POST' }),
-        redeploy: (id: string) => request<AsyncAccepted>(`/api/v1/tenants/${id}/redeploy`, { method: 'POST' }),
-        stop: (id: string) => request<AsyncAccepted>(`/api/v1/tenants/${id}/stop`, { method: 'POST' }),
-        start: (id: string) => request<AsyncAccepted>(`/api/v1/tenants/${id}/start`, { method: 'POST' }),
+        provision: (id: string) =>
+            request<AsyncAccepted>(`/api/v1/tenants/${id}/provision`, {
+                method: 'POST',
+            }),
+        redeploy: (id: string) =>
+            request<AsyncAccepted>(`/api/v1/tenants/${id}/redeploy`, {
+                method: 'POST',
+            }),
+        stop: (id: string) =>
+            request<AsyncAccepted>(`/api/v1/tenants/${id}/stop`, {
+                method: 'POST',
+            }),
+        start: (id: string) =>
+            request<AsyncAccepted>(`/api/v1/tenants/${id}/start`, {
+                method: 'POST',
+            }),
         resize: (id: string, body: Record<string, unknown>) =>
-            request<AsyncAccepted>(`/api/v1/tenants/${id}/resize`, { method: 'POST', body }),
+            request<AsyncAccepted>(`/api/v1/tenants/${id}/resize`, {
+                method: 'POST',
+                body,
+            }),
         migrate: (id: string, body: Record<string, unknown>) =>
-            request<AsyncAccepted>(`/api/v1/tenants/${id}/migrate`, { method: 'POST', body }),
+            request<AsyncAccepted>(`/api/v1/tenants/${id}/migrate`, {
+                method: 'POST',
+                body,
+            }),
         runDbMigrations: (id: string) =>
-            request<AsyncAccepted>(`/api/v1/tenants/${id}/db-migrate`, { method: 'POST' }),
+            request<AsyncAccepted>(`/api/v1/tenants/${id}/db-migrate`, {
+                method: 'POST',
+            }),
 
-        backups: (id: string) => request<Paginated<Record<string, unknown>>>(`/api/v1/tenants/${id}/backups`),
+        backups: (id: string) =>
+            request<Paginated<Record<string, unknown>>>(
+                `/api/v1/tenants/${id}/backups`,
+            ),
         createBackup: (id: string) =>
-            request<AsyncAccepted>(`/api/v1/tenants/${id}/backups`, { method: 'POST' }),
+            request<AsyncAccepted>(`/api/v1/tenants/${id}/backups`, {
+                method: 'POST',
+            }),
         restoreBackup: (id: string, backupId: string) =>
-            request<AsyncAccepted>(`/api/v1/tenants/${id}/backups/${backupId}/restore`, { method: 'POST' }),
+            request<AsyncAccepted>(
+                `/api/v1/tenants/${id}/backups/${backupId}/restore`,
+                { method: 'POST' },
+            ),
 
         /** Moves the tenant's data to another cluster (dump + restore). */
         migrateDatabase: (id: string, body: Record<string, unknown>) =>
-            request<AsyncAccepted>(`/api/v1/tenants/${id}/migrate-database`, { method: 'POST', body }),
+            request<AsyncAccepted>(`/api/v1/tenants/${id}/migrate-database`, {
+                method: 'POST',
+                body,
+            }),
         dbMigrations: (id: string) =>
-            request<Paginated<ControllerDbMigration>>(`/api/v1/tenants/${id}/db-migrations`),
+            request<Paginated<ControllerDbMigration>>(
+                `/api/v1/tenants/${id}/db-migrations`,
+            ),
 
-        domains: (id: string) => request<Paginated<ControllerDomain>>(`/api/v1/tenants/${id}/domains`),
+        domains: (id: string) =>
+            request<Paginated<ControllerDomain>>(
+                `/api/v1/tenants/${id}/domains`,
+            ),
         addDomain: (id: string, body: Record<string, unknown>) =>
-            request<ControllerDomain>(`/api/v1/tenants/${id}/domains`, { method: 'POST', body }),
+            request<ControllerDomain>(`/api/v1/tenants/${id}/domains`, {
+                method: 'POST',
+                body,
+            }),
 
-        containerLogs: (id: string) => request<unknown>(`/api/v1/tenants/${id}/container-logs`),
+        containerLogs: (id: string) =>
+            request<unknown>(`/api/v1/tenants/${id}/container-logs`),
     },
 
     databases: {
-        list: () => request<Paginated<ControllerDatabase>>('/api/v1/database-connections'),
-        get: (id: string) => request<ControllerDatabase>(`/api/v1/database-connections/${id}`),
+        list: () =>
+            request<Paginated<ControllerDatabase>>(
+                '/api/v1/database-connections',
+            ),
+        get: (id: string) =>
+            request<ControllerDatabase>(`/api/v1/database-connections/${id}`),
         create: (body: Record<string, unknown>) =>
-            request<ControllerDatabase>('/api/v1/database-connections', { method: 'POST', body }),
+            request<ControllerDatabase>('/api/v1/database-connections', {
+                method: 'POST',
+                body,
+            }),
         update: (id: string, body: Record<string, unknown>) =>
-            request<ControllerDatabase>(`/api/v1/database-connections/${id}`, { method: 'PATCH', body }),
-        remove: (id: string) => request<void>(`/api/v1/database-connections/${id}`, { method: 'DELETE' }),
+            request<ControllerDatabase>(`/api/v1/database-connections/${id}`, {
+                method: 'PATCH',
+                body,
+            }),
+        remove: (id: string) =>
+            request<void>(`/api/v1/database-connections/${id}`, {
+                method: 'DELETE',
+            }),
         /** Opens a real connection and reports the server version. */
         test: (id: string) =>
             request<{ status: string; version?: string; message?: string }>(
@@ -423,30 +565,47 @@ export const controller = {
     },
 
     domains: {
-        activate: (id: string) => request<ControllerDomain>(`/api/v1/domains/${id}/activate`, { method: 'POST' }),
-        verify: (id: string) => request<ControllerDomain>(`/api/v1/domains/${id}/verify`, { method: 'POST' }),
-        disable: (id: string) => request<ControllerDomain>(`/api/v1/domains/${id}/disable`, { method: 'POST' }),
-        remove: (id: string) => request<void>(`/api/v1/domains/${id}`, { method: 'DELETE' }),
+        activate: (id: string) =>
+            request<ControllerDomain>(`/api/v1/domains/${id}/activate`, {
+                method: 'POST',
+            }),
+        verify: (id: string) =>
+            request<ControllerDomain>(`/api/v1/domains/${id}/verify`, {
+                method: 'POST',
+            }),
+        disable: (id: string) =>
+            request<ControllerDomain>(`/api/v1/domains/${id}/disable`, {
+                method: 'POST',
+            }),
+        remove: (id: string) =>
+            request<void>(`/api/v1/domains/${id}`, { method: 'DELETE' }),
     },
 
     logs: {
         list: (params?: Record<string, string | undefined>) =>
-            request<Paginated<ControllerActivityLog>>(`/api/v1/logs${toQuery(params)}`),
-        operations: (params?: Record<string, string | undefined>) =>
-            request<Paginated<ControllerOperation>>(`/api/v1/logs/operations${toQuery(params)}`),
-        operation: (id: string) =>
-            request<{ operation: ControllerOperation; steps: ControllerActivityLog[] }>(
-                `/api/v1/logs/operations/${id}`,
+            request<Paginated<ControllerActivityLog>>(
+                `/api/v1/logs${toQuery(params)}`,
             ),
+        operations: (params?: Record<string, string | undefined>) =>
+            request<Paginated<ControllerOperation>>(
+                `/api/v1/logs/operations${toQuery(params)}`,
+            ),
+        operation: (id: string) =>
+            request<{
+                operation: ControllerOperation;
+                steps: ControllerActivityLog[];
+            }>(`/api/v1/logs/operations/${id}`),
     },
 
     dashboard: {
-        summary: () => request<Record<string, unknown>>('/api/v1/dashboard/summary'),
+        summary: () =>
+            request<Record<string, unknown>>('/api/v1/dashboard/summary'),
     },
 
     proxy: {
         info: () => request<Record<string, unknown>>('/api/v1/proxy/info'),
-        sync: () => request<AsyncAccepted>('/api/v1/proxy/sync', { method: 'POST' }),
+        sync: () =>
+            request<AsyncAccepted>('/api/v1/proxy/sync', { method: 'POST' }),
         verify: () => request<Record<string, unknown>>('/api/v1/proxy/verify'),
     },
 };

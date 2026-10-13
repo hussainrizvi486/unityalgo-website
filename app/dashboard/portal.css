@@ -1,0 +1,170 @@
+/* Customer portal only; overlays receive the same scope through ThemeScope. */
+.customer-portal {
+    --page: #fafafa;
+    --surface: #ffffff;
+    --border: #e7e7ea;
+    --border-strong: #d5d5da;
+    --primary: #141416;
+    --primary-hover: #000000;
+    --on-primary: #ffffff;
+    --muted: #77777e;
+    --positive: #1a7f4b;
+    --caution: #8a5a00;
+    --critical: #b3261e;
+    --neutral-accent: #2f5c8f;
+    --radius: 10px;
+    --dens: 1;
+    --control-height: 32px;
+    --control-font-size: 12px;
+    --control-line-height: 16px;
+    --control-radius: 6px;
+    --control-padding-x: 12px;
+    --label-gap: 6px;
+    --panel-padding: 24px;
+    --font-ui:
+        var(--font-portal-ui), 'Inter', ui-sans-serif, system-ui, sans-serif;
+    --font-display:
+        var(--font-portal-display), 'Inter Tight', ui-sans-serif, sans-serif;
+
+    --color-ink-50: #f7f7f8;
+    --color-ink-100: #efeff1;
+    --color-ink-200: var(--border);
+    --color-ink-300: var(--border-strong);
+    --color-ink-400: #9b9ba1;
+    --color-ink-500: var(--muted);
+    --color-ink-600: #57575d;
+    --color-ink-700: #3a3a3f;
+    --color-ink-800: #1f1f22;
+    --color-ink-900: var(--primary);
+    --color-ink-950: var(--primary);
+    --color-brand: var(--primary);
+    --color-brand-deep: var(--primary-hover);
+    --color-brand-press: var(--primary-hover);
+    --color-brand-soft: var(--neutral-accent);
+    --color-brand-subdued: #efeff1;
+    --color-link: var(--neutral-accent);
+    --color-success-50: #eef7f1;
+    --color-success-100: #eef7f1;
+    --color-success-500: var(--positive);
+    --color-success-600: var(--positive);
+    --color-success-700: var(--positive);
+    --color-warning-50: #fbf5e9;
+    --color-warning-500: var(--caution);
+    --color-warning-600: var(--caution);
+    --color-warning-700: var(--caution);
+    --color-error-50: #fbeeed;
+    --color-error-100: #fbeeed;
+    --color-error-500: var(--critical);
+    --color-error-600: var(--critical);
+    --color-error-700: var(--critical);
+    --color-info-50: #eef3f9;
+    --color-info-500: var(--neutral-accent);
+    --color-info-600: var(--neutral-accent);
+    --color-background: var(--surface);
+    --color-foreground: var(--primary);
+    --color-primary: var(--primary);
+    --color-primary-foreground: var(--on-primary);
+    --color-secondary: #efeff1;
+    --color-secondary-foreground: var(--primary);
+    --color-accent: #efeff1;
+    --color-accent-foreground: var(--primary);
+    --color-muted: #f7f7f8;
+    --color-muted-foreground: var(--muted);
+    --color-input: var(--border-strong);
+    --color-border: var(--border);
+    --color-ring: var(--neutral-accent);
+    --color-destructive: var(--critical);
+    --color-destructive-foreground: var(--on-primary);
+    --color-popover: var(--surface);
+    --color-popover-foreground: var(--primary);
+    --color-sidebar: var(--surface);
+    --color-sidebar-foreground: #3a3a3f;
+    --color-sidebar-primary: var(--primary);
+    --color-sidebar-primary-foreground: var(--on-primary);
+    --color-sidebar-accent: #efeff1;
+    --color-sidebar-accent-foreground: var(--primary);
+    --color-sidebar-border: var(--border);
+    --color-sidebar-ring: var(--neutral-accent);
+    --radius-xs: 2px;
+    --radius-sm: 4px;
+    --radius-md: 6px;
+    --radius-lg: 8px;
+    --radius-xl: var(--radius);
+    --radius-2xl: 14px;
+    --radius-3xl: 20px;
+
+    font-family: var(--font-ui);
+    font-feature-settings: 'cv05', 'ss03';
+    -webkit-font-smoothing: antialiased;
+}
+
+.customer-portal [data-slot='sidebar-inset'] {
+    background: var(--page);
+}
+
+.customer-portal :is(h1, h2, h3, h4) {
+    font-family: var(--font-display);
+}
+
+.customer-portal.rounded,
+.customer-portal .rounded {
+    border-radius: var(--radius-sm);
+}
+
+.customer-portal.rounded-md,
+.customer-portal .rounded-md {
+    border-radius: var(--radius-md);
+}
+
+.customer-portal :is(.bg-brand, .bg-ink-950, .bg-primary):is(button, a):hover {
+    background-color: var(--primary-hover);
+}
+
+/* One sizing contract for every portal form, including composed inputs. */
+.customer-portal
+    :is(
+        [data-slot='input'],
+        [data-slot='select-trigger'],
+        [data-slot='button']
+    ) {
+    height: calc(var(--control-height) * var(--dens));
+    font-size: var(--control-font-size);
+    line-height: var(--control-line-height);
+    border-radius: var(--control-radius);
+}
+.customer-portal [data-slot='button'] {
+    padding-block: 0;
+}
+.customer-portal [data-slot='button'][data-size='sm'] {
+    height: calc((var(--control-height) - 4px) * var(--dens));
+}
+.customer-portal [data-slot='button'][data-size='lg'] {
+    height: calc((var(--control-height) + 8px) * var(--dens));
+}
+.customer-portal [data-slot='button'][data-size='icon'] {
+    width: calc(var(--control-height) * var(--dens));
+    padding: 0;
+}
+.customer-portal [data-slot='label'] {
+    font-size: var(--control-font-size);
+    line-height: var(--control-line-height);
+    font-weight: 500;
+    margin-bottom: var(--label-gap);
+}
+.customer-portal [data-slot='textarea'] {
+    font-size: var(--control-font-size);
+    line-height: 1.6;
+    border-radius: var(--control-radius);
+}
+.customer-portal [data-slot='portal-panel'] {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: calc(var(--panel-padding) * var(--dens));
+}
+.customer-portal [data-slot='portal-panel'][data-padding='none'] {
+    padding: 0;
+}
+.customer-portal [data-slot='button']:not([data-size='icon']) {
+    padding-inline: var(--control-padding-x);
+}

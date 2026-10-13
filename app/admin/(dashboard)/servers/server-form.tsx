@@ -23,6 +23,7 @@ export interface ServerFormValues {
     max_memory_mb: string;
     max_containers: string;
     is_active: boolean;
+    frappe_enabled: boolean;
 }
 
 function SubmitButton({ label }: { label: string }) {
@@ -46,6 +47,10 @@ export function ServerForm({ action, defaultValues, submitLabel, isEdit }: Serve
 
     return (
         <form action={formAction} className="space-y-6 max-w-2xl">
+            <label className="flex items-start gap-3 rounded-lg border border-ink-200 p-4 text-sm">
+                <Checkbox name="frappe_enabled" defaultChecked={defaultValues?.frappe_enabled ?? false} />
+                <span>Allow Frappe site provisioning<span className="mt-1 block text-xs text-ink-500">For healthy worker nodes with Docker Compose, at least 6 GB of available memory and ten container slots per site.</span></span>
+            </label>
             <div className="grid md:grid-cols-2 gap-6">
                 <div>
                     <Label htmlFor="name" className="text-sm text-ink-700 mb-1.5">Node name</Label>

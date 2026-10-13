@@ -10,9 +10,9 @@ const breadcrumbs = generateBreadcrumbJsonLd([
 ]);
 
 export const metadata = generatePageMetadata({
-    title: 'AlgoSuite Coming Soon | UnityAlgo',
+    title: 'AlgoSuite | Connected Business Management',
     description:
-        'AlgoSuite is a complete business management platform for modern companies, currently under development by UnityAlgo.',
+        'Explore AlgoSuite, a connected business management platform in development by UnityAlgo. Discover planned finance, inventory, CRM, HR, and operations workflows.',
     keywords: [
         'AlgoSuite',
         'ERP Software',

@@ -14,8 +14,8 @@ import { createSupportTicketAction, type AccountFormState } from '@/app/customer
 function SubmitButton() {
   const { pending } = useFormStatus();
   return (
-    <Button type="submit" disabled={pending} className="h-11 gap-2 bg-ink-900 px-6 text-white hover:bg-ink-800">
-      {pending ? 'Sending…' : 'Send request'}<Send className="h-4 w-4" />
+    <Button type="submit" disabled={pending} className="py-2 gap-2 bg-ink-900 px-6 text-white hover:bg-ink-800">
+      {pending ? 'Sending…' : 'Send request'}<Send className="size-3" />
     </Button>
   );
 }

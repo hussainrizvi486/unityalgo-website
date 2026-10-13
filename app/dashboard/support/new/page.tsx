@@ -7,7 +7,7 @@ export default async function NewTicketPage() {
   await requireCustomerSession();
 
   return (
-    <div className="mx-auto max-w-2xl">
+    <div className="mx-auto max-w-7xl">
       <Link href="/dashboard/support" className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-ink-500 hover:text-ink-700">
         <ArrowLeft className="h-4 w-4" />Back to tickets
       </Link>

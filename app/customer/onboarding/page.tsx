@@ -1,8 +1,7 @@
 import { Suspense } from 'react';
-import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/db';
-import { verifyCustomerSessionToken, CUSTOMER_SESSION_COOKIE } from '@/lib/customer-auth';
+import { getCustomerSession } from '@/lib/customer-session';
 import { OnboardingFlow } from '@/components/customer/onboarding-flow';
 import { formatCurrency } from '@/lib/pricing';
 
@@ -12,9 +11,7 @@ export default async function CustomerOnboardingPage({
   searchParams: Promise<{ plan?: string }>;
 }) {
   const { plan } = await searchParams;
-  const cookieStore = await cookies();
-  const token = cookieStore.get(CUSTOMER_SESSION_COOKIE)?.value;
-  const session = token ? await verifyCustomerSessionToken(token) : null;
+  const session = await getCustomerSession();
   if (!session) {
     const next = `/customer/onboarding${plan ? `?plan=${encodeURIComponent(plan)}` : ''}`;
     redirect(`/login?next=${encodeURIComponent(next)}`);

@@ -6,10 +6,10 @@ import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/db';
 import { createSessionToken, SESSION_COOKIE, SESSION_DURATION_SECONDS } from '@/lib/auth';
 import {
-    createCustomerSessionToken,
     CUSTOMER_SESSION_COOKIE,
     CUSTOMER_SESSION_DURATION_SECONDS,
 } from '@/lib/customer-auth';
+import { createTrackedCustomerSession } from '@/lib/login-sessions';
 
 /**
  * One sign-in for both roles.
@@ -78,7 +78,7 @@ export async function loginAction(
     } else {
         cookieStore.set(
             CUSTOMER_SESSION_COOKIE,
-            await createCustomerSessionToken({ userId: user.id, email: user.email }),
+            await createTrackedCustomerSession(user),
             {
                 httpOnly: true,
                 secure: process.env.NODE_ENV === 'production',

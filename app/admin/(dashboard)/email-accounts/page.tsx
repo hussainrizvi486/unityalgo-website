@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/db';
 import { requireAdmin } from '@/lib/admin-session';
 import { encryptionIsConfigured } from '@/lib/secret-box';
+import { getEmailDeliveryWarning } from '@/lib/email-delivery';
 import { deleteEmailAccountAction, testEmailAccountAction } from '@/app/admin/email-actions';
 import { AdminPageHeader, AdminPageError, AdminPageNotice } from '@/components/admin/page-header';
 import { EmailAccountsList, type EmailAccountRow } from './email-accounts-list';
@@ -16,7 +17,7 @@ export default async function AdminEmailAccountsPage() {
 
     const accounts = await prisma.emailAccount.findMany({
         select: {
-            id: true, label: true, address: true, purpose: true,
+            id: true, label: true, address: true, purpose: true, createdAt: true,
             smtpHost: true, smtpPort: true, smtpSecure: true,
             imapHost: true, imapPort: true,
             isDefault: true, isActive: true,
@@ -44,6 +45,16 @@ export default async function AdminEmailAccountsPage() {
 
     const failing = accounts.filter((a) => a.lastTestOk === false);
     const hasDefault = accounts.some((a) => a.isDefault && a.isActive);
+    const verificationAccount = accounts.filter((a) => a.isActive && a.purpose === 'TRANSACTIONAL')
+        .sort((a, b) => Number(b.isDefault) - Number(a.isDefault) || a.createdAt.getTime() - b.createdAt.getTime())[0]
+        ?? accounts.find((a) => a.isActive && a.isDefault);
+    const environmentConfigured = ['SMTP_HOST', 'SMTP_PORT', 'SMTP_USER', 'SMTP_PASSWORD']
+        .every((key) => Boolean(process.env[key]));
+    const deliveryWarning = verificationAccount
+        ? await getEmailDeliveryWarning(verificationAccount.smtpHost, verificationAccount.address)
+        : environmentConfigured
+            ? await getEmailDeliveryWarning(process.env.SMTP_HOST!, process.env.SMTP_FROM || process.env.SMTP_USER!)
+            : null;
 
     return (
         <div>
@@ -56,6 +67,14 @@ export default async function AdminEmailAccountsPage() {
             {!encryptionIsConfigured() ? (
                 <AdminPageError message="CREDENTIAL_ENCRYPTION_KEY is not set, so passwords cannot be stored. Generate one with `openssl rand -base64 32` and add it to .env." />
             ) : null}
+
+            {!verificationAccount ? (
+                environmentConfigured
+                    ? <AdminPageNotice message="Registration verification codes use the SMTP_* environment mailbox. No active transactional or default account is configured here." />
+                    : <AdminPageError message="Registration emails cannot be sent: configure an active transactional email account or the SMTP_* environment variables." />
+            ) : null}
+
+            {deliveryWarning ? <AdminPageError message={deliveryWarning} /> : null}
 
             {accounts.length > 0 && !hasDefault ? (
                 <AdminPageNotice message="No active default account. Any purpose without its own mailbox falls through to the SMTP_* environment variables." />

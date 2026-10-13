@@ -173,6 +173,12 @@ class DeploymentController(BaseController):
                 f"Node '{server.name}' has role '{server.role}'; tenant "
                 "containers can only run on worker nodes"
             )
+        self.session.execute(text("SELECT pg_advisory_xact_lock(hashtext('customer-site-placement'))"))
+        from app.controller.server import ServerController
+        load = ServerController(self.session, self.settings).node_load()
+        slots, used = self.session.execute(select(load.c.containers, load.c.used_mb).where(load.c.server_id == server.id)).first() or (0, 0)
+        if slots >= server.max_containers or used + tenant.memory_limit_mb + self.settings.node_memory_reserve_mb > server.max_memory_mb:
+            raise ConflictError('The worker does not have capacity for this deployment.')
 
         deployment_id = uuid.uuid4()
         port = self.allocate_port(server)

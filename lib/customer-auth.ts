@@ -33,9 +33,12 @@ function getSecretKey() {
 interface CustomerSessionPayload {
     userId: string;
     email: string;
+    sessionId?: string;
 }
 
-export async function createCustomerSessionToken(payload: CustomerSessionPayload) {
+export async function createCustomerSessionToken(
+    payload: CustomerSessionPayload,
+) {
     return new SignJWT({ ...payload })
         .setProtectedHeader({ alg: 'HS256' })
         .setIssuedAt()

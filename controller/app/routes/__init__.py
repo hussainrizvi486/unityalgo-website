@@ -6,11 +6,13 @@ from .health import HealthRoutes
 from .log import LogRoutes
 from .proxy import ProxyRoutes
 from .server import ServerRoutes
+from .site import SiteRoutes
 from .tenant import LegacyRoutes, TenantRoutes
 
 ALL_ROUTES = (
     HealthRoutes,
     ServerRoutes,
+    SiteRoutes,
     TenantRoutes,
     DomainRoutes,
     LogRoutes,

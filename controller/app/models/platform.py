@@ -33,6 +33,7 @@ from app.models.base import Base
 # the ones mapped below -- autogenerate compares against the live database, so
 # an unmapped Prisma table would otherwise look like one to DROP.
 PRISMA_OWNED_TABLES = frozenset({
+    "AppCatalog", "LoginSession", "Notification", "EmailAccount", "Currency", "PaddleEvent", "leads",
     "User",
     "Product",
     "Subscription",

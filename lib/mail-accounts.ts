@@ -63,6 +63,9 @@ export function buildSmtpTransport(settings: {
         // starts plaintext and upgrades via STARTTLS. Getting this wrong makes
         // nodemailer hang waiting for a greeting the server never sends.
         secure: settings.secure,
+        connectionTimeout: 15_000,
+        greetingTimeout: 15_000,
+        socketTimeout: 30_000,
         auth: { user: settings.username, pass: settings.password },
     });
 }

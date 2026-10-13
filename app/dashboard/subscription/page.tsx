@@ -40,7 +40,7 @@ export default async function SubscriptionPage({ searchParams }: SubscriptionPag
   }
 
   return (
-    <div className="mx-auto max-w-4xl">
+    <div className="mx-auto max-w-7xl">
       <p className="text-xs font-bold uppercase tracking-[.18em] text-brand">Subscription</p>
       <h1 className="mt-2 text-3xl font-bold tracking-tight text-ink-950">Plan and billing</h1>
       <p className="mt-2 text-sm text-ink-500">Manage your plans and add-ons — you can hold one plan per product at a time.</p>
@@ -51,10 +51,12 @@ export default async function SubscriptionPage({ searchParams }: SubscriptionPag
 
       {subscriptions.length === 0 ? (
         <section className="mt-8 flex min-h-72 flex-col items-center justify-center rounded-xl border border-dashed border-ink-300 bg-white p-6 text-center">
-          <Store className="h-10 w-10 text-ink-300" />
+          <Store className="size-8 text-ink-300" />
           <h2 className="mt-4 text-xl font-bold text-ink-900">No active subscription</h2>
           <p className="mt-2 max-w-sm text-sm text-ink-500">Choose a plan to activate your subscription.</p>
-          <Link href="/dashboard/plans" className="mt-5 inline-flex h-10 items-center gap-2 rounded-full bg-brand px-5 text-sm font-semibold text-white">View plans<ArrowRight className="h-4 w-4" /></Link>
+          <Button asChild className='py-2'>
+            <Link href="/dashboard/plans" className="mt-4 inline-flex items-center gap-2 rounded-full bg-brand px-4 text-sm font-semibold text-white">View plans<ArrowRight className="size-4" /></Link>
+          </Button>
         </section>
       ) : (
         <div className="mt-8 space-y-10">

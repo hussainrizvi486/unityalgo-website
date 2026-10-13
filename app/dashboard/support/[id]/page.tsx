@@ -23,7 +23,7 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
   const dateFormatter = new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' });
 
   return (
-    <div className="mx-auto max-w-3xl">
+    <div className="mx-auto max-w-4xl">
       <Link href="/dashboard/support" className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-ink-500 hover:text-ink-700">
         <ArrowLeft className="h-4 w-4" />Back to tickets
       </Link>

@@ -69,7 +69,8 @@ function info(message: string) {
 
 async function mintCustomerSession(userId: string, email: string) {
     const key = new TextEncoder().encode(SESSION_SECRET);
-    return new SignJWT({ userId, email })
+    const session = await prisma.loginSession.create({ data: { userId, userAgent: 'E2E test', expiresAt: new Date(Date.now() + 3600_000) } });
+    return new SignJWT({ userId, email, sessionId: session.id })
         .setProtectedHeader({ alg: 'HS256' })
         .setIssuedAt()
         .setExpirationTime('1h')

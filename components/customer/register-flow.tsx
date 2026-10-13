@@ -152,11 +152,12 @@ export function OtpStep({ email }: { email: string }) {
                 <form action={resendAction}>
                     <button
                         type="submit"
-                        disabled={cooldown > 0}
+                        // disabled={cooldown > 0}
                         className="inline-flex items-center gap-1.5 font-semibold text-link hover:underline disabled:cursor-not-allowed disabled:text-ink-400 disabled:no-underline"
                     >
                         <RefreshCw className="h-3.5 w-3.5" />
-                        {cooldown > 0 ? `Resend code in ${cooldown}s` : 'Resend code'}
+                        Resend code
+                        {/* {cooldown > 0 ? `Resend code in ${cooldown}s` : 'Resend code'} */}
                     </button>
                 </form>
                 <form action={restartRegistrationAction}>

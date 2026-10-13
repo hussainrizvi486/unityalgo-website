@@ -173,6 +173,7 @@ export default async function ServerDetailPage({ params, searchParams }: PagePro
                         max_memory_mb: server.max_memory_mb ? String(server.max_memory_mb) : '',
                         max_containers: server.max_containers ? String(server.max_containers) : '',
                         is_active: server.is_active,
+                        frappe_enabled: server.frappe_enabled,
                     }}
                 />
             </section>

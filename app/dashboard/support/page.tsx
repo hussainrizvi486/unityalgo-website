@@ -17,7 +17,7 @@ export default async function SupportPage() {
   const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER;
 
   return (
-    <div className="mx-auto max-w-4xl">
+    <div className="mx-auto max-w-7xl">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-xs font-bold uppercase tracking-[.18em] text-brand">Support</p>
@@ -33,8 +33,8 @@ export default async function SupportPage() {
             </Link>
           ) : null}
           <Link href="/dashboard/support/new">
-            <Button className="gap-2 bg-ink-900 text-white hover:bg-ink-800">
-              <Plus className="h-4 w-4" />New ticket
+            <Button className="gap-2 bg-ink-900 text-white hover:bg-ink-800 py-2">
+              <Plus className="size-4" />New ticket
             </Button>
           </Link>
         </div>
@@ -42,7 +42,7 @@ export default async function SupportPage() {
 
       {tickets.length === 0 ? (
         <section className="mt-8 flex min-h-64 flex-col items-center justify-center rounded-xl border border-dashed border-ink-300 bg-white p-6 text-center">
-          <MessageSquareText className="h-10 w-10 text-ink-300" />
+          <MessageSquareText className="size-8 text-ink-300" />
           <h2 className="mt-4 text-lg font-bold text-ink-900">No support tickets yet</h2>
           <p className="mt-2 max-w-sm text-sm text-ink-500">Raise a ticket and our team will get back to you.</p>
         </section>

@@ -11,6 +11,9 @@ exactly what a partial API would have to be checked against anyway.
 from app.config import settings as default_settings
 from app.errors import ProxyConfigurationError
 from app.services.caddy_admin_client import CaddyAdminClient
+from sqlalchemy import select, text
+from sqlalchemy.orm import joinedload
+from app.models.site import Site
 
 
 class ProxyConfigurationService:
@@ -43,6 +46,11 @@ class ProxyConfigurationService:
                     ],
                 }
             )
+        for site in session.scalars(select(Site).options(joinedload(Site.server)).where(Site.status.in_(['routing', 'ready']))):
+            routes.append({
+                '@id': f'site-{site.id}', 'match': [{'host': [site.domain]}],
+                'handle': [{'handler': 'reverse_proxy', 'upstreams': [{'dial': f'{site.server.dial_host}:{site.port}'}]}],
+            })
         # Caddy's automatic HTTPS: listening on :443 with hostname-matched
         # routes and no explicit TLS connection policy is enough for Caddy to
         # provision/manage certs for every route host itself (Let's Encrypt
@@ -72,6 +80,7 @@ class ProxyConfigurationService:
         before this existed.
         """
         from app.controller.server import ServerController
+        session.execute(text("SELECT pg_advisory_xact_lock(hashtext('proxy-route-sync'))"))
         proxy = ServerController(session, self.settings).proxy_node()
         if proxy is None:
             if recorder:

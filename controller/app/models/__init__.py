@@ -18,6 +18,7 @@ from app.models.platform import (
     PlatformUser,
 )
 from app.models.server import ServerNode, Tenant
+from app.models.site import Site
 
 __all__ = [
     "Base",

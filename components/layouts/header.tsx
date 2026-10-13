@@ -23,7 +23,7 @@ const serviceLinks = [
 
 const productLinks = [
   { name: 'AlgoSuite', href: '/products/algosuite', desc: 'Our ERP platform — accounting, HR, inventory and CRM.', status: null },
-  { name: 'UnityCommerce', href: '/products/unitycommerce', desc: 'Launch and run an online store, built in-house.'},
+  // { name: 'UnityCommerce', href: '/products/unitycommerce', desc: 'Launch and run an online store, built in-house.'},
 ];
 
 const navLinks = [
@@ -65,6 +65,26 @@ const DesktopNav = ({ isScrolled }: { isScrolled: boolean }) => (
   >
     <NavigationMenuList>
       <NavigationMenuItem>
+        <NavigationMenuTrigger>Products</NavigationMenuTrigger>
+        <NavigationMenuContent>
+          <ul className="grid w-[26rem] gap-1 p-2">
+            {productLinks.map((link) => (
+              <li key={link.name}>
+                <NavigationMenuLink asChild>
+                  <Link href={link.href}>
+                    <span className="flex items-center gap-2 font-medium text-ink-900">
+                      {link.name}
+                    </span>
+                    <span className="text-xs leading-snug text-ink-500">{link.desc}</span>
+                  </Link>
+                </NavigationMenuLink>
+              </li>
+            ))}
+          </ul>
+        </NavigationMenuContent>
+      </NavigationMenuItem>
+
+      <NavigationMenuItem>
         <NavigationMenuTrigger>Services</NavigationMenuTrigger>
         <NavigationMenuContent>
           <ul className="grid w-[34rem] grid-cols-2 gap-1 p-2">
@@ -87,26 +107,6 @@ const DesktopNav = ({ isScrolled }: { isScrolled: boolean }) => (
               </Link>
             </NavigationMenuLink>
           </div>
-        </NavigationMenuContent>
-      </NavigationMenuItem>
-
-      <NavigationMenuItem>
-        <NavigationMenuTrigger>Products</NavigationMenuTrigger>
-        <NavigationMenuContent>
-          <ul className="grid w-[26rem] gap-1 p-2">
-            {productLinks.map((link) => (
-              <li key={link.name}>
-                <NavigationMenuLink asChild>
-                  <Link href={link.href}>
-                    <span className="flex items-center gap-2 font-medium text-ink-900">
-                      {link.name}
-                    </span>
-                    <span className="text-xs leading-snug text-ink-500">{link.desc}</span>
-                  </Link>
-                </NavigationMenuLink>
-              </li>
-            ))}
-          </ul>
         </NavigationMenuContent>
       </NavigationMenuItem>
 

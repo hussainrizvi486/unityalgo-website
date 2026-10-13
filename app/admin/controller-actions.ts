@@ -58,6 +58,7 @@ export async function createServerAction(
     const sshPassword = String(formData.get('ssh_password') ?? '');
     const body: Record<string, unknown> = {
         name,
+        frappe_enabled: formData.get('frappe_enabled') === 'on',
         ip_address: ipAddress,
         private_ip: String(formData.get('private_ip') ?? '').trim() || null,
         role: String(formData.get('role') ?? 'worker'),
@@ -93,6 +94,7 @@ export async function updateServerAction(
         max_memory_mb: Number(formData.get('max_memory_mb') ?? 0) || undefined,
         max_containers: Number(formData.get('max_containers') ?? 0) || undefined,
         is_active: formData.get('is_active') === 'on',
+        frappe_enabled: formData.get('frappe_enabled') === 'on',
     };
     const sshPassword = String(formData.get('ssh_password') ?? '');
     if (sshPassword) body.ssh_password = sshPassword;

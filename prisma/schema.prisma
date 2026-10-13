@@ -44,6 +44,8 @@ model User {
   supportTickets SupportTicket[]
   comments       Comment[]
   billingRecords BillingRecord[]
+  loginSessions  LoginSession[]
+  notifications Notification[]
 
   @@index([role])
   leads Lead[]
@@ -562,4 +564,49 @@ model Post {
   updatedAt       DateTime  @updatedAt
 
   @@index([published, publishedAt])
+}
+
+/// Server-managed application catalogue. App packages must be present in the Frappe image.
+model AppCatalog {
+  id             String   @id @default(cuid())
+  slug           String   @unique
+  name           String
+  description    String
+  category       String
+  frappeAppName  String?
+  isInstallable  Boolean  @default(false)
+  isActive       Boolean  @default(true)
+  sortOrder      Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([isActive, sortOrder])
+}
+
+model LoginSession {
+  id         String   @id @default(uuid())
+  userId     String
+  userAgent  String
+  createdAt  DateTime @default(now())
+  lastSeenAt DateTime @default(now())
+  expiresAt  DateTime
+  revokedAt  DateTime?
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, revokedAt, expiresAt])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  eventKey  String
+  title     String
+  body      String
+  href      String?
+  readAt    DateTime?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, eventKey])
+  @@index([userId, readAt, createdAt])
 }

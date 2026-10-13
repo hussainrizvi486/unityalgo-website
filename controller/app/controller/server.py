@@ -2,13 +2,14 @@ import io
 from datetime import datetime, timezone
 
 import paramiko
-from sqlalchemy import func, select
+from sqlalchemy import func, select, text, union_all, literal
 
 from app.controller.base import BaseController
 from app.errors import ConflictError, NodeUnreachableError, ValidationError
 from app.models.activity import ActivityLog, Operation
 from app.models.deployment import Deployment
 from app.models.server import ServerNode, Tenant
+from app.models.site import Site
 from app.services import crypto
 from app.services.ssh_service import SSHService
 
@@ -38,6 +39,7 @@ class ServerController(BaseController):
         "max_memory_mb",
         "max_containers",
         "is_active",
+        "frappe_enabled",
     )
     SSH_AUTH_METHODS = ("password", "key")
     # DSA/DSSKey was removed from paramiko itself as of 5.0 (pinned in
@@ -49,6 +51,10 @@ class ServerController(BaseController):
         self.check_payload(data, partial)
         v = self.validator
         values = {}
+        if "frappe_enabled" in data:
+            if not isinstance(data["frappe_enabled"], bool):
+                raise ValidationError('frappe_enabled must be a boolean.')
+            values["frappe_enabled"] = data["frappe_enabled"]
 
         if "name" in data:
             values["name"] = v.string(data["name"], "name", max_length=100)
@@ -480,6 +486,8 @@ class ServerController(BaseController):
         containers themselves are unreachable once the node is gone.
         """
         active = self.deployment_count(server)
+        if self.session.scalar(select(func.count()).select_from(Site).where(Site.server_id == server.id)):
+            raise ConflictError('Frappe sites are assigned to this server. Recover or relocate those sites before removing the server.')
         if active:
             if not force:
                 raise ConflictError(
@@ -534,20 +542,24 @@ class ServerController(BaseController):
         by refresh_capacity(); placement reads the deployments table directly so
         a stale cache can never cause an overcommit.
         """
+        allocations = union_all(
+            select(Deployment.server_id.label('server_id'), Deployment.memory_limit_mb.label('memory'), literal(1).label('slots')).where(Deployment.status.in_(Deployment.ACTIVE_STATUSES)),
+            select(Site.server_id.label('server_id'), Site.memory_limit_mb.label('memory'), Site.container_slots.label('slots')).where(Site.status.in_(Site.ACTIVE_STATUSES)),
+        ).subquery()
         return (
             select(
-                Deployment.server_id.label("server_id"),
-                func.count().label("containers"),
-                func.coalesce(func.sum(Deployment.memory_limit_mb), 0).label("used_mb"),
+                allocations.c.server_id.label("server_id"),
+                func.sum(allocations.c.slots).label("containers"),
+                func.coalesce(func.sum(allocations.c.memory), 0).label("used_mb"),
             )
-            .where(Deployment.status.in_(Deployment.ACTIVE_STATUSES))
-            .group_by(Deployment.server_id)
+            .group_by(allocations.c.server_id)
             .subquery()
         )
 
     def available_node(self, required_memory_mb=None):
         """Pick the least-loaded active worker node with room for a container."""
         required = required_memory_mb or self.settings.tenant_memory_limit_mb
+        self.session.execute(text("SELECT pg_advisory_xact_lock(hashtext('customer-site-placement'))"))
         reserve = self.settings.node_memory_reserve_mb
         load = self.node_load()
         # OUTER JOIN + COALESCE: a node with no deployments must still be
@@ -652,15 +664,8 @@ class ServerController(BaseController):
 
     def refresh_capacity(self, server):
         """Recompute the cached counters from live deployments."""
-        containers, used_mb = self.session.execute(
-            select(
-                func.count(),
-                func.coalesce(func.sum(Deployment.memory_limit_mb), 0),
-            ).where(
-                Deployment.server_id == server.id,
-                Deployment.status.in_(Deployment.ACTIVE_STATUSES),
-            )
-        ).one()
+        load = self.node_load()
+        containers, used_mb = self.session.execute(select(load.c.containers, load.c.used_mb).where(load.c.server_id == server.id)).first() or (0, 0)
         server.active_containers = int(containers or 0)
         server.used_memory_mb = int(used_mb or 0)
         self.session.flush()
@@ -668,7 +673,7 @@ class ServerController(BaseController):
 
     def deployment_count(self, server):
         """Active deployments on a node -- the real 'is it in use' signal."""
-        return self.session.scalar(
+        return self.session.scalar(select(func.count()).select_from(Site).where(Site.server_id == server.id)) + self.session.scalar(
             select(func.count())
             .select_from(Deployment)
             .where(

@@ -16,7 +16,7 @@ export default async function AddressesPage() {
   });
 
   return (
-    <div className="mx-auto max-w-3xl">
+    <div className="mx-auto max-w-7xl">
       <Link href="/dashboard/settings" className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-ink-500 hover:text-ink-700">
         <ArrowLeft className="h-4 w-4" />Back to settings
       </Link>
@@ -27,7 +27,7 @@ export default async function AddressesPage() {
           <p className="mt-2 text-sm text-ink-500">Manage the addresses on your account.</p>
         </div>
         <Link href="/dashboard/settings/addresses/new">
-          <Button className="rounded-md bg-ink-900 text-white hover:bg-ink-800">Add address</Button>
+          <Button className="rounded-md bg-ink-900 text-white hover:bg-ink-800 py-2">Add address</Button>
         </Link>
       </div>
 
