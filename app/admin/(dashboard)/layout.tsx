@@ -12,9 +12,10 @@ import { AdminTopbar } from '@/components/admin/admin-topbar';
  */
 export default function AdminDashboardLayout({ children }: { children: React.ReactNode }) {
     return (
-        <SidebarProvider className="bg-ink-100">
+        <SidebarProvider className="bg-ink-100" style={{ '--sidebar-width': '15rem' } as React.CSSProperties}>
             <AdminSidebar />
-            <SidebarInset className="m-3 ml-0 min-w-0 rounded-xl border border-ink-200/70 bg-white shadow-sm">
+            {/* <SidebarInset className="m-3 ml-0 min-w-0 rounded-xl border border-ink-200/70 bg-white shadow-sm"> */}
+            <SidebarInset className="min-w-0 rounded-xl border border-ink-200/70 bg-white shadow-sm">
                 <AdminTopbar />
                 <div className="min-w-0 flex-1 px-6 py-6">{children}</div>
             </SidebarInset>

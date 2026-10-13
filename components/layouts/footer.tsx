@@ -15,7 +15,7 @@ export function Footer() {
   return (
     <footer className="bg-ink-950 text-white py-12">
       <div className="container mx-auto px-2 md:px-4">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-5">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-8 mb-5">
           {/* Company Info */}
           <div className="md:col-span-2">
             <div className="mb-4 text-white">
@@ -32,7 +32,7 @@ export function Footer() {
             <h4 className="mb-4" style={{ fontSize: '1.125rem', fontWeight: 600 }}>
               Quick Links
             </h4>
-            <ul className="space-y-2 ">
+            <ul className="space-y-2">
               <li>
                 <Link
                   href='/'
@@ -69,6 +69,18 @@ export function Footer() {
               <li>
                 <Link href="/privacy-policy" className="text-ink-300 hover:text-white transition-colors cursor-pointer">
                   Privacy Policy
+                </Link>
+              </li>
+            </ul>
+          </div>
+          <div>
+            <h4 className="mb-4" style={{ fontSize: '1.125rem', fontWeight: 600 }}>
+              Products
+            </h4>
+            <ul className="space-y-2 ">
+              <li>
+                <Link href="/products/algosuite" className="text-ink-300 hover:text-white transition-colors cursor-pointer">
+                  AlgoSuite
                 </Link>
               </li>
             </ul>

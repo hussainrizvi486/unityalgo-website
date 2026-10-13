@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
-import { Search } from 'lucide-react';
+import { Command, Search } from 'lucide-react';
 import { SidebarTrigger, useSidebar } from '@/components/ui/sidebar';
 import { Separator } from '@/components/ui/separator';
 import { AdminBreadcrumbs } from '@/components/admin/admin-breadcrumbs';
@@ -86,9 +86,9 @@ export function AdminTopbar() {
     }
 
     return (
-        <header className="sticky top-0 z-20 flex h-14 shrink-0 items-center gap-3 rounded-t-xl border-b border-ink-100 bg-white/85 px-4 backdrop-blur-sm">
-            <SidebarTrigger className="-ml-1 text-ink-500" />
-            <Separator orientation="vertical" className="h-5 bg-ink-200" />
+        <header className="sticky top-0 z-20 flex h-14 shrink-0 items-center gap-3 border-b border-ink-100 bg-white/85 px-4 backdrop-blur-sm">
+            {/* <SidebarTrigger className="-ml-1 text-ink-500" />
+            <Separator orientation="vertical" className="h-5 bg-ink-200" /> */}
 
             <div className="min-w-0 flex-1">
                 <AdminBreadcrumbs />
@@ -107,11 +107,12 @@ export function AdminTopbar() {
                         open && 'invisible',
                     )}
                 >
-                    <Search className="h-3.5 w-3.5" />
-                    <span className="hidden sm:inline">Jump to…</span>
+                    <Search className="size-4" />
+                    <span className="hidden sm:inline text-xs">Jump to…</span>
                     {!isMobile ? (
-                        <kbd className="ml-6 rounded border border-ink-200 bg-white px-1.5 font-mono text-[10px] text-ink-400">
-                            ⌘K
+                        <kbd className="flex items-center gap-0.5 ml-6 rounded border border-ink-200 bg-white px-1 font-mono text-xs text-ink-400">
+                            <Command className='size-2.5'/>
+                            <div>K</div>
                         </kbd>
                     ) : null}
                 </button>

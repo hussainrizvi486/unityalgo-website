@@ -80,10 +80,16 @@ export function CustomerShell({
         <ThemeScope.Provider value={themeClassName}>
             <SidebarProvider className={`${themeClassName} text-foreground`}>
                 <Sidebar collapsible="icon">
-                    <SidebarHeader>
-                        <div className="flex items-center gap-2 overflow-hidden px-2 py-1.5">
-                            <Logo className="h-10.5 shrink-0" />
-                        </div>
+                    <SidebarHeader className="border-b border-sidebar-border">
+                        <Link
+                            href="/"
+                            className="flex items-center gap-2.5 overflow-hidden rounded-md px-2 py-0.5 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                        >
+                            <Image src="/logo.svg" alt="" width={28} height={28} className="size-8.5 shrink-0" priority />
+                            <span className="truncate font-logo text-[1rem] font-bold leading-none text-ink-900 group-data-[collapsible=icon]:hidden">
+                                UnityAlgo
+                            </span>
+                        </Link>
                     </SidebarHeader>
                     <SidebarSeparator />
                     <SidebarContent>
@@ -95,8 +101,8 @@ export function CustomerShell({
                                             item.href === '/dashboard'
                                                 ? pathname === item.href
                                                 : pathname.startsWith(
-                                                      item.href,
-                                                  );
+                                                    item.href,
+                                                );
                                         return (
                                             <SidebarMenuItem key={item.href}>
                                                 <SidebarMenuButton

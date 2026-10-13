@@ -9,9 +9,16 @@ import {
     Boxes,
     Check,
     CircleDollarSign,
+    ClipboardList,
     Factory,
+    FolderKanban,
+    Headphones,
     PackageCheck,
+    Receipt,
+    ShieldCheck,
     ShoppingBag,
+    ShoppingCart,
+    UserRound,
     Users,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -137,6 +144,19 @@ const modules = [
     // },
 ];
 
+const plannedModules = [
+    { name: 'Procurement', icon: ShoppingCart, text: 'Connect purchase requests, supplier quotations, purchase orders, and receipts.', detail: 'Suppliers · Purchasing · Receipts' },
+    { name: 'Sales', icon: ShoppingBag, text: 'Follow quotations and customer orders through delivery, invoicing, and payment.', detail: 'Quotations · Orders · Delivery' },
+    { name: 'CRM', icon: UserRound, text: 'Keep leads, opportunities, customer conversations, and follow-ups in one shared view.', detail: 'Leads · Opportunities · Customers' },
+    { name: 'Accounting', icon: CircleDollarSign, text: 'Bring invoices, payments, expenses, and financial reports together around connected records.', detail: 'Invoices · Payments · Reporting' },
+    { name: 'Stock', icon: Boxes, text: 'Track items across warehouses, with receipts, transfers, and replenishment planning.', detail: 'Items · Warehouses · Transfers' },
+    { name: 'Manufacturing', icon: Factory, text: 'Plan materials and production with bills of materials, work orders, and production schedules.', detail: 'Materials · Work orders · Production' },
+    { name: 'Projects', icon: FolderKanban, text: 'Organise project tasks, responsibilities, timelines, and costs so teams can follow progress.', detail: 'Tasks · Timelines · Costs' },
+    { name: 'Point of Sale', icon: Receipt, text: 'Connect checkout, customer receipts, and retail payments with stock and accounting records.', detail: 'Checkout · Receipts · Payments' },
+    { name: 'Quality', icon: ShieldCheck, text: 'Record inspections, quality checks, and corrective actions across purchasing and production.', detail: 'Inspections · Checks · Actions' },
+    { name: 'Support', icon: Headphones, text: 'Manage customer issues, ticket ownership, and resolutions with a shared communication history.', detail: 'Tickets · Responses · Resolutions' },
+];
+
 const workflow = [
     {
         icon: ShoppingBag,
@@ -211,7 +231,7 @@ const questions = [
     },
     {
         question: 'Which business functions are planned?',
-        answer: 'The planned scope covers finance, inventory, sales and CRM, people and HR, and core operations. Final features and availability will be confirmed as development progresses.',
+        answer: 'The planned scope covers procurement, sales, CRM, accounting, stock, manufacturing, projects, point of sale, quality, support, and people and HR. Final features and availability will be confirmed as development progresses.',
     },
     {
         question: 'Can we discuss our existing software and data?',
@@ -340,29 +360,29 @@ export const MainContent = () => (
                 </div> */}
                 <div className="grid items-center gap-12 lg:grid-cols-[1fr_1.08fr] lg:gap-16">
                     <div>
-                        <div className="mb-6 flex flex-wrap items-center gap-3">
+                        {/* <div className="mb-6 flex flex-wrap items-center gap-3">
                             <span className="text-sm font-semibold text-brand">
                                 AlgoSuite / Business management
                             </span>
                             <span className="border-l border-ink-300 pl-3 text-xs text-ink-500">
                                 In development
                             </span>
-                        </div>
-                        <h1 className="max-w-xl text-5xl font-semibold leading-[1.06] tracking-[-0.045em] sm:text-6xl xl:text-7xl">
+                        </div> */}
+                        <h1 className="max-w-xl text-4xl font-bold leading-[1.04] tracking-[-0.065em] sm:text-6xl xl:text-7xl">
                             Your whole business.
                             <br />
                             <span className="text-brand">
                                 Working together.
                             </span>
                         </h1>
-                        <p className="mt-7 max-w-lg text-lg leading-relaxed text-ink-600">
+                        <p className="mt-7 max-w-lg text-sm leading-relaxed text-ink-600">
                             The order. The stock. The invoice. The people behind
                             it all. AlgoSuite is being built to bring them into
                             one connected business platform.
                         </p>
                         <div className="mt-8 flex flex-wrap gap-3">
-                            <Button asChild size="lg" className="h-12 px-6">
-                                <Link href="#contact">
+                            <Button asChild size="lg" className="py-2 px-6">
+                                <Link href="#contact" className='text-sm'>
                                     Talk about your business{' '}
                                     <ArrowUpRight className="size-4" />
                                 </Link>
@@ -371,9 +391,9 @@ export const MainContent = () => (
                                 asChild
                                 variant="outline"
                                 size="lg"
-                                className="h-12 px-6"
+                                className="py-2 px-6"
                             >
-                                <Link href="#modules">
+                                <Link href="#modules" className='text-sm'>
                                     Explore the AlgoSuite{' '}
                                     <ArrowDown className="size-4" />
                                 </Link>
@@ -420,7 +440,7 @@ export const MainContent = () => (
                     <a
                         key={id}
                         href={`#${id}`}
-                        className="shrink-0 text-ink-600 hover:text-brand focus-visible:outline-2 focus-visible:outline-offset-4"
+                        className="shrink-0 text-ink-600 hover:text-blue-600 active:text-blue-700 focus-visible:outline-2 focus-visible:outline-offset-4"
                     >
                         {label}
                     </a>
@@ -489,6 +509,27 @@ export const MainContent = () => (
                         part fits into the bigger picture.
                     </p>
                 </div>
+                <div className="mb-12 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    {plannedModules.map((module) => (
+                        <a
+                            key={module.name}
+                            href="#contact"
+                            className="group flex flex-col rounded-sm border border-ink-200 bg-white p-7 transition-colors hover:border-blue-300 hover:bg-blue-50 active:border-blue-500 active:bg-blue-100 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-600"
+                        >
+                            <module.icon className="size-7 text-blue-600" />
+                            <h3 className="mt-6 text-xl font-semibold tracking-tight group-hover:text-blue-700 group-active:text-blue-800">{module.name}</h3>
+                            <p className="mt-4 flex-1 text-sm leading-7 text-ink-600">{module.text}</p>
+                            <p className="mt-6 border-t border-ink-200 pt-4 text-xs leading-6 text-ink-500">{module.detail}</p>
+                            <span className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-blue-700">Discuss this module <ArrowUpRight className="size-4" /></span>
+                        </a>
+                    ))}
+                    <div className="flex flex-col justify-center rounded-sm border border-ink-200 bg-ink-100 p-7">
+                        <ClipboardList className="size-7 text-ink-600" />
+                        <h3 className="mt-6 text-xl font-semibold">Planned around your team</h3>
+                        <p className="mt-4 text-sm leading-7 text-ink-600">People &amp; HR is also part of the planned suite. Final module scope and availability will be confirmed as development progresses.</p>
+                    </div>
+                </div>
+                <h3 className="mb-5 text-xl font-semibold">Explore dashboard previews</h3>
                 <Tabs defaultValue="finance" className="gap-0">
                     <div className="overflow-x-auto border-b border-ink-200">
                         <TabsList
@@ -499,7 +540,7 @@ export const MainContent = () => (
                                 <TabsTrigger
                                     key={module.id}
                                     value={module.id}
-                                    className="h-14 flex-none gap-2 rounded-none border-0 border-b-2 border-transparent px-2 text-ink-600 data-[state=active]:border-brand data-[state=active]:bg-transparent data-[state=active]:text-brand data-[state=active]:shadow-none"
+                                    className="h-14 flex-none gap-2 rounded-none border-0 border-b-2 border-transparent px-2 text-ink-600 hover:bg-ink-100 hover:text-blue-600 active:bg-blue-100 data-[state=active]:border-blue-600 data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700 data-[state=active]:shadow-none"
                                 >
                                     <module.icon className="size-4" />
                                     {module.label}
@@ -530,14 +571,14 @@ export const MainContent = () => (
                                                 key={feature}
                                                 className="flex items-start gap-3 text-sm text-ink-700"
                                             >
-                                                <Check className="mt-0.5 size-4 shrink-0 text-brand" />
+                                                <Check className="mt-0.5 size-4 shrink-0 text-blue-600" />
                                                 {feature}
                                             </li>
                                         ))}
                                     </ul>
                                     <a
                                         href="#contact"
-                                        className="mt-8 inline-flex items-center gap-2 text-sm font-semibold text-brand hover:underline"
+                                        className="mt-8 inline-flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-700 hover:underline active:text-blue-800"
                                     >
                                         Discuss your requirements{' '}
                                         <ArrowRight className="size-4" />
@@ -595,7 +636,7 @@ export const MainContent = () => (
                                                                 key={point}
                                                                 className="flex items-start gap-2 text-sm text-ink-700"
                                                             >
-                                                                <Check className="mt-0.5 size-4 shrink-0 text-brand" />
+                                                                <Check className="mt-0.5 size-4 shrink-0 text-blue-600" />
                                                                 {point}
                                                             </li>
                                                         ),
@@ -690,13 +731,13 @@ export const MainContent = () => (
                     business contexts we are considering as the platform takes
                     shape.
                 </p>
-                <div className="mt-12 grid gap-6 md:grid-cols-3">
+                <div className="mt-12 grid gap-2 md:grid-cols-3">
                     {industries.map((industry) => (
                         <article
                             key={industry.title}
-                            className="flex flex-col border border-ink-200 p-7 transition-colors hover:border-ink-400"
+                            className="flex flex-col border rounded-sm border-ink-200 p-7 transition-colors hover:border-ink-400 hover:bg-ink-50 focus-within:border-ink-400 focus-within:bg-ink-50"
                         >
-                            <industry.icon className="size-7 text-brand" />
+                            <industry.icon className="size-7 text-blue-600" />
                             <h3 className="mt-7 text-2xl font-semibold tracking-tight">
                                 {industry.title}
                             </h3>
@@ -708,7 +749,7 @@ export const MainContent = () => (
                             </p>
                             <a
                                 href="#contact"
-                                className="mt-4 inline-flex items-center gap-2 text-sm font-semibold"
+                                className="mt-4 inline-flex items-center gap-2 text-sm font-semibold hover:text-blue-600 active:text-blue-700 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-600"
                             >
                                 Discuss your workflow{' '}
                                 <ArrowUpRight className="size-4" />

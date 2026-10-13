@@ -73,7 +73,8 @@ export function AdminSidebar() {
     const pathname = usePathname();
 
     return (
-        <Sidebar variant="floating" collapsible="icon" className="p-3">
+        // <Sidebar variant='floating' collapsible="icon" className="p-3 pr-0">
+        <Sidebar collapsible="icon" className="">
             <SidebarHeader className="border-b border-sidebar-border px-3 py-3">
                 {/* Not the marketing <Logo/>: that component contains its own
                     <Link href="/">, so nesting it here produced an <a> inside
@@ -94,7 +95,7 @@ export function AdminSidebar() {
                 </Link>
             </SidebarHeader>
 
-            <SidebarContent className="gap-0 px-1 py-2">
+            <SidebarContent className="gap-0 px-1 py-2 scrollbar-none [&::-webkit-scrollbar]:hidden">
                 {navGroups.map((group) => (
                     <SidebarGroup key={group.label}>
                         <SidebarGroupLabel className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">
@@ -110,6 +111,7 @@ export function AdminSidebar() {
                                             // section lit rather than losing the highlight.
                                             isActive={pathname.startsWith(item.href)}
                                             tooltip={item.name}
+                                            className="hover:bg-ink-100 hover:text-ink-900 active:bg-ink-200 active:text-ink-900 data-[active=true]:bg-ink-200 data-[active=true]:text-ink-900"
                                         >
                                             <Link href={item.href}>
                                                 <item.icon />
@@ -131,7 +133,7 @@ export function AdminSidebar() {
                             <SidebarMenuButton
                                 type="submit"
                                 tooltip="Log out"
-                                className="w-full text-ink-600"
+                                className="w-full text-ink-600 hover:bg-ink-100 hover:text-ink-900 active:bg-ink-200 active:text-ink-900"
                             >
                                 <LogOut />
                                 <span>Log out</span>
