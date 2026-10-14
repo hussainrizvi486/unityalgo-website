@@ -52,7 +52,7 @@ import {
 
 const plannedModules = [
     { name: 'Procurement', icon: ShoppingCart, text: 'Connect purchase requests, supplier quotations, purchase orders, and receipts.' },
-    { name: 'Sales', icon: ShoppingBag, text: 'Follow quotations and customer orders through delivery, invoicing, and payment.' },
+    { name: 'Selling', icon: ShoppingBag, text: 'Connect quotations, customer orders, POS checkout, detailed invoicing, and payments with stock and accounting.' },
     { name: 'CRM', icon: UserRound, text: 'Keep leads, opportunities, customer conversations, and follow-ups in one shared view.' },
     { name: 'Accounting', icon: CircleDollarSign, text: 'Bring invoices, payments, expenses, and financial reports together around connected records.' },
     { name: 'Stock', icon: Boxes, text: 'Track items across warehouses, with receipts, transfers, and replenishment planning.' },
@@ -150,7 +150,7 @@ const questions = [
     },
     {
         question: 'Which business functions are planned?',
-        answer: 'The planned scope covers procurement, sales, CRM, accounting, stock, manufacturing, projects, point of sale, quality, support, and people and HR. Final features and availability will be confirmed as development progresses.',
+        answer: 'The planned scope covers procurement, selling with POS and detailed invoicing, CRM, accounting, stock, manufacturing, projects, quality, support, and people and HR. Final features and availability will be confirmed as development progresses.',
     },
     {
         question: 'Can we discuss our existing software and data?',
@@ -184,6 +184,12 @@ const screenshots = {
         width: 1085,
         height: 749,
         alt: 'AlgoSuite Stock Dashboard showing active items, warehouses, stock valuation, purchase receipts, and delivery trends',
+    },
+    selling: {
+        src: '/images/algosuite/selling.png',
+        width: 1612,
+        height: 1010,
+        alt: 'Item catalogue with mobile phone images, product names, item codes, and filters',
     },
     people: {
         src: '/images/algosuite/people-hr.png',
@@ -408,6 +414,28 @@ const areas: Area[] = [
         },
     },
     {
+        id: 'selling',
+        label: 'Selling',
+        icon: ShoppingBag,
+        shot: 'selling',
+        title: 'Connect every sale, from checkout to payment.',
+        description:
+            'Manage counter sales and customer orders in one selling workspace. Bring POS checkout, detailed invoices, and payment tracking together with the stock and accounting records your team already uses.',
+        highlights: ['Point of sale (POS) checkout', 'Detailed invoices with taxes and discounts', 'Payments, returns, and customer balances'],
+        items: [
+            { icon: Receipt, title: 'Point of sale (POS)', text: 'Build a cart, select a customer, apply discounts, and record cash or card payments. Issue a receipt and connect each checkout to stock and accounting.' },
+            { icon: ScanBarcode, title: 'Fast item entry', text: 'Find items by name or barcode and review quantities, prices, and availability while preparing a sale.' },
+            { icon: FileText, title: 'Detailed invoicing', text: 'Prepare itemised invoices with customer details, quantities, unit prices, discounts, taxes, and totals. Carry order details into billing and include payment terms and due dates.' },
+            { icon: ShoppingBag, title: 'Quotations and sales orders', text: 'Prepare quotations, convert accepted quotes into sales orders, and keep agreed prices and delivery terms attached through invoicing.' },
+            { icon: Wallet, title: 'Payments and outstanding balances', text: 'Record full or partial payments against invoices, review unpaid amounts, and follow customer balances and overdue bills.' },
+            { icon: RotateCcw, title: 'Returns and credit notes', text: 'Link returns and credit notes to the original sale, with the related stock changes and customer balance kept together.' },
+        ],
+        callout: {
+            title: 'One sale, connected across the business.',
+            text: 'POS receipts and sales invoices carry the same customer and item details into stock and accounting, so your teams can follow what was sold, billed, and paid.',
+        },
+    },
+    {
         id: 'people',
         label: 'People & HR',
         icon: Users,
@@ -460,8 +488,8 @@ function WorkspacePreview({ shot, sidebar = false }: { shot: Shot; sidebar?: boo
 const eyebrow = 'text-sm font-medium text-brand';
 const heading =
     'mt-4 text-3xl font-semibold leading-tight tracking-tight md:text-5xl';
-const container = 'container mx-auto max-w-7xl';
-const section = 'scroll-mt-24 px-4 py-20 md:px-6 md:py-28';
+const container = 'site-container';
+const section = 'site-section';
 
 export const MainContent = () => (
     <main>
@@ -559,7 +587,7 @@ export const MainContent = () => (
                     <a
                         key={id}
                         href={`#${id}`}
-                        className="shrink-0 text-ink-600 hover:text-blue-600 active:text-blue-700 focus-visible:outline-2 focus-visible:outline-offset-4"
+                        className="shrink-0 text-ink-600 hover:text-ink-800 active:text-ink-900 focus-visible:outline-2 focus-visible:outline-offset-4"
                     >
                         {label}
                     </a>
@@ -642,24 +670,24 @@ export const MainContent = () => (
             <div className={container}>
                 <div className="mb-10 flex flex-col justify-between gap-5 md:flex-row md:items-end">
                     <div>
-                        <h2 className={heading}>Modules we are planning</h2>
+                        <h2 className={heading}>Modules we provide.</h2>
                     </div>
                     <p className="max-w-sm text-sm leading-6 text-ink-600">
                         Pick the part of the business you care about most. Scope
                         and availability are not final.
                     </p>
                 </div>
-                <div className="mb-12 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="mb-12 grid gap-1 sm:grid-cols-2 lg:grid-cols-3">
                     {plannedModules.map((module) => (
                         <a
                             key={module.name}
                             href="#contact"
-                            className="group flex flex-col rounded-sm border border-ink-200 bg-white p-7 transition-colors hover:border-blue-300 hover:bg-blue-50 active:border-blue-500 active:bg-blue-100 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-600"
+                            className="group flex flex-col rounded-sm border border-ink-200 bg-white p-7 transition-colors hover:border-ink-300 hover:bg-ink-50 active:border-ink-500 active:bg-ink-100 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ink-600"
                         >
-                            <module.icon className="size-7 text-blue-600" />
-                            <h3 className="mt-6 text-xl font-semibold tracking-tight group-hover:text-blue-700 group-active:text-blue-800">{module.name}</h3>
+                            <module.icon className="size-7 text-ink-600" />
+                            <h3 className="mt-6 text-xl font-semibold tracking-tight group-active:text-ink-800">{module.name}</h3>
                             <p className="mt-4 flex-1 text-sm leading-7 text-ink-600">{module.text}</p>
-                            <span className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-blue-700">Ask about {module.name} <ArrowUpRight className="size-4" /></span>
+                            <span className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-ink-700 group-hover:text-ink-900">Ask about {module.name} <ArrowUpRight className="size-4" /></span>
                         </a>
                     ))}
                     <div className="flex flex-col justify-center rounded-sm border border-ink-200 bg-ink-100 p-7">
@@ -681,7 +709,7 @@ export const MainContent = () => (
                             <TabsTrigger
                                 key={area.id}
                                 value={area.id}
-                                className="h-auto flex-none justify-start whitespace-nowrap rounded-none border-0 border-b-2 border-transparent px-3 py-3 text-left text-sm font-medium text-ink-600 hover:bg-ink-100 hover:text-ink-900 data-[state=active]:border-brand data-[state=active]:bg-transparent data-[state=active]:font-semibold data-[state=active]:text-brand data-[state=active]:shadow-none lg:-ml-px lg:whitespace-normal lg:border-b-0 lg:border-l-2 lg:px-5 lg:py-3.5"
+                                className="h-auto flex-none justify-start whitespace-nowrap rounded-none border-0 border-b-2 border-transparent px-3 py-3 text-left text-sm font-medium text-ink-600 hover:bg-ink-100 hover:text-ink-900 data-[state=active]:border-ink-900 data-[state=active]:bg-transparent data-[state=active]:font-semibold data-[state=active]:text-ink-900 data-[state=active]:shadow-none lg:-ml-px lg:whitespace-normal lg:border-b-0 lg:border-l-2 lg:px-5 lg:py-3.5"
                             >
                                 {area.label}
                             </TabsTrigger>
@@ -701,14 +729,14 @@ export const MainContent = () => (
                                         <ul className="mt-5 space-y-2.5">
                                             {area.highlights.map((h) => (
                                                 <li key={h} className="flex items-start gap-3 text-sm text-ink-700">
-                                                    <Check className="mt-0.5 size-4 shrink-0 text-blue-600" />
+                                                    <Check className="mt-0.5 size-4 shrink-0 text-ink-600" />
                                                     {h}
                                                 </li>
                                             ))}
                                         </ul>
                                         <a
                                             href="#contact"
-                                            className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-700 hover:underline"
+                                            className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-ink-600 hover:text-ink-800 hover:underline"
                                         >
                                             Ask about {area.label.toLowerCase()} <ArrowRight className="size-4" />
                                         </a>
@@ -725,7 +753,7 @@ export const MainContent = () => (
                                 <div className="mt-10 grid gap-x-8 gap-y-9 border-t border-ink-200 pt-9 sm:grid-cols-2">
                                     {area.items.map((item) => (
                                         <article key={item.title}>
-                                            <item.icon className="size-6 text-blue-600" />
+                                            <item.icon className="size-6 text-ink-600" />
                                             <h4 className="mt-3 text-lg font-semibold">{item.title}</h4>
                                             <p className="mt-2 text-sm leading-7 text-ink-600">{item.text}</p>
                                         </article>
@@ -822,9 +850,9 @@ export const MainContent = () => (
                     {industries.map((industry) => (
                         <article
                             key={industry.title}
-                            className="flex flex-col border rounded-sm border-ink-200 p-7 transition-colors hover:border-ink-400 hover:bg-ink-50 focus-within:border-ink-400 focus-within:bg-ink-50"
+                            className="flex flex-col border rounded-sm border-ink-200 p-4 transition-colors hover:border-ink-400 hover:bg-ink-50 focus-within:border-ink-400 focus-within:bg-ink-50"
                         >
-                            <industry.icon className="size-7 text-blue-600" />
+                            <industry.icon className="size-7 text-ink-600" />
                             <h3 className="mt-7 text-2xl font-semibold tracking-tight">
                                 {industry.title}
                             </h3>
@@ -833,7 +861,7 @@ export const MainContent = () => (
                             </p>
                             <a
                                 href="#contact"
-                                className="mt-4 inline-flex items-center gap-2 text-sm font-semibold hover:text-blue-600 active:text-blue-700 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-600"
+                                className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-ink-700 hover:text-ink-800 active:text-ink-900 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ink-600"
                             >
                                 Talk about your business{' '}
                                 <ArrowUpRight className="size-4" />
@@ -935,10 +963,10 @@ export const MainContent = () => (
                     <h2 className="text-3xl font-semibold tracking-tight md:text-4xl">
                         Questions we get
                     </h2>
-                    <p className="mt-5 max-w-sm text-sm leading-7 text-ink-600">
+                    {/* <p className="mt-5 max-w-sm text-sm leading-7 text-ink-600">
                         AlgoSuite is still being built, so some answers are
                         &ldquo;not yet&rdquo;.
-                    </p>
+                    </p> */}
                 </div>
                 <Accordion type="single" collapsible>
                     {questions.map((item, index) => (
@@ -978,11 +1006,11 @@ export const MainContent = () => (
                     <h3 className="text-xl font-semibold">
                         Get in touch
                     </h3>
-                    <p className="mt-3 text-sm leading-7 text-ink-600">
+                    <p className="mt-3 mb-3 text-sm leading-6 text-ink-600">
                         Ask about modules, availability, or implementation. You
                         do not need a full requirements list.
                     </p>
-                    <Button asChild size="lg" className="mt-6 h-12 px-6">
+                    <Button asChild size="lg" className="py-2 px-4">
                         <Link href="/#contact">
                             Contact us <ArrowUpRight className="size-4" />
                         </Link>

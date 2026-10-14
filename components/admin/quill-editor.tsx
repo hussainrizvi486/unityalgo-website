@@ -215,7 +215,7 @@ export function QuillEditor({ name, defaultValue }: QuillEditorProps) {
                     <Redo className="w-4 h-4" />
                 </ToolbarButton>
 
-                {uploading && <span className="text-xs text-ink-400 ml-2">Uploading…</span>}
+                {uploading && <span className="portal-text-caption text-ink-400 ml-2">Uploading…</span>}
             </div>
 
             <div

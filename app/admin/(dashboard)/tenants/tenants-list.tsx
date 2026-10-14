@@ -53,7 +53,7 @@ export function TenantsList({ rows }: { rows: TenantRow[] }) {
             icon: <Globe />,
             flex: 1.4,
             minWidth: 190,
-            cellClass: 'font-mono text-xs',
+            cellClass: 'font-mono portal-text-caption',
             cellRenderer: MutedCell,
             valueGetter: (p) => p.data?.domain,
         },

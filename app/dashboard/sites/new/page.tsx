@@ -30,17 +30,17 @@ export default async function CreateSitePage({
         capabilities = null;
     }
     return (
-        <div className="mx-auto max-w-7xl">
+        <div className="mx-auto portal-page">
             <Link
                 href="/dashboard/sites"
-                className="text-sm text-ink-500 hover:underline"
+                className="portal-text-body text-ink-500 hover:underline"
             >
                 Back to sites
             </Link>
-            <h1 className="mt-6 text-3xl font-semibold tracking-tight">
+            <h1 className="portal-page-title mt-6">
                 Create a Frappe site
             </h1>
-            <p className="mt-3 text-sm leading-7 text-ink-600">
+            <p className="mt-3 portal-text-body leading-7 text-ink-600">
                 Give your workspace a name, choose available applications, and
                 set its administrator password. An eligible server is selected
                 automatically.

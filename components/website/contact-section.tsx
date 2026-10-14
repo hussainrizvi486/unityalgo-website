@@ -51,12 +51,12 @@ export function Contact() {
   };
 
   return (
-    <section id="contact" className="relative py-24  overflow-hidden">
+    <section id="contact" className="relative overflow-hidden site-section-spacing">
 
       <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-brand/5 rounded-full blur-[120px] pointer-events-none translate-x-1/3 -translate-y-1/3" />
       <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-ink-200/20 rounded-full blur-[100px] pointer-events-none -translate-x-1/3 translate-y-1/3" />
 
-      <div className="container relative z-10 mx-auto px-4">
+      <div className="site-container relative z-10 site-gutters">
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-24 items-start">
 
           <div className="mt-8">
@@ -99,7 +99,7 @@ export function Contact() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.2 }}
-            className="bg-white/80  p-4 md:p-8 rounded shadow-md"
+            className="bg-white/80 p-4 md:p-8 rounded shadow-md"
           >
             <form onSubmit={handleSubmit} className="space-y-8">
              <div>
@@ -119,10 +119,7 @@ export function Contact() {
                   />
                   <label
                     htmlFor="first_name"
-                    className="absolute left-0 -top-3.5 text-ink-600 text-xs font-semibold  tracking-wider transition-all
-                     peer-placeholder-shown:text-sm peer-placeholder-shown:font-normal peer-placeholder-shown:normal-case peer-placeholder-shown:tracking-normal peer-placeholder-shown:text-ink-400 peer-placeholder-shown:top-2
-                     peer-focus:-top-3.5 peer-focus:text-black peer-focus:text-xs peer-focus:font-semibold  peer-focus:tracking-wider
-                     pointer-events-none"
+                    className="absolute left-0 -top-3.5 text-ink-600 text-xs font-semibold tracking-wider transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:font-normal peer-placeholder-shown:normal-case peer-placeholder-shown:tracking-normal peer-placeholder-shown:text-ink-400 peer-placeholder-shown:top-2 peer-focus:-top-3.5 peer-focus:text-black peer-focus:text-xs peer-focus:font-semibold peer-focus:tracking-wider pointer-events-none"
                   >
                     First Name
                   </label>
@@ -140,10 +137,7 @@ export function Contact() {
                   />
                   <label
                     htmlFor="last_name"
-                    className="absolute left-0 -top-3.5 text-ink-600 text-xs font-semibold  tracking-wider transition-all
-                     peer-placeholder-shown:text-sm peer-placeholder-shown:font-normal peer-placeholder-shown:normal-case peer-placeholder-shown:tracking-normal peer-placeholder-shown:text-ink-400 peer-placeholder-shown:top-2
-                     peer-focus:-top-3.5 peer-focus:text-black peer-focus:text-xs peer-focus:font-semibold  peer-focus:tracking-wider
-                     pointer-events-none"
+                    className="absolute left-0 -top-3.5 text-ink-600 text-xs font-semibold tracking-wider transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:font-normal peer-placeholder-shown:normal-case peer-placeholder-shown:tracking-normal peer-placeholder-shown:text-ink-400 peer-placeholder-shown:top-2 peer-focus:-top-3.5 peer-focus:text-black peer-focus:text-xs peer-focus:font-semibold peer-focus:tracking-wider pointer-events-none"
                   >
                     Last Name
                   </label>
@@ -162,10 +156,7 @@ export function Contact() {
                 />
                 <label
                   htmlFor="email"
-                  className="absolute left-0 -top-3.5 text-ink-600 text-sm font-medium tracking-wider transition-all
-                   peer-placeholder-shown:text-sm peer-placeholder-shown:font-normal peer-placeholder-shown:normal-case peer-placeholder-shown:tracking-normal peer-placeholder-shown:text-ink-400 peer-placeholder-shown:top-2
-                   peer-focus:-top-3.5 peer-focus:text-black peer-focus:text-xs peer-focus:font-semibold  peer-focus:tracking-wider
-                   pointer-events-none"
+                  className="absolute left-0 -top-3.5 text-ink-600 text-sm font-medium tracking-wider transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:font-normal peer-placeholder-shown:normal-case peer-placeholder-shown:tracking-normal peer-placeholder-shown:text-ink-400 peer-placeholder-shown:top-2 peer-focus:-top-3.5 peer-focus:text-black peer-focus:text-xs peer-focus:font-semibold peer-focus:tracking-wider pointer-events-none"
                 >
                   Email Address
                 </label>
@@ -183,10 +174,7 @@ export function Contact() {
                 />
                 <label
                   htmlFor="phone"
-                  className="absolute left-0 -top-3.5 text-ink-600 text-xs font-semibold tracking-wider transition-all
-                   peer-placeholder-shown:text-sm peer-placeholder-shown:font-normal peer-placeholder-shown:normal-case peer-placeholder-shown:tracking-normal peer-placeholder-shown:text-ink-400 peer-placeholder-shown:top-2
-                   peer-focus:-top-3.5 peer-focus:text-black peer-focus:text-xs peer-focus:font-semibold  peer-focus:tracking-wider
-                   pointer-events-none"
+                  className="absolute left-0 -top-3.5 text-ink-600 text-xs font-semibold tracking-wider transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:font-normal peer-placeholder-shown:normal-case peer-placeholder-shown:tracking-normal peer-placeholder-shown:text-ink-400 peer-placeholder-shown:top-2 peer-focus:-top-3.5 peer-focus:text-black peer-focus:text-xs peer-focus:font-semibold peer-focus:tracking-wider pointer-events-none"
                 >
                   Phone Number
                 </label>
@@ -212,10 +200,7 @@ export function Contact() {
                 /> */}
                 <label
                   htmlFor="message"
-                  className="absolute left-0 -top-3.5 text-ink-600 text-xs font-semibold  tracking-wider transition-all
-                   peer-placeholder-shown:text-sm peer-placeholder-shown:font-normal peer-placeholder-shown:normal-case peer-placeholder-shown:tracking-normal peer-placeholder-shown:text-ink-400 peer-placeholder-shown:top-2
-                   peer-focus:-top-3.5 peer-focus:text-black peer-focus:text-xs peer-focus:font-semibold  peer-focus:tracking-wider
-                   pointer-events-none"
+                  className="absolute left-0 -top-3.5 text-ink-600 text-xs font-semibold tracking-wider transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:font-normal peer-placeholder-shown:normal-case peer-placeholder-shown:tracking-normal peer-placeholder-shown:text-ink-400 peer-placeholder-shown:top-2 peer-focus:-top-3.5 peer-focus:text-black peer-focus:text-xs peer-focus:font-semibold peer-focus:tracking-wider pointer-events-none"
                 >
                   Message
                 </label>

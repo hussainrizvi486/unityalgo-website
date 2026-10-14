@@ -10,7 +10,7 @@ import { Notice } from '@/components/ui/notice';
 function Submit({ available }: { available: boolean }) {
     const { pending } = useFormStatus();
     return (
-        <Button type="submit" disabled={!available || pending} className="py-2 px-4">
+        <Button type="submit" disabled={!available || pending} className="">
             {pending ? 'Requesting your site…' : 'Create site'}
         </Button>
     );
@@ -30,7 +30,7 @@ export function SiteForm({
     return (
         <form
             action={action}
-            className="mt-8 space-y-6 rounded-xl border border-ink-200 bg-white p-6"
+            className="mt-8 portal-stack portal-panel-padding portal-surface"
         >
             <input type="hidden" name="requestKey" value={requestKey} />
             <div>
@@ -56,7 +56,7 @@ export function SiteForm({
                     placeholder="my-business"
                     className="mt-2"
                 />
-                <p className="mt-2 text-xs leading-6 text-ink-500">
+                <p className="mt-2 portal-text-caption leading-6 text-ink-500">
                     Use 3–48 lowercase letters, numbers and internal hyphens,
                     starting with a letter. Your site gets its own address.
                 </p>
@@ -74,14 +74,14 @@ export function SiteForm({
                     autoComplete="new-password"
                     className="mt-2"
                 />
-                <p className="mt-2 text-xs text-ink-500">
+                <p className="mt-2 portal-text-caption text-ink-500">
                     At least 12 characters. Sign in to the site as
                     Administrator.
                 </p>
             </div>
             <fieldset>
-                <legend className="text-sm font-semibold">Applications</legend>
-                <p className="mt-2 text-xs text-ink-500">
+                <legend className="portal-text-body font-semibold">Applications</legend>
+                <p className="mt-2 portal-text-caption text-ink-500">
                     Frappe and ERPNext are included. Select additional available
                     applications below.
                 </p>
@@ -89,7 +89,7 @@ export function SiteForm({
                     {apps.map((app) => (
                         <label
                             key={app.id}
-                            className={`flex items-center justify-between gap-3 rounded-lg border border-ink-200 p-4 text-sm ${app.available ? '' : 'text-ink-500'}`}
+                            className={`flex items-center justify-between gap-3 rounded-lg border border-ink-200 p-4 portal-text-body ${app.available ? '' : 'text-ink-500'}`}
                         >
                             <span className="flex items-center gap-3">
                                 <input
@@ -105,14 +105,14 @@ export function SiteForm({
                                 {app.name}
                             </span>
                             {!app.available && (
-                                <span className="text-xs">Requires setup</span>
+                                <span className="portal-text-caption">Requires setup</span>
                             )}
                         </label>
                     ))}
                 </div>
             </fieldset>
             <div className="border-t border-ink-200 pt-5">
-                <p className="mb-5 text-sm leading-6 text-ink-600">
+                <p className="mb-5 portal-text-body leading-6 text-ink-600">
                     Installation runs in the background. You can follow the
                     progress on your site page and in notifications.
                 </p>

@@ -74,16 +74,12 @@ export default async function AdminLogsPage({ searchParams }: PageProps) {
             {/* Operations are grouped end-to-end processes; events are the
                 individual steps, including standalone ones like health sweeps. */}
             <div className="mb-4 flex flex-wrap gap-2">
-                <Link href="/admin/logs">
-                    <Button size="sm" variant={view === 'operations' ? 'default' : 'outline'} >
+                <Button asChild size="sm" variant={view === 'operations' ? 'default' : 'outline'} ><Link href="/admin/logs">
                         Operations
-                    </Button>
-                </Link>
-                <Link href="/admin/logs?view=events">
-                    <Button size="sm" variant={view === 'events' ? 'default' : 'outline'} >
+                    </Link></Button>
+                <Button asChild size="sm" variant={view === 'events' ? 'default' : 'outline'} ><Link href="/admin/logs?view=events">
                         All events
-                    </Button>
-                </Link>
+                    </Link></Button>
             </div>
 
             <LogsList view={view} rows={rows} categories={categories} />

@@ -60,7 +60,7 @@ export function StackedCell<Row>({ data, get }: CellProps<Row, StackedValue | nu
     const { primary, secondary, href } = value;
     return (
         <div className={CELL}>
-            <div className="truncate text-sm font-medium text-ink-900">
+            <div className="truncate portal-text-body font-medium text-ink-900">
                 {href ? (
                     <Link href={href} className="hover:text-link hover:underline">{primary}</Link>
                 ) : (
@@ -68,7 +68,7 @@ export function StackedCell<Row>({ data, get }: CellProps<Row, StackedValue | nu
                 )}
             </div>
             {secondary != null && secondary !== '' && (
-                <div className="truncate text-xs text-ink-400">{secondary}</div>
+                <div className="truncate portal-text-caption text-ink-400">{secondary}</div>
             )}
         </div>
     );
@@ -84,7 +84,7 @@ export function AvatarCell<Row>({ data, get }: CellProps<Row, StackedValue | nul
         <div className="flex h-full items-center gap-3 min-w-0 leading-normal">
             <AvatarInitials name={typeof primary === 'string' ? primary : ''} />
             <div className="min-w-0">
-                <div className="truncate text-sm font-medium text-ink-900">
+                <div className="truncate portal-text-body font-medium text-ink-900">
                     {href ? (
                         <Link href={href} className="hover:text-link hover:underline">{primary}</Link>
                     ) : (
@@ -92,7 +92,7 @@ export function AvatarCell<Row>({ data, get }: CellProps<Row, StackedValue | nul
                     )}
                 </div>
                 {secondary != null && secondary !== '' && (
-                    <div className="truncate text-xs text-ink-400">{secondary}</div>
+                    <div className="truncate portal-text-caption text-ink-400">{secondary}</div>
                 )}
             </div>
         </div>
@@ -200,17 +200,15 @@ export function ActionsCell<Row>({ data, get }: CellProps<Row, ActionsValue | nu
                 </Badge>
             )}
             {value.actions?.map((action) => (
-                <Link key={action.label} href={action.href}>
-                    <Button
+                <Button asChild key={action.label}
                         size="sm"
                         variant={action.tone === 'solid' ? 'default' : 'outline'}
                         className={cn(
                             action.tone === 'solid' && 'bg-ink-900 text-white hover:bg-ink-800',
                         )}
-                    >
+                    ><Link href={action.href}>
                         {action.label}
-                    </Button>
-                </Link>
+                    </Link></Button>
             ))}
             {value.submits?.map((submit) => (
                 <form key={submit.label} action={submit.action}>

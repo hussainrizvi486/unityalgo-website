@@ -8,7 +8,7 @@ export default async function ApplicationsPage() {
         orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
     });
     return (
-        <div className="max-w-4xl">
+        <div className="portal-detail">
             <AdminPageHeader
                 title="Application catalogue"
                 subtitle="Manage the applications shown in the customer App Store."
@@ -21,7 +21,7 @@ export default async function ApplicationsPage() {
                     >
                         <summary className="cursor-pointer font-semibold">
                             {app.name}
-                            <span className="ml-3 text-xs font-normal text-ink-500">
+                            <span className="ml-3 portal-text-caption font-normal text-ink-500">
                                 {app.category} ·{' '}
                                 {app.isActive ? 'Visible' : 'Hidden'} ·{' '}
                                 {app.isInstallable

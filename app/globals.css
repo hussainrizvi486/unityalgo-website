@@ -206,6 +206,103 @@
 
 :root {
   color-scheme: light;
+  --site-content-width: 80rem;
+  --site-wide-width: 72rem;
+  --site-reading-width: 48rem;
+  --site-detail-width: 56rem;
+  --site-gutter: 1rem;
+  --site-section-spacing: 5rem;
+  --site-anchor-offset: 6rem;
+  --ui-control-height: 2.25rem;
+  --ui-control-font-size: 0.875rem;
+  --ui-control-padding: 0.75rem;
+  --ui-control-radius: var(--radius-md);
+  --ui-button-padding: 1rem;
+  --ui-button-small-height: 2rem;
+  --ui-button-large-height: 2.75rem;
+  --footer-heading-size: 1.125rem;
+  --footer-body-line-height: 1.6;
+  --layer-header: 50;
+  --layer-navigation: 40;
+  --layer-overlay: 60;
+  --layer-tooltip: 70;
+}
+
+/* Shared public layout and primitive sizing; utility overrides stay available. */
+@layer components {
+  .site-container {
+    width: 100%;
+    max-width: var(--site-content-width);
+    margin-inline: auto;
+    min-width: 0;
+  }
+
+  .site-section {
+    scroll-margin-top: var(--site-anchor-offset);
+    padding: var(--site-section-spacing) var(--site-gutter);
+  }
+
+  .site-container-wide { max-width: var(--site-wide-width); }
+  .site-container-reading { max-width: var(--site-reading-width); }
+  .site-container-detail { max-width: var(--site-detail-width); }
+  .site-gutters { padding-inline: var(--site-gutter); }
+  .site-section-spacing { padding-block: var(--site-section-spacing); }
+  .footer-heading { font-size: var(--footer-heading-size); font-weight: 600; }
+  .footer-description { line-height: var(--footer-body-line-height); }
+  .site-header-layer { z-index: var(--layer-header); }
+  .site-navigation-layer { z-index: var(--layer-navigation); }
+
+  [data-slot='button'] {
+    min-height: var(--ui-control-height);
+    font-size: var(--ui-control-font-size);
+    line-height: 1.25;
+    padding: 0 var(--ui-button-padding);
+    border-radius: var(--ui-control-radius);
+  }
+
+  [data-slot='button'][data-size='sm'] {
+    min-height: var(--ui-button-small-height);
+    padding-inline: var(--ui-control-padding);
+  }
+
+  [data-slot='button'][data-size='lg'] {
+    min-height: var(--ui-button-large-height);
+    padding-inline: calc(var(--ui-button-padding) * 1.5);
+  }
+
+  [data-slot='button'][data-size='icon'] {
+    width: var(--ui-control-height);
+    height: var(--ui-control-height);
+    padding: 0;
+  }
+
+  :is([data-slot='input'], [data-slot='select-trigger']) {
+    height: var(--ui-control-height);
+    padding-inline: var(--ui-control-padding);
+    font-size: var(--ui-control-font-size);
+    border-radius: var(--ui-control-radius);
+  }
+}
+
+/* Keep dialogs above fixed site navigation on every route. */
+:is([data-slot$='overlay'], [data-slot='dialog-content'], [data-slot='alert-dialog-content'], [data-slot='sheet-content'], [data-slot='popover-content'], [data-slot='select-content']) {
+  z-index: var(--layer-overlay);
+}
+
+[data-slot='tooltip-content'] {
+  z-index: var(--layer-tooltip);
+}
+
+:is([data-slot='dialog-content'], [data-slot='alert-dialog-content']) {
+  max-height: calc(100dvh - 2rem);
+  overflow-y: auto;
+}
+
+@media (min-width: 768px) {
+  :root {
+    --site-gutter: 1.5rem;
+    --site-section-spacing: 7rem;
+  }
 }
 
 body {

@@ -86,19 +86,19 @@ export function SiteStatus({
     }, [initial.id, initial.status, retry, attempt]);
     const index = steps.findIndex(([status]) => status === site.status);
     return (
-        <div className="mx-auto max-w-4xl">
+        <div className="mx-auto portal-detail">
             <Link
                 href="/dashboard/sites"
-                className="text-sm text-ink-500 hover:underline"
+                className="portal-text-body text-ink-500 hover:underline"
             >
                 Back to sites
             </Link>
             <div className="mt-6 flex flex-wrap items-start justify-between gap-6">
                 <div>
-                    <h1 className="text-3xl font-semibold tracking-tight">
+                    <h1 className="portal-page-title">
                         {site.name}
                     </h1>
-                    <p className="mt-3 break-all text-sm text-ink-600">
+                    <p className="mt-3 break-all portal-text-body text-ink-600">
                         {site.domain}
                     </p>
                 </div>
@@ -118,7 +118,7 @@ export function SiteStatus({
                 <div className="flex items-center gap-3">
                     <Globe className="size-5 text-brand" />
                     <h2 className="font-semibold">Installation progress</h2>
-                    <span className="ml-auto text-sm text-ink-500">
+                    <span className="ml-auto portal-text-body text-ink-500">
                         {site.progress}%
                     </span>
                 </div>
@@ -135,17 +135,17 @@ export function SiteStatus({
                         style={{ width: `${site.progress}%` }}
                     />
                 </div>
-                <p className="mt-5 text-sm leading-7 text-ink-600">
+                <p className="mt-5 portal-text-body leading-7 text-ink-600">
                     {site.message}
                 </p>
-                <p className="mt-3 text-xs text-ink-500">
+                <p className="mt-3 portal-text-caption text-ink-500">
                     Assigned server: {site.server_name}
                 </p>
                 <ol className="mt-8 grid gap-4 sm:grid-cols-2">
                     {steps.map(([status, label], step) => (
                         <li
                             key={status}
-                            className={`flex items-center gap-3 text-sm ${step <= index ? 'text-ink-900' : 'text-ink-500'}`}
+                            className={`flex items-center gap-3 portal-text-body ${step <= index ? 'text-ink-900' : 'text-ink-500'}`}
                         >
                             <span
                                 className={`flex size-6 shrink-0 items-center justify-center rounded-full ${step < index || site.status === 'ready' ? 'bg-ink-900 text-white' : 'border border-ink-300'}`}
@@ -178,12 +178,12 @@ export function SiteStatus({
             </section>
             <section className="mt-6 rounded-xl border border-ink-200 p-6">
                 <h2 className="font-semibold">Selected applications</h2>
-                <p className="mt-3 text-sm text-ink-600">
+                <p className="mt-3 portal-text-body text-ink-600">
                     {site.apps
                         .map((app) => applicationNames[app] || app)
                         .join(', ')}
                 </p>
-                <p className="mt-3 text-xs text-ink-500">
+                <p className="mt-3 portal-text-caption text-ink-500">
                     Your Frappe account uses Administrator and the password you
                     chose during site creation.
                 </p>

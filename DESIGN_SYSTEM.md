@@ -175,6 +175,10 @@ All follow the same convention: `data-slot` attributes, `cn()` for class merging
 
 ## 10. Where to look things up
 
+Shared layout and control dimensions live in `app/globals.css`: `--site-*` controls public container widths, gutters, and section spacing; `--ui-*` controls shared button, input, and select sizes. `site-container`, `site-gutters`, and `site-section-spacing` consume these values. Component utility classes remain available for intentional layout exceptions.
+
+Both authenticated portals import `app/dashboard/portal.css`. Its opening token block controls page padding, title/body/caption sizes, form widths, field spacing, panel padding, control sizes, grid dimensions, and stacking layers. Use `portal-page-title`, `portal-page`, `portal-detail`, `portal-form`, `portal-stack`, `portal-fields`, and `portal-surface` for repeated page styles. Customer palette overrides remain scoped to `.customer-portal`; the admin retains the global palette. `ThemeScope` carries either scope into dialogs, dropdowns, and mobile drawers.
+
 - **Tokens**: `app/globals.css` (`@theme` block) — always the source of truth
 - **Live visual reference**: `/theme-preview` route
 - **Font loading**: `app/layout.tsx`

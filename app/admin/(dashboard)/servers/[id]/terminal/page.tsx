@@ -25,13 +25,13 @@ export default async function ServerTerminalPage({ params }: { params: Promise<{
         <div className="max-w-5xl">
             <Link
                 href={`/admin/servers/${server.id}`}
-                className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-ink-500 hover:text-ink-700"
+                className="mb-6 inline-flex items-center gap-2 portal-text-body font-semibold text-ink-500 hover:text-ink-700"
             >
                 <ArrowLeft className="h-4 w-4" />Back to {server.name}
             </Link>
 
-            <h1 className="text-2xl font-bold">Terminal — {server.name}</h1>
-            <p className="mt-1 mb-6 font-mono text-sm text-ink-500">
+            <h1 className="portal-page-title">Terminal — {server.name}</h1>
+            <p className="mt-1 mb-6 font-mono portal-text-body text-ink-500">
                 {server.ssh_user}@{server.ip_address}:{server.ssh_port}
             </p>
 

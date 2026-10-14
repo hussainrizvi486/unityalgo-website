@@ -14,7 +14,7 @@ import { createSupportTicketAction, type AccountFormState } from '@/app/customer
 function SubmitButton() {
   const { pending } = useFormStatus();
   return (
-    <Button type="submit" disabled={pending} className="py-2 gap-2 bg-ink-900 px-6 text-white hover:bg-ink-800">
+    <Button type="submit" disabled={pending} className="gap-2">
       {pending ? 'Sending…' : 'Send request'}<Send className="size-3" />
     </Button>
   );
@@ -24,13 +24,13 @@ export function NewTicketForm() {
   const [state, formAction] = useActionState<AccountFormState | undefined, FormData>(createSupportTicketAction, undefined);
 
   return (
-    <form action={formAction} className="space-y-5">
+    <form action={formAction} className="portal-fields">
       <div>
-        <Label htmlFor="subject" className="mb-1.5 text-sm text-ink-700">Subject</Label>
+        <Label htmlFor="subject" className="mb-1.5 portal-text-body text-ink-700">Subject</Label>
         <Input id="subject" name="subject" required placeholder="What do you need help with?" />
       </div>
       <div>
-        <Label htmlFor="description" className="mb-1.5 text-sm text-ink-700">Message</Label>
+        <Label htmlFor="description" className="mb-1.5 portal-text-body text-ink-700">Message</Label>
         <Textarea id="description" name="description" required className="min-h-40 rounded-lg" placeholder="Tell us what happened and how we can help." />
       </div>
       {state?.error ? <Notice tone="error">{state.error}</Notice> : null}

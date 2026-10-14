@@ -29,7 +29,7 @@ export function AppCatalogForm({ app }: { app?: App }) {
     const [state, action] = useActionState(saveAppCatalogAction, undefined);
     const prefix = app?.id || 'new';
     return (
-        <form action={action} className="space-y-5 py-5">
+        <form action={action} className="portal-fields py-5">
             <input type="hidden" name="id" value={app?.id || ''} />
             <div className="grid gap-5 sm:grid-cols-2">
                 {[
@@ -63,7 +63,7 @@ export function AppCatalogForm({ app }: { app?: App }) {
                     className="mt-2"
                 />
             </div>
-            <label className="flex items-center gap-2 text-sm">
+            <label className="flex items-center gap-2 portal-text-body">
                 <input
                     type="checkbox"
                     name="isActive"
@@ -71,7 +71,7 @@ export function AppCatalogForm({ app }: { app?: App }) {
                 />
                 Visible in App Store
             </label>
-            <label className="flex items-center gap-2 text-sm">
+            <label className="flex items-center gap-2 portal-text-body">
                 <input
                     type="checkbox"
                     name="isInstallable"
@@ -79,7 +79,7 @@ export function AppCatalogForm({ app }: { app?: App }) {
                 />
                 Enable installation
             </label>
-            <p className="text-xs leading-6 text-ink-500">
+            <p className="portal-text-caption leading-6 text-ink-500">
                 Before enabling installation, include this package in
                 FRAPPE_IMAGE and FRAPPE_AVAILABLE_APPS on the controller. Only
                 packages in the image can be installed.

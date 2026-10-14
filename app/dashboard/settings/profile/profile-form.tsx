@@ -96,23 +96,23 @@ export function ProfileForm({
     }
 
     return (
-        <div className="mx-auto max-w-7xl">
+        <div className="mx-auto portal-page">
             {!embedded && (
                 <>
                     <Link
                         href="/dashboard/settings"
-                        className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-ink-500 hover:text-ink-700"
+                        className="mb-6 inline-flex items-center gap-2 portal-text-body font-semibold text-ink-500 hover:text-ink-700"
                     >
                         <ArrowLeft className="h-4 w-4" />
                         Back to settings
                     </Link>
-                    <p className="text-xs font-bold uppercase tracking-[.18em] text-brand">
+                    <p className="portal-text-caption font-bold uppercase tracking-[.18em] text-brand">
                         Settings
                     </p>
-                    <h1 className="mt-2 text-3xl font-bold tracking-tight text-ink-950">
+                    <h1 className="portal-page-title mt-2">
                         Edit profile
                     </h1>
-                    <p className="mt-2 text-sm text-ink-500">
+                    <p className="mt-2 portal-text-body text-ink-500">
                         Update your name and profile picture.
                     </p>
                 </>
@@ -157,22 +157,22 @@ export function ProfileForm({
                         />
                     </div>
                     <div>
-                        <p className="text-sm font-semibold text-ink-800">
+                        <p className="portal-text-body font-semibold text-ink-800">
                             Profile picture
                         </p>
-                        <p className="mt-1 text-xs text-ink-400">
+                        <p className="mt-1 portal-text-caption text-ink-400">
                             PNG, JPG or WebP, up to 5 MB
                         </p>
                         <label
                             htmlFor="avatar"
-                            className="mt-2 inline-block cursor-pointer text-xs font-semibold text-brand"
+                            className="mt-2 inline-block cursor-pointer portal-text-caption font-semibold text-brand"
                         >
                             Upload new photo
                         </label>
                         {imageError ? (
                             <p
                                 role="alert"
-                                className="mt-2 text-xs text-error-700"
+                                className="mt-2 portal-text-caption text-error-700"
                             >
                                 {imageError}
                             </p>
@@ -233,7 +233,7 @@ export function ProfileForm({
                     </div>
 
                     <div className="border-t border-ink-100 pt-5">
-                        <div className="mb-4 flex items-center gap-2 text-sm font-semibold text-ink-800">
+                        <div className="mb-4 flex items-center gap-2 portal-text-body font-semibold text-ink-800">
                             <Building2 className="h-4 w-4 text-brand" />
                             Company
                         </div>

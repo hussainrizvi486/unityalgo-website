@@ -26,8 +26,8 @@ export const adminGridTheme = themeQuartz
     .withParams({
         // Type — inherits the app's font rather than AG Grid's default stack.
         fontFamily: 'inherit',
-        fontSize: 14,
-        headerFontSize: 13,
+        fontSize: 'var(--portal-body-size, 14px)',
+        headerFontSize: 'var(--portal-caption-size, 13px)',
         headerFontWeight: 500,
         headerTextColor: INK_500,
 
@@ -43,9 +43,9 @@ export const adminGridTheme = themeQuartz
 
         // Rows. Generous height because most cells stack a primary line over a
         // dimmer secondary one, matching the old table's px-6 py-4 rhythm.
-        rowHeight: 60,
-        headerHeight: 44,
-        cellHorizontalPadding: 20,
+        rowHeight: 'var(--portal-grid-row-height, 60px)',
+        headerHeight: 'var(--portal-grid-header-height, 44px)',
+        cellHorizontalPadding: 'var(--portal-grid-cell-padding, 20px)',
         oddRowBackgroundColor: SURFACE,
         rowHoverColor: 'color-mix(in srgb, var(--color-ink-50) 75%, transparent)',
 

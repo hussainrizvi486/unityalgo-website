@@ -45,7 +45,7 @@ export function ModulePageContent({ config }: { config: ModulePageConfig }) {
                 <div className="absolute inset-0 bg-grid-pattern mask-[radial-gradient(ellipse_at_top,black_30%,transparent_70%)] opacity-30 pointer-events-none" />
                 <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-brand/5 rounded-full blur-[120px] pointer-events-none" />
 
-                <div className="container mx-auto max-w-6xl relative z-10">
+                <div className="site-container site-container-wide relative z-10">
                     <div className="grid md:grid-cols-2 gap-12 items-center">
                         <motion.div
                             initial={{ opacity: 0, y: 20 }}
@@ -56,18 +56,16 @@ export function ModulePageContent({ config }: { config: ModulePageConfig }) {
                                 <span className="w-2 h-2 rounded-full bg-brand motion-safe:animate-pulse" />
                                 <span className="text-xs font-semibold text-brand tracking-wide uppercase">{config.badge}</span>
                             </div>
-                            <h1 className="text-5xl md:text-6xl font-bold tracking-tight  mb-8 text-balance">
+                            <h1 className="text-5xl md:text-6xl font-bold tracking-tight mb-8 text-balance">
                                 {config.heading}
                             </h1>
                             <p className="text-xl text-ink-600 leading-relaxed text-balance mb-10">
                                 {config.subheading}
                             </p>
 
-                            <Link href="/#contact">
-                                <Button size="lg" className="bg-ink-900 hover:bg-ink-800 text-white px-8 h-12 text-base shadow-lg shadow-ink-900/10">
+                            <Button asChild size="lg" className="bg-ink-900 hover:bg-ink-800 text-white px-8 h-12 text-base shadow-lg shadow-ink-900/10"><Link href="/#contact">
                                     {config.ctaLabel ?? 'Request Demo'}
-                                </Button>
-                            </Link>
+                                </Link></Button>
                         </motion.div>
 
                         <motion.div
@@ -108,15 +106,13 @@ export function ModulePageContent({ config }: { config: ModulePageConfig }) {
             <FaqSection items={config.faqItems} />
 
             {/* --- CTA --- */}
-            <section className="py-24 bg-gradient-to-br from-ink-950 to-black text-white text-center px-4">
-                <div className="container mx-auto max-w-3xl">
+            <section className="bg-gradient-to-br from-ink-950 to-black text-white text-center px-4 site-section-spacing">
+                <div className="site-container site-container-reading">
                     <h2 className="text-4xl font-bold mb-6">{config.ctaHeading}</h2>
                     <p className="text-ink-300 mb-8 max-w-2xl mx-auto">{config.ctaDescription}</p>
-                    <Link href="/#contact">
-                        <Button size="lg" className="bg-white text-ink-600 hover:bg-ink-100 px-8 h-12">
+                    <Button asChild size="lg" className="bg-white text-ink-600 hover:bg-ink-100 px-8 h-12"><Link href="/#contact">
                             {config.ctaLabel ?? 'Request Demo'}
-                        </Button>
-                    </Link>
+                        </Link></Button>
                 </div>
             </section>
         </>

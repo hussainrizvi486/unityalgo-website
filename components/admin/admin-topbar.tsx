@@ -86,7 +86,7 @@ export function AdminTopbar() {
     }
 
     return (
-        <header className="sticky top-0 z-20 flex h-14 shrink-0 items-center gap-3 border-b border-ink-100 bg-white/85 px-4 backdrop-blur-sm">
+        <header className="portal-topbar sticky top-0 flex shrink-0 items-center gap-3 border-b border-ink-100 bg-white/85 backdrop-blur-sm">
             {/* <SidebarTrigger className="-ml-1 text-ink-500" />
             <Separator orientation="vertical" className="h-5 bg-ink-200" /> */}
 
@@ -102,15 +102,15 @@ export function AdminTopbar() {
                         requestAnimationFrame(() => inputRef.current?.select());
                     }}
                     className={cn(
-                        'flex h-9 items-center gap-2 rounded-md border border-ink-200 bg-ink-50 px-3 text-sm text-ink-400',
+                        'flex h-9 items-center gap-2 rounded-md border border-ink-200 bg-ink-50 px-3 portal-text-body text-ink-400',
                         'transition-colors hover:bg-ink-100 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50',
                         open && 'invisible',
                     )}
                 >
                     <Search className="size-4" />
-                    <span className="hidden sm:inline text-xs">Jump to…</span>
+                    <span className="hidden sm:inline portal-text-caption">Jump to…</span>
                     {!isMobile ? (
-                        <kbd className="flex items-center gap-0.5 ml-6 rounded border border-ink-200 bg-white px-1 font-mono text-xs text-ink-400">
+                        <kbd className="flex items-center gap-0.5 ml-6 rounded border border-ink-200 bg-white px-1 font-mono portal-text-caption text-ink-400">
                             <Command className='size-2.5'/>
                             <div>K</div>
                         </kbd>
@@ -118,7 +118,7 @@ export function AdminTopbar() {
                 </button>
 
                 {open ? (
-                    <div className="absolute right-0 top-0 z-30 w-72 overflow-hidden rounded-md border border-ink-200 bg-white shadow-lg">
+                    <div className="portal-menu-layer absolute right-0 top-0 w-72 overflow-hidden rounded-md border border-ink-200 bg-white shadow-lg">
                         <div className="flex items-center gap-2 border-b border-ink-100 px-3">
                             <Search className="h-3.5 w-3.5 shrink-0 text-ink-400" />
                             <input
@@ -128,12 +128,12 @@ export function AdminTopbar() {
                                 onKeyDown={onInputKey}
                                 placeholder="Jump to a section…"
                                 aria-label="Jump to a section"
-                                className="h-9 w-full bg-transparent text-sm text-ink-900 outline-none placeholder:text-ink-400"
+                                className="h-9 w-full bg-transparent portal-text-body text-ink-900 outline-none placeholder:text-ink-400"
                             />
                         </div>
                         <ul role="listbox" className="max-h-72 overflow-auto py-1">
                             {matches.length === 0 ? (
-                                <li className="px-3 py-6 text-center text-xs text-ink-400">
+                                <li className="px-3 py-6 text-center portal-text-caption text-ink-400">
                                     Nothing matches &ldquo;{query}&rdquo;
                                 </li>
                             ) : matches.map((item, i) => (
@@ -145,7 +145,7 @@ export function AdminTopbar() {
                                         onMouseEnter={() => setCursor(i)}
                                         onClick={() => go(item.href)}
                                         className={cn(
-                                            'flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm',
+                                            'flex w-full items-center gap-2.5 px-3 py-2 text-left portal-text-body',
                                             // Keyboard cursor: a neutral highlight, so it
                                             // does not read as an alert on every keystroke.
                                             i === cursor ? 'bg-ink-100 text-ink-950' : 'text-ink-700',
@@ -153,7 +153,7 @@ export function AdminTopbar() {
                                     >
                                         <item.icon className="h-4 w-4 shrink-0 opacity-70" />
                                         <span className="truncate">{item.name}</span>
-                                        <span className="ml-auto shrink-0 text-[10px] uppercase tracking-wide text-ink-400">
+                                        <span className="ml-auto shrink-0 portal-text-micro uppercase tracking-wide text-ink-400">
                                             {item.group}
                                         </span>
                                     </button>

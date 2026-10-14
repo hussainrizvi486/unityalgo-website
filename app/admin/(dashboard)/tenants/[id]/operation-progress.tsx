@@ -52,7 +52,7 @@ export function OperationProgress({ operationId }: { operationId: string }) {
 
     if (!snapshot) {
         return (
-            <div className="mt-6 flex items-center gap-2 rounded-md bg-info-50 px-3.5 py-2.5 text-sm text-info-600">
+            <div className="mt-6 flex items-center gap-2 rounded-md bg-info-50 px-3.5 py-2.5 portal-text-body text-info-600">
                 <Loader2 className="h-4 w-4 animate-spin" />Starting…
             </div>
         );
@@ -63,7 +63,7 @@ export function OperationProgress({ operationId }: { operationId: string }) {
 
     return (
         <div
-            className={`mt-6 rounded-md px-3.5 py-3 text-sm ${
+            className={`mt-6 rounded-md px-3.5 py-3 portal-text-body ${
                 failed ? 'bg-error-50 text-error-700' : done ? 'bg-success-50 text-success-700' : 'bg-info-50 text-info-600'
             }`}
         >
@@ -74,7 +74,7 @@ export function OperationProgress({ operationId }: { operationId: string }) {
             </p>
 
             {snapshot.steps.length > 0 && (
-                <ol className="mt-2.5 space-y-1 border-t border-current/10 pt-2.5 text-xs">
+                <ol className="mt-2.5 space-y-1 border-t border-current/10 pt-2.5 portal-text-caption">
                     {snapshot.steps.map((step) => (
                         <li key={step.id} className="flex items-start gap-2">
                             <span className="opacity-50">{step.status === 'success' ? '✓' : step.status === 'failed' ? '✗' : '•'}</span>

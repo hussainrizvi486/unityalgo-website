@@ -32,19 +32,19 @@ export default async function DatabaseDetailPage({ params, searchParams }: PageP
     }
 
     return (
-        <div className="max-w-3xl">
-            <Link href="/admin/databases" className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-ink-500 hover:text-ink-700">
+        <div className="portal-detail">
+            <Link href="/admin/databases" className="mb-6 inline-flex items-center gap-2 portal-text-body font-semibold text-ink-500 hover:text-ink-700">
                 <ArrowLeft className="h-4 w-4" />Back to databases
             </Link>
 
             <div className="flex items-start justify-between gap-4">
                 <div>
                     <div className="flex items-center gap-3">
-                        <h1 className="text-2xl font-bold">{db.name}</h1>
+                        <h1 className="portal-page-title">{db.name}</h1>
                         <Badge variant={db.role === 'cluster' ? 'info' : 'neutral'}>{db.role}</Badge>
                         {db.is_default && <Badge variant="brand">Default</Badge>}
                     </div>
-                    <p className="mt-1 font-mono text-sm text-ink-500">
+                    <p className="mt-1 font-mono portal-text-body text-ink-500">
                         {db.username}@{db.host}:{db.port}/{db.database_name}
                     </p>
                 </div>
@@ -56,22 +56,22 @@ export default async function DatabaseDetailPage({ params, searchParams }: PageP
                 </form>
             </div>
 
-            {error && <div className="mt-6 rounded-md bg-error-50 px-3.5 py-2.5 text-sm text-error-700">{error}</div>}
+            {error && <div className="mt-6 rounded-md bg-error-50 px-3.5 py-2.5 portal-text-body text-error-700">{error}</div>}
             {done && (
-                <div className="mt-6 flex items-center gap-2 rounded-md bg-success-50 px-3.5 py-2.5 text-sm text-success-700">
+                <div className="mt-6 flex items-center gap-2 rounded-md bg-success-50 px-3.5 py-2.5 portal-text-body text-success-700">
                     <CheckCircle2 className="h-4 w-4" />Saved.
                 </div>
             )}
 
             {db.last_test_status && (
-                <div className="mt-6 rounded-xl border border-ink-100 bg-white p-4 text-sm">
+                <div className="mt-6 rounded-xl border border-ink-100 bg-white p-4 portal-text-body">
                     <span className="text-ink-400">Last test:</span>{' '}
                     <Badge variant={db.last_test_status === 'success' ? 'success' : 'error'}>{db.last_test_status}</Badge>
-                    {db.last_test_message && <p className="mt-2 font-mono text-xs text-ink-600">{db.last_test_message}</p>}
+                    {db.last_test_message && <p className="mt-2 font-mono portal-text-caption text-ink-600">{db.last_test_message}</p>}
                 </div>
             )}
 
-            <section className="mt-8 rounded-xl border border-ink-200 bg-white p-5 sm:p-6">
+            <section className="mt-8 p-5 sm:p-6 portal-surface">
                 <h2 className="mb-6 font-bold text-ink-900">Settings</h2>
                 <DatabaseForm
                     action={updateDatabaseAction.bind(null, db.id)}
@@ -95,7 +95,7 @@ export default async function DatabaseDetailPage({ params, searchParams }: PageP
 
             <section className="mt-8 rounded-xl border border-error-500/20 bg-error-50/40 p-5 sm:p-6">
                 <h2 className="font-bold text-ink-900">Danger zone</h2>
-                <p className="mt-1 mb-4 text-sm text-ink-600">
+                <p className="mt-1 mb-4 portal-text-body text-ink-600">
                     Deregistering removes the record here; the database itself is untouched. Refused while any tenant
                     still has its data on this cluster.
                 </p>

@@ -20,7 +20,7 @@ export interface ContactFormValues {
 function SubmitButton({ label }: { label: string }) {
     const { pending } = useFormStatus();
     return (
-        <Button type="submit" disabled={pending} className="bg-ink-900 hover:bg-ink-800 text-white px-8">
+        <Button type="submit" disabled={pending} className="">
             {pending ? 'Saving...' : label}
         </Button>
     );
@@ -36,16 +36,16 @@ export function ContactForm({ action, defaultValues, submitLabel }: ContactFormP
     const [state, formAction] = useActionState(action, undefined);
 
     return (
-        <form action={formAction} className="space-y-6 max-w-2xl">
+        <form action={formAction} className="portal-stack portal-form">
             <div className="grid md:grid-cols-2 gap-6">
                 <div>
-                    <Label htmlFor="firstName" className="text-sm text-ink-700 mb-1.5">
+                    <Label htmlFor="firstName" className="portal-text-body text-ink-700 mb-1.5">
                         First Name
                     </Label>
                     <Input id="firstName" name="firstName" required defaultValue={defaultValues?.firstName} />
                 </div>
                 <div>
-                    <Label htmlFor="lastName" className="text-sm text-ink-700 mb-1.5">
+                    <Label htmlFor="lastName" className="portal-text-body text-ink-700 mb-1.5">
                         Last Name
                     </Label>
                     <Input id="lastName" name="lastName" required defaultValue={defaultValues?.lastName} />
@@ -53,35 +53,33 @@ export function ContactForm({ action, defaultValues, submitLabel }: ContactFormP
             </div>
 
             <div>
-                <Label htmlFor="email" className="text-sm text-ink-700 mb-1.5">
+                <Label htmlFor="email" className="portal-text-body text-ink-700 mb-1.5">
                     Email
                 </Label>
                 <Input id="email" name="email" type="email" required defaultValue={defaultValues?.email} />
             </div>
 
             <div>
-                <Label htmlFor="phone" className="text-sm text-ink-700 mb-1.5">
+                <Label htmlFor="phone" className="portal-text-body text-ink-700 mb-1.5">
                     Phone
                 </Label>
                 <Input id="phone" name="phone" required defaultValue={defaultValues?.phone} />
             </div>
 
             <div>
-                <Label htmlFor="message" className="text-sm text-ink-700 mb-1.5">
+                <Label htmlFor="message" className="portal-text-body text-ink-700 mb-1.5">
                     Message
                 </Label>
                 <Textarea id="message" name="message" required rows={5} defaultValue={defaultValues?.message} />
             </div>
 
-            {state?.error && <p className="text-sm text-error-600">{state.error}</p>}
+            {state?.error && <p className="portal-text-body text-error-600">{state.error}</p>}
 
             <div className="flex items-center gap-3">
                 <SubmitButton label={submitLabel} />
-                <Link href="/admin/contacts">
-                    <Button type="button" variant="outline" >
+                <Button asChild type="button" variant="outline" ><Link href="/admin/contacts">
                         Cancel
-                    </Button>
-                </Link>
+                    </Link></Button>
             </div>
         </form>
     );

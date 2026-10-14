@@ -26,15 +26,15 @@ export function SidebarOverview({
     const [activeIndex, setActiveIndex] = useState(0);
 
     return (
-        <section className="py-24 bg-white">
-            <div className="container mx-auto px-4 max-w-6xl">
+        <section className="bg-white site-section-spacing">
+            <div className="site-container site-gutters site-container-wide">
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
                     className="text-center mb-16"
                 >
-                    <h2 className="text-3xl font-bold  mb-4">{heading}</h2>
+                    <h2 className="text-3xl font-bold mb-4">{heading}</h2>
                     <p className="text-ink-600 max-w-2xl mx-auto">{subheading}</p>
                 </motion.div>
 

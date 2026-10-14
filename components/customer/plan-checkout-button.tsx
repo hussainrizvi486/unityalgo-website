@@ -155,7 +155,7 @@ export function PlanCheckoutButton({ planId, label }: { planId: string; label: s
                 type="button"
                 onClick={open}
                 disabled={busy || phase === 'settled'}
-                className="w-full rounded-md bg-ink-900 text-white hover:bg-ink-800"
+                className="w-full rounded-md"
             >
                 {phase === 'opening' ? 'Opening checkout…'
                     : phase === 'settling' ? 'Activating your plan…'
@@ -164,24 +164,24 @@ export function PlanCheckoutButton({ planId, label }: { planId: string; label: s
             </Button>
 
             {phase === 'settling' ? (
-                <Notice tone="info" className="mt-2 text-xs">
+                <Notice tone="info" className="mt-2 portal-text-caption">
                     Payment received — activating your plan. This usually takes a few seconds.
                 </Notice>
             ) : null}
             {phase === 'settled' ? (
-                <Notice tone="success" className="mt-2 text-xs">
+                <Notice tone="success" className="mt-2 portal-text-caption">
                     Your plan is active.
                 </Notice>
             ) : null}
             {phase === 'slow' ? (
-                <Notice tone="warning" className="mt-2 text-xs">
+                <Notice tone="warning" className="mt-2 portal-text-caption">
                     Your payment went through, but activation is taking longer than usual.
                     Nothing further is needed — refresh in a minute, and contact support if
                     it still has not appeared.
                 </Notice>
             ) : null}
             {error ? (
-                <Notice tone="error" className="mt-2 text-xs">{error}</Notice>
+                <Notice tone="error" className="mt-2 portal-text-caption">{error}</Notice>
             ) : null}
         </div>
     );

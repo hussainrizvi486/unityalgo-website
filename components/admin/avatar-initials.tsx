@@ -25,7 +25,7 @@ export function AvatarInitials({ name, className }: { name: string; className?: 
     return (
         <span
             className={cn(
-                'flex size-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold',
+                'flex size-8 shrink-0 items-center justify-center rounded-full portal-text-caption font-semibold',
                 colorFor(name || '?'),
                 className
             )}

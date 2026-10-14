@@ -41,7 +41,7 @@ export default async function DatabaseBrowsePage({ params }: { params: Promise<{
         <div>
             <Link
                 href={`/admin/databases/${id}`}
-                className="mb-4 inline-flex items-center gap-1.5 text-sm text-ink-500 hover:text-ink-900"
+                className="mb-4 inline-flex items-center gap-1.5 portal-text-body text-ink-500 hover:text-ink-900"
             >
                 <ArrowLeft className="h-4 w-4" />
                 Back to {connection.name}

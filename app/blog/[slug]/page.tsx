@@ -115,11 +115,11 @@ export default async function BlogDetailsPage({
 
             <main>
                 <article className="pt-32 pb-20 px-4" style={articleStyle}>
-                    <div className="container mx-auto max-w-3xl">
+                    <div className="site-container site-container-reading">
             
 
                         <h1
-                            className="text-lg md:text-3xl font-bold tracking-tight  mb-6 text-balance"
+                            className="text-lg md:text-3xl font-bold tracking-tight mb-6 text-balance"
                             style={post.textColor ? { color: post.textColor } : undefined}
                         >
                             {post.title}
@@ -156,9 +156,9 @@ export default async function BlogDetailsPage({
                 </article>
 
                 {relatedPosts.length > 0 && (
-                    <section className="py-24 bg-ink-50 border-t border-ink-100 px-4">
-                        <div className="container mx-auto max-w-6xl">
-                            <h2 className="text-3xl font-bold  mb-12">Related Blogs</h2>
+                    <section className="bg-ink-50 border-t border-ink-100 px-4 site-section-spacing">
+                        <div className="site-container site-container-wide">
+                            <h2 className="text-3xl font-bold mb-12">Related Blogs</h2>
                             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
                                 {relatedPosts.map((related) => (
                                     <BlogCard key={related.id} post={related} />

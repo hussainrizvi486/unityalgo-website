@@ -443,7 +443,7 @@ export default function ThemePreviewPage() {
         <div className="bg-background text-foreground min-h-screen">
             {/* --- PAGE HEADER --- */}
             <div className="border-b border-ink-100 bg-white/80 backdrop-blur-md sticky top-0 z-40">
-                <div className="container mx-auto px-4 md:px-6 py-4 flex items-center justify-between gap-4">
+                <div className="site-container site-gutters py-4 flex items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
                         <Logo className="h-9" />
                         <span className="text-sm font-semibold text-ink-400 hidden sm:inline">/ Theme Preview</span>
@@ -454,7 +454,7 @@ export default function ThemePreviewPage() {
                 </div>
             </div>
 
-            <div className="container mx-auto px-4 md:px-6 py-10 flex gap-10">
+            <div className="site-container site-gutters py-10 flex gap-10">
                 {/* --- STICKY TOC --- */}
                 <nav className="hidden lg:block w-60 shrink-0">
                     <div className="sticky top-24 max-h-[calc(100vh-8rem)] overflow-y-auto pb-6 space-y-5">
@@ -1876,9 +1876,7 @@ export default function ThemePreviewPage() {
                                         Creating a tenant reserves its slug and database. Provisioning it deploys the
                                         container.
                                     </p>
-                                    <Link href="#states" className="mt-5">
-                                        <Button className="bg-ink-900 text-white hover:bg-ink-800">New tenant</Button>
-                                    </Link>
+                                    <Button asChild className="bg-ink-900 text-white hover:bg-ink-800"><Link href="#states" className="mt-5">New tenant</Link></Button>
                                 </div>
                             </Spec>
 
@@ -2116,7 +2114,7 @@ export default function ThemePreviewPage() {
 
             {/* FOOTER */}
             <section id="footer" className="scroll-mt-24 mt-24">
-                <div className="container mx-auto px-4 md:px-6 mb-6">
+                <div className="site-container site-gutters mb-6">
                     <h2 className="text-2xl md:text-3xl font-bold text-ink-900">Footer</h2>
                     <p className="text-ink-500 mt-2">The live Footer component, rendered as-is.</p>
                 </div>

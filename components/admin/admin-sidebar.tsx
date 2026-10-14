@@ -86,10 +86,10 @@ export function AdminSidebar() {
                 >
                     <Image src="/logo.svg" alt="" width={28} height={28} className="size-7 shrink-0" priority />
                     {/* Both hidden when collapsed to icons, where only the mark fits. */}
-                    <span className="truncate font-logo text-[15px] font-bold leading-none text-ink-900 group-data-[collapsible=icon]:hidden">
+                    <span className="truncate font-logo portal-brand-title font-bold leading-none text-ink-900 group-data-[collapsible=icon]:hidden">
                         UnityAlgo
                     </span>
-                    <span className="shrink-0 rounded bg-ink-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-ink-500 group-data-[collapsible=icon]:hidden">
+                    <span className="shrink-0 rounded bg-ink-100 px-1.5 py-0.5 portal-text-micro font-semibold uppercase tracking-wider text-ink-500 group-data-[collapsible=icon]:hidden">
                         Admin
                     </span>
                 </Link>
@@ -98,7 +98,7 @@ export function AdminSidebar() {
             <SidebarContent className="gap-0 px-1 py-2 scrollbar-none [&::-webkit-scrollbar]:hidden">
                 {navGroups.map((group) => (
                     <SidebarGroup key={group.label}>
-                        <SidebarGroupLabel className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">
+                        <SidebarGroupLabel className="portal-text-small font-semibold uppercase tracking-wider text-ink-400">
                             {group.label}
                         </SidebarGroupLabel>
                         <SidebarGroupContent>

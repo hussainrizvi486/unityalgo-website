@@ -91,7 +91,7 @@ export function HowWeBuildSection() {
     }, []);
 
     return (
-        <section className="relative py-24 md:py-32 overflow-hidden bg-ink-950">
+        <section className="relative overflow-hidden bg-ink-950 site-section-spacing">
             <Image
                 src="/images/how-we-build.jpg"
                 alt=""
@@ -101,7 +101,7 @@ export function HowWeBuildSection() {
             />
             <div className="absolute inset-0 bg-linear-to-r from-ink-950 via-ink-950/85 to-ink-950/30" />
 
-            <div className="container relative z-10 mx-auto px-4 md:px-6">
+            <div className="site-container relative z-10 site-gutters">
                 <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-start">
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}

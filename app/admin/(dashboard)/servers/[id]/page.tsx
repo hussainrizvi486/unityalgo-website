@@ -28,8 +28,8 @@ const ACTION_LABELS: Record<string, string> = {
 function Spec({ icon: Icon, label, value }: { icon: typeof Cpu; label: string; value: string }) {
     return (
         <div className="rounded-xl border border-ink-100 bg-white p-4">
-            <p className="flex items-center gap-2 text-xs text-ink-400"><Icon className="h-3.5 w-3.5" />{label}</p>
-            <p className="mt-1.5 text-sm font-semibold text-ink-900">{value}</p>
+            <p className="flex items-center gap-2 portal-text-caption text-ink-400"><Icon className="h-3.5 w-3.5" />{label}</p>
+            <p className="mt-1.5 portal-text-body font-semibold text-ink-900">{value}</p>
         </div>
     );
 }
@@ -53,34 +53,32 @@ export default async function ServerDetailPage({ params, searchParams }: PagePro
     const isProxy = server.role === 'proxy';
 
     return (
-        <div className="max-w-4xl">
-            <Link href="/admin/servers" className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-ink-500 hover:text-ink-700">
+        <div className="portal-detail">
+            <Link href="/admin/servers" className="mb-6 inline-flex items-center gap-2 portal-text-body font-semibold text-ink-500 hover:text-ink-700">
                 <ArrowLeft className="h-4 w-4" />Back to servers
             </Link>
 
             <div className="flex items-start justify-between gap-4">
                 <div>
                     <div className="flex items-center gap-3">
-                        <h1 className="text-2xl font-bold">{server.name}</h1>
+                        <h1 className="portal-page-title">{server.name}</h1>
                         <Badge variant={isProxy ? 'info' : 'neutral'}>{server.role}</Badge>
                         <Badge variant={server.is_active ? 'success' : 'neutral'}>
                             {server.is_active ? 'Active' : 'Disabled'}
                         </Badge>
                     </div>
-                    <p className="mt-1 font-mono text-sm text-ink-500">
+                    <p className="mt-1 font-mono portal-text-body text-ink-500">
                         {server.ssh_user}@{server.ip_address}:{server.ssh_port}
                     </p>
                 </div>
-                <Link href={`/admin/servers/${server.id}/terminal`}>
-                    <Button variant="outline" className="gap-2">
+                <Button asChild variant="outline" className="gap-2"><Link href={`/admin/servers/${server.id}/terminal`}>
                         <TerminalSquare className="h-4 w-4" />Open terminal
-                    </Button>
-                </Link>
+                    </Link></Button>
             </div>
 
-            {error && <div className="mt-6 rounded-md bg-error-50 px-3.5 py-2.5 text-sm text-error-700">{error}</div>}
+            {error && <div className="mt-6 rounded-md bg-error-50 px-3.5 py-2.5 portal-text-body text-error-700">{error}</div>}
             {done && (
-                <div className="mt-6 flex items-center gap-2 rounded-md bg-success-50 px-3.5 py-2.5 text-sm text-success-700">
+                <div className="mt-6 flex items-center gap-2 rounded-md bg-success-50 px-3.5 py-2.5 portal-text-body text-success-700">
                     <CheckCircle2 className="h-4 w-4" />{ACTION_LABELS[done] ?? 'Done.'}
                 </div>
             )}
@@ -101,13 +99,13 @@ export default async function ServerDetailPage({ params, searchParams }: PagePro
                 <Spec icon={Network} label="Containers" value={`${server.active_containers ?? 0}${server.max_containers ? ` / ${server.max_containers}` : ''}`} />
             </div>
 
-            <div className="mt-3 rounded-xl border border-ink-100 bg-white p-4 text-sm text-ink-600">
+            <div className="mt-3 rounded-xl border border-ink-100 bg-white p-4 portal-text-body text-ink-600">
                 <span className="text-ink-400">OS:</span> {server.os_name ?? 'not collected'}
                 {server.kernel_version ? <> · <span className="text-ink-400">kernel</span> {server.kernel_version}</> : null}
                 {server.architecture ? <> · <span className="text-ink-400">arch</span> {server.architecture}</> : null}
                 {server.docker_version ? <> · <span className="text-ink-400">Docker</span> {server.docker_version}</> : null}
                 {server.last_checked_at ? (
-                    <div className="mt-1 text-xs text-ink-400">
+                    <div className="mt-1 portal-text-caption text-ink-400">
                         Last checked {new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(server.last_checked_at))}
                         {server.last_check_status ? ` — ${server.last_check_status}` : ''}
                     </div>
@@ -115,9 +113,9 @@ export default async function ServerDetailPage({ params, searchParams }: PagePro
             </div>
 
             {/* --- maintenance --- */}
-            <section className="mt-8 rounded-xl border border-ink-200 bg-white p-5 sm:p-6">
+            <section className="mt-8 p-5 sm:p-6 portal-surface">
                 <h2 className="font-bold text-ink-900">Maintenance</h2>
-                <p className="mt-1 text-xs text-ink-400">
+                <p className="mt-1 portal-text-caption text-ink-400">
                     These run over SSH against the live node. Bootstrap operations are queued and continue in the
                     background — follow them in the <Link href="/admin/logs" className="text-link hover:underline">activity log</Link>.
                 </p>
@@ -157,7 +155,7 @@ export default async function ServerDetailPage({ params, searchParams }: PagePro
             </section>
 
             {/* --- edit --- */}
-            <section className="mt-8 rounded-xl border border-ink-200 bg-white p-5 sm:p-6">
+            <section className="mt-8 p-5 sm:p-6 portal-surface">
                 <h2 className="mb-6 font-bold text-ink-900">Settings</h2>
                 <ServerForm
                     action={updateServerAction.bind(null, server.id)}
@@ -180,7 +178,7 @@ export default async function ServerDetailPage({ params, searchParams }: PagePro
 
             <section className="mt-8 rounded-xl border border-error-500/20 bg-error-50/40 p-5 sm:p-6">
                 <h2 className="font-bold text-ink-900">Danger zone</h2>
-                <p className="mt-1 mb-4 text-sm text-ink-600">
+                <p className="mt-1 mb-4 portal-text-body text-ink-600">
                     Deregistering only removes the record here — it does not touch the machine. The API refuses if
                     tenants are still deployed on it.
                 </p>

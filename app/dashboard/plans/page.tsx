@@ -35,9 +35,9 @@ export default async function PurchasePlansPage() {
 
   return (
     <div className="mx-auto max-w-6xl">
-      <p className="text-xs font-bold uppercase tracking-[.18em] text-brand">Plans</p>
-      <h1 className="mt-2 text-3xl font-bold tracking-tight text-ink-950">Choose a plan</h1>
-      <p className="mt-2 text-sm text-ink-500">You can hold one plan per product — pick a plan for each product you want to subscribe to.</p>
+      <p className="portal-text-caption font-bold uppercase tracking-[.18em] text-brand">Plans</p>
+      <h1 className="portal-page-title mt-2">Choose a plan</h1>
+      <p className="mt-2 portal-text-body text-ink-500">You can hold one plan per product — pick a plan for each product you want to subscribe to.</p>
 
       {[...groups.entries()].map(([product, group]) => {
         const subscriptionForProduct = subscriptionByProduct.get(product);
@@ -56,15 +56,15 @@ export default async function PurchasePlansPage() {
                   className={`flex flex-col rounded-xl border p-6 ${isCurrent ? 'border-brand ring-1 ring-brand' : 'border-ink-200'} bg-white`}
                 >
                   <h3 className="text-lg font-bold text-ink-950">{plan.name}</h3>
-                  {plan.tagline ? <p className="mt-1 text-sm text-ink-500">{plan.tagline}</p> : null}
+                  {plan.tagline ? <p className="mt-1 portal-text-body text-ink-500">{plan.tagline}</p> : null}
                   <div className="mt-4">
                     <span className="text-2xl font-bold text-ink-950">{formatPlanPrice(plan)}</span>
                   </div>
-                  {transactionFee ? <p className="mt-1 text-xs text-ink-400">+ {transactionFee}</p> : null}
-                  <p className="mt-1 text-xs text-ink-400">{plan.userLimit == null ? 'Unlimited seats' : `Up to ${plan.userLimit} seats`}</p>
+                  {transactionFee ? <p className="mt-1 portal-text-caption text-ink-400">+ {transactionFee}</p> : null}
+                  <p className="mt-1 portal-text-caption text-ink-400">{plan.userLimit == null ? 'Unlimited seats' : `Up to ${plan.userLimit} seats`}</p>
 
                   {plan.features.length ? (
-                    <ul className="mt-5 space-y-2 text-sm text-ink-600">
+                    <ul className="mt-5 space-y-2 portal-text-body text-ink-600">
                       {plan.features.map((feature) => (
                         <li key={feature} className="flex items-start gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-brand" />{feature}</li>
                       ))}
@@ -77,11 +77,9 @@ export default async function PurchasePlansPage() {
                         Current plan
                       </Button>
                     ) : isCustomQuote ? (
-                      <Link href="/#contact">
-                        <Button type="button" variant="outline" className="w-full gap-1.5 rounded-md">
+                      <Button asChild type="button" variant="outline" className="w-full gap-1.5 rounded-md"><Link href="/#contact">
                           <MessageCircle className="h-4 w-4" />Contact sales
-                        </Button>
-                      </Link>
+                        </Link></Button>
                     ) : (
                       <PlanCheckoutButton
                         planId={plan.id}
@@ -97,7 +95,7 @@ export default async function PurchasePlansPage() {
         );
       })}
 
-      {plans.length === 0 ? <p className="mt-10 text-center text-sm text-ink-500">No plans are available yet — check back soon.</p> : null}
+      {plans.length === 0 ? <p className="mt-10 text-center portal-text-body text-ink-500">No plans are available yet — check back soon.</p> : null}
     </div>
   );
 }

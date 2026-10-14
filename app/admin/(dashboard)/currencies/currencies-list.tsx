@@ -45,7 +45,7 @@ export function CurrenciesList({
             icon: <Hash />,
             flex: 1.4,
             minWidth: 210,
-            cellClass: 'font-mono text-xs',
+            cellClass: 'font-mono portal-text-caption',
             cellRenderer: StackedCell,
             text: (row) => row.numberFormat,
             get: (row) => ({ primary: row.numberFormat, secondary: row.sample }),

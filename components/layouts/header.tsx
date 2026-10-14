@@ -140,12 +140,12 @@ export function Header() {
   return (
     <>
       <header
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ease-in-out border-b ${isScrolled
+        className={`site-header-layer fixed top-0 left-0 right-0 transition-all duration-500 ease-in-out border-b ${isScrolled
           ? 'bg-white/40 backdrop-blur-xl border-white/20 shadow-sm py-3'
           : 'bg-transparent border-transparent py-5'
           }`}
       >
-        <div className="container mx-auto px-4 md:px-6">
+        <div className="site-container site-gutters">
           <div className="flex items-center justify-between">
             <div className="shrink-0 flex items-center">
               <Logo />
@@ -159,7 +159,7 @@ export function Header() {
             <div className="hidden md:flex items-center gap-4">
               <Link href="#contact">
                 {/* sm:text-base bg-brand hover:bg-brand text-white rounded-full shadow-lg shadow-ink-900/10 transition-all */}
-                <Button className="transition-all duration-300 bg-ink-900 hover:bg-ink-800 text-white shadow-md">
+                <Button className="py-2 transition-all duration-300 bg-ink-900 hover:bg-ink-800 text-white shadow-md">
                   Get Started
                 </Button>
               </Link>
@@ -198,7 +198,7 @@ const MobileMenu = () => {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.2 }}
-      className="fixed inset-0 z-40 bg-white pt-24 md:hidden"
+      className="site-navigation-layer fixed inset-0 bg-white pt-24 md:hidden"
     >
       <motion.div
         initial={{ opacity: 0, y: -12 }}
@@ -207,7 +207,7 @@ const MobileMenu = () => {
         transition={{ duration: 0.25 }}
         className="h-full overflow-y-auto border-t border-ink-100"
       >
-        <nav className="container mx-auto max-w-lg px-4 py-6 pb-10">
+        <nav className="site-container max-w-lg site-gutters py-6 pb-10">
           <Link href="/" onClick={closeMenu} className="flex items-center px-4 py-3.5 rounded-lg text-base font-semibold text-ink-900 hover:bg-ink-50 transition-colors">
             Home
           </Link>
@@ -225,11 +225,9 @@ const MobileMenu = () => {
               </Link>
             ))}
 
-          <Link href="/#contact" onClick={closeMenu} className="block mt-6">
-            <Button className="w-full h-12 bg-ink-900 hover:bg-ink-800 text-white shadow-md" size="sm">
+          <Button asChild className="w-full h-12 bg-ink-900 hover:bg-ink-800 text-white shadow-md" size="sm"><Link href="/#contact" onClick={closeMenu} className="block mt-6">
               Get Started
-            </Button>
-          </Link>
+            </Link></Button>
         </nav>
       </motion.div>
     </motion.div>

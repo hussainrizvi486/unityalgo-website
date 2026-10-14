@@ -21,16 +21,16 @@ export default async function SitesPage() {
         sites = null;
     }
     return (
-        <div className="mx-auto max-w-7xl">
+        <div className="mx-auto portal-page">
             <div className="flex flex-wrap items-start justify-between gap-5">
                 <div>
-                    <p className="text-xs font-semibold uppercase tracking-wider text-brand">
+                    <p className="portal-text-caption font-semibold uppercase tracking-wider text-brand">
                         Your workspaces
                     </p>
-                    <h1 className="mt-2 text-3xl font-semibold tracking-tight">
+                    <h1 className="portal-page-title mt-2">
                         Sites
                     </h1>
-                    <p className="mt-3 text-sm text-ink-600">
+                    <p className="mt-3 portal-text-body text-ink-600">
                         Manage your Frappe sites and follow their installation
                         progress.
                     </p>
@@ -48,7 +48,7 @@ export default async function SitesPage() {
                             ),
                         )}
                     />
-                    <Button asChild className="h-8">
+                    <Button asChild className="">
                         <Link href="/dashboard/sites/new">
                             <Plus className="size-4" />
                             Create site
@@ -85,18 +85,18 @@ export default async function SitesPage() {
                             <h2 className="mt-5 text-xl font-semibold">
                                 {site.name}
                             </h2>
-                            <p className="mt-2 break-all text-sm text-ink-500">
+                            <p className="mt-2 break-all portal-text-body text-ink-500">
                                 {site.domain}
                             </p>
-                            <p className="mt-4 text-xs text-ink-500">
+                            <p className="mt-4 portal-text-caption text-ink-500">
                                 Server: {site.server_name}
                             </p>
-                            <p className="mt-3 min-h-12 text-sm leading-6 text-ink-600">
+                            <p className="mt-3 min-h-12 portal-text-body leading-6 text-ink-600">
                                 {site.message}
                             </p>
                             <Link
                                 href={`/dashboard/sites/${site.id}`}
-                                className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-brand"
+                                className="mt-5 inline-flex items-center gap-2 portal-text-body font-semibold text-brand"
                             >
                                 View site <ArrowUpRight className="size-4" />
                             </Link>
@@ -109,11 +109,11 @@ export default async function SitesPage() {
                     <h2 className="mt-5 text-xl font-semibold">
                         Your first site starts here.
                     </h2>
-                    <p className="mx-auto mt-3 max-w-md text-sm leading-7 text-ink-600">
+                    <p className="mx-auto mt-3 max-w-md portal-text-body leading-7 text-ink-600">
                         Choose a name and your applications. We will assign an
                         available server and start the Frappe installation.
                     </p>
-                    <Button asChild className="mt-6 py-2">
+                    <Button asChild className="mt-6">
                         <Link href="/dashboard/sites/new">
                             Create your first site
                         </Link>

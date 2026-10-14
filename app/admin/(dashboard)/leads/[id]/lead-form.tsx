@@ -16,7 +16,7 @@ import type { LeadStatus } from '@prisma/client';
 function SaveButton() {
     const { pending } = useFormStatus();
     return (
-        <Button type="submit" disabled={pending} className="bg-ink-900 text-white hover:bg-ink-800">
+        <Button type="submit" disabled={pending} className="">
             {pending ? 'Saving…' : 'Save'}
         </Button>
     );
@@ -26,7 +26,7 @@ export function LeadForm({ id, status, notes }: { id: string; status: LeadStatus
     const [state, formAction] = useActionState(updateLeadAction, undefined);
 
     return (
-        <form action={formAction} className="space-y-5">
+        <form action={formAction} className="portal-fields">
             <input type="hidden" name="id" value={id} />
 
             {state?.error && (
@@ -53,7 +53,7 @@ export function LeadForm({ id, status, notes }: { id: string; status: LeadStatus
 
             <div className="flex items-center gap-3 border-t border-ink-200 pt-5">
                 <SaveButton />
-                <Link href="/admin/leads"><Button type="button" variant="outline">Back</Button></Link>
+                <Button asChild type="button" variant="outline"><Link href="/admin/leads">Back</Link></Button>
                 <div className="ml-auto">
                     <DeleteButton
                         action={deleteLeadAction}

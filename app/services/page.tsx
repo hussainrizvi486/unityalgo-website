@@ -43,8 +43,8 @@ const Page = () => {
             <main>
                 <section className="relative pt-40 pb-20 md:pt-52 md:pb-24 px-4">
                     <div className="absolute inset-0 bg-grid-pattern mask-[radial-gradient(ellipse_at_top,black_30%,transparent_70%)] opacity-30 pointer-events-none" />
-                    <div className="container mx-auto max-w-6xl text-center relative z-10">
-                        <h1 className="text-5xl md:text-6xl font-bold tracking-tight  mb-6 text-balance">
+                    <div className="site-container site-container-wide text-center relative z-10">
+                        <h1 className="text-5xl md:text-6xl font-bold tracking-tight mb-6 text-balance">
                             Our Services
                         </h1>
                         <p className="text-xl text-ink-600 max-w-2xl mx-auto leading-relaxed text-balance">
@@ -54,7 +54,7 @@ const Page = () => {
                 </section>
 
                 <section className="pb-24 px-4">
-                    <div className="container mx-auto max-w-6xl grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="site-container site-container-wide grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {services.map((service) => (
                             <Link
                                 key={service.name}

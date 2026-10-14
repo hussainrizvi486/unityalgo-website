@@ -37,7 +37,7 @@ const ListViewGrid = dynamic(
     {
         ssr: false,
         loading: () => (
-            <div className="animate-pulse rounded-xl border border-ink-200 bg-white" style={{ height: 620 }} />
+            <div className="portal-grid-loading animate-pulse portal-surface" />
         ),
     },
 ) as <Row>(props: {
@@ -46,7 +46,7 @@ const ListViewGrid = dynamic(
     getRowId: (row: Row) => string;
     query: string;
     pageSize: number;
-    height: number;
+    height?: number;
     sort: string;
     onSortChange: (next: string) => void;
     page: number;
@@ -64,7 +64,7 @@ export function AdminListView<Row>({
     emptyIcon,
     emptyAction,
     pageSize = 50,
-    height = 620,
+    height,
     className,
 }: ListViewProps<Row>) {
     // Search is debounced: it is written per keystroke, and an address-bar
@@ -110,13 +110,11 @@ export function AdminListView<Row>({
                 <div className="flex min-h-64 flex-col items-center justify-center rounded-xl border border-dashed border-ink-300 bg-white p-6 text-center">
                     {emptyIcon ?? null}
                     <h2 className="mt-4 text-lg font-bold text-ink-900">{emptyTitle}</h2>
-                    {emptyMessage && <p className="mt-2 max-w-sm text-sm text-ink-500">{emptyMessage}</p>}
+                    {emptyMessage && <p className="mt-2 max-w-sm portal-text-body text-ink-500">{emptyMessage}</p>}
                     {emptyAction && (
-                        <Link href={emptyAction.href} className="mt-5">
-                            <Button className="bg-ink-900 text-white hover:bg-ink-800">
+                        <Button asChild className=""><Link href={emptyAction.href} className="mt-5">
                                 {emptyAction.label}
-                            </Button>
-                        </Link>
+                            </Link></Button>
                     )}
                 </div>
             ) : (

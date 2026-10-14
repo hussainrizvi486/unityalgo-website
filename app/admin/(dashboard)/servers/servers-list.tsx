@@ -39,7 +39,7 @@ export function ServersList({ rows }: { rows: ServerRow[] }) {
             icon: <Network />,
             flex: 1.2,
             minWidth: 170,
-            cellClass: 'font-mono text-xs',
+            cellClass: 'font-mono portal-text-caption',
             cellRenderer: StackedCell,
             text: (row) => `${row.ipAddress} ${row.privateIp ?? ''}`,
             get: (row) => ({ primary: row.ipAddress, secondary: row.privateIp }),

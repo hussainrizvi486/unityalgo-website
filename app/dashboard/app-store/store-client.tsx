@@ -27,14 +27,14 @@ export function AppStoreClient({ apps }: { apps: App[] }) {
                 .includes(search.toLowerCase()),
     );
     return (
-        <div className="mx-auto max-w-7xl">
-            <p className="text-xs font-semibold uppercase tracking-wider text-brand">
+        <div className="mx-auto portal-page">
+            <p className="portal-text-caption font-semibold uppercase tracking-wider text-brand">
                 Extend your workspace
             </p>
-            <h1 className="mt-2 text-3xl font-semibold tracking-tight">
+            <h1 className="portal-page-title mt-2">
                 App Store
             </h1>
-            <p className="mt-3 max-w-2xl text-sm leading-7 text-ink-600">
+            <p className="mt-3 portal-form portal-text-body leading-7 text-ink-600">
                 Explore applications for your business. Choose available
                 applications when creating a Frappe site; packages requiring
                 setup will become installable when your administrator configures
@@ -81,13 +81,13 @@ export function AppStoreClient({ apps }: { apps: App[] }) {
                                 {app.available ? 'Available' : 'Requires setup'}
                             </Badge>
                         </div>
-                        <p className="mt-6 text-xs font-medium uppercase tracking-wider text-ink-500">
+                        <p className="mt-6 portal-text-caption font-medium uppercase tracking-wider text-ink-500">
                             {app.category}
                         </p>
                         <h2 className="mt-2 text-xl font-semibold">
                             {app.name}
                         </h2>
-                        <p className="mt-2 flex-1 text-sm leading-7 text-ink-600">
+                        <p className="mt-2 flex-1 portal-text-body leading-7 text-ink-600">
                             {app.description}
                         </p>
                         {app.available ? (
@@ -102,7 +102,7 @@ export function AppStoreClient({ apps }: { apps: App[] }) {
                         ) : (
                             <Link
                                 href="/dashboard/support/new"
-                                className="mt-6 text-sm font-medium text-brand hover:underline"
+                                className="mt-6 portal-text-body font-medium text-brand hover:underline"
                             >
                                 Ask about installation
                             </Link>
@@ -111,7 +111,7 @@ export function AppStoreClient({ apps }: { apps: App[] }) {
                 ))}
             </div>
             {!visible.length && (
-                <p className="mt-12 rounded-xl border border-dashed border-ink-300 p-10 text-center text-sm text-ink-500">
+                <p className="mt-12 rounded-xl border border-dashed border-ink-300 p-10 text-center portal-text-body text-ink-500">
                     No applications match your search.
                 </p>
             )}

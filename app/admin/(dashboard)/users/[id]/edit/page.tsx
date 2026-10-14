@@ -18,7 +18,7 @@ export default async function EditUserPage({ params }: { params: Promise<{ id: s
     return (
         <div className="space-y-12">
             <div>
-                <h1 className="text-2xl font-bold mb-8">Edit User</h1>
+                <h1 className="portal-page-title mb-8">Edit User</h1>
                 <UserForm
                     action={boundUpdateAction}
                     submitLabel="Save Changes"
@@ -26,9 +26,9 @@ export default async function EditUserPage({ params }: { params: Promise<{ id: s
                 />
             </div>
 
-            <div className="max-w-lg pt-8 border-t border-ink-200">
+            <div className="portal-form-narrow pt-8 border-t border-ink-200">
                 <h2 className="text-lg font-bold mb-1">Change Password</h2>
-                <p className="text-sm text-ink-500 mb-6">Set a new password for {user.email}.</p>
+                <p className="portal-text-body text-ink-500 mb-6">Set a new password for {user.email}.</p>
                 <ChangePasswordForm action={boundPasswordAction} />
             </div>
         </div>

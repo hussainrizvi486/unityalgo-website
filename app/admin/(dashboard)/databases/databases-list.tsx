@@ -46,7 +46,7 @@ export function DatabasesList({
             icon: <Network />,
             flex: 1.5,
             minWidth: 220,
-            cellClass: 'font-mono text-xs',
+            cellClass: 'font-mono portal-text-caption',
             cellRenderer: StackedCell,
             text: (row) => `${row.address} ${row.username}`,
             get: (row) => ({ primary: row.address, secondary: row.username }),

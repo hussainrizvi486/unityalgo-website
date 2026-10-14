@@ -139,7 +139,7 @@ export const MainContent = ({ plans }: { plans: UnityCommercePlan[] }) => {
                 <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_70%_15%,rgba(0,0,0,0.07),transparent_45%),radial-gradient(circle_at_15%_85%,rgba(0,0,0,0.04),transparent_40%)]" />
                 <div className="pointer-events-none absolute inset-0 bg-grid-pattern opacity-40 [mask-image:linear-gradient(to_bottom,black_35%,transparent_90%)]" />
 
-                <div className="container relative mx-auto max-w-7xl">
+                <div className="site-container relative">
                     <div className="flex flex-col items-center text-center">
                         <motion.div
                             initial={{ opacity: 0, y: 16 }}
@@ -181,17 +181,13 @@ export const MainContent = ({ plans }: { plans: UnityCommercePlan[] }) => {
                             transition={{ duration: 0.6, delay: 0.3 }}
                             className="mt-8 flex flex-col items-center justify-center gap-3.5 sm:flex-row"
                         >
-                            <Link href="/register?next=/customer/onboarding&plan=Growth" className="w-full sm:w-auto">
-                                <Button size="lg" className="group h-13 w-full bg-ink-950 px-8 text-base font-semibold text-white shadow-lg shadow-ink-950/20 transition-all hover:bg-ink-800 hover:shadow-xl sm:w-auto">
+                            <Button asChild size="lg" className="group h-13 w-full bg-ink-950 px-8 text-base font-semibold text-white shadow-lg shadow-ink-950/20 transition-all hover:bg-ink-800 hover:shadow-xl sm:w-auto"><Link href="/register?next=/customer/onboarding&plan=Growth" className="w-full sm:w-auto">
                                     Start Building Your Store
                                     <ArrowRight className="ml-2 size-4 transition-transform group-hover:translate-x-1" />
-                                </Button>
-                            </Link>
-                            <Link href="#pricing" className="w-full sm:w-auto">
-                                <Button variant="outline" size="lg" className="h-13 w-full border-ink-300 bg-white px-8 text-base font-semibold text-ink-800 shadow-sm hover:bg-ink-50 hover:text-ink-900 sm:w-auto">
+                                </Link></Button>
+                            <Button asChild variant="outline" size="lg" className="h-13 w-full border-ink-300 bg-white px-8 text-base font-semibold text-ink-800 shadow-sm hover:bg-ink-50 hover:text-ink-900 sm:w-auto"><Link href="#pricing" className="w-full sm:w-auto">
                                     View Pricing &amp; Plans
-                                </Button>
-                            </Link>
+                                </Link></Button>
                         </motion.div>
 
                         <motion.div
@@ -264,8 +260,8 @@ export const MainContent = ({ plans }: { plans: UnityCommercePlan[] }) => {
             </section>
 
             {/* ── THEMES PREVIEW ──────────────────────────────────────── */}
-            <section id="themes" className="scroll-mt-20 bg-ink-950 px-4 py-24 text-white">
-                <div className="container mx-auto max-w-7xl">
+            <section id="themes" className="scroll-mt-20 bg-ink-950 px-4 text-white site-section-spacing">
+                <div className="site-container">
                     <div className="mb-14 max-w-3xl">
                         <span className="text-xs font-extrabold uppercase tracking-[0.18em] text-white/50">Included with every plan</span>
                         <h2 className="mt-2 text-3xl font-extrabold tracking-tight sm:text-5xl">
@@ -308,20 +304,18 @@ export const MainContent = ({ plans }: { plans: UnityCommercePlan[] }) => {
                     </div>
 
                     <div className="mt-10 flex flex-wrap items-center gap-4">
-                        {/* <Link href="/register?next=/customer/onboarding&plan=Growth">
-                            <Button size="lg" className="h-12 bg-white px-7 font-bold text-ink-950 hover:bg-white/85">
+                        {/* <Button asChild size="lg" className="h-12 bg-white px-7 font-bold text-ink-950 hover:bg-white/85"><Link href="/register?next=/customer/onboarding&plan=Growth">
                                 Browse all themes
                                 <ArrowRight className="ml-2 size-4" />
-                            </Button>
-                        </Link> */}
+                            </Link></Button> */}
                         <p className="text-xs text-white/45">Switch themes at any time — your products and orders stay put.</p>
                     </div>
                 </div>
             </section>
 
             {/* ── PRICING (structure unchanged; recoloured for the dark page) ── */}
-            <section id="pricing" className="scroll-mt-20 border-t border-ink-100 py-24">
-                <div className="container mx-auto max-w-7xl px-4">
+            <section id="pricing" className="scroll-mt-20 border-t border-ink-100 site-section-spacing">
+                <div className="site-container px-4">
                     <div className="mb-12 text-center">
                         <span className="text-xs font-extrabold uppercase tracking-[0.18em] text-ink-500">Transparent Pricing</span>
                         <h2 className="mt-2 text-3xl font-extrabold sm:text-5xl">Simple, predictable pricing plans.</h2>
@@ -359,10 +353,10 @@ export const MainContent = ({ plans }: { plans: UnityCommercePlan[] }) => {
             </section>
 
             {/* ── BUILD FAST ──────────────────────────────────────────── */}
-            <section className="relative overflow-hidden bg-ink-950 px-4 py-24 text-white">
+            <section className="relative overflow-hidden bg-ink-950 px-4 text-white site-section-spacing">
                 <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(255,255,255,0.07),transparent_55%)]" />
 
-                <div className="container relative mx-auto max-w-7xl">
+                <div className="site-container relative">
                     <div className="mb-14 max-w-3xl">
                         <span className="text-xs font-extrabold uppercase tracking-[0.18em] text-white/50">Three steps</span>
                         <h2 className="mt-2 text-3xl font-extrabold tracking-tight sm:text-5xl">Build fast on UnityCommerce</h2>
@@ -423,17 +417,13 @@ export const MainContent = ({ plans }: { plans: UnityCommercePlan[] }) => {
                             </p>
                         </div>
                         <div className="flex shrink-0 flex-col gap-3 sm:flex-row">
-                            <Link href="/register?next=/customer/onboarding&plan=Growth">
-                                <Button size="lg" className="h-13 w-full bg-white px-8 text-base font-semibold text-ink-950 shadow-lg shadow-black/40 hover:bg-white/85 sm:w-auto">
+                            <Button asChild size="lg" className="h-13 w-full bg-white px-8 text-base font-semibold text-ink-950 shadow-lg shadow-black/40 hover:bg-white/85 sm:w-auto"><Link href="/register?next=/customer/onboarding&plan=Growth">
                                     Get Started
                                     <ArrowRight className="ml-2 size-4" />
-                                </Button>
-                            </Link>
-                            <Link href="/#contact">
-                                <Button variant="outline" size="lg" className="h-13 w-full border-white/20 bg-white/5 px-8 text-base font-semibold text-white hover:bg-white/10 hover:text-white sm:w-auto">
+                                </Link></Button>
+                            <Button asChild variant="outline" size="lg" className="h-13 w-full border-white/20 bg-white/5 px-8 text-base font-semibold text-white hover:bg-white/10 hover:text-white sm:w-auto"><Link href="/#contact">
                                     Talk to Sales
-                                </Button>
-                            </Link>
+                                </Link></Button>
                         </div>
                     </div>
                 </div>
@@ -493,20 +483,18 @@ const PlanCard = ({ plan, index }: { index: number, plan: UnityCommercePlan }) =
             </div>
 
 
-            <Link href={price
-                ? `/register?next=/customer/onboarding&plan=${encodeURIComponent(plan.name)}`
-                : '/#contact'}>
-                <Button
+            <Button asChild
                     className={cn(
                         'h-12 w-full cursor-pointer text-xs font-bold sm:text-sm',
                         plan.highlighted
                             ? 'bg-white text-ink-950 shadow-md hover:bg-ink-100'
                             : 'bg-ink-950 text-white shadow-md hover:bg-ink-800',
                     )}
-                >
+                ><Link href={price
+                ? `/register?next=/customer/onboarding&plan=${encodeURIComponent(plan.name)}`
+                : '/#contact'}>
                     {price ? `Start with ${price}` : 'Talk to sales'}
-                </Button>
-            </Link>
+                </Link></Button>
         </motion.div>
     )
 }

@@ -43,7 +43,7 @@ function qualified(table: DbTable) {
 function ResultGrid({ result }: { result: DbQueryResult }) {
     if (result.kind === 'status') {
         return (
-            <div className="rounded-md border border-ink-200 bg-ink-50 px-4 py-3 text-sm text-ink-700">
+            <div className="rounded-md border border-ink-200 bg-ink-50 px-4 py-3 portal-text-body text-ink-700">
                 {result.affected_rows} row{result.affected_rows === 1 ? '' : 's'} affected
                 <span className="ml-2 text-ink-400">· {result.duration_ms} ms</span>
             </div>
@@ -52,7 +52,7 @@ function ResultGrid({ result }: { result: DbQueryResult }) {
 
     if (result.row_count === 0) {
         return (
-            <div className="rounded-md border border-ink-200 bg-ink-50 px-4 py-3 text-sm text-ink-500">
+            <div className="rounded-md border border-ink-200 bg-ink-50 px-4 py-3 portal-text-body text-ink-500">
                 No rows · {result.duration_ms} ms
             </div>
         );
@@ -60,7 +60,7 @@ function ResultGrid({ result }: { result: DbQueryResult }) {
 
     return (
         <div>
-            <div className="flex items-center gap-2 pb-2 text-xs text-ink-500">
+            <div className="flex items-center gap-2 pb-2 portal-text-caption text-ink-500">
                 <span>{result.row_count} row{result.row_count === 1 ? '' : 's'}</span>
                 <span>· {result.duration_ms} ms</span>
                 {result.truncated ? (
@@ -73,7 +73,7 @@ function ResultGrid({ result }: { result: DbQueryResult }) {
             {/* The grid scrolls in its own box: a wide result must never make
                 the whole admin page scroll sideways. */}
             <div className="max-h-[26rem] overflow-auto rounded-md border border-ink-200">
-                <table className="w-full border-collapse text-left text-xs">
+                <table className="w-full border-collapse text-left portal-text-caption">
                     <thead className="sticky top-0 bg-ink-50">
                         <tr>
                             {result.columns.map((c) => (
@@ -175,13 +175,13 @@ export function DatabaseBrowser({
 
     return (
         <div className="flex min-h-[34rem] gap-4">
-            <aside className="w-72 shrink-0 rounded-xl border border-ink-200 bg-white">
+            <aside className="w-72 shrink-0 portal-surface">
                 <div className="border-b border-ink-200 p-3">
-                    <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-ink-900">
+                    <div className="mb-2 flex items-center gap-2 portal-text-body font-semibold text-ink-900">
                         <Database className="h-4 w-4 text-ink-400" />
                         {connectionName}
                     </div>
-                    <p className="mb-3 truncate font-mono text-xs text-ink-500">{databaseName}</p>
+                    <p className="mb-3 truncate font-mono portal-text-caption text-ink-500">{databaseName}</p>
                     <div className="relative">
                         <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-ink-400" />
                         <Input
@@ -189,27 +189,27 @@ export function DatabaseBrowser({
                             value={filter}
                             onChange={(e) => setFilter(e.target.value)}
                             placeholder="Search tables…  ⌘K"
-                            className="h-9 pl-8 text-sm"
+                            className="h-9 pl-8 portal-text-body"
                         />
                     </div>
                 </div>
                 <ul className="max-h-[28rem] overflow-auto py-1">
                     {visible.length === 0 ? (
-                        <li className="px-3 py-6 text-center text-xs text-ink-400">No matching tables</li>
+                        <li className="px-3 py-6 text-center portal-text-caption text-ink-400">No matching tables</li>
                     ) : visible.map((table) => (
                         <li key={`${table.schema}.${table.name}`}>
                             <button
                                 type="button"
                                 onClick={() => openTable(table)}
                                 className={cn(
-                                    'flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs hover:bg-ink-100',
+                                    'flex w-full items-center gap-2 px-3 py-1.5 text-left portal-text-caption hover:bg-ink-100',
                                     selected?.name === table.name && selected?.schema === table.schema
                                         && 'bg-ink-100 font-semibold',
                                 )}
                             >
                                 <Table2 className="h-3.5 w-3.5 shrink-0 text-ink-400" />
                                 <span className="truncate">{table.name}</span>
-                                <span className="ml-auto shrink-0 text-[10px] text-ink-400">
+                                <span className="ml-auto shrink-0 portal-text-micro text-ink-400">
                                     ~{table.estimated_rows}
                                 </span>
                             </button>
@@ -218,7 +218,7 @@ export function DatabaseBrowser({
                 </ul>
             </aside>
 
-            <section className="min-w-0 flex-1 rounded-xl border border-ink-200 bg-white">
+            <section className="min-w-0 flex-1 portal-surface">
                 <div className="flex items-center justify-between gap-4 border-b border-ink-200 px-4 py-2.5">
                     <div className="flex gap-1">
                         {(['data', 'structure', 'sql'] as Tab[]).map((t) => (
@@ -227,7 +227,7 @@ export function DatabaseBrowser({
                                 type="button"
                                 onClick={() => setTab(t)}
                                 className={cn(
-                                    'rounded-md px-3 py-1.5 text-sm capitalize transition-colors',
+                                    'rounded-md px-3 py-1.5 portal-text-body capitalize transition-colors',
                                     tab === t ? 'bg-ink-900 text-white' : 'text-ink-600 hover:bg-ink-100',
                                 )}
                             >
@@ -237,7 +237,7 @@ export function DatabaseBrowser({
                     </div>
                     <span
                         className={cn(
-                            'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium',
+                            'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 portal-text-caption font-medium',
                             allowWrites ? 'bg-warning-50 text-warning-700' : 'bg-ink-100 text-ink-600',
                         )}
                         title={allowWrites
@@ -251,16 +251,16 @@ export function DatabaseBrowser({
 
                 <div className="p-4">
                     {tab === 'structure' && selected ? (
-                        <div className="space-y-6">
+                        <div className="portal-stack">
                             <div>
-                                <h3 className="mb-2 text-sm font-semibold text-ink-900">
+                                <h3 className="mb-2 portal-text-body font-semibold text-ink-900">
                                     {selected.schema}.{selected.name}
                                     <span className="ml-2 font-normal text-ink-400">
                                         {selected.kind} · ~{selected.estimated_rows} rows · {formatBytes(selected.size_bytes)}
                                     </span>
                                 </h3>
                                 <div className="overflow-x-auto rounded-md border border-ink-200">
-                                    <table className="w-full border-collapse text-left text-xs">
+                                    <table className="w-full border-collapse text-left portal-text-caption">
                                         <thead className="bg-ink-50">
                                             <tr>
                                                 {['Column', 'Type', 'Nullable', 'Default'].map((h) => (
@@ -289,10 +289,10 @@ export function DatabaseBrowser({
 
                             {selected.foreign_keys.length > 0 ? (
                                 <div>
-                                    <h4 className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-ink-900">
+                                    <h4 className="mb-2 flex items-center gap-1.5 portal-text-body font-semibold text-ink-900">
                                         <Link2 className="h-4 w-4 text-ink-400" />Foreign keys
                                     </h4>
-                                    <ul className="space-y-1 font-mono text-xs text-ink-600">
+                                    <ul className="space-y-1 font-mono portal-text-caption text-ink-600">
                                         {selected.foreign_keys.map((fk) => <li key={fk.name}>{fk.definition}</li>)}
                                     </ul>
                                 </div>
@@ -300,8 +300,8 @@ export function DatabaseBrowser({
 
                             {selected.indexes.length > 0 ? (
                                 <div>
-                                    <h4 className="mb-2 text-sm font-semibold text-ink-900">Indexes</h4>
-                                    <ul className="space-y-1 font-mono text-xs text-ink-600">
+                                    <h4 className="mb-2 portal-text-body font-semibold text-ink-900">Indexes</h4>
+                                    <ul className="space-y-1 font-mono portal-text-caption text-ink-600">
                                         {selected.indexes.map((ix) => <li key={ix.name}>{ix.definition}</li>)}
                                     </ul>
                                 </div>
@@ -325,7 +325,7 @@ export function DatabaseBrowser({
                                 spellCheck={false}
                                 rows={tab === 'sql' ? 8 : 3}
                                 placeholder="SELECT * FROM …"
-                                className="w-full rounded-md border border-ink-200 bg-ink-50/50 p-3 font-mono text-xs text-ink-900 outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                                className="w-full rounded-md border border-ink-200 bg-ink-50/50 p-3 font-mono portal-text-caption text-ink-900 outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
                             />
                             <div className="flex items-center gap-3">
                                 <Button
@@ -337,14 +337,14 @@ export function DatabaseBrowser({
                                     {running ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
                                     {running ? 'Running…' : 'Run'}
                                 </Button>
-                                <span className="text-xs text-ink-400">⌘↵ to run</span>
+                                <span className="portal-text-caption text-ink-400">⌘↵ to run</span>
                             </div>
 
                             {error ? (
                                 <Notice tone="error">{error}</Notice>
                             ) : null}
                             {result ? <ResultGrid result={result} /> : (
-                                <p className="rounded-md border border-dashed border-ink-300 px-3.5 py-6 text-center text-xs text-ink-400">
+                                <p className="rounded-md border border-dashed border-ink-300 px-3.5 py-6 text-center portal-text-caption text-ink-400">
                                     {selected
                                         ? `Run the statement to read ${selected.schema}.${selected.name}.`
                                         : 'Pick a table, or write a statement.'}

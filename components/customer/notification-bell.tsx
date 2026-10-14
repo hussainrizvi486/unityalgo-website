@@ -78,7 +78,7 @@ export function NotificationBell({ initial }: { initial: NotificationData }) {
                 >
                     <Bell className="size-5" />
                     {data.unread > 0 && (
-                        <span className="absolute -right-1 -top-1 rounded-full bg-brand px-1.5 text-[10px] text-white">
+                        <span className="absolute -right-1 -top-1 rounded-full bg-brand px-1.5 portal-text-micro text-white">
                             {data.unread > 99 ? '99+' : data.unread}
                         </span>
                     )}
@@ -101,7 +101,7 @@ export function NotificationBell({ initial }: { initial: NotificationData }) {
                     </Button>
                 </div>
                 {error && (
-                    <p role="alert" className="p-3 text-xs text-error-700">
+                    <p role="alert" className="p-3 portal-text-caption text-error-700">
                         {error}
                     </p>
                 )}
@@ -112,13 +112,13 @@ export function NotificationBell({ initial }: { initial: NotificationData }) {
                                 key={item.id}
                                 className={`border-b border-ink-100 p-4 last:border-0 ${item.read ? '' : 'bg-ink-50'}`}
                             >
-                                <p className="text-sm font-semibold">
+                                <p className="portal-text-body font-semibold">
                                     {item.title}
                                 </p>
-                                <p className="mt-1 text-xs leading-5 text-ink-600">
+                                <p className="mt-1 portal-text-caption leading-5 text-ink-600">
                                     {item.body}
                                 </p>
-                                <div className="mt-2 flex items-center justify-between text-xs">
+                                <div className="mt-2 flex items-center justify-between portal-text-caption">
                                     <time
                                         dateTime={item.createdAt}
                                         className="text-ink-500"
@@ -152,7 +152,7 @@ export function NotificationBell({ initial }: { initial: NotificationData }) {
                             </div>
                         ))
                     ) : (
-                        <p className="p-8 text-center text-sm text-ink-500">
+                        <p className="p-8 text-center portal-text-body text-ink-500">
                             You are all caught up. Site updates will appear
                             here.
                         </p>

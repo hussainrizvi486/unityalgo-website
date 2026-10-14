@@ -18,7 +18,7 @@ export default async function EditPlanPage({ params }: { params: Promise<{ id: s
 
     return (
         <div>
-            <h1 className="text-2xl font-bold mb-8">Edit Plan</h1>
+            <h1 className="portal-page-title mb-8">Edit Plan</h1>
             <PlanForm
                     currencies={currencies}
                 products={products}

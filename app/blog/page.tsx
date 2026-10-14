@@ -44,7 +44,7 @@ export default async function BlogListingPage({
 
             <main className="max-w-5xl mx-auto">
                 <section className="pt-28 pb-16 md:pb-20 px-4">
-                    <div className="container mx-auto max-w-6xl text-center flex items-center flex-col  mb-6">
+                    <div className="site-container site-container-wide text-center flex items-center flex-col mb-6">
                         <h1 className="text-xl md:text-3xl font-bold">
                             Browse our thoughts
                         </h1>
@@ -54,7 +54,7 @@ export default async function BlogListingPage({
                 </section>
 
                 <section className="pb-24 px-4">
-                    <div className="container mx-auto max-w-6xl">
+                    <div className="site-container site-container-wide">
                         {posts.length === 0 ? (
                             <p className="text-center text-ink-500 py-24">
                                 No blog posts published yet. Check back soon.

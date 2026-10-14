@@ -16,7 +16,7 @@ export function RefreshSites({ pending }: { pending: boolean }) {
     return (
         <Button
             variant="outline"
-            className="h-8"
+            className=""
             disabled={refreshing}
             onClick={() => start(() => router.refresh())}
         >

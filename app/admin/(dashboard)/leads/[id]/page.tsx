@@ -23,7 +23,7 @@ export default async function AdminLeadPage({ params }: { params: Promise<{ id: 
             />
 
             <div className="grid max-w-5xl gap-6 lg:grid-cols-[1.3fr_1fr]">
-                <section className="space-y-5 rounded-xl border border-ink-200 bg-white p-6">
+                <section className="portal-fields portal-panel-padding portal-surface">
                     <div className="flex flex-wrap items-center gap-3">
                         <Badge variant={LEAD_STATUS_BADGE_VARIANT[lead.status]}>
                             {LEAD_STATUS_LABEL[lead.status]}
@@ -31,7 +31,7 @@ export default async function AdminLeadPage({ params }: { params: Promise<{ id: 
                         {lead.user && (
                             <Link
                                 href={`/admin/users/${lead.user.id}`}
-                                className="text-xs font-semibold text-link hover:underline"
+                                className="portal-text-caption font-semibold text-link hover:underline"
                             >
                                 Has an account — view user
                             </Link>
@@ -46,20 +46,20 @@ export default async function AdminLeadPage({ params }: { params: Promise<{ id: 
                             ['Received', formatDate(lead.createdAt)],
                         ].map(([term, value]) => (
                             <div key={String(term)}>
-                                <dt className="text-xs font-semibold uppercase tracking-wide text-ink-400">{term}</dt>
-                                <dd className="mt-1 text-sm text-ink-800">{value}</dd>
+                                <dt className="portal-text-caption font-semibold uppercase tracking-wide text-ink-400">{term}</dt>
+                                <dd className="mt-1 portal-text-body text-ink-800">{value}</dd>
                             </div>
                         ))}
                     </dl>
 
                     <div>
-                        <h2 className="text-xs font-semibold uppercase tracking-wide text-ink-400">Message</h2>
-                        <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-ink-700">{lead.message}</p>
+                        <h2 className="portal-text-caption font-semibold uppercase tracking-wide text-ink-400">Message</h2>
+                        <p className="mt-2 whitespace-pre-wrap portal-text-body leading-relaxed text-ink-700">{lead.message}</p>
                     </div>
                 </section>
 
-                <section className="rounded-xl border border-ink-200 bg-white p-6">
-                    <h2 className="mb-5 text-sm font-semibold text-ink-900">Follow-up</h2>
+                <section className="portal-panel-padding portal-surface">
+                    <h2 className="mb-5 portal-text-body font-semibold text-ink-900">Follow-up</h2>
                     <LeadForm id={lead.id} status={lead.status} notes={lead.notes ?? ''} />
                 </section>
             </div>

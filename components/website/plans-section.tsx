@@ -21,8 +21,8 @@ export async function PlansSection() {
     if (products.length === 0) return null;
 
     return (
-        <section id="plans" className="scroll-mt-24 bg-white py-24">
-            <div className="container mx-auto px-4 md:px-6">
+        <section id="plans" className="scroll-mt-24 bg-white site-section-spacing">
+            <div className="site-container site-gutters">
                 <div className="max-w-2xl">
                     <p className="text-xs font-semibold uppercase tracking-wider text-ink-400">
                         Our products
@@ -117,18 +117,16 @@ export async function PlansSection() {
                                         )}
 
                                         <div className="mt-auto pt-6">
-                                            <Link href="/register" className="block">
-                                                <Button
+                                            <Button asChild
                                                     className={cn(
                                                         'w-full',
                                                         featured
                                                             ? 'bg-white text-ink-900 hover:bg-ink-100'
                                                             : 'bg-ink-900 text-white hover:bg-ink-800',
                                                     )}
-                                                >
+                                                ><Link href="/register" className="block">
                                                     {plan.priceAmount == null ? 'Talk to us' : `Start with ${plan.name}`}
-                                                </Button>
-                                            </Link>
+                                                </Link></Button>
                                         </div>
                                     </div>
                                 );

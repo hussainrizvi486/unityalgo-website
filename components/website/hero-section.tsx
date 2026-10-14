@@ -160,7 +160,7 @@ export function HeroSection() {
                 </div>
             ) : null}
 
-            <div className="container relative z-10 mx-auto w-full">
+            <div className="site-container relative z-10 w-full">
                 <div className="max-w-[690px] text-left">
                     <motion.div
                         initial={{ opacity: 0, y: 12 }}

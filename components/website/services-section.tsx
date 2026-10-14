@@ -99,15 +99,15 @@ const data: Array<ServiceType> = [
 
 export const Services = () => {
     return (
-        <section className="relative min-h-screen bg-ink-50 text-foreground py-24 overflow-hidden" id="services">
+        <section className="relative min-h-screen bg-ink-50 text-foreground overflow-hidden site-section-spacing" id="services">
 
 
             <div className="absolute inset-0 bg-grid-pattern mask-[linear-gradient(to_bottom,transparent,black_10%,black_90%,transparent)] opacity-30 pointer-events-none" />
 
-            <div className="container relative z-10 mx-auto px-4 md:px-6">
+            <div className="site-container relative z-10 site-gutters">
                 <div className="mb-20 text-center max-w-3xl mx-auto">
      
-                    <h2 className="text-4xl md:text-5xl font-bold tracking-tight  mb-6">
+                    <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-6">
                         What We Provide
                     </h2>
                     <p className="text-lg text-ink-600 leading-relaxed text-balance">
@@ -141,7 +141,7 @@ export const Services = () => {
                                 initial={{ opacity: 0, scale: 0.9 }}
                                 whileInView={{ opacity: 1, scale: 1 }}
                                 transition={{ delay: index * 0.05 }}
-                                className="px-5 py-3 rounded-full text-sm font-medium  cursor-default flex items-center gap-2"
+                                className="px-5 py-3 rounded-full text-sm font-medium cursor-default flex items-center gap-2"
                             >
                                 <industry.icon className="w-4 h-4 opacity-70" />
                                 <span>{industry.name}</span>
@@ -202,11 +202,9 @@ const ServiceCard = (props: ServiceType & { index: number }) => {
                             Let&apos;s Chat
                         </Button>
                         {props.link && (
-                            <Link href={props.link}>
-                                <Button variant="ghost" className="py-1.5 h-auto text-xs rounded font-bold text-ink-600 hover:bg-secondary">
+                            <Button asChild variant="ghost" className="py-1.5 h-auto text-xs rounded font-bold text-ink-600 hover:bg-secondary"><Link href={props.link}>
                                     Learn more <ArrowUpRight className="ml-1 w-4 h-4" />
-                                </Button>
-                            </Link>
+                                </Link></Button>
                         )}
                     </div>
                 </div>

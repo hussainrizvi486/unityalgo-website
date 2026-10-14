@@ -41,7 +41,7 @@ export function AdminGridHeader(params: AdminHeaderParams) {
         return (
             <div
                 className={cn(
-                    'flex w-full items-center gap-2 text-sm font-medium text-ink-500',
+                    'flex w-full items-center gap-2 portal-text-body font-medium text-ink-500',
                     align === 'right' && 'justify-end',
                 )}
             >
@@ -55,7 +55,7 @@ export function AdminGridHeader(params: AdminHeaderParams) {
             type="button"
             onClick={(event) => params.progressSort(event.shiftKey)}
             className={cn(
-                'group flex w-full items-center gap-2 text-sm font-medium text-ink-500 transition-colors hover:text-ink-800',
+                'group flex w-full items-center gap-2 portal-text-body font-medium text-ink-500 transition-colors hover:text-ink-800',
                 align === 'right' && 'justify-end',
             )}
         >

@@ -15,7 +15,7 @@ export default async function EditPostPage({ params }: { params: Promise<{ id: s
 
     return (
         <div>
-            <h1 className="text-2xl font-bold mb-8">Edit Post</h1>
+            <h1 className="portal-page-title mb-8">Edit Post</h1>
             <PostForm
                 action={boundUpdateAction}
                 submitLabel="Save Changes"

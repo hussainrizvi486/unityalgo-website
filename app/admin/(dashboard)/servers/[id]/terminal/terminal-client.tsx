@@ -42,10 +42,14 @@ export function TerminalClient({ serverId, serverName }: { serverId: string; ser
             const { FitAddon } = await import('@xterm/addon-fit');
             if (disposed || !containerRef.current) return;
 
+            const styles = getComputedStyle(containerRef.current);
             const term = new Terminal({
-                fontSize: 13,
-                fontFamily: 'Menlo, Monaco, "Courier New", monospace',
-                theme: { background: '#151515', foreground: '#F0F0F0' },
+                fontSize: parseFloat(styles.getPropertyValue('--portal-terminal-font-size')),
+                fontFamily: styles.getPropertyValue('--portal-terminal-font-family').trim(),
+                theme: {
+                    background: styles.getPropertyValue('--color-ink-950').trim(),
+                    foreground: styles.getPropertyValue('--color-ink-100').trim(),
+                },
                 cursorBlink: true,
             });
             const fit = new FitAddon();
@@ -145,7 +149,7 @@ export function TerminalClient({ serverId, serverName }: { serverId: string; ser
     return (
         <div>
             <div className="flex items-center justify-between gap-3 rounded-t-xl border border-ink-800 bg-ink-950 px-4 py-2.5">
-                <div className="flex items-center gap-2 text-xs text-white/60">
+                <div className="flex items-center gap-2 portal-text-caption text-white/60">
                     <span
                         className={`h-2 w-2 rounded-full ${
                             phase === 'open' ? 'bg-success-500' : phase === 'connecting' ? 'bg-warning-500' : 'bg-ink-500'
@@ -173,7 +177,7 @@ export function TerminalClient({ serverId, serverName }: { serverId: string; ser
 
             <div className="rounded-b-xl border border-t-0 border-ink-800 bg-ink-950 p-3">
                 {phase === 'idle' ? (
-                    <div className="flex h-96 items-center justify-center text-sm text-white/40">
+                    <div className="flex h-96 items-center justify-center portal-text-body text-white/40">
                         Press Connect to open a shell on {serverName}.
                     </div>
                 ) : (
@@ -182,10 +186,10 @@ export function TerminalClient({ serverId, serverName }: { serverId: string; ser
             </div>
 
             {message ? (
-                <p className={`mt-3 text-sm ${phase === 'error' ? 'text-error-700' : 'text-ink-500'}`}>{message}</p>
+                <p className={`mt-3 portal-text-body ${phase === 'error' ? 'text-error-700' : 'text-ink-500'}`}>{message}</p>
             ) : null}
 
-            <p className="mt-3 text-xs text-ink-400">
+            <p className="mt-3 portal-text-caption text-ink-400">
                 Access is granted by a single-server token that expires in 60 seconds; reconnecting mints a new one.
                 Every session is recorded in the <a href="/admin/logs?category=terminal" className="text-link hover:underline">activity log</a>.
             </p>

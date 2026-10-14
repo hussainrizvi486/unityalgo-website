@@ -79,7 +79,7 @@ function SessionRow({ session }: { session: Session }) {
                         <Monitor className="mt-1 size-5 text-ink-500" />
                     )}
                     <div>
-                        <p className="text-sm font-semibold">
+                        <p className="portal-text-body font-semibold">
                             {browser} · {mobile ? 'Mobile device' : 'Computer'}
                             {session.current && (
                                 <Badge
@@ -91,7 +91,7 @@ function SessionRow({ session }: { session: Session }) {
                                 </Badge>
                             )}
                         </p>
-                        <p className="mt-2 text-xs leading-6 text-ink-500">
+                        <p className="mt-2 portal-text-caption leading-6 text-ink-500">
                             Signed in{' '}
                             {new Date(session.createdAt).toLocaleString()}
                             <br />
@@ -106,7 +106,7 @@ function SessionRow({ session }: { session: Session }) {
                 </form>
             </div>
             {state?.error && (
-                <p role="alert" className="mt-3 text-sm text-error-700">
+                <p role="alert" className="mt-3 portal-text-body text-error-700">
                     {state.error}
                 </p>
             )}
@@ -125,14 +125,14 @@ export function SettingsClient({
     updated?: boolean;
 }) {
     return (
-        <div className="mx-auto max-w-7xl">
-            <p className="text-xs font-semibold uppercase tracking-wider text-brand">
+        <div className="mx-auto portal-page">
+            <p className="portal-text-caption font-semibold uppercase tracking-wider text-brand">
                 Your account
             </p>
-            <h1 className="mt-2 text-3xl font-semibold tracking-tight">
+            <h1 className="portal-page-title mt-2">
                 Settings
             </h1>
-            <p className="mt-3 text-sm text-ink-600">
+            <p className="mt-3 portal-text-body text-ink-600">
                 Manage your details, signed-in devices, and account security.
             </p>
             <Tabs defaultValue={defaultTab} className="mt-8">
@@ -149,10 +149,10 @@ export function SettingsClient({
                     )}
                     <div className="mb-4 rounded-lg border border-ink-200 p-4">
                         <h2 className="font-semibold">Verified email</h2>
-                        <p className="mt-2 break-all text-sm text-ink-600">
+                        <p className="mt-2 break-all portal-text-body text-ink-600">
                             {profile.email}
                         </p>
-                        <p className="mt-2 text-xs text-ink-500">
+                        <p className="mt-2 portal-text-caption text-ink-500">
                             Your sign-in email is verified and cannot be edited
                             here.
                         </p>
@@ -160,7 +160,7 @@ export function SettingsClient({
                     <ProfileForm {...profile} embedded />
                     <Link
                         href="/dashboard/settings/addresses"
-                        className="mt-6 inline-block text-sm font-medium text-brand hover:underline"
+                        className="mt-6 inline-block portal-text-body font-medium text-brand hover:underline"
                     >
                         Manage saved addresses
                     </Link>
@@ -170,7 +170,7 @@ export function SettingsClient({
                         <h2 className="text-xl font-semibold">
                             Active login sessions
                         </h2>
-                        <p className="mt-2 text-sm leading-6 text-ink-600">
+                        <p className="mt-2 portal-text-body leading-6 text-ink-600">
                             End a session to sign that device out immediately.
                             Changing your password also ends your other
                             sessions.
@@ -179,7 +179,7 @@ export function SettingsClient({
                             <SessionRow key={session.id} session={session} />
                         ))}
                         {!sessions.length && (
-                            <p className="mt-6 text-sm text-ink-500">
+                            <p className="mt-6 portal-text-body text-ink-500">
                                 No active sessions.
                             </p>
                         )}

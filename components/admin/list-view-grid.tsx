@@ -43,7 +43,7 @@ export function ListViewGrid<Row>({
     getRowId: (row: Row) => string;
     query: string;
     pageSize: number;
-    height: number;
+    height?: number;
     /** "colId:asc" / "colId:desc", or '' for the grid's natural order. */
     sort: string;
     onSortChange: (next: string) => void;
@@ -98,7 +98,7 @@ export function ListViewGrid<Row>({
             // fights the panel's clean look.
             suppressHeaderMenuButton: true,
             filter: false,
-            cellClass: 'text-sm',
+            cellClass: 'portal-text-body',
         }),
         [],
     );
@@ -122,8 +122,8 @@ export function ListViewGrid<Row>({
 
     return (
         <div
-            className="overflow-hidden rounded-xl border border-ink-200 bg-white"
-            style={{ height }}
+            className="portal-list-grid portal-surface overflow-hidden"
+            style={height === undefined ? undefined : { height }}
         >
             <AgGridReact<Row>
                 theme={adminGridTheme}
@@ -142,7 +142,7 @@ export function ListViewGrid<Row>({
                 // across them should not start a range selection.
                 cellSelection={false}
                 animateRows={false}
-                overlayNoRowsTemplate={`<span class="text-sm text-ink-500">No matches for that search.</span>`}
+                overlayNoRowsTemplate={`<span class="portal-text-body text-ink-500">No matches for that search.</span>`}
             />
         </div>
     );

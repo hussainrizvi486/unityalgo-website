@@ -41,7 +41,7 @@ export function FilterPills<T extends string>({
                         aria-checked={active}
                         onClick={() => onChange(option.value)}
                         className={cn(
-                            'rounded-md px-3.5 py-1.5 text-sm font-medium transition-colors',
+                            'portal-filter-button font-medium transition-colors',
                             active
                                 ? 'bg-white text-ink-900 shadow-sm'
                                 : 'text-ink-500 hover:bg-ink-100 hover:text-ink-700',
@@ -49,7 +49,7 @@ export function FilterPills<T extends string>({
                     >
                         {option.label}
                         {option.count != null && (
-                            <span className={cn('ml-1.5 text-xs', active ? 'text-ink-400' : 'text-ink-400')}>
+                            <span className={cn('ml-1.5 portal-text-caption', active ? 'text-ink-400' : 'text-ink-400')}>
                                 {option.count}
                             </span>
                         )}

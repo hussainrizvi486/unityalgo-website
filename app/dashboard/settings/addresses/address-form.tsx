@@ -24,7 +24,7 @@ export interface AddressFormValues {
 function SubmitButton({ label }: { label: string }) {
   const { pending } = useFormStatus();
   return (
-    <Button type="submit" disabled={pending} className="rounded-md bg-ink-900 px-7 text-white hover:bg-ink-800">
+    <Button type="submit" disabled={pending} className="rounded-md">
       {pending ? 'Saving…' : label}
     </Button>
   );
@@ -41,42 +41,42 @@ export function AddressForm({ action, defaultValues, submitLabel, lockDefault }:
   const [state, formAction] = useActionState<AccountFormState | undefined, FormData>(action, undefined);
 
   return (
-    <form action={formAction} className="space-y-5">
+    <form action={formAction} className="portal-fields">
       <div>
-        <Label htmlFor="addressLine1" className="mb-1.5 text-sm text-ink-700">Address line 1</Label>
+        <Label htmlFor="addressLine1" className="mb-1.5 portal-text-body text-ink-700">Address line 1</Label>
         <Input id="addressLine1" name="addressLine1" required defaultValue={defaultValues?.addressLine1} placeholder="123 Main Street" />
       </div>
       <div>
-        <Label htmlFor="addressLine2" className="mb-1.5 text-sm text-ink-700">
+        <Label htmlFor="addressLine2" className="mb-1.5 portal-text-body text-ink-700">
           Address line 2 <span className="text-ink-400 font-normal">(optional)</span>
         </Label>
         <Input id="addressLine2" name="addressLine2" defaultValue={defaultValues?.addressLine2} placeholder="Apartment, suite, unit, etc." />
       </div>
       <div className="grid gap-5 sm:grid-cols-2">
         <div>
-          <Label htmlFor="city" className="mb-1.5 text-sm text-ink-700">City</Label>
+          <Label htmlFor="city" className="mb-1.5 portal-text-body text-ink-700">City</Label>
           <Input id="city" name="city" required defaultValue={defaultValues?.city} />
         </div>
         <div>
-          <Label htmlFor="state" className="mb-1.5 text-sm text-ink-700">State</Label>
+          <Label htmlFor="state" className="mb-1.5 portal-text-body text-ink-700">State</Label>
           <Input id="state" name="state" required defaultValue={defaultValues?.state} />
         </div>
       </div>
       <div className="grid gap-5 sm:grid-cols-2">
         <div>
-          <Label htmlFor="country" className="mb-1.5 text-sm text-ink-700">Country</Label>
+          <Label htmlFor="country" className="mb-1.5 portal-text-body text-ink-700">Country</Label>
           <Input id="country" name="country" required defaultValue={defaultValues?.country} />
         </div>
         <div>
-          <Label htmlFor="postcode" className="mb-1.5 text-sm text-ink-700">Postcode</Label>
+          <Label htmlFor="postcode" className="mb-1.5 portal-text-body text-ink-700">Postcode</Label>
           <Input id="postcode" name="postcode" required defaultValue={defaultValues?.postcode} />
         </div>
       </div>
 
       {lockDefault ? (
-        <p className="text-sm text-ink-500">This is your only address, so it&apos;s automatically your default.</p>
+        <p className="portal-text-body text-ink-500">This is your only address, so it&apos;s automatically your default.</p>
       ) : (
-        <Label htmlFor="isDefault" className="text-sm text-ink-700">
+        <Label htmlFor="isDefault" className="portal-text-body text-ink-700">
           <Checkbox id="isDefault" name="isDefault" defaultChecked={defaultValues?.isDefault} />
           Set as default address
         </Label>
@@ -86,11 +86,9 @@ export function AddressForm({ action, defaultValues, submitLabel, lockDefault }:
 
       <div className="flex items-center gap-3">
         <SubmitButton label={submitLabel} />
-        <Link href="/dashboard/settings/addresses">
-          <Button type="button" variant="outline" className="rounded-md">
+        <Button asChild type="button" variant="outline" className="rounded-md"><Link href="/dashboard/settings/addresses">
             Cancel
-          </Button>
-        </Link>
+          </Link></Button>
       </div>
     </form>
   );

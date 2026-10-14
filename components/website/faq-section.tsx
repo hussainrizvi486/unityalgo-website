@@ -25,15 +25,15 @@ export function FaqSection({
     items,
 }: FaqSectionProps) {
     return (
-        <section className="py-24 bg-white border-t border-ink-100">
-            <div className="container mx-auto px-4 max-w-3xl">
+        <section className="bg-white border-t border-ink-100 site-section-spacing">
+            <div className="site-container site-gutters site-container-reading">
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
                     className="text-center mb-16"
                 >
-                    <h2 className="text-3xl font-bold  mb-4">{heading}</h2>
+                    <h2 className="text-3xl font-bold mb-4">{heading}</h2>
                     <p className="text-ink-600">{subheading}</p>
                 </motion.div>
 

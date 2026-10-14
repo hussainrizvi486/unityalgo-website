@@ -21,19 +21,17 @@ interface AdminPageHeaderProps {
  */
 export function AdminPageHeader({ title, subtitle, action, children }: AdminPageHeaderProps) {
     return (
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+        <div className="portal-page-header">
             <div>
-                <h1 className="text-2xl font-bold text-ink-900">{title}</h1>
-                {subtitle != null && <p className="mt-1 text-sm text-ink-500">{subtitle}</p>}
+                <h1 className="portal-page-title">{title}</h1>
+                {subtitle != null && <p className="mt-1 portal-text-body text-ink-500">{subtitle}</p>}
             </div>
-            <div className="flex items-center gap-2">
+            <div className="portal-actions">
                 {children}
                 {action && (
-                    <Link href={action.href}>
-                        <Button className="bg-ink-900 text-white hover:bg-ink-800">
-                            {action.label}
-                        </Button>
-                    </Link>
+                    <Button asChild>
+                        <Link href={action.href}>{action.label}</Link>
+                    </Button>
                 )}
             </div>
         </div>

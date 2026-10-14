@@ -47,36 +47,34 @@ export default async function AdminUserDetailPage({ params }: { params: Promise<
     const storeFor = new Map((tenants ?? []).map((t) => [t.subscription_id, t]));
 
     return (
-        <div className="max-w-4xl">
-            <Link href="/admin/users" className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-ink-500 hover:text-ink-700">
+        <div className="portal-detail">
+            <Link href="/admin/users" className="mb-6 inline-flex items-center gap-2 portal-text-body font-semibold text-ink-500 hover:text-ink-700">
                 <ArrowLeft className="h-4 w-4" />Back to users
             </Link>
 
             <div className="flex items-start justify-between gap-4">
                 <div>
                     <div className="flex items-center gap-3">
-                        <h1 className="text-2xl font-bold">{displayName || user.email}</h1>
+                        <h1 className="portal-page-title">{displayName || user.email}</h1>
                         <Badge variant={user.role === 'ADMIN' ? 'neutral' : 'info'}>
                             {user.role === 'ADMIN' ? 'Admin' : 'Customer'}
                         </Badge>
                     </div>
-                    <p className="mt-1 text-sm text-ink-500">
+                    <p className="mt-1 portal-text-body text-ink-500">
                         {user.email}
                         {user.company ? ` · ${user.company}` : ''} · joined {date(user.createdAt)}
                     </p>
                 </div>
-                <Link href={`/admin/users/${user.id}/edit`}>
-                    <Button variant="outline" >Edit</Button>
-                </Link>
+                <Button asChild variant="outline" ><Link href={`/admin/users/${user.id}/edit`}>Edit</Link></Button>
             </div>
 
             {/* --- subscriptions --- */}
-            <section className="mt-8 rounded-xl border border-ink-200 bg-white p-5 sm:p-6">
+            <section className="mt-8 p-5 sm:p-6 portal-surface">
                 <h2 className="flex items-center gap-2 font-bold text-ink-900">
                     <CreditCard className="h-4 w-4 text-ink-400" />Subscriptions
                 </h2>
                 {user.subscriptions.length === 0 ? (
-                    <p className="mt-4 text-sm text-ink-500">No subscriptions.</p>
+                    <p className="mt-4 portal-text-body text-ink-500">No subscriptions.</p>
                 ) : (
                     <ul className="mt-4 divide-y divide-ink-100">
                         {user.subscriptions.map((sub) => {
@@ -86,16 +84,16 @@ export default async function AdminUserDetailPage({ params }: { params: Promise<
                                     <div>
                                         <div className="font-medium text-ink-900">
                                             {sub.plan.name}
-                                            <span className="ml-2 text-xs font-normal text-ink-400">
+                                            <span className="ml-2 portal-text-caption font-normal text-ink-400">
                                                 {sub.product.label}
                                             </span>
                                         </div>
-                                        <div className="text-sm text-ink-500">
+                                        <div className="portal-text-body text-ink-500">
                                             {money(sub.plan.priceAmount)} · started {date(sub.startedAt)}
                                             {sub.storeName ? ` · ${sub.storeName}` : ''}
                                         </div>
                                         {sub.productId === 'unity_commerce' && (
-                                            <div className="mt-1 text-sm">
+                                            <div className="mt-1 portal-text-body">
                                                 {store ? (
                                                     <Link href={`/admin/tenants/${store.id}`} className="inline-flex items-center gap-1.5 font-medium text-link hover:underline">
                                                         <Store className="h-3.5 w-3.5" />{store.tenant_slug}
@@ -121,16 +119,16 @@ export default async function AdminUserDetailPage({ params }: { params: Promise<
             </section>
 
             {/* --- storefronts --- */}
-            <section className="mt-6 rounded-xl border border-ink-200 bg-white p-5 sm:p-6">
+            <section className="mt-6 p-5 sm:p-6 portal-surface">
                 <h2 className="flex items-center gap-2 font-bold text-ink-900">
                     <Boxes className="h-4 w-4 text-ink-400" />Storefronts
                 </h2>
                 {tenants === null ? (
-                    <p className="mt-4 text-sm text-ink-500">
+                    <p className="mt-4 portal-text-body text-ink-500">
                         The controller is unreachable, so this customer&apos;s storefronts cannot be listed.
                     </p>
                 ) : tenants.length === 0 ? (
-                    <p className="mt-4 text-sm text-ink-500">No storefronts.</p>
+                    <p className="mt-4 portal-text-body text-ink-500">No storefronts.</p>
                 ) : (
                     <ul className="mt-4 divide-y divide-ink-100">
                         {tenants.map((tenant) => (
@@ -139,7 +137,7 @@ export default async function AdminUserDetailPage({ params }: { params: Promise<
                                     <Link href={`/admin/tenants/${tenant.id}`} className="font-medium text-ink-900 hover:text-link hover:underline">
                                         {tenant.tenant_slug}
                                     </Link>
-                                    <div className="text-sm text-ink-500">
+                                    <div className="portal-text-body text-ink-500">
                                         {tenant.custom_domain ?? tenant.assigned_subdomain ?? '—'}
                                         {' · '}{tenant.subscription?.plan?.name ?? tenant.plan_tier}
                                     </div>
@@ -155,11 +153,11 @@ export default async function AdminUserDetailPage({ params }: { params: Promise<
 
             {/* --- addresses --- */}
             {user.addresses.length > 0 && (
-                <section className="mt-6 rounded-xl border border-ink-200 bg-white p-5 sm:p-6">
+                <section className="mt-6 p-5 sm:p-6 portal-surface">
                     <h2 className="font-bold text-ink-900">Addresses</h2>
                     <ul className="mt-4 grid gap-4 sm:grid-cols-2">
                         {user.addresses.map((address) => (
-                            <li key={address.id} className="text-sm text-ink-600">
+                            <li key={address.id} className="portal-text-body text-ink-600">
                                 {address.isDefault && <Badge variant="neutral" className="mb-1.5">Default</Badge>}
                                 <div>{address.addressLine1}</div>
                                 {address.addressLine2 && <div>{address.addressLine2}</div>}

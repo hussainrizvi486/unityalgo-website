@@ -20,10 +20,10 @@ export function ProjectFlow({
     stages,
 }: ProjectFlowProps) {
     return (
-        <section className="py-24 bg-ink-900 text-white relative overflow-hidden">
+        <section className="bg-ink-900 text-white relative overflow-hidden site-section-spacing">
             <div className="absolute top-1/2 left-0 w-[600px] h-[600px] bg-brand/10 rounded-full blur-[120px] pointer-events-none -translate-y-1/2" />
 
-            <div className="container mx-auto px-4 max-w-6xl relative z-10">
+            <div className="site-container site-gutters site-container-wide relative z-10">
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}

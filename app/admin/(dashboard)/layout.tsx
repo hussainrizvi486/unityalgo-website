@@ -1,6 +1,8 @@
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { AdminSidebar } from '@/components/admin/admin-sidebar';
 import { AdminTopbar } from '@/components/admin/admin-topbar';
+import { AdminTheme } from '@/components/admin/admin-theme';
+import '@/app/dashboard/portal.css';
 
 /**
  * The admin shell: a floating nav card and a content card on a shared ground.
@@ -12,13 +14,14 @@ import { AdminTopbar } from '@/components/admin/admin-topbar';
  */
 export default function AdminDashboardLayout({ children }: { children: React.ReactNode }) {
     return (
-        <SidebarProvider className="bg-ink-100" style={{ '--sidebar-width': '15rem' } as React.CSSProperties}>
-            <AdminSidebar />
-            {/* <SidebarInset className="m-3 ml-0 min-w-0 rounded-xl border border-ink-200/70 bg-white shadow-sm"> */}
-            <SidebarInset className="min-w-0 rounded-xl border border-ink-200/70 bg-white shadow-sm">
-                <AdminTopbar />
-                <div className="min-w-0 flex-1 px-6 py-6">{children}</div>
-            </SidebarInset>
-        </SidebarProvider>
+        <AdminTheme>
+            <SidebarProvider className="admin-portal bg-ink-100">
+                <AdminSidebar />
+                <SidebarInset className="min-w-0 rounded-xl border border-ink-200/70 bg-white shadow-sm">
+                    <AdminTopbar />
+                    <div className="portal-content">{children}</div>
+                </SidebarInset>
+            </SidebarProvider>
+        </AdminTheme>
     );
 }

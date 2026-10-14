@@ -4,7 +4,7 @@ import { PostForm } from '../post-form';
 export default function NewPostPage() {
     return (
         <div>
-            <h1 className="text-2xl font-bold mb-8">New Post</h1>
+            <h1 className="portal-page-title mb-8">New Post</h1>
             <PostForm action={createPostAction} submitLabel="Create Post" />
         </div>
     );

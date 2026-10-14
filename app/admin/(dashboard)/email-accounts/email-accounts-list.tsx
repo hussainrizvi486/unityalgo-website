@@ -57,7 +57,7 @@ export function EmailAccountsList({
             icon: <Send />,
             flex: 1.3,
             minWidth: 200,
-            cellClass: 'font-mono text-xs',
+            cellClass: 'font-mono portal-text-caption',
             cellRenderer: StackedCell,
             text: (row) => row.smtp,
             get: (row) => ({ primary: row.smtp, secondary: 'SMTP' }),
@@ -67,7 +67,7 @@ export function EmailAccountsList({
             icon: <Inbox />,
             flex: 1.3,
             minWidth: 200,
-            cellClass: 'font-mono text-xs',
+            cellClass: 'font-mono portal-text-caption',
             cellRenderer: StackedCell,
             text: (row) => row.imap ?? 'Send only',
             get: (row) => ({

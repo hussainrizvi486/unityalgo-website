@@ -17,7 +17,7 @@ export default async function EditAddOnPage({ params }: { params: Promise<{ id: 
 
     return (
         <div>
-            <h1 className="text-2xl font-bold mb-8">Edit Add-on</h1>
+            <h1 className="portal-page-title mb-8">Edit Add-on</h1>
             <AddOnForm
                 products={products}
                 action={boundUpdateAction}

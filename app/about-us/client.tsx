@@ -14,7 +14,7 @@ export const AboutContent = () => {
                 <div className="absolute inset-0 bg-grid-pattern mask-[radial-gradient(ellipse_at_top,black_30%,transparent_70%)] opacity-30 pointer-events-none" />
                 <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-brand/5 rounded-full blur-[120px] pointer-events-none" />
 
-                <div className="container mx-auto max-w-6xl text-center relative z-10">
+                <div className="site-container site-container-wide text-center relative z-10">
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -24,7 +24,7 @@ export const AboutContent = () => {
                             <span className="w-2 h-2 rounded-full bg-brand animate-pulse" />
                             <span className="text-xs font-semibold text-brand tracking-wide uppercase">Our DNA</span>
                         </div>
-                        <h1 className="text-5xl md:text-7xl font-bold tracking-tight  mb-8 text-balance">
+                        <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-8 text-balance">
                             Architecting the <br />
                             <span className="text-brand">Future of Business</span>
                         </h1>
@@ -37,8 +37,8 @@ export const AboutContent = () => {
             </section>
 
 
-            <section className="py-20 bg-white relative">
-                <div className="container mx-auto px-4 max-w-6xl">
+            <section className="bg-white relative site-section-spacing">
+                <div className="site-container site-gutters site-container-wide">
                     <div className="grid md:grid-cols-12 gap-6">
 
 
@@ -96,11 +96,11 @@ export const AboutContent = () => {
             </section>
 
             {/* --- MISSION & VISION (Split View) --- */}
-            <section className="py-24 bg-ink-900 text-white relative overflow-hidden">
+            <section className="bg-ink-900 text-white relative overflow-hidden site-section-spacing">
                 {/* Background Glows */}
                 <div className="absolute top-1/2 left-1/4 w-[600px] h-[600px] bg-brand/20 rounded-full blur-[120px] pointer-events-none -translate-y-1/2" />
 
-                <div className="container mx-auto px-4 max-w-6xl relative z-10">
+                <div className="site-container site-gutters site-container-wide relative z-10">
                     <div className="grid md:grid-cols-2 gap-16 items-center">
                         <motion.div
                             initial={{ opacity: 0, y: 20 }}
@@ -158,10 +158,10 @@ export const AboutContent = () => {
             </section>
 
             {/* --- OUR APPROACH (Values) --- */}
-            <section className="py-24 bg-background">
-                <div className="container mx-auto px-4 max-w-6xl text-center">
+            <section className="bg-background site-section-spacing">
+                <div className="site-container site-gutters site-container-wide text-center">
                     <div className="mb-16">
-                        <h2 className="text-3xl font-bold  mb-4">Why Businesses Trust Unity Algo</h2>
+                        <h2 className="text-3xl font-bold mb-4">Why Businesses Trust Unity Algo</h2>
                         <p className="text-ink-600 max-w-2xl mx-auto">
                             We don&apos;t just deliver software; we deliver certainty in an uncertain digital landscape.
                         </p>

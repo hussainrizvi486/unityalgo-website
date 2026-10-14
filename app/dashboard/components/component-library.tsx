@@ -181,13 +181,13 @@ function Example({
     return (
         <div className="min-w-0 rounded-lg border border-ink-200 bg-white">
             <div className="border-b border-ink-200 px-4 py-4">
-                <h3 className="text-sm font-semibold">{title}</h3>
-                <p className="mt-1 text-xs leading-5 text-ink-600">
+                <h3 className="portal-text-body font-semibold">{title}</h3>
+                <p className="mt-1 portal-text-caption leading-5 text-ink-600">
                     {description}
                 </p>
             </div>
             <div className="p-4">{children}</div>
-            <details className="border-t border-ink-200 text-xs">
+            <details className="border-t border-ink-200 portal-text-caption">
                 <summary className="cursor-pointer px-4 py-3 font-medium text-ink-600">
                     Source & usage
                 </summary>
@@ -203,9 +203,9 @@ function Example({
 function Section({ id, children }: { id: string; children: ReactNode }) {
     const section = sections.find((item) => item.id === id)!;
     return (
-        <section id={id} className="scroll-mt-24 space-y-5">
+        <section id={id} className="scroll-mt-24 portal-fields">
             <div>
-                <p className="text-xs font-medium text-ink-500">
+                <p className="portal-text-caption font-medium text-ink-500">
                     {String(sections.indexOf(section) + 1).padStart(2, '0')}
                 </p>
                 <h2 className="mt-1 text-xl font-semibold tracking-tight">
@@ -256,7 +256,7 @@ export function ComponentLibrary() {
     );
 
     return (
-        <div className="mx-auto max-w-7xl">
+        <div className="mx-auto portal-page">
             <Breadcrumb>
                 <BreadcrumbList>
                     <BreadcrumbItem>
@@ -272,13 +272,13 @@ export function ComponentLibrary() {
             </Breadcrumb>
             <div className="mt-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
                 <div>
-                    <p className="text-xs font-medium uppercase tracking-wider text-ink-500">
+                    <p className="portal-text-caption font-medium uppercase tracking-wider text-ink-500">
                         Customer portal / Design system
                     </p>
-                    <h1 className="mt-2 text-3xl font-semibold tracking-tight">
+                    <h1 className="portal-page-title mt-2">
                         One library. Every screen.
                     </h1>
-                    <p className="mt-3 max-w-2xl text-sm leading-6 text-ink-600">
+                    <p className="mt-3 portal-form portal-text-body leading-6 text-ink-600">
                         Explore the components used in your portal. Change the
                         shared component or its theme token once, and every
                         screen using it follows.
@@ -291,37 +291,37 @@ export function ComponentLibrary() {
             <PortalPanel className="mt-7">
                 <div className="grid gap-5 md:grid-cols-3">
                     <div>
-                        <h2 className="text-sm font-semibold">
+                        <h2 className="portal-text-body font-semibold">
                             01 / Theme values
                         </h2>
-                        <p className="mt-2 text-xs leading-6 text-ink-600">
+                        <p className="mt-2 portal-text-caption leading-6 text-ink-600">
                             Colors, control sizing, label sizes and panel
                             spacing.
                         </p>
-                        <code className="mt-2 block break-all text-xs text-link">
+                        <code className="mt-2 block break-all portal-text-caption text-link">
                             app/dashboard/portal.css
                         </code>
                     </div>
                     <div>
-                        <h2 className="text-sm font-semibold">
+                        <h2 className="portal-text-body font-semibold">
                             02 / Shared components
                         </h2>
-                        <p className="mt-2 text-xs leading-6 text-ink-600">
+                        <p className="mt-2 portal-text-caption leading-6 text-ink-600">
                             Markup, variants, interaction and accessibility.
                         </p>
-                        <code className="mt-2 block text-xs text-link">
+                        <code className="mt-2 block portal-text-caption text-link">
                             components/ui/*
                         </code>
                     </div>
                     <div>
-                        <h2 className="text-sm font-semibold">
+                        <h2 className="portal-text-body font-semibold">
                             03 / Shared surfaces
                         </h2>
-                        <p className="mt-2 text-xs leading-6 text-ink-600">
+                        <p className="mt-2 portal-text-caption leading-6 text-ink-600">
                             One panel style for Profile, Security, Sessions and
                             App Store cards.
                         </p>
-                        <code className="mt-2 block break-all text-xs text-link">
+                        <code className="mt-2 block break-all portal-text-caption text-link">
                             components/customer/portal-panel.tsx
                         </code>
                     </div>
@@ -345,13 +345,13 @@ export function ComponentLibrary() {
                             <a
                                 key={section.id}
                                 href={`#${section.id}`}
-                                className="rounded-md px-3 py-2 text-xs font-medium text-ink-600 hover:bg-ink-100 hover:text-ink-900"
+                                className="rounded-md px-3 py-2 portal-text-caption font-medium text-ink-600 hover:bg-ink-100 hover:text-ink-900"
                             >
                                 {section.title}
                             </a>
                         ))}
                     </nav>
-                    <p className="mt-4 text-xs leading-5 text-ink-500">
+                    <p className="mt-4 portal-text-caption leading-5 text-ink-500">
                         Examples use sample data. Actions on this page do not
                         create sites or change your account.
                     </p>
@@ -391,7 +391,7 @@ export function ComponentLibrary() {
                                                     backgroundColor: `var(--${token})`,
                                                 }}
                                             />
-                                            <p className="mt-2 text-xs text-ink-600">
+                                            <p className="mt-2 portal-text-caption text-ink-600">
                                                 --{token}
                                             </p>
                                         </div>
@@ -406,7 +406,7 @@ export function ComponentLibrary() {
                                 >
                                     Clear hierarchy, familiar controls.
                                 </p>
-                                <p className="mt-2 text-sm leading-6 text-ink-600">
+                                <p className="mt-2 portal-text-body leading-6 text-ink-600">
                                     Body text · 14px / 24px. Labels, fields and
                                     buttons · shared 12px control token.
                                 </p>
@@ -426,7 +426,7 @@ export function ComponentLibrary() {
                                         </Label>
                                         <select
                                             id="preview-height"
-                                            className="h-8 w-full rounded-md border border-input bg-white px-3 text-xs"
+                                            className="h-8 w-full rounded-md border border-input bg-white px-3 portal-text-caption"
                                             value={height}
                                             onChange={(event) =>
                                                 setHeight(event.target.value)
@@ -449,7 +449,7 @@ export function ComponentLibrary() {
                                         </Label>
                                         <select
                                             id="preview-density"
-                                            className="h-8 w-full rounded-md border border-input bg-white px-3 text-xs"
+                                            className="h-8 w-full rounded-md border border-input bg-white px-3 portal-text-caption"
                                             value={density}
                                             onChange={(event) =>
                                                 setDensity(event.target.value)
@@ -623,7 +623,7 @@ export function ComponentLibrary() {
                                         '<Select><SelectTrigger><SelectValue placeholder="Choose app" /></SelectTrigger>\n<SelectContent><SelectItem value="lending">Lending</SelectItem></SelectContent></Select>'
                                     }
                                 >
-                                    <div className="space-y-5">
+                                    <div className="portal-fields">
                                         <div>
                                             <Label htmlFor="demo-app">
                                                 Application
@@ -798,11 +798,11 @@ export function ComponentLibrary() {
                                                 onCheckedChange={setSwitchOn}
                                             />
                                         </div>
-                                        <p className="text-xs text-ink-500">
+                                        <p className="portal-text-caption text-ink-500">
                                             Preview is{' '}
                                             {switchOn ? 'enabled' : 'disabled'}.
                                         </p>
-                                        <fieldset className="flex gap-4 text-xs">
+                                        <fieldset className="flex gap-4 portal-text-caption">
                                             <legend className="mb-2 font-medium">
                                                 Billing cycle
                                             </legend>
@@ -843,7 +843,7 @@ export function ComponentLibrary() {
                                         <h3 className="mt-4 font-semibold">
                                             Main workspace
                                         </h3>
-                                        <p className="mt-2 text-xs leading-5 text-ink-500">
+                                        <p className="mt-2 portal-text-caption leading-5 text-ink-500">
                                             Sample site card using the shared
                                             surface.
                                         </p>
@@ -954,13 +954,13 @@ export function ComponentLibrary() {
                                     </TabsList>
                                     <TabsContent
                                         value="overview"
-                                        className="py-4 text-sm text-ink-600"
+                                        className="py-4 portal-text-body text-ink-600"
                                     >
                                         Your workspace overview appears here.
                                     </TabsContent>
                                     <TabsContent
                                         value="activity"
-                                        className="py-4 text-sm text-ink-600"
+                                        className="py-4 portal-text-body text-ink-600"
                                     >
                                         No new activity in this sample
                                         workspace.
@@ -1081,7 +1081,7 @@ export function ComponentLibrary() {
                                     </Table>
                                 </div>
                                 <div className="mt-4 flex items-center justify-between gap-3">
-                                    <p className="text-xs text-ink-500">
+                                    <p className="portal-text-caption text-ink-500">
                                         {rows.length} example workspaces · Page
                                         1 of 1
                                     </p>
@@ -1226,10 +1226,10 @@ export function ComponentLibrary() {
                                             </Button>
                                         </PopoverTrigger>
                                         <PopoverContent className="w-64 p-4">
-                                            <h3 className="text-sm font-semibold">
+                                            <h3 className="portal-text-body font-semibold">
                                                 Quick details
                                             </h3>
-                                            <p className="mt-2 text-xs leading-5 text-ink-600">
+                                            <p className="mt-2 portal-text-caption leading-5 text-ink-600">
                                                 A compact surface for
                                                 information related to the
                                                 current action.
@@ -1333,10 +1333,10 @@ export function ComponentLibrary() {
                                 >
                                     <div className="py-5 text-center">
                                         <Globe className="mx-auto size-8 text-ink-400" />
-                                        <h3 className="mt-4 text-sm font-semibold">
+                                        <h3 className="mt-4 portal-text-body font-semibold">
                                             No workspaces yet
                                         </h3>
-                                        <p className="mt-2 text-xs leading-5 text-ink-500">
+                                        <p className="mt-2 portal-text-caption leading-5 text-ink-500">
                                             Create your first workspace to get
                                             started.
                                         </p>
@@ -1364,7 +1364,7 @@ export function ComponentLibrary() {
                     role="status"
                 >
                     <Check className="size-4 shrink-0 text-success-700" />
-                    <p className="text-xs">{notice}</p>
+                    <p className="portal-text-caption">{notice}</p>
                     <Button
                         size="icon"
                         variant="ghost"

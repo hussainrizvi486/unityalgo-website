@@ -14,14 +14,14 @@ export function Footer() {
 
   return (
     <footer className="bg-ink-950 text-white py-12">
-      <div className="container mx-auto px-2 md:px-4">
+      <div className="site-container site-gutters">
         <div className="grid grid-cols-1 md:grid-cols-5 gap-8 mb-5">
           {/* Company Info */}
           <div className="md:col-span-2">
             <div className="mb-4 text-white">
               <Logo className="h-10" />
             </div>
-            <p className="text-ink-300 max-w-md" style={{ lineHeight: '1.6' }}>
+            <p className="footer-description text-ink-300 max-w-md">
               Empowering businesses with cutting-edge web and enterprise solutions.
               Building the future, one line of code at a time.
             </p>
@@ -29,7 +29,7 @@ export function Footer() {
 
           {/* Quick Links */}
           <div>
-            <h4 className="mb-4" style={{ fontSize: '1.125rem', fontWeight: 600 }}>
+            <h4 className="footer-heading mb-4">
               Quick Links
             </h4>
             <ul className="space-y-2">
@@ -74,7 +74,7 @@ export function Footer() {
             </ul>
           </div>
           <div>
-            <h4 className="mb-4" style={{ fontSize: '1.125rem', fontWeight: 600 }}>
+            <h4 className="footer-heading mb-4">
               Products
             </h4>
             <ul className="space-y-2 ">
@@ -87,7 +87,7 @@ export function Footer() {
           </div>
 
           <div>
-            <h4 className="mb-4" style={{ fontSize: '1.125rem', fontWeight: 600 }}>
+            <h4 className="footer-heading mb-4">
               Connect With Us
             </h4>
             <div className="flex gap-3">

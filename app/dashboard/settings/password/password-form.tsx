@@ -46,23 +46,23 @@ export function PasswordForm({ embedded = false }: { embedded?: boolean }) {
     }
 
     return (
-        <div className="mx-auto max-w-7xl">
+        <div className="mx-auto portal-page">
             {!embedded && (
                 <>
                     <Link
                         href="/dashboard/settings?tab=security"
-                        className="mb-6 inline-flex items-center gap-2 text-sm font-medium text-ink-500 hover:text-ink-900"
+                        className="mb-6 inline-flex items-center gap-2 portal-text-body font-medium text-ink-500 hover:text-ink-900"
                     >
                         <ArrowLeft className="size-4" />
                         Back to settings
                     </Link>
-                    <p className="text-xs font-semibold uppercase tracking-wider text-ink-500">
+                    <p className="portal-text-caption font-semibold uppercase tracking-wider text-ink-500">
                         Account security
                     </p>
-                    <h1 className="mt-2 text-3xl font-semibold tracking-tight text-ink-950">
+                    <h1 className="portal-page-title mt-2">
                         Change password
                     </h1>
-                    <p className="mt-3 text-sm text-ink-600">
+                    <p className="mt-3 portal-text-body text-ink-600">
                         Keep your account protected with a password only you
                         know.
                     </p>
@@ -87,21 +87,21 @@ export function PasswordForm({ embedded = false }: { embedded?: boolean }) {
                         >
                             Change your password
                         </h2>
-                        <p className="mt-3 max-w-sm text-sm leading-6 text-ink-600">
+                        <p className="mt-3 max-w-sm portal-text-body leading-6 text-ink-600">
                             Enter your current password, then choose a new one
                             for your UnityAlgo account.
                         </p>
                         <div className="mt-7 rounded-lg bg-ink-50 p-4">
-                            <h3 className="text-sm font-semibold text-ink-900">
+                            <h3 className="portal-text-body font-semibold text-ink-900">
                                 Choose a memorable passphrase
                             </h3>
-                            <p className="mt-2 text-sm leading-6 text-ink-600">
+                            <p className="mt-2 portal-text-body leading-6 text-ink-600">
                                 Use at least 8 characters. A longer phrase with
                                 several unrelated words is easier to remember.
                                 Avoid reusing a password from another account.
                             </p>
                         </div>
-                        <div className="mt-6 flex items-start gap-3 text-sm leading-6 text-ink-600">
+                        <div className="mt-6 flex items-start gap-3 portal-text-body leading-6 text-ink-600">
                             <ShieldCheck
                                 className="mt-1 size-4 shrink-0 text-ink-500"
                                 aria-hidden="true"
@@ -131,7 +131,7 @@ export function PasswordForm({ embedded = false }: { embedded?: boolean }) {
                             }
                         }}
                     >
-                        <fieldset disabled={pending} className="space-y-6">
+                        <fieldset disabled={pending} className="portal-stack">
                             <div>
                                 <Label
                                     htmlFor="currentPassword"
@@ -175,7 +175,7 @@ export function PasswordForm({ embedded = false }: { embedded?: boolean }) {
                                 />
                                 <p
                                     id="password-requirement"
-                                    className={`mt-2 flex items-center gap-1.5 text-xs ${newPassword.length >= 8 ? 'text-success-700' : 'text-ink-500'}`}
+                                    className={`mt-2 flex items-center gap-1.5 portal-text-caption ${newPassword.length >= 8 ? 'text-success-700' : 'text-ink-500'}`}
                                 >
                                     {newPassword.length >= 8 && (
                                         <Check
@@ -212,7 +212,7 @@ export function PasswordForm({ embedded = false }: { embedded?: boolean }) {
                                 <p
                                     id="password-confirmation"
                                     aria-live="polite"
-                                    className={`mt-2 flex min-h-4 items-center gap-1.5 text-xs ${mismatch ? 'text-error-700' : matches ? 'text-success-700' : 'text-ink-500'}`}
+                                    className={`mt-2 flex min-h-4 items-center gap-1.5 portal-text-caption ${mismatch ? 'text-error-700' : matches ? 'text-success-700' : 'text-ink-500'}`}
                                 >
                                     {matches && (
                                         <Check

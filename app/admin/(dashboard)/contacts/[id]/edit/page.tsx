@@ -15,7 +15,7 @@ export default async function EditContactPage({ params }: { params: Promise<{ id
 
     return (
         <div>
-            <h1 className="text-2xl font-bold mb-8">Edit Contact</h1>
+            <h1 className="portal-page-title mb-8">Edit Contact</h1>
             <ContactForm
                 action={boundUpdateAction}
                 submitLabel="Save Changes"

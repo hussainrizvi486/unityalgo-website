@@ -29,15 +29,15 @@ export function PricingTable({
     plans,
 }: PricingTableProps) {
     return (
-        <section className="py-24 bg-ink-50">
-            <div className="container mx-auto px-4 max-w-6xl">
+        <section className="bg-ink-50 site-section-spacing">
+            <div className="site-container site-gutters site-container-wide">
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
                     className="text-center mb-16"
                 >
-                    <h2 className="text-3xl font-bold  mb-4">{heading}</h2>
+                    <h2 className="text-3xl font-bold mb-4">{heading}</h2>
                     <p className="text-ink-600 max-w-2xl mx-auto">{subheading}</p>
                 </motion.div>
 
@@ -86,18 +86,16 @@ export function PricingTable({
                                 </ul>
                             )}
 
-                            <Link href={plan.ctaHref ?? '/#contact'}>
-                                <Button
+                            <Button asChild
                                     className={cn(
                                         'w-full h-11',
                                         plan.highlighted
                                             ? 'bg-white hover:bg-ink-100 text-brand'
                                             : 'bg-ink-900 hover:bg-ink-800 text-white',
                                     )}
-                                >
+                                ><Link href={plan.ctaHref ?? '/#contact'}>
                                     {plan.ctaLabel ?? (plan.price === 'Contact' ? 'Contact Sales' : 'Request Demo')}
-                                </Button>
-                            </Link>
+                                </Link></Button>
                         </motion.div>
                     ))}
                 </div>

@@ -128,7 +128,7 @@ function FieldControl({ field }: { field: AdminFormField }) {
 
     if (field.type === 'checkbox') {
         return (
-            <label htmlFor={id} className="flex items-start gap-2.5 text-sm text-ink-700">
+            <label htmlFor={id} className="flex items-start gap-2.5 portal-text-body text-ink-700">
                 <Checkbox
                     id={id}
                     name={field.name}
@@ -138,7 +138,7 @@ function FieldControl({ field }: { field: AdminFormField }) {
                 />
                 <span>
                     {field.label}
-                    {field.help ? <span className="block text-xs text-ink-500">{field.help}</span> : null}
+                    {field.help ? <span className="block portal-text-caption text-ink-500">{field.help}</span> : null}
                 </span>
             </label>
         );
@@ -146,7 +146,7 @@ function FieldControl({ field }: { field: AdminFormField }) {
 
     return (
         <div className={cn(field.fullWidth && 'md:col-span-full')}>
-            <Label htmlFor={id} className="mb-1.5 text-sm text-ink-700">
+            <Label htmlFor={id} className="mb-1.5 portal-text-body text-ink-700">
                 {field.label}
                 {!field.required ? <span className="ml-1 font-normal text-ink-400">(optional)</span> : null}
             </Label>
@@ -202,21 +202,21 @@ function FieldControl({ field }: { field: AdminFormField }) {
                 />
             )}
 
-            {field.help ? <p className="mt-1.5 text-xs text-ink-500">{field.help}</p> : null}
+            {field.help ? <p className="mt-1.5 portal-text-caption text-ink-500">{field.help}</p> : null}
         </div>
     );
 }
 
 function SectionBlock({ section }: { section: Section }) {
     return (
-        <section className="space-y-5 border-t border-ink-200 pt-7 first:border-0 first:pt-0">
+        <section className="portal-fields border-t border-ink-200 pt-7 first:border-0 first:pt-0">
             {section.label || section.description ? (
                 <div>
                     {section.label ? (
-                        <h2 className="text-sm font-semibold text-ink-900">{section.label}</h2>
+                        <h2 className="portal-text-body font-semibold text-ink-900">{section.label}</h2>
                     ) : null}
                     {section.description ? (
-                        <p className="mt-1 text-xs text-ink-500">{section.description}</p>
+                        <p className="mt-1 portal-text-caption text-ink-500">{section.description}</p>
                     ) : null}
                 </div>
             ) : null}
@@ -228,7 +228,7 @@ function SectionBlock({ section }: { section: Section }) {
             >
                 <div className={cn('grid gap-6', section.columns.length > 1 && 'md:grid-cols-[repeat(var(--cols),minmax(0,1fr))]')}>
                     {section.columns.map((column, i) => (
-                        <div key={i} className="space-y-5">
+                        <div key={i} className="portal-fields">
                             {column.fields.map((field) => (
                                 <FieldControl key={('name' in field && field.name) || i} field={field} />
                             ))}
@@ -243,7 +243,7 @@ function SectionBlock({ section }: { section: Section }) {
 function SubmitButton({ label }: { label: string }) {
     const { pending } = useFormStatus();
     return (
-        <Button type="submit" disabled={pending} className="bg-ink-900 px-8 text-white hover:bg-ink-800">
+        <Button type="submit" disabled={pending} className="">
             {pending ? 'Saving…' : label}
         </Button>
     );
@@ -290,7 +290,7 @@ export function AdminDynamicForm({
     );
 
     return (
-        <form action={formAction} className="max-w-3xl space-y-8">
+        <form action={formAction} className="portal-detail space-y-8">
             {Object.entries(hidden ?? {}).map(([name, value]) =>
                 value === undefined ? null : <input key={name} type="hidden" name={name} value={value} />,
             )}
@@ -306,9 +306,7 @@ export function AdminDynamicForm({
 
             <div className="flex items-center gap-3 border-t border-ink-200 pt-6">
                 <SubmitButton label={submitLabel} />
-                <Link href={cancelHref}>
-                    <Button type="button" variant="outline">Cancel</Button>
-                </Link>
+                <Button asChild type="button" variant="outline"><Link href={cancelHref}>Cancel</Link></Button>
                 {children}
             </div>
         </form>

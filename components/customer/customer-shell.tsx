@@ -86,7 +86,7 @@ export function CustomerShell({
                             className="flex items-center gap-2.5 overflow-hidden rounded-md px-2 py-0.5 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
                         >
                             <Image src="/logo.svg" alt="" width={28} height={28} className="size-8.5 shrink-0" priority />
-                            <span className="truncate font-logo text-[1rem] font-bold leading-none text-ink-900 group-data-[collapsible=icon]:hidden">
+                            <span className="truncate font-logo portal-brand-title font-bold leading-none text-ink-900 group-data-[collapsible=icon]:hidden">
                                 UnityAlgo
                             </span>
                         </Link>
@@ -137,15 +137,15 @@ export function CustomerShell({
                                     className="h-8 w-8 shrink-0 rounded-full object-cover"
                                 />
                             ) : (
-                                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand text-xs font-bold text-white">
+                                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand portal-text-caption font-bold text-white">
                                     {initials}
                                 </span>
                             )}
                             <div className="min-w-0 group-data-[collapsible=icon]:hidden">
-                                <p className="truncate text-sm font-semibold text-ink-900">
+                                <p className="truncate portal-text-body font-semibold text-ink-900">
                                     {fullName}
                                 </p>
-                                <p className="truncate text-xs text-ink-400">
+                                <p className="truncate portal-text-caption text-ink-400">
                                     {user.email}
                                 </p>
                             </div>
@@ -167,10 +167,10 @@ export function CustomerShell({
                     </SidebarFooter>
                 </Sidebar>
                 <SidebarInset>
-                    <header className="sticky top-0 z-30 flex h-14 items-center justify-between gap-3 border-b border-ink-200 bg-white px-4 sm:px-6">
+                    <header className="portal-topbar sticky top-0 flex items-center justify-between gap-3 border-b border-ink-200 bg-white">
                         <div className="flex items-center gap-3">
                             <SidebarTrigger />
-                            <span className="text-sm font-medium text-ink-600">
+                            <span className="portal-text-body font-medium text-ink-600">
                                 {navItems.find(
                                     (item) =>
                                         item.href !== '/dashboard' &&
@@ -180,7 +180,7 @@ export function CustomerShell({
                         </div>
                         <NotificationBell initial={notifications} />
                     </header>
-                    <main className="min-w-0 flex-1 p-4 sm:p-6 lg:p-10">
+                    <main className="portal-content">
                         {children}
                     </main>
                 </SidebarInset>

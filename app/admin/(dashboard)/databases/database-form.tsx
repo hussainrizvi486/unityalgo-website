@@ -33,7 +33,7 @@ const SSL_MODES = ['disable', 'allow', 'prefer', 'require', 'verify-ca', 'verify
 function SubmitButton({ label }: { label: string }) {
     const { pending } = useFormStatus();
     return (
-        <Button type="submit" disabled={pending} className="bg-ink-900 hover:bg-ink-800 text-white px-8">
+        <Button type="submit" disabled={pending} className="">
             {pending ? 'Saving...' : label}
         </Button>
     );
@@ -53,14 +53,14 @@ export function DatabaseForm({ action, defaultValues, submitLabel, isEdit }: Dat
     const [role, setRole] = useState<string>(defaultValues?.role ?? 'external');
 
     return (
-        <form action={formAction} className="space-y-6 max-w-2xl">
+        <form action={formAction} className="portal-stack portal-form">
             <div className="grid md:grid-cols-2 gap-6">
                 <div>
-                    <Label htmlFor="name" className="text-sm text-ink-700 mb-1.5">Name</Label>
+                    <Label htmlFor="name" className="portal-text-body text-ink-700 mb-1.5">Name</Label>
                     <Input id="name" name="name" required defaultValue={defaultValues?.name} placeholder="primary-eu" />
                 </div>
                 <div>
-                    <Label htmlFor="role" className="text-sm text-ink-700 mb-1.5">Role</Label>
+                    <Label htmlFor="role" className="portal-text-body text-ink-700 mb-1.5">Role</Label>
                     <Select name="role" defaultValue={role} onValueChange={setRole}>
                         <SelectTrigger id="role" className="w-full"><SelectValue /></SelectTrigger>
                         <SelectContent>
@@ -73,31 +73,31 @@ export function DatabaseForm({ action, defaultValues, submitLabel, isEdit }: Dat
 
             <div className="grid md:grid-cols-3 gap-6">
                 <div className="md:col-span-2">
-                    <Label htmlFor="host" className="text-sm text-ink-700 mb-1.5">Host</Label>
+                    <Label htmlFor="host" className="portal-text-body text-ink-700 mb-1.5">Host</Label>
                     <Input id="host" name="host" required defaultValue={defaultValues?.host} placeholder="db.example.com" />
                 </div>
                 <div>
-                    <Label htmlFor="port" className="text-sm text-ink-700 mb-1.5">Port</Label>
+                    <Label htmlFor="port" className="portal-text-body text-ink-700 mb-1.5">Port</Label>
                     <SmartInput id="port" name="port" kind="integer" min={1} max={65535} defaultValue={defaultValues?.port ?? '5432'} />
                 </div>
             </div>
 
             <div className="grid md:grid-cols-3 gap-6">
                 <div>
-                    <Label htmlFor="database_name" className="text-sm text-ink-700 mb-1.5">
+                    <Label htmlFor="database_name" className="portal-text-body text-ink-700 mb-1.5">
                         {role === 'cluster' ? 'Maintenance database' : 'Database'}
                     </Label>
                     <Input id="database_name" name="database_name" required defaultValue={defaultValues?.database_name} placeholder="postgres" />
                     {role === 'cluster' && (
-                        <p className="mt-1 text-xs text-ink-400">Connected to in order to CREATE DATABASE. Usually <code>postgres</code>.</p>
+                        <p className="mt-1 portal-text-caption text-ink-400">Connected to in order to CREATE DATABASE. Usually <code>postgres</code>.</p>
                     )}
                 </div>
                 <div>
-                    <Label htmlFor="username" className="text-sm text-ink-700 mb-1.5">Username</Label>
+                    <Label htmlFor="username" className="portal-text-body text-ink-700 mb-1.5">Username</Label>
                     <Input id="username" name="username" required defaultValue={defaultValues?.username} />
                 </div>
                 <div>
-                    <Label htmlFor="password" className="text-sm text-ink-700 mb-1.5">
+                    <Label htmlFor="password" className="portal-text-body text-ink-700 mb-1.5">
                         Password {isEdit && <span className="text-ink-400 font-normal">(blank = unchanged)</span>}
                     </Label>
                     <PasswordInput id="password" name="password" autoComplete="new-password" required={!isEdit} />
@@ -105,30 +105,30 @@ export function DatabaseForm({ action, defaultValues, submitLabel, isEdit }: Dat
             </div>
 
             <div>
-                <Label htmlFor="sslmode" className="text-sm text-ink-700 mb-1.5">SSL mode</Label>
+                <Label htmlFor="sslmode" className="portal-text-body text-ink-700 mb-1.5">SSL mode</Label>
                 <Select name="sslmode" defaultValue={defaultValues?.sslmode ?? 'prefer'}>
                     <SelectTrigger id="sslmode" className="w-full md:w-56"><SelectValue /></SelectTrigger>
                     <SelectContent>
                         {SSL_MODES.map((mode) => <SelectItem key={mode} value={mode}>{mode}</SelectItem>)}
                     </SelectContent>
                 </Select>
-                <p className="mt-1 text-xs text-ink-400">Managed Postgres usually requires <code>require</code>.</p>
+                <p className="mt-1 portal-text-caption text-ink-400">Managed Postgres usually requires <code>require</code>.</p>
             </div>
 
             {role === 'cluster' && (
-                <div className="space-y-6 rounded-xl border border-ink-100 bg-ink-50/50 p-5">
+                <div className="portal-stack rounded-xl border border-ink-100 bg-ink-50/50 p-5">
                     <div>
-                        <Label htmlFor="host_from_worker" className="text-sm text-ink-700 mb-1.5">
+                        <Label htmlFor="host_from_worker" className="portal-text-body text-ink-700 mb-1.5">
                             Host as seen from workers <span className="text-ink-400 font-normal">(optional)</span>
                         </Label>
                         <Input id="host_from_worker" name="host_from_worker" defaultValue={defaultValues?.host_from_worker} placeholder="10.0.0.5 or db.internal" />
-                        <p className="mt-1 text-xs text-ink-400">
+                        <p className="mt-1 portal-text-caption text-ink-400">
                             Tenant containers run on remote nodes and often cannot reach this database by the same host
                             the controller uses. Leave blank if the address above works from a worker.
                         </p>
                     </div>
 
-                    <Label htmlFor="is_default" className="text-sm text-ink-700">
+                    <Label htmlFor="is_default" className="portal-text-body text-ink-700">
                         <Checkbox id="is_default" name="is_default" defaultChecked={defaultValues?.is_default} />
                         Default cluster — new tenants are provisioned here
                     </Label>
@@ -136,11 +136,11 @@ export function DatabaseForm({ action, defaultValues, submitLabel, isEdit }: Dat
             )}
 
             <div className="rounded-md border border-warning-500/30 bg-warning-50/50 p-4">
-                <Label htmlFor="allow_writes" className="text-sm text-ink-800">
+                <Label htmlFor="allow_writes" className="portal-text-body text-ink-800">
                     <Checkbox id="allow_writes" name="allow_writes" defaultChecked={defaultValues?.allow_writes} />
                     Allow the query console to modify data
                 </Label>
-                <p className="mt-1.5 pl-6 text-xs text-ink-600">
+                <p className="mt-1.5 pl-6 portal-text-caption text-ink-600">
                     Off by default. While off, statements run inside a read-only transaction and the
                     database itself refuses any INSERT, UPDATE, DELETE or DDL — including ones hidden
                     in a CTE. Turn this on only for a connection you intend to change data through.
@@ -148,7 +148,7 @@ export function DatabaseForm({ action, defaultValues, submitLabel, isEdit }: Dat
             </div>
 
             <div>
-                <Label htmlFor="notes" className="text-sm text-ink-700 mb-1.5">
+                <Label htmlFor="notes" className="portal-text-body text-ink-700 mb-1.5">
                     Notes <span className="text-ink-400 font-normal">(optional)</span>
                 </Label>
                 <Textarea id="notes" name="notes" rows={2} defaultValue={defaultValues?.notes} />
@@ -158,9 +158,7 @@ export function DatabaseForm({ action, defaultValues, submitLabel, isEdit }: Dat
 
             <div className="flex items-center gap-3">
                 <SubmitButton label={submitLabel} />
-                <Link href="/admin/databases">
-                    <Button type="button" variant="outline" >Cancel</Button>
-                </Link>
+                <Button asChild type="button" variant="outline" ><Link href="/admin/databases">Cancel</Link></Button>
             </div>
         </form>
     );

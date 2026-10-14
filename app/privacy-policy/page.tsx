@@ -27,7 +27,7 @@ const Page = () => {
 
         <div className="absolute inset-0 bg-grid-pattern mask-[linear-gradient(to_bottom,transparent,black_10%,black_90%,transparent)] opacity-20 pointer-events-none -z-10" />
 
-        <div className="container mx-auto max-w-4xl px-4 md:px-6 space-y-8">
+        <div className="site-container site-container-detail site-gutters space-y-8">
           <div className="space-y-4 border-b border-ink-100 pb-8">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-ink-100 border border-ink-200 mb-2">
               <span className="w-2 h-2 rounded-full bg-brand"></span>
