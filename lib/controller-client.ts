@@ -403,6 +403,8 @@ export interface SiteBackups {
 }
 
 export interface CustomerSite {
+    /** Where to open the site: its domain, or the worker's address and port when running locally. */
+    url: string;
     id: string;
     name: string;
     slug: string;

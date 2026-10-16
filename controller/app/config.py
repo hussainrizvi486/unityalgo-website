@@ -175,6 +175,10 @@ class Settings:
         self.node_memory_reserve_mb = self._int("NODE_MEMORY_RESERVE_MB", 1024)
         self.frappe_image = self._str("FRAPPE_IMAGE", "frappe/erpnext:v16.50.0")
         self.frappe_site_domain = self._str("FRAPPE_SITE_DOMAIN", "").strip().lower()
+        # What "Open site" points at: "domain" = https://<slug>.<base domain>; "direct" = http://<worker address>:<port>,
+        # which is how a site is reached when the base domain does not resolve (local development). "auto" picks
+        # direct everywhere except production.
+        self.frappe_site_links = self._str("FRAPPE_SITE_LINKS", "auto").strip().lower()
         self.frappe_available_apps = [app.strip() for app in self._str("FRAPPE_AVAILABLE_APPS", "erpnext").split(",") if app.strip()]
         self.frappe_port_start = self._int("FRAPPE_PORT_START", 30000)
         self.frappe_port_end = self._int("FRAPPE_PORT_END", 31999)
@@ -374,6 +378,12 @@ class Settings:
                 "is protected by it alone, so the API refuses to serve without one. "
                 'Generate one with: python -c "import secrets; print(secrets.token_urlsafe(48))"'
             )
+
+    @property
+    def site_links_direct(self):
+        if self.frappe_site_links in ("direct", "domain"):
+            return self.frappe_site_links == "direct"
+        return not self.is_production
 
     @property
     def is_production(self):

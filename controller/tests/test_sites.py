@@ -15,6 +15,14 @@ class SiteProvisioningTests(unittest.TestCase):
         self.settings = SimpleNamespace(node_memory_reserve_mb=1024, frappe_enforce_capacity=True, frappe_cpu_overcommit=2.0)
         self.node.cpu_cores = 4
 
+    def test_open_links_use_the_worker_address_locally_and_the_domain_in_production(self):
+        from app.routes.site import site_url
+        site = SimpleNamespace(domain='acme.cloud.example.test', port=30007, server=SimpleNamespace(dial_host='192.168.252.2'))
+        for mode, env, expected in (('auto', 'development', 'http://192.168.252.2:30007'), ('auto', 'production', 'https://acme.cloud.example.test'),
+                                    ('direct', 'production', 'http://192.168.252.2:30007'), ('domain', 'development', 'https://acme.cloud.example.test')):
+            with self.subTest(mode=mode, env=env), patch('app.config.settings.frappe_site_links', mode), patch('app.config.settings.app_env', env):
+                self.assertEqual(site_url(site), expected)
+
     def test_capacity_reserves_container_slots(self):
         self.assertTrue(fits_site(self.node, 10, 6144, 1, self.settings))
         self.assertFalse(fits_site(self.node, 21, 6144, 1, self.settings))

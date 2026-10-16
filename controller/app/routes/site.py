@@ -93,8 +93,15 @@ def used_cpu(session, server_id):
 def site_need(site):
     return {'ram_mb': site.memory_limit_mb, 'cpu': site.cpu_limit, 'storage_gb': site.storage_limit_gb}
 
+def site_url(site):
+    """Where a browser should open the site: its own domain, or (local development) the worker's address and port."""
+    from app.config import settings
+    if settings.site_links_direct:
+        return f'http://{site.server.dial_host}:{site.port}'
+    return f'https://{site.domain}'
+
 def serialize(site):
-    return {'id': str(site.id), 'name': site.name, 'slug': site.slug, 'domain': site.domain,
+    return {'id': str(site.id), 'name': site.name, 'slug': site.slug, 'domain': site.domain, 'url': site_url(site),
             'server_id': str(site.server_id), 'server_name': site.server.name,
             'status': site.status, 'progress': site.progress, 'message': site.message,
             'apps': site.app_names, 'db_server': site.db_server.name if site.db_server_id else None, 'plan_id': site.plan_id, 'plan_name': site.plan_name,

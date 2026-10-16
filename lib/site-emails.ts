@@ -25,7 +25,7 @@ const escapeHtml = (value: string) =>
 
 function compose(event: SiteEmailEvent, site: CustomerSite) {
     const detailsUrl = `${PORTAL_URL}/dashboard/sites/${site.id}`;
-    const siteUrl = `https://${site.domain}`;
+    const siteUrl = site.url;
     switch (event) {
         case 'initiated':
             return {

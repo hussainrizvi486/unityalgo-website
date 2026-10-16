@@ -237,7 +237,9 @@ class RolloutApiTests(RolloutTestCase):
         self.make_site('has-it', installed={'version': '15.0.0', 'commit': SHA_OLD})
         self.make_site('lacks-it')
         response = self.roll(action='install')
-        self.assertEqual([s['site_slug'] for s in response.json['sites']], ['lacks-it'])
+        slugs = {s['site_slug'] for s in response.json['sites']}
+        self.assertIn('lacks-it', slugs)
+        self.assertNotIn('has-it', slugs)       # other real sites in the development database may also lack the app
 
     def test_incompatible_unverified_and_stale_requests_are_refused(self):
         self.make_site('stale', installed={'version': '15.0.0', 'commit': SHA_OLD})

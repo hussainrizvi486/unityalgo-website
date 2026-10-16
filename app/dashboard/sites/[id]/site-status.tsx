@@ -142,7 +142,7 @@ export function SiteStatus({
                 {site.status === 'ready' && (
                     <Button asChild>
                         <a
-                            href={`https://${site.domain}`}
+                            href={site.url}
                             target="_blank"
                             rel="noopener noreferrer"
                         >

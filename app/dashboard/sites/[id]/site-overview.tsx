@@ -166,7 +166,7 @@ export function SiteOverview({ site, applicationNames, plans, onChange }: {
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                     <Button asChild variant="outline" size="sm" disabled={!running}>
-                        <a href={`https://${site.domain}`} target="_blank" rel="noopener noreferrer" aria-disabled={!running}>
+                        <a href={site.url} target="_blank" rel="noopener noreferrer" aria-disabled={!running}>
                             <ArrowUpRight className="size-4" />Access site
                         </a>
                     </Button>

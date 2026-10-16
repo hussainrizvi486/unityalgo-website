@@ -98,7 +98,7 @@ export default async function AdminSiteDetailPage({
                 </div>
                 {running && (
                     <Button asChild size="sm" variant="outline">
-                        <a href={`https://${site.domain}`} target="_blank" rel="noopener noreferrer">Open site <ArrowUpRight className="size-4" /></a>
+                        <a href={site.url} target="_blank" rel="noopener noreferrer">Open site <ArrowUpRight className="size-4" /></a>
                     </Button>
                 )}
             </div>
