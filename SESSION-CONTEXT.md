@@ -68,7 +68,7 @@ The two products:
                              ▼
                  ┌───────────────────────┐
                  │   ONE Postgres DB      │
-                 │  Prisma owns PascalCase│
+                 │  The website (Drizzle) owns PascalCase│
                  │  Alembic owns snake_case│
                  └───────────────────────┘
 ```
@@ -76,12 +76,12 @@ The two products:
 ### The three rules that hold this together
 
 1. **One database, two schema owners.**
-   Prisma owns PascalCase tables (`User`, `Plan`, `Subscription`, `Currency`, …).
+   The website (Drizzle) owns PascalCase tables (`User`, `Plan`, `Subscription`, `Currency`, …).
    Alembic owns snake_case tables (`tenants`, `server_nodes`, `deployments`,
    `domain_mappings`, `operations`, `activity_logs`, …). There are **no name
    collisions**. Cross-tool foreign keys are real Postgres FKs written by hand in
    Alembic migrations (e.g. `tenants.user_id → "User"(id)`).
-   `controller/alembic/env.py` filters Prisma-owned tables out of autogenerate so
+   `controller/alembic/env.py` filters website-owned tables out of autogenerate so
    Alembic never tries to drop them. **`e2e-test.ts` asserts this guard still works.**
 
 2. **One authentication system.** The Python service has **no login and no user
@@ -115,7 +115,7 @@ The two products:
 │   ├── api/                paddle/webhook, admin/upload, email
 │   ├── theme-preview/      Living design-system reference (see §7)
 │   ├── globals.css         ALL design tokens live here (@theme)
-│   └── generated/prisma/   Generated Prisma client (imported via @/app/generated/prisma/client)
+│   └── (the database client lives in lib/db.ts; the schema in db/schema.ts)
 ├── components/
 │   ├── ui/                 shadcn-style primitives
 │   ├── admin/              Admin-only compositions
@@ -124,7 +124,7 @@ The two products:
 │   └── layouts/            header.tsx, footer.tsx
 ├── lib/                    Server + shared logic (see §5)
 ├── controller/             The Python/Flask service (see §4)
-├── prisma/                 schema.prisma + hand-written migrations
+├── db/                     Drizzle schema, relations, migrations (legacy Prisma ones archived)
 ├── scripts/                tsx operational + test scripts
 ├── proxy.ts                Next.js middleware (auth gate)
 └── public/images/          Marketing artwork
@@ -132,7 +132,7 @@ The two products:
 
 ### Path aliases
 `@/` → repo root. So `@/lib/db`, `@/components/ui/button`,
-`@/app/generated/prisma/client`. **`tsx` scripts only resolve `@/` when run from
+`@/db/schema`. **`tsx` scripts only resolve `@/` when run from
 the repo root** — a script placed outside `scripts/` will fail to resolve aliases.
 
 ---
@@ -176,7 +176,7 @@ are real, neither is a placeholder.
 
 | File | Responsibility |
 |---|---|
-| `db.ts` | The Prisma client singleton (`@prisma/adapter-pg`) |
+| `db.ts` | The Drizzle client (`db`) over one `pg` pool, plus `isUniqueViolation`, `errorText`, `one` |
 | `auth.ts`, `admin-session.ts` | Admin session mint/verify; `requireAdmin()` re-checks the role |
 | `customer-auth.ts`, `customer-session.ts` | Customer equivalents |
 | `controller-client.ts` | Typed fetch wrapper for the Python API; Server-Action-only |
@@ -277,7 +277,7 @@ Building it out found two real defects in shipping code:
 
 ---
 
-## 8. Data model (Prisma)
+## 8. Data model (website)
 
 ```
 User (Role: ADMIN | CUSTOMER)
@@ -302,9 +302,8 @@ Alembic side (snake_case): `tenants`, `server_nodes`, `deployments`,
 `tenant_migrations`, `database_connections`, `database_clusters`.
 `tenants.user_id → "User"(id)`, `tenants.subscription_id → "Subscription"(id)`.
 
-**Migrations are hand-written.** Applied with `prisma migrate deploy`, not
-`migrate dev`. Latest Prisma migrations: `20260901090000_index_foreign_keys`,
-`20260901120000_currencies` (seeds USD + PKR), `20260901140000_product_landing_visibility`.
+**Migrations are generated.** `npm run db:generate` diffs `db/schema.ts` against the last snapshot; `npm run db:migrate` applies them (`npm run db:baseline` first on a database that predates Drizzle). The migrations Prisma ran before the move are archived in
+`db/legacy-prisma-migrations/`.
 
 ---
 
@@ -490,8 +489,7 @@ Traps hit repeatedly in this session, worth remembering:
 
 ## 14. Gotchas that cost time in this session
 
-- **Restart the dev server after `prisma generate`.** A running Next dev server
-  keeps a stale Prisma client; this cost time twice (`paddleEvent`, `showOnLanding`).
+- Drizzle has no generate step, so the dev server never holds a stale client after a schema change.
 - **`'use server'` files may only export async functions.** Move constants to `lib/`.
 - **`alembic.ini` had a hardcoded `sqlalchemy.url`** on the wrong port with a
   plaintext password. `env.py` now reads `DATABASE_URL`. Do not reintroduce it.

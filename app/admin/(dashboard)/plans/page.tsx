@@ -1,4 +1,5 @@
-import { prisma } from '@/lib/db';
+import { asc, eq } from 'drizzle-orm';
+import { db, schema } from '@/lib/db';
 import { ADMIN_LIST_LIMIT } from '@/lib/pagination';
 import { formatPlanPrice } from '@/lib/pricing';
 import { AdminPageHeader, AdminPageError, AdminPageNotice } from '@/components/admin/page-header';
@@ -13,12 +14,14 @@ export default async function AdminPlansPage({ searchParams }: PlansPageProps) {
     const params = await searchParams;
 
     const [plans, totalCount] = await Promise.all([
-        prisma.plan.findMany({
-            orderBy: [{ product: { sortOrder: 'asc' } }, { sortOrder: 'asc' }],
-            include: { product: true },
-            take: ADMIN_LIST_LIMIT,
-        }),
-        prisma.plan.count(),
+        db
+            .select({ row: schema.plan, product: schema.product })
+            .from(schema.plan)
+            .innerJoin(schema.product, eq(schema.product.id, schema.plan.productId))
+            .orderBy(asc(schema.product.sortOrder), asc(schema.plan.sortOrder))
+            .limit(ADMIN_LIST_LIMIT)
+            .then((rows) => rows.map(({ row, product }) => ({ ...row, product }))),
+        db.$count(schema.plan),
     ]);
 
     const rows: PlanRow[] = plans.map((plan) => ({

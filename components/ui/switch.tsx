@@ -96,11 +96,11 @@ const Switch = React.forwardRef<HTMLButtonElement, SwitchProps>(function Switch(
                     'disabled:cursor-not-allowed disabled:opacity-50',
                     TRACK[size],
                     dark
-                        ? 'focus-visible:ring-[3px] focus-visible:ring-white/40'
-                        : 'focus-visible:ring-[3px] focus-visible:ring-ring/50',
+                        ? 'focus-visible:ring-3 focus-visible:ring-primary-foreground/40'
+                        : 'focus-visible:ring-3 focus-visible:ring-ring/50',
                     dark
-                        ? on ? 'bg-white' : 'bg-white/25'
-                        : on ? 'bg-ink-950' : 'bg-ink-200',
+                        ? on ? 'bg-card' : 'bg-primary-foreground/25'
+                        : on ? 'bg-primary' : 'bg-border',
                     className,
                 )}
             >
@@ -112,7 +112,7 @@ const Switch = React.forwardRef<HTMLButtonElement, SwitchProps>(function Switch(
                         on ? TRAVEL[size] : 'translate-x-0',
                         // On a dark ground the track turns white when on, so a
                         // white knob would disappear into it.
-                        dark && on ? 'bg-ink-950' : 'bg-white',
+                        dark && on ? 'bg-primary' : 'bg-card',
                     )}
                 />
             </button>

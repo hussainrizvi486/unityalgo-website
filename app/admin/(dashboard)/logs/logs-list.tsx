@@ -23,6 +23,8 @@ export interface LogRow {
     started?: string;
     /** Events only. */
     message?: string;
+    /** Detail page for this row, when there is one. */
+    href?: string;
     category: string;
     statusLabel: string;
     statusVariant: BadgeVariant;
@@ -57,7 +59,7 @@ export function LogsList({
         minWidth: 230,
         cellRenderer: StackedCell,
         text: (row) => `${row.title} ${row.category}`,
-        get: (row) => ({ primary: row.title, secondary: row.subtitle }),
+        get: (row) => ({ primary: row.title, secondary: row.subtitle, href: row.href }),
     });
 
     const targetColumn: ListViewColumn<LogRow> = {
@@ -139,7 +141,7 @@ export function LogsList({
                     ]}
                 />
             }
-            emptyIcon={<Activity className="h-10 w-10 text-ink-300" />}
+            emptyIcon={<Activity className="h-10 w-10 text-muted-foreground/50" />}
             emptyTitle={view === 'operations' ? 'No operations recorded yet' : 'No events recorded yet'}
             emptyMessage="Provisioning, migrations, backups and health checks all record their steps here."
         />

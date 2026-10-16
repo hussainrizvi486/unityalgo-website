@@ -4,7 +4,10 @@ import { controller, ControllerError } from '@/lib/controller-client';
 import { recordSiteNotification } from '@/lib/customer-notifications';
 import { Notice } from '@/components/ui/notice';
 import { SiteStatus } from './site-status';
-import { prisma } from '@/lib/db';
+import { inArray } from 'drizzle-orm';
+import { db, schema } from '@/lib/db';
+import { listAlgoSuitePlans } from '@/lib/products';
+import { formatPlanPrice } from '@/lib/pricing';
 export default async function SiteDetailPage({
     params,
 }: {
@@ -26,18 +29,30 @@ export default async function SiteDetailPage({
         );
     }
     await recordSiteNotification(user.id, site);
-    const applications = await prisma.appCatalog.findMany({
-        where: { frappeAppName: { in: site.apps } },
-        select: { name: true, frappeAppName: true },
-    });
+    const applications = site.apps.length
+        ? await db
+              .select({ name: schema.appCatalog.name, frappeAppName: schema.appCatalog.frappeAppName })
+              .from(schema.appCatalog)
+              .where(inArray(schema.appCatalog.frappeAppName, site.apps))
+        : [];
     const applicationNames = Object.fromEntries(
         applications
             .filter((app) => app.frappeAppName !== 'erpnext')
             .map((app) => [app.frappeAppName!, app.name]),
     );
+    const plans = await listAlgoSuitePlans();
     return (
         <SiteStatus
             initial={site}
+            plans={plans.map((plan) => ({
+                id: plan.id,
+                name: plan.name,
+                price: formatPlanPrice(plan),
+                users: plan.userLimit,
+                vcpu: plan.vcpu,
+                ramMb: plan.ramMb,
+                storageGb: plan.storageGb,
+            }))}
             applicationNames={{
                 ...applicationNames,
                 erpnext: 'ERPNext',

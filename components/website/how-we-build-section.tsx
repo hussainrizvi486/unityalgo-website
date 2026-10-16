@@ -61,9 +61,9 @@ const stages: BuildStage[] = [
 ];
 
 const roleStyles: Record<BuildRole, string> = {
-    'Human + AI': 'text-warning-500 border-warning-500/40',
-    AI: 'text-warning-500 border-warning-500/40',
-    Human: 'text-success-500 border-success-500/40',
+    'Human + AI': 'text-warning border-warning/40',
+    AI: 'text-warning border-warning/40',
+    Human: 'text-success border-success/40',
 };
 
 function RoleBadge({ role }: { role: BuildRole }) {
@@ -91,7 +91,7 @@ export function HowWeBuildSection() {
     }, []);
 
     return (
-        <section className="relative overflow-hidden bg-ink-950 site-section-spacing">
+        <section className="relative overflow-hidden bg-primary site-section-spacing">
             <Image
                 src="/images/how-we-build.jpg"
                 alt=""
@@ -99,7 +99,7 @@ export function HowWeBuildSection() {
                 sizes="100vw"
                 className="object-cover"
             />
-            <div className="absolute inset-0 bg-linear-to-r from-ink-950 via-ink-950/85 to-ink-950/30" />
+            <div className="absolute inset-0 bg-linear-to-r from-primary via-primary/85 to-primary/30" />
 
             <div className="site-container relative z-10 site-gutters">
                 <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-start">
@@ -110,11 +110,11 @@ export function HowWeBuildSection() {
                         transition={{ duration: 0.6 }}
                         className="lg:sticky lg:top-32"
                     >
-                        <p className="text-xs font-semibold text-white/60 tracking-widest uppercase mb-4">How We Build</p>
-                        <h2 className="text-4xl md:text-5xl font-bold text-white tracking-tight mb-6 text-balance">
+                        <p className="text-xs font-semibold text-primary-foreground/60 tracking-widest uppercase mb-4">How We Build</p>
+                        <h2 className="text-4xl md:text-5xl text-primary-foreground tracking-tight mb-6 text-balance">
                             A delivery method built for the AI era, not retrofitted to it.
                         </h2>
-                        <p className="text-white/70 leading-relaxed text-balance">
+                        <p className="text-primary-foreground/70 leading-relaxed text-balance">
                             Seven named stages. Continuous iteration. AI runs alongside us in every conversation — surfacing blind spots, edge cases, and contradictions before they become rework — while senior engineers and Human QA own the decisions that move risk and ship the product. You always know who is driving, what you&apos;re approving, and what comes next.
                         </p>
                     </motion.div>
@@ -131,19 +131,19 @@ export function HowWeBuildSection() {
                                     transition={{ delay: idx * 0.08, duration: 0.5 }}
                                     className={cn(
                                         'p-6 md:p-8 rounded-xl',
-                                        'bg-black/30 backdrop-blur-sm border border-white/10'
+                                        'bg-scrim/30 backdrop-blur-sm border border-primary-foreground/10'
                                     )}
                                 >
-                                    <div className="flex items-center justify-between gap-4 mb-3">
+                                    <div className="flex items-center justify-between gap-gap mb-3">
                                         <div className="flex items-center gap-3">
                                             <span className={cn('text-sm font-bold', roleStyles[stage.role].split(' ')[0])}>
                                                 {stage.number}
                                             </span>
-                                            <h3 className="text-xl font-bold text-white">{stage.title}</h3>
+                                            <h3 className="text-xl text-primary-foreground">{stage.title}</h3>
                                         </div>
                                         <RoleBadge role={stage.role} />
                                     </div>
-                                    <p className="text-sm text-white/70 leading-relaxed">{stage.description}</p>
+                                    <p className="text-sm text-primary-foreground/70 leading-relaxed">{stage.description}</p>
                                 </motion.div>
                             ))}
                             <button
@@ -157,15 +157,15 @@ export function HowWeBuildSection() {
                                     }
                                 }}
                                 className={cn(
-                                    'absolute right-3 bottom-3 w-12 h-12 rounded-full flex items-center justify-center bg-white/8 border border-white/10 shadow-backdrop transition-transform',
+                                    'absolute right-3 bottom-3 w-12 h-12 rounded-full flex items-center justify-center bg-primary-foreground/8 border border-primary-foreground/10 shadow-backdrop transition-transform',
                                     'hover:scale-105',
                                     !isAtBottom ? 'animate-bob' : ''
                                 )}
                             >
                                 {!isAtBottom ? (
-                                    <ChevronDown size={20} className="text-white" />
+                                    <ChevronDown size={20} className="text-primary-foreground" />
                                 ) : (
-                                    <ChevronUp size={20} className="text-white" />
+                                    <ChevronUp size={20} className="text-primary-foreground" />
                                 )}
                             </button>
                         </div>

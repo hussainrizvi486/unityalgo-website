@@ -9,11 +9,11 @@ import { PlugZap } from 'lucide-react';
  */
 export function ControllerOffline({ message }: { message: string }) {
     return (
-        <div className="flex min-h-72 flex-col items-center justify-center rounded-xl border border-dashed border-warning-500/40 bg-warning-50 p-8 text-center">
-            <PlugZap className="h-10 w-10 text-warning-600" />
-            <h2 className="mt-4 text-lg font-bold text-ink-900">Controller API unavailable</h2>
-            <p className="mt-2 portal-form-narrow portal-text-body text-warning-700">{message}</p>
-            <pre className="mt-5 rounded-md bg-white/70 px-4 py-3 text-left portal-text-caption text-ink-700">
+        <div className="flex min-h-72 flex-col items-center justify-center rounded-xl border border-dashed border-warning/40 bg-warning/10 p-8 text-center">
+            <PlugZap className="h-10 w-10 text-warning" />
+            <h2 className="mt-4 text-lg text-foreground">Controller API unavailable</h2>
+            <p className="mt-2 portal-form-narrow portal-text-body text-warning">{message}</p>
+            <pre className="mt-5 rounded-md bg-card/70 px-4 py-3 text-left portal-text-caption text-foreground/80">
                 cd controller{'\n'}
                 source env/bin/activate{'\n'}
                 python main.py serve

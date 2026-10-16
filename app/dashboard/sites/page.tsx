@@ -24,13 +24,13 @@ export default async function SitesPage() {
         <div className="mx-auto portal-page">
             <div className="flex flex-wrap items-start justify-between gap-5">
                 <div>
-                    <p className="portal-text-caption font-semibold uppercase tracking-wider text-brand">
+                    <p className="portal-text-caption font-semibold uppercase tracking-wider text-primary">
                         Your workspaces
                     </p>
                     <h1 className="portal-page-title mt-2">
                         Sites
                     </h1>
-                    <p className="mt-3 portal-text-body text-ink-600">
+                    <p className="mt-3 portal-text-body text-foreground/70">
                         Manage your Frappe sites and follow their installation
                         progress.
                     </p>
@@ -42,9 +42,11 @@ export default async function SitesPage() {
                                 (site) =>
                                     ![
                                         'ready',
+                                        'stopped',
+                                        'deactivated',
                                         'failed',
                                         'cleanup_required',
-                                    ].includes(site.status),
+                                    ].includes(site.status) || Boolean(site.activity),
                             ),
                         )}
                     />
@@ -62,11 +64,11 @@ export default async function SitesPage() {
                     have not been changed. Try refreshing or contact support.
                 </Notice>
             ) : sites.length ? (
-                <div className="mt-8 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+                <div className="mt-8 grid gap-gap-lg md:grid-cols-2 xl:grid-cols-3">
                     {sites.map((site) => (
                         <PortalPanel key={site.id}>
                             <div className="flex items-center justify-between gap-3">
-                                <Globe className="size-6 text-brand" />
+                                <Globe className="size-6 text-primary" />
                                 <Badge
                                     variant={
                                         site.status === 'ready'
@@ -82,21 +84,21 @@ export default async function SitesPage() {
                                     {site.status.replaceAll('_', ' ')}
                                 </Badge>
                             </div>
-                            <h2 className="mt-5 text-xl font-semibold">
+                            <h2 className="mt-5 text-xl ">
                                 {site.name}
                             </h2>
-                            <p className="mt-2 break-all portal-text-body text-ink-500">
+                            <p className="mt-2 break-all portal-text-body text-muted-foreground">
                                 {site.domain}
                             </p>
-                            <p className="mt-4 portal-text-caption text-ink-500">
+                            <p className="mt-4 portal-text-caption text-muted-foreground">
                                 Server: {site.server_name}
                             </p>
-                            <p className="mt-3 min-h-12 portal-text-body leading-6 text-ink-600">
+                            <p className="mt-3 min-h-12 portal-text-body leading-6 text-foreground/70">
                                 {site.message}
                             </p>
                             <Link
                                 href={`/dashboard/sites/${site.id}`}
-                                className="mt-5 inline-flex items-center gap-2 portal-text-body font-semibold text-brand"
+                                className="mt-5 inline-flex items-center gap-2 portal-text-body font-semibold text-primary"
                             >
                                 View site <ArrowUpRight className="size-4" />
                             </Link>
@@ -104,12 +106,12 @@ export default async function SitesPage() {
                     ))}
                 </div>
             ) : (
-                <div className="mt-10 rounded-xl border border-dashed border-ink-300 px-6 py-16 text-center">
-                    <Globe className="mx-auto size-10 text-ink-400" />
-                    <h2 className="mt-5 text-xl font-semibold">
+                <div className="mt-10 rounded-xl border border-dashed border-input px-6 py-16 text-center">
+                    <Globe className="mx-auto size-10 text-muted-foreground" />
+                    <h2 className="mt-5 text-xl ">
                         Your first site starts here.
                     </h2>
-                    <p className="mx-auto mt-3 max-w-md portal-text-body leading-7 text-ink-600">
+                    <p className="mx-auto mt-3 max-w-md portal-text-body leading-7 text-foreground/70">
                         Choose a name and your applications. We will assign an
                         available server and start the Frappe installation.
                     </p>

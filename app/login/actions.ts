@@ -3,7 +3,8 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import bcrypt from 'bcryptjs';
-import { prisma } from '@/lib/db';
+import { eq } from 'drizzle-orm';
+import { db, schema } from '@/lib/db';
 import { createSessionToken, SESSION_COOKIE, SESSION_DURATION_SECONDS } from '@/lib/auth';
 import {
     CUSTOMER_SESSION_COOKIE,
@@ -54,7 +55,7 @@ export async function loginAction(
     const password = String(formData.get('password') ?? '');
     const next = String(formData.get('next') ?? '') || null;
 
-    const user = await prisma.user.findUnique({ where: { email } });
+    const user = await db.query.user.findFirst({ where: eq(schema.user.email, email) });
 
     // One message for "no such account" and "wrong password" alike: telling
     // them apart lets anyone enumerate which addresses have accounts. bcrypt

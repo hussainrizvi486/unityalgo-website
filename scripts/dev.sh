@@ -105,12 +105,15 @@ if ! (command -v redis-cli >/dev/null 2>&1 && redis-cli ping >/dev/null 2>&1); t
 fi
 
 # --- start --------------------------------------------------------------
-log "starting next(:3000) controller(:8000) terminal(:8765)$([[ $REDIS_OK == 1 ]] && printf ' worker')"
+log "starting next(:3000) controller(:8000) terminal(:8765)$([[ $REDIS_OK == 1 ]] && printf ' worker beat')"
 
 run "next"       "$BLUE"    npx next dev
 run "controller" "$GREEN"   bash -c "cd controller && source env/bin/activate && exec python main.py serve"
 run "terminal"   "$MAGENTA" bash -c "cd controller && source env/bin/activate && exec python ws_terminal_main.py"
 [[ $REDIS_OK == 1 ]] && run "worker" "$YELLOW" bash -c "cd controller && source env/bin/activate && exec python main.py worker"
+# Beat is what fires the periodic jobs: scheduled site backups, the seat/storage audit and the health sweep.
+# Exactly one scheduler may run, so it is started here and nowhere else.
+[[ $REDIS_OK == 1 ]] && run "beat"   "$RED"    bash -c "cd controller && source env/bin/activate && exec python main.py beat"
 
 log "Ctrl-C to stop all of them"
 wait

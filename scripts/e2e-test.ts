@@ -19,8 +19,8 @@
  * is skipped automatically if it is not reachable.
  */
 import 'dotenv/config';
-import { PrismaClient } from '@prisma/client';
-import { PrismaPg } from '@prisma/adapter-pg';
+import { and, asc, desc, eq, inArray, isNotNull, like, sql } from 'drizzle-orm';
+import { closeDb, db, schema } from '../lib/db';
 import { SignJWT } from 'jose';
 import bcrypt from 'bcryptjs';
 import { readFile } from 'fs/promises';
@@ -31,8 +31,6 @@ const CONTROLLER_URL = process.env.CONTROLLER_URL ?? 'http://localhost:8000';
 const SESSION_SECRET = process.env.SESSION_SECRET;
 const E2E_PREFIX = 'e2e-test-';
 
-const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
-const prisma = new PrismaClient({ adapter });
 
 // ---------------------------------------------------------------- reporting
 
@@ -69,7 +67,7 @@ function info(message: string) {
 
 async function mintCustomerSession(userId: string, email: string) {
     const key = new TextEncoder().encode(SESSION_SECRET);
-    const session = await prisma.loginSession.create({ data: { userId, userAgent: 'E2E test', expiresAt: new Date(Date.now() + 3600_000) } });
+    const [session] = await db.insert(schema.loginSession).values({ userId, userAgent: 'E2E test', expiresAt: new Date(Date.now() + 3600_000) }).returning();
     return new SignJWT({ userId, email, sessionId: session.id })
         .setProtectedHeader({ alg: 'HS256' })
         .setIssuedAt()
@@ -189,38 +187,31 @@ async function expectRedirect(path: string, expectedPrefix: string, cookie?: str
 
 async function cleanup() {
     // Order matters: children before parents, since not every FK cascades.
-    const users = await prisma.user.findMany({
-        where: { email: { startsWith: E2E_PREFIX } },
-        select: { id: true },
-    });
+    const users = await db.select({ id: schema.user.id }).from(schema.user).where(like(schema.user.email, `${E2E_PREFIX}%`));
     const userIds = users.map((u) => u.id);
 
     if (userIds.length) {
-        const tickets = await prisma.supportTicket.findMany({
-            where: { userId: { in: userIds } },
-            select: { id: true },
-        });
+        const tickets = await db.select({ id: schema.supportTicket.id }).from(schema.supportTicket).where(inArray(schema.supportTicket.userId, userIds));
         // Comments are polymorphic (entityType/entityId), so they have no FK
         // to cascade from — they must be deleted explicitly.
-        await prisma.comment.deleteMany({
-            where: { entityType: 'SUPPORT_TICKET', entityId: { in: tickets.map((t) => t.id) } },
-        });
-        await prisma.comment.deleteMany({ where: { authorId: { in: userIds } } });
-        await prisma.user.deleteMany({ where: { id: { in: userIds } } });
+        if (tickets.length) {
+            await db.delete(schema.comment).where(and(
+                eq(schema.comment.entityType, 'SUPPORT_TICKET'),
+                inArray(schema.comment.entityId, tickets.map((t) => t.id)),
+            ));
+        }
+        await db.delete(schema.comment).where(inArray(schema.comment.authorId, userIds));
+        await db.delete(schema.user).where(inArray(schema.user.id, userIds));
     }
 
-    await prisma.emailVerification.deleteMany({ where: { email: { startsWith: E2E_PREFIX } } });
+    await db.delete(schema.emailVerification).where(like(schema.emailVerification.email, `${E2E_PREFIX}%`));
 
-    // Controller-owned rows. Raw SQL because Prisma does not map these tables
+    // Controller-owned rows. Raw SQL because Drizzle does not map these tables
     // (they belong to Alembic — see controller/README.md), and guarded because
     // they only exist once the controller's migrations have been applied.
     try {
-        await prisma.$executeRawUnsafe(
-            `DELETE FROM tenants WHERE tenant_slug LIKE '${E2E_PREFIX}%'`,
-        );
-        await prisma.$executeRawUnsafe(
-            `DELETE FROM database_connections WHERE name LIKE '${E2E_PREFIX}%'`,
-        );
+        await db.execute(sql.raw(`DELETE FROM tenants WHERE tenant_slug LIKE '${E2E_PREFIX}%'`));
+        await db.execute(sql.raw(`DELETE FROM database_connections WHERE name LIKE '${E2E_PREFIX}%'`));
     } catch {
         // Controller schema not present in this database — nothing to clean.
     }
@@ -290,22 +281,20 @@ async function main() {
     // and vice versa. This is the security property the two-cookie design exists
     // to guarantee, so it is worth asserting explicitly rather than assuming.
     section('Cross-role session isolation');
-    const throwawayCustomer = await prisma.user.create({
-        data: {
+    const [throwawayCustomer] = await db.insert(schema.user).values({
             email: `${E2E_PREFIX}isolation@example.com`,
             passwordHash: await bcrypt.hash('irrelevant', 10),
             role: 'CUSTOMER',
             firstName: 'Iso',
             lastName: 'Lation',
-        },
-    });
+        }).returning();
     const isoCustomerCookie = `unityalgo_customer_session=${await mintCustomerSession(
         throwawayCustomer.id,
         throwawayCustomer.email,
     )}`;
     await expectRedirect('/admin/users', '/login', isoCustomerCookie);
 
-    const adminUser = await prisma.user.findFirst({ where: { role: 'ADMIN' } });
+    const adminUser = await db.query.user.findFirst({ where: eq(schema.user.role, 'ADMIN') });
     if (adminUser) {
         const adminCookie = `unityalgo_admin_session=${await mintAdminSession(adminUser.email)}`;
         await expectRedirect('/dashboard', '/login', adminCookie);
@@ -317,16 +306,14 @@ async function main() {
     section('Customer data flow');
 
     const customerEmail = `${E2E_PREFIX}customer@example.com`;
-    const customer = await prisma.user.create({
-        data: {
+    const [customer] = await db.insert(schema.user).values({
             email: customerEmail,
             passwordHash: await bcrypt.hash('E2ePassword123', 10),
             role: 'CUSTOMER',
             firstName: 'Eve',
             lastName: 'Tester',
             emailVerifiedAt: new Date(),
-        },
-    });
+        }).returning();
     check('customer created', !!customer.id);
 
     const customerCookie = `unityalgo_customer_session=${await mintCustomerSession(customer.id, customer.email)}`;
@@ -338,22 +325,20 @@ async function main() {
     await expectRenders('/dashboard/plans', customerCookie, 'Choose a plan');
 
     // --- purchase -----------------------------------------------------------
-    const plan = await prisma.plan.findFirst({
-        where: { isActive: true, priceAmount: { not: null } },
-        orderBy: [{ productId: 'asc' }, { sortOrder: 'asc' }],
+    const plan = await db.query.plan.findFirst({
+        where: and(eq(schema.plan.isActive, true), isNotNull(schema.plan.priceAmount)),
+        orderBy: [asc(schema.plan.productId), asc(schema.plan.sortOrder)],
     });
     if (!plan) {
         info('no purchasable plan seeded — run `npm run seed:plans` first. Skipping purchase flow.');
     } else {
-        const subscription = await prisma.subscription.create({
-            data: {
+        const [subscription] = await db.insert(schema.subscription).values({
                 userId: customer.id,
                 planId: plan.id,
                 productId: plan.productId,
                 status: 'ACTIVE',
                 currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-            },
-        });
+            }).returning();
         check(`subscription created (${plan.productId}/${plan.name})`, !!subscription.id);
 
         await expectRenders('/dashboard', customerCookie, plan.name);
@@ -363,45 +348,40 @@ async function main() {
         // just app logic — assert the constraint really exists.
         let duplicateRejected = false;
         try {
-            await prisma.subscription.create({
-                data: { userId: customer.id, planId: plan.id, productId: plan.productId, status: 'ACTIVE' },
-            });
+            await db.insert(schema.subscription).values({ userId: customer.id, planId: plan.id, productId: plan.productId, status: 'ACTIVE' });
         } catch {
             duplicateRejected = true;
         }
         check('duplicate subscription for same product rejected by DB constraint', duplicateRejected);
 
         // --- add-ons --------------------------------------------------------
-        const addOn = await prisma.addOn.findFirst({ where: { productId: plan.productId, isActive: true } });
+        const addOn = await db.query.addOn.findFirst({ where: and(eq(schema.addOn.productId, plan.productId), eq(schema.addOn.isActive, true)) });
         if (!addOn) {
             info(`no active add-on for ${plan.productId} — skipping add-on flow`);
         } else {
-            await prisma.subscriptionAddOn.create({
-                data: { subscriptionId: subscription.id, addOnId: addOn.id },
-            });
-            const withAddOn = await prisma.subscription.findUnique({
-                where: { id: subscription.id },
-                include: { addOns: { include: { addOn: true } } },
+            await db.insert(schema.subscriptionAddOn).values({ subscriptionId: subscription.id, addOnId: addOn.id });
+            const withAddOn = await db.query.subscription.findFirst({
+                where: eq(schema.subscription.id, subscription.id),
+                with: { addOns: { with: { addOn: true } } },
             });
             check('add-on attached to subscription', withAddOn?.addOns.length === 1);
             await expectRenders('/dashboard/subscription', customerCookie, addOn.name);
 
             let duplicateAddOnRejected = false;
             try {
-                await prisma.subscriptionAddOn.create({
-                    data: { subscriptionId: subscription.id, addOnId: addOn.id },
-                });
+                await db.insert(schema.subscriptionAddOn).values({ subscriptionId: subscription.id, addOnId: addOn.id });
             } catch {
                 duplicateAddOnRejected = true;
             }
             check('duplicate add-on rejected by DB constraint', duplicateAddOnRejected);
 
-            await prisma.subscriptionAddOn.deleteMany({
-                where: { subscriptionId: subscription.id, addOnId: addOn.id },
-            });
-            const afterRemove = await prisma.subscription.findUnique({
-                where: { id: subscription.id },
-                include: { addOns: true },
+            await db.delete(schema.subscriptionAddOn).where(and(
+                eq(schema.subscriptionAddOn.subscriptionId, subscription.id),
+                eq(schema.subscriptionAddOn.addOnId, addOn.id),
+            ));
+            const afterRemove = await db.query.subscription.findFirst({
+                where: eq(schema.subscription.id, subscription.id),
+                with: { addOns: true },
             });
             check('add-on removed from subscription', afterRemove?.addOns.length === 0);
         }
@@ -413,16 +393,13 @@ async function main() {
     await expectRenders('/dashboard/settings/profile', customerCookie);
     await expectRenders('/dashboard/settings/password', customerCookie);
 
-    await prisma.user.update({
-        where: { id: customer.id },
-        data: {
+    await db.update(schema.user).set({
             username: `${E2E_PREFIX}evetester`,
             phone: '+1 555 010 0100',
             company: 'E2E Industries',
             companyEmail: 'ops@e2e-industries.test',
-        },
-    });
-    const updatedProfile = await prisma.user.findUnique({ where: { id: customer.id } });
+        }).where(eq(schema.user.id, customer.id));
+    const updatedProfile = await db.query.user.findFirst({ where: eq(schema.user.id, customer.id) });
     check('profile fields persist (username/phone/company/companyEmail)',
         updatedProfile?.username === `${E2E_PREFIX}evetester`
         && updatedProfile?.phone === '+1 555 010 0100'
@@ -434,25 +411,19 @@ async function main() {
     // since most customers will never set one.
     let duplicateUsernameRejected = false;
     try {
-        await prisma.user.create({
-            data: {
+        await db.insert(schema.user).values({
                 email: `${E2E_PREFIX}dupe-username@example.com`,
                 passwordHash: 'x',
                 role: 'CUSTOMER',
                 username: `${E2E_PREFIX}evetester`,
-            },
-        });
+            });
     } catch {
         duplicateUsernameRejected = true;
     }
     check('duplicate username rejected by DB constraint', duplicateUsernameRejected);
 
-    const nullUsernameA = await prisma.user.create({
-        data: { email: `${E2E_PREFIX}null-a@example.com`, passwordHash: 'x', role: 'CUSTOMER' },
-    });
-    const nullUsernameB = await prisma.user.create({
-        data: { email: `${E2E_PREFIX}null-b@example.com`, passwordHash: 'x', role: 'CUSTOMER' },
-    });
+    const [nullUsernameA] = await db.insert(schema.user).values({ email: `${E2E_PREFIX}null-a@example.com`, passwordHash: 'x', role: 'CUSTOMER' }).returning();
+    const [nullUsernameB] = await db.insert(schema.user).values({ email: `${E2E_PREFIX}null-b@example.com`, passwordHash: 'x', role: 'CUSTOMER' }).returning();
     check('multiple users may have NULL username', !!nullUsernameA.id && !!nullUsernameB.id);
 
     // --- addresses ----------------------------------------------------------
@@ -460,8 +431,7 @@ async function main() {
     await expectRenders('/dashboard/settings/addresses', customerCookie, 'No addresses yet');
     await expectRenders('/dashboard/settings/addresses/new', customerCookie);
 
-    const first = await prisma.address.create({
-        data: {
+    const [first] = await db.insert(schema.address).values({
             userId: customer.id,
             addressLine1: '1 First Street',
             city: 'Metropolis',
@@ -469,12 +439,10 @@ async function main() {
             country: 'USA',
             postcode: '10001',
             isDefault: true,
-        },
-    });
+        }).returning();
     check('first address is default', first.isDefault);
 
-    const second = await prisma.address.create({
-        data: {
+    const [second] = await db.insert(schema.address).values({
             userId: customer.id,
             addressLine1: '2 Second Avenue',
             city: 'Gotham',
@@ -482,29 +450,28 @@ async function main() {
             country: 'USA',
             postcode: '07001',
             isDefault: false,
-        },
-    });
+        }).returning();
 
     // Promoting a default must demote the previous one, or the UI would show
     // two defaults.
-    await prisma.$transaction([
-        prisma.address.updateMany({ where: { userId: customer.id }, data: { isDefault: false } }),
-        prisma.address.update({ where: { id: second.id }, data: { isDefault: true } }),
-    ]);
-    const afterPromote = await prisma.address.findMany({ where: { userId: customer.id } });
+    await db.transaction(async (tx) => {
+        await tx.update(schema.address).set({ isDefault: false }).where(eq(schema.address.userId, customer.id));
+        await tx.update(schema.address).set({ isDefault: true }).where(eq(schema.address.id, second.id));
+    });
+    const afterPromote = await db.query.address.findMany({ where: eq(schema.address.userId, customer.id) });
     check('exactly one default after promoting the second address',
         afterPromote.filter((a) => a.isDefault).length === 1
         && afterPromote.find((a) => a.isDefault)?.id === second.id);
 
     // Deleting the default should promote a survivor, so a customer with any
     // addresses always has exactly one default.
-    await prisma.address.delete({ where: { id: second.id } });
-    const fallback = await prisma.address.findFirst({
-        where: { userId: customer.id },
-        orderBy: { createdAt: 'desc' },
+    await db.delete(schema.address).where(eq(schema.address.id, second.id));
+    const fallback = await db.query.address.findFirst({
+        where: eq(schema.address.userId, customer.id),
+        orderBy: desc(schema.address.createdAt),
     });
-    if (fallback) await prisma.address.update({ where: { id: fallback.id }, data: { isDefault: true } });
-    const afterDelete = await prisma.address.findMany({ where: { userId: customer.id } });
+    if (fallback) await db.update(schema.address).set({ isDefault: true }).where(eq(schema.address.id, fallback.id));
+    const afterDelete = await db.query.address.findMany({ where: eq(schema.address.userId, customer.id) });
     check('a default survives deletion of the previous default',
         afterDelete.length === 1 && afterDelete[0].isDefault);
     await expectRenders('/dashboard/settings/addresses', customerCookie, '1 First Street');
@@ -514,55 +481,47 @@ async function main() {
     await expectRenders('/dashboard/support', customerCookie, 'No support tickets yet');
     await expectRenders('/dashboard/support/new', customerCookie);
 
-    const ticket = await prisma.supportTicket.create({
-        data: {
+    const [ticket] = await db.insert(schema.supportTicket).values({
             userId: customer.id,
             subject: 'E2E cannot access store',
             description: 'Raised by the automated end-to-end suite.',
             status: 'OPEN',
-        },
-    });
+        }).returning();
     check('ticket created', !!ticket.id);
     await expectRenders('/dashboard/support', customerCookie, 'E2E cannot access store');
     await expectRenders(`/dashboard/support/${ticket.id}`, customerCookie, 'E2E cannot access store');
 
-    await prisma.comment.create({
-        data: {
+    await db.insert(schema.comment).values({
             entityType: 'SUPPORT_TICKET',
             entityId: ticket.id,
             authorId: customer.id,
             body: 'Customer reply from the E2E suite.',
-        },
-    });
+        });
     if (adminUser) {
-        await prisma.comment.create({
-            data: {
+        await db.insert(schema.comment).values({
                 entityType: 'SUPPORT_TICKET',
                 entityId: ticket.id,
                 authorId: adminUser.id,
                 body: 'Admin reply from the E2E suite.',
-            },
-        });
+            });
     }
-    const thread = await prisma.comment.findMany({
-        where: { entityType: 'SUPPORT_TICKET', entityId: ticket.id },
-        orderBy: { createdAt: 'asc' },
+    const thread = await db.query.comment.findMany({
+        where: and(eq(schema.comment.entityType, 'SUPPORT_TICKET'), eq(schema.comment.entityId, ticket.id)),
+        orderBy: asc(schema.comment.createdAt),
     });
     check(`comment thread ordered oldest-first (${thread.length} comments)`, thread.length >= 1);
     await expectRenders(`/dashboard/support/${ticket.id}`, customerCookie, 'Customer reply from the E2E suite.');
 
     // The comment table is deliberately generic; if it were secretly
     // ticket-only this would fail and the abstraction would be a lie.
-    await prisma.comment.create({
-        data: {
+    await db.insert(schema.comment).values({
             entityType: 'PLAN',
             entityId: 'e2e-non-ticket-entity',
             authorId: customer.id,
             body: 'Comment attached to a non-ticket entity.',
-        },
-    });
-    const planComments = await prisma.comment.findMany({
-        where: { entityType: 'PLAN', entityId: 'e2e-non-ticket-entity' },
+        });
+    const planComments = await db.query.comment.findMany({
+        where: and(eq(schema.comment.entityType, 'PLAN'), eq(schema.comment.entityId, 'e2e-non-ticket-entity')),
     });
     check('generic comment table accepts a non-ticket entityType', planComments.length === 1);
 
@@ -629,8 +588,8 @@ async function main() {
         await expectRedirect('/admin/servers', '/login');
         await expectRedirect('/admin/tenants', '/login');
 
-        await prisma.supportTicket.update({ where: { id: ticket.id }, data: { status: 'RESOLVED' } });
-        const resolved = await prisma.supportTicket.findUnique({ where: { id: ticket.id } });
+        await db.update(schema.supportTicket).set({ status: 'RESOLVED' }).where(eq(schema.supportTicket.id, ticket.id));
+        const resolved = await db.query.supportTicket.findFirst({ where: eq(schema.supportTicket.id, ticket.id) });
         check('admin can change ticket status to RESOLVED', resolved?.status === 'RESOLVED');
         await expectRenders(`/dashboard/support/${ticket.id}`, customerCookie, 'Resolved');
     }
@@ -681,10 +640,10 @@ async function main() {
         check('controller admin SPA is removed', spa.status === 404, `status ${spa.status}`);
 
         // Both migration tools must own tables in the one shared database.
-        const tables = await prisma.$queryRaw<Array<{ table_name: string }>>`
+        const { rows: tables } = await db.execute<{ table_name: string }>(sql`
             SELECT table_name FROM information_schema.tables
             WHERE table_schema = 'public'
-        `;
+        `);
         const names = tables.map((t) => t.table_name);
         check('shared DB holds Prisma-owned tables', names.includes('User') && names.includes('Subscription'));
         check('shared DB holds Alembic-owned tables',
@@ -820,42 +779,32 @@ async function main() {
             // of the subscription's rows, not independently-settable fields.
             section('Tenant ↔ customer ↔ plan');
 
-            const linkUser = await prisma.user.create({
-                data: {
+            const [linkUser] = await db.insert(schema.user).values({
                     email: `${E2E_PREFIX}linked@example.com`,
                     passwordHash: 'x',
                     role: 'CUSTOMER',
                     name: 'Linked Customer',
-                },
-            });
-            const linkPlan = await prisma.plan.create({
-                data: {
+                }).returning();
+            const [linkPlan] = await db.insert(schema.plan).values({
                     productId: 'unity_commerce',
                     name: 'E2E Launch',
                     slug: `${E2E_PREFIX}launch`,
                     priceAmount: 49,
-                },
-            });
-            const linkSub = await prisma.subscription.create({
-                data: {
+                }).returning();
+            const [linkSub] = await db.insert(schema.subscription).values({
                     userId: linkUser.id, planId: linkPlan.id,
                     productId: 'unity_commerce', status: 'ACTIVE',
-                },
-            });
+                }).returning();
             // A second product for the same person, to prove only the
             // UnityCommerce one can carry a storefront.
-            const algoPlan = await prisma.plan.create({
-                data: {
+            const [algoPlan] = await db.insert(schema.plan).values({
                     productId: 'algo_suite', name: 'E2E Algo',
                     slug: `${E2E_PREFIX}algo`, priceAmount: 29,
-                },
-            });
-            const algoSub = await prisma.subscription.create({
-                data: {
+                }).returning();
+            const [algoSub] = await db.insert(schema.subscription).values({
                     userId: linkUser.id, planId: algoPlan.id,
                     productId: 'algo_suite', status: 'ACTIVE',
-                },
-            });
+                }).returning();
 
             const slug = `${E2E_PREFIX}linked`.replace(/[^a-z0-9-]/g, '-');
             const linkedRes = await api('/api/v1/tenants', {
@@ -934,9 +883,9 @@ async function main() {
                 await api(`/api/v1/tenants/${linked.id}?force=true`, { method: 'DELETE' });
             }
 
-            await prisma.subscription.deleteMany({ where: { id: { in: [linkSub.id, algoSub.id] } } });
-            await prisma.plan.deleteMany({ where: { id: { in: [linkPlan.id, algoPlan.id] } } });
-            await prisma.user.delete({ where: { id: linkUser.id } });
+            await db.delete(schema.subscription).where(inArray(schema.subscription.id, [linkSub.id, algoSub.id]));
+            await db.delete(schema.plan).where(inArray(schema.plan.id, [linkPlan.id, algoPlan.id]));
+            await db.delete(schema.user).where(eq(schema.user.id, linkUser.id));
         } else {
             info('CONTROLLER_INTERNAL_API_KEY not set — skipping cluster checks');
         }
@@ -975,9 +924,9 @@ async function main() {
 
             // Needs a real server row: auth is checked before the server is
             // looked up, so a valid token against a missing server still 404s.
-            const serverRows = await prisma.$queryRaw<Array<{ id: string }>>`
+            const { rows: serverRows } = await db.execute<{ id: string }>(sql`
                 SELECT id::text FROM server_nodes WHERE is_active = true LIMIT 1
-            `;
+            `);
 
             if (serverRows.length === 0) {
                 info('no active server registered — skipping positive terminal-token checks');
@@ -1042,12 +991,12 @@ async function main() {
             'controller/alembic/env.py must pass include_object to context.configure');
 
         // The Prisma side must still own its tables outright.
-        const prismaOwned = await prisma.$queryRaw<Array<{ table_name: string }>>`
+        const websiteOwned = (await db.execute<{ table_name: string }>(sql`
             SELECT table_name FROM information_schema.tables
             WHERE table_schema = 'public' AND table_name IN ('User','Subscription','BillingRecord')
-        `;
-        check('Prisma-owned tables still present and intact', prismaOwned.length === 3,
-            `found ${prismaOwned.length} of 3`);
+        `)).rows;
+        check('website-owned tables still present and intact', websiteOwned.length === 3,
+            `found ${websiteOwned.length} of 3`);
 
         // The identity merge should have removed the controller's parallel
         // copies of people/billing entirely.
@@ -1057,7 +1006,7 @@ async function main() {
 
         // Cross-tool foreign keys are the thing most likely to be quietly
         // missing after a schema change, so assert them directly.
-        const fks = await prisma.$queryRaw<Array<{ constraint_name: string }>>`
+        const fks = (await db.execute<{ constraint_name: string }>(sql`
             SELECT tc.constraint_name
             FROM information_schema.table_constraints tc
             WHERE tc.constraint_type = 'FOREIGN KEY'
@@ -1066,7 +1015,7 @@ async function main() {
                 'tenants_subscription_id_fkey',
                 'BillingRecord_tenantId_fkey'
               )
-        `;
+        `)).rows;
         check('cross-tool foreign keys exist (tenants↔User/Subscription, BillingRecord↔tenants)',
             fks.length === 3, `found ${fks.length} of 3`);
     }
@@ -1086,7 +1035,7 @@ main()
         } catch (err) {
             console.log(`  ${RED}✗${RESET} cleanup failed: ${err instanceof Error ? err.message : err}`);
         }
-        await prisma.$disconnect();
+        await closeDb();
 
         console.log(`\n${BOLD}${passed} passed, ${failed} failed${RESET}`);
         if (failures.length) {

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
 import { Loader2, PlugZap, RotateCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { mintTerminalTokenAction } from '@/app/admin/controller-actions';
@@ -47,8 +48,8 @@ export function TerminalClient({ serverId, serverName }: { serverId: string; ser
                 fontSize: parseFloat(styles.getPropertyValue('--portal-terminal-font-size')),
                 fontFamily: styles.getPropertyValue('--portal-terminal-font-family').trim(),
                 theme: {
-                    background: styles.getPropertyValue('--color-ink-950').trim(),
-                    foreground: styles.getPropertyValue('--color-ink-100').trim(),
+                    background: styles.getPropertyValue('--scrim').trim(),
+                    foreground: styles.getPropertyValue('--on-scrim').trim(),
                 },
                 cursorBlink: true,
             });
@@ -148,17 +149,17 @@ export function TerminalClient({ serverId, serverName }: { serverId: string; ser
 
     return (
         <div>
-            <div className="flex items-center justify-between gap-3 rounded-t-xl border border-ink-800 bg-ink-950 px-4 py-2.5">
-                <div className="flex items-center gap-2 portal-text-caption text-white/60">
+            <div className="flex items-center justify-between gap-3 rounded-t-xl border border-foreground bg-primary px-4 py-2.5">
+                <div className="flex items-center gap-2 portal-text-caption text-primary-foreground/60">
                     <span
                         className={`h-2 w-2 rounded-full ${
-                            phase === 'open' ? 'bg-success-500' : phase === 'connecting' ? 'bg-warning-500' : 'bg-ink-500'
+                            phase === 'open' ? 'bg-success' : phase === 'connecting' ? 'bg-warning' : 'bg-muted-foreground'
                         }`}
                     />
                     {phase === 'open' ? `Connected to ${serverName}` : phase === 'connecting' ? 'Connecting…' : 'Not connected'}
                 </div>
                 {phase === 'idle' ? (
-                    <Button size="sm" onClick={() => setAttempt((n) => n + 1)} className="gap-1.5 bg-white text-ink-900 hover:bg-ink-100">
+                    <Button size="sm" onClick={() => setAttempt((n) => n + 1)} className="gap-1.5 bg-card text-foreground hover:bg-secondary">
                         <PlugZap className="h-3.5 w-3.5" />Connect
                     </Button>
                 ) : (
@@ -167,7 +168,7 @@ export function TerminalClient({ serverId, serverName }: { serverId: string; ser
                         variant="outline"
                         onClick={() => setAttempt((n) => n + 1)}
                         disabled={phase === 'connecting'}
-                        className="gap-1.5 border-white/20 bg-transparent text-white hover:bg-white/10"
+                        className="gap-1.5 border-primary-foreground/20 bg-transparent text-primary-foreground hover:bg-primary-foreground/10"
                     >
                         {phase === 'connecting' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RotateCw className="h-3.5 w-3.5" />}
                         Reconnect
@@ -175,9 +176,9 @@ export function TerminalClient({ serverId, serverName }: { serverId: string; ser
                 )}
             </div>
 
-            <div className="rounded-b-xl border border-t-0 border-ink-800 bg-ink-950 p-3">
+            <div className="rounded-b-xl border border-t-0 border-foreground bg-primary p-3">
                 {phase === 'idle' ? (
-                    <div className="flex h-96 items-center justify-center portal-text-body text-white/40">
+                    <div className="flex h-96 items-center justify-center portal-text-body text-primary-foreground/40">
                         Press Connect to open a shell on {serverName}.
                     </div>
                 ) : (
@@ -186,12 +187,12 @@ export function TerminalClient({ serverId, serverName }: { serverId: string; ser
             </div>
 
             {message ? (
-                <p className={`mt-3 portal-text-body ${phase === 'error' ? 'text-error-700' : 'text-ink-500'}`}>{message}</p>
+                <p className={`mt-3 portal-text-body ${phase === 'error' ? 'text-destructive' : 'text-muted-foreground'}`}>{message}</p>
             ) : null}
 
-            <p className="mt-3 portal-text-caption text-ink-400">
+            <p className="mt-3 portal-text-caption text-muted-foreground">
                 Access is granted by a single-server token that expires in 60 seconds; reconnecting mints a new one.
-                Every session is recorded in the <a href="/admin/logs?category=terminal" className="text-link hover:underline">activity log</a>.
+                Every session is recorded in the <Link href="/admin/logs?category=terminal" className="text-primary hover:underline">activity log</Link>.
             </p>
         </div>
     );

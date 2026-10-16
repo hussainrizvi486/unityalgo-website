@@ -2,11 +2,12 @@
 
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import { prisma } from '@/lib/db';
+import { and, eq, ne } from 'drizzle-orm';
+import { db, errorText, one, schema } from '@/lib/db';
 import { requireAdmin } from '@/lib/admin-session';
 import { encryptSecret } from '@/lib/secret-box';
 import { buildSmtpTransport } from '@/lib/mail-accounts';
-import type { EmailPurpose } from '@prisma/client';
+import type { EmailPurpose } from '@/db/types';
 
 /**
  * Admin actions for mail accounts.
@@ -73,14 +74,17 @@ function validate(fields: ReturnType<typeof readFields>) {
  * The partial unique index would otherwise reject the write, and doing both
  * halves separately leaves a window with two defaults or none.
  */
-async function withDefaultCleared<T>(isDefault: boolean, keepId: string | null, work: () => Promise<T>) {
-    if (!isDefault) return work();
-    return prisma.$transaction(async (tx) => {
-        await tx.emailAccount.updateMany({
-            where: { isDefault: true, ...(keepId ? { id: { not: keepId } } : {}) },
-            data: { isDefault: false },
-        });
-        return work();
+type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+async function withDefaultCleared<T>(isDefault: boolean, keepId: string | null, work: (tx: Tx | typeof db) => Promise<T>) {
+    if (!isDefault) return work(db);
+    return db.transaction(async (tx) => {
+        await tx
+            .update(schema.emailAccount)
+            .set({ isDefault: false })
+            .where(and(eq(schema.emailAccount.isDefault, true), keepId ? ne(schema.emailAccount.id, keepId) : undefined));
+        // The write itself runs inside the same transaction, so there is never a moment with two defaults or none.
+        return work(tx);
     });
 }
 
@@ -98,9 +102,8 @@ export async function createEmailAccountAction(
     }
 
     try {
-        await withDefaultCleared(fields.isDefault, null, () =>
-            prisma.emailAccount.create({
-                data: {
+        await withDefaultCleared(fields.isDefault, null, (tx) =>
+            tx.insert(schema.emailAccount).values({
                     label: fields.label,
                     address: fields.address,
                     fromName: fields.fromName,
@@ -117,7 +120,6 @@ export async function createEmailAccountAction(
                     imapPassword: fields.imapHost ? encryptSecret(fields.imapPassword) : null,
                     isDefault: fields.isDefault,
                     isActive: fields.isActive,
-                },
             }));
     } catch (error) {
         return { error: friendlyError(error) };
@@ -140,10 +142,8 @@ export async function updateEmailAccountAction(
     if (invalid) return { error: invalid };
 
     try {
-        await withDefaultCleared(fields.isDefault, id, () =>
-            prisma.emailAccount.update({
-                where: { id },
-                data: {
+        await withDefaultCleared(fields.isDefault, id, async (tx) =>
+            one(await tx.update(schema.emailAccount).set({
                     label: fields.label,
                     address: fields.address,
                     fromName: fields.fromName,
@@ -166,8 +166,7 @@ export async function updateEmailAccountAction(
                         : { imapPassword: null }),
                     isDefault: fields.isDefault,
                     isActive: fields.isActive,
-                },
-            }));
+            }).where(eq(schema.emailAccount.id, id)).returning({ id: schema.emailAccount.id }), 'Email account'));
     } catch (error) {
         return { error: friendlyError(error) };
     }
@@ -180,7 +179,7 @@ export async function deleteEmailAccountAction(formData: FormData) {
     await requireAdmin();
     const id = String(formData.get('id') ?? '');
     if (!id) return;
-    await prisma.emailAccount.delete({ where: { id } });
+    await db.delete(schema.emailAccount).where(eq(schema.emailAccount.id, id));
     revalidatePath('/admin/email-accounts');
 }
 
@@ -197,7 +196,7 @@ export async function testEmailAccountAction(formData: FormData) {
     const id = String(formData.get('id') ?? '');
     if (!id) return;
 
-    const account = await prisma.emailAccount.findUnique({ where: { id } });
+    const account = await db.query.emailAccount.findFirst({ where: eq(schema.emailAccount.id, id) });
     if (!account) return;
 
     let ok = false;
@@ -218,15 +217,15 @@ export async function testEmailAccountAction(formData: FormData) {
         message = error instanceof Error ? error.message : String(error);
     }
 
-    await prisma.emailAccount.update({
-        where: { id },
-        data: { lastTestedAt: new Date(), lastTestOk: ok, lastTestError: ok ? null : message },
-    });
+    await db
+        .update(schema.emailAccount)
+        .set({ lastTestedAt: new Date(), lastTestOk: ok, lastTestError: ok ? null : message })
+        .where(eq(schema.emailAccount.id, id));
     revalidatePath('/admin/email-accounts');
 }
 
 function friendlyError(error: unknown) {
-    const text = error instanceof Error ? error.message : String(error);
+    const text = errorText(error);
     if (text.includes('EmailAccount_address_key')) {
         return 'An account already exists for that address.';
     }

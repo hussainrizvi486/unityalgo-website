@@ -1,6 +1,7 @@
 'use server';
 import { revalidatePath } from 'next/cache';
-import { prisma } from '@/lib/db';
+import { eq } from 'drizzle-orm';
+import { db, one, schema } from '@/lib/db';
 import { requireAdmin } from '@/lib/admin-session';
 export interface AppCatalogState {
     error?: string;
@@ -51,8 +52,8 @@ export async function saveAppCatalogAction(
         isActive: data.get('isActive') === 'on',
     };
     try {
-        if (id) await prisma.appCatalog.update({ where: { id }, data: fields });
-        else await prisma.appCatalog.create({ data: fields });
+        if (id) one(await db.update(schema.appCatalog).set(fields).where(eq(schema.appCatalog.id, id)).returning({ id: schema.appCatalog.id }), 'Application');
+        else await db.insert(schema.appCatalog).values(fields);
     } catch {
         return {
             error: 'Could not save the application. Check that its slug is unique.',

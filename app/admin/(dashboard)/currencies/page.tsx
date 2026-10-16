@@ -1,4 +1,5 @@
-import { prisma } from '@/lib/db';
+import { asc, eq, getTableColumns, sql } from 'drizzle-orm';
+import { db, schema } from '@/lib/db';
 import { requireAdmin } from '@/lib/admin-session';
 import { deleteCurrencyAction } from '@/app/admin/currency-actions';
 import { AdminPageHeader } from '@/components/admin/page-header';
@@ -8,10 +9,12 @@ import { CurrenciesList, type CurrencyRow } from './currencies-list';
 export default async function AdminCurrenciesPage() {
     await requireAdmin();
 
-    const currencies = await prisma.currency.findMany({
-        orderBy: [{ sortOrder: 'asc' }, { code: 'asc' }],
-        include: { _count: { select: { plans: true } } },
-    });
+    const currencies = await db
+        .select({ ...getTableColumns(schema.currency), planCount: sql<number>`count(${schema.plan.id})::int` })
+        .from(schema.currency)
+        .leftJoin(schema.plan, eq(schema.plan.currencyId, schema.currency.id))
+        .groupBy(schema.currency.id)
+        .orderBy(asc(schema.currency.sortOrder), asc(schema.currency.code));
 
     const rows: CurrencyRow[] = currencies.map((c) => ({
         id: c.id,
@@ -22,7 +25,7 @@ export default async function AdminCurrenciesPage() {
         // A worked example beats the raw pattern for telling formats apart.
         sample: formatCurrencyAmount(1234567.89, c),
         isActive: c.isActive,
-        planCount: c._count.plans,
+        planCount: c.planCount,
     }));
 
     return (

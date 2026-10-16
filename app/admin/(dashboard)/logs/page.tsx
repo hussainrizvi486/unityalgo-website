@@ -38,6 +38,7 @@ export default async function AdminLogsPage({ searchParams }: PageProps) {
         view === 'operations'
             ? operations.map((operation) => ({
                   id: operation.id,
+                  href: `/admin/logs/${operation.id}`,
                   title: operation.label,
                   subtitle:
                       operation.step_count != null
@@ -52,6 +53,7 @@ export default async function AdminLogsPage({ searchParams }: PageProps) {
               }))
             : events.map((event) => ({
                   id: event.id,
+                  href: event.operation_id ? `/admin/logs/${event.operation_id}` : undefined,
                   title: event.action,
                   subtitle: `${event.category} · ${formatDateTime(event.created_at)}`,
                   target: event.tenant_slug ?? event.server_name ?? '—',

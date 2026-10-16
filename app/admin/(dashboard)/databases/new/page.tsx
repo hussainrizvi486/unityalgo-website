@@ -8,7 +8,7 @@ export default async function NewDatabasePage() {
     return (
         <div>
             <h1 className="portal-page-title mb-2">Register Database</h1>
-            <p className="portal-text-body text-ink-500 mb-8 portal-form">
+            <p className="portal-text-body text-muted-foreground mb-8 portal-form">
                 A <strong>cluster</strong> is a PostgreSQL instance you hold admin credentials for, so tenant databases
                 can be created on it and moved between clusters. An <strong>external</strong> connection is read-only
                 from the platform&apos;s point of view — usable from the query console, but never provisioned onto.

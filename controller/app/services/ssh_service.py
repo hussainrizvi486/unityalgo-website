@@ -7,6 +7,7 @@ picking whichever the node record provides.
 import io
 import json
 import socket
+import time
 from contextlib import contextmanager
 from pathlib import Path
 
@@ -143,20 +144,7 @@ class SSHService:
             # Pasted key content (in-memory) takes priority over a file path
             # whenever key auth applies.
             pkey = self._load_pkey() if (self.auth_method == "key" and self.key_content) else None
-            client.connect(
-                hostname=self.host,
-                port=self.port,
-                username=self.username,
-                password=self.password,
-                pkey=pkey,
-                key_filename=self.key_path if (self.auth_method == "key" and not pkey) else None,
-                # Password auth must not silently fall back to the operator's
-                # agent or ~/.ssh keys -- that hides a misconfigured node.
-                look_for_keys=self.auth_method == "key",
-                allow_agent=self.auth_method == "key",
-                timeout=self.settings.ssh_timeout,
-                auth_timeout=self.settings.ssh_timeout,
-            )
+            self._connect_with_retry(client, pkey)
             yield client
         except paramiko.AuthenticationException:
             raise NodeUnreachableError(
@@ -169,6 +157,35 @@ class SSHService:
             )
         finally:
             client.close()
+
+    # A login that fails once and works a second later (a node just woken or briefly busy, sshd throttling a burst
+    # of connections) must not fail a whole provisioning, backup or restore. Only the connection attempt is retried,
+    # never a command, so nothing runs twice.
+    CONNECT_ATTEMPTS = 3
+    CONNECT_BACKOFF_SECONDS = (1.0, 3.0)
+
+    def _connect_with_retry(self, client, pkey):
+        for attempt in range(self.CONNECT_ATTEMPTS):
+            try:
+                client.connect(
+                    hostname=self.host,
+                    port=self.port,
+                    username=self.username,
+                    password=self.password,
+                    pkey=pkey,
+                    key_filename=self.key_path if (self.auth_method == "key" and not pkey) else None,
+                    # Password auth must not silently fall back to the operator's
+                    # agent or ~/.ssh keys -- that hides a misconfigured node.
+                    look_for_keys=self.auth_method == "key",
+                    allow_agent=self.auth_method == "key",
+                    timeout=self.settings.ssh_timeout,
+                    auth_timeout=self.settings.ssh_timeout,
+                )
+                return
+            except (paramiko.SSHException, socket.error, OSError):
+                if attempt == self.CONNECT_ATTEMPTS - 1:
+                    raise
+                time.sleep(self.CONNECT_BACKOFF_SECONDS[min(attempt, len(self.CONNECT_BACKOFF_SECONDS) - 1)])
 
     def run(self, command, timeout=None, stdin_data=None):
         with self.connect() as client:

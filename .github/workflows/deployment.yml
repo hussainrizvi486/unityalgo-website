@@ -31,11 +31,6 @@ jobs:
           npm run lint --if-present
           npm test --if-present
 
-      - name: Generate Prisma Client
-        run: npx prisma generate
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-
       - name: Run Next.js Build Test
         run: npm run build
         env:
@@ -71,11 +66,11 @@ jobs:
             echo "==> Installing dependencies"
             npm ci
 
-            echo "==> Generating Prisma Client"
-            npx prisma generate
-
             echo "==> Running migrations"
-            npx prisma migrate deploy
+            # An existing database that predates Drizzle has its baseline recorded first (a no-op on a fresh
+            # one, and once done); then anything newer is applied.
+            npm run db:baseline
+            npm run db:migrate
 
             echo "==> Building Next.js"
             npm run build

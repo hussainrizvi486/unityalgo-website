@@ -57,9 +57,9 @@ function NavigationMenuItem({ className, ...props }: React.ComponentProps<typeof
 }
 
 const navigationMenuTriggerStyle = cva(
-    'group inline-flex h-9 w-max items-center justify-center gap-1 rounded-md px-4 py-2 text-sm font-medium text-ink-900 outline-none transition-colors ' +
-    'hover:bg-ink-100 focus-visible:ring-ring/50 focus-visible:ring-[3px] ' +
-    'data-[state=open]:bg-ink-100 disabled:pointer-events-none disabled:opacity-50',
+    'group inline-flex h-9 w-max items-center justify-center gap-1 rounded-md px-4 py-2 text-sm font-medium text-foreground outline-none transition-colors ' +
+    'hover:bg-secondary focus-visible:ring-ring/50 focus-visible:ring-3 ' +
+    'data-[state=open]:bg-secondary disabled:pointer-events-none disabled:opacity-50',
 );
 
 function NavigationMenuTrigger({
@@ -75,7 +75,7 @@ function NavigationMenuTrigger({
         >
             {children}
             <ChevronDown
-                className="relative top-px size-3.5 text-ink-400 transition-transform duration-300 group-data-[state=open]:rotate-180"
+                className="relative top-px size-3.5 text-muted-foreground transition-transform duration-300 group-data-[state=open]:rotate-180"
                 aria-hidden="true"
             />
         </NavigationMenuPrimitive.Trigger>
@@ -116,7 +116,7 @@ function NavigationMenuViewport({
                     // via the CSS variables Radix sets, which is the morph that
                     // makes the menu feel like one object.
                     'origin-top-center relative mt-2 h-[var(--radix-navigation-menu-viewport-height)] w-full overflow-hidden',
-                    'rounded-xl border border-ink-200 bg-popover text-popover-foreground shadow-lg',
+                    'rounded-xl border border-border bg-popover text-popover-foreground shadow-lg',
                     'transition-[width,height] duration-300 ease-out',
                     'data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95',
                     'data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95',
@@ -135,8 +135,8 @@ function NavigationMenuLink({ className, ...props }: React.ComponentProps<typeof
             data-slot="navigation-menu-link"
             className={cn(
                 'flex flex-col gap-1 rounded-md p-2 text-sm outline-none transition-colors',
-                'hover:bg-ink-50 focus-visible:ring-ring/50 focus-visible:ring-[3px]',
-                'data-[active=true]:bg-ink-50 data-[active=true]:text-ink-900',
+                'hover:bg-muted focus-visible:ring-ring/50 focus-visible:ring-3',
+                'data-[active=true]:bg-muted data-[active=true]:text-foreground',
                 className,
             )}
             {...props}

@@ -4,6 +4,7 @@ import * as React from 'react';
 import { useFrame } from '@react-three/fiber';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 import * as THREE from 'three';
+import { mixRgb, rgbHex, tokenRgb, type Rgb } from '@/lib/css-token';
 
 /**
  * The prop vocabulary for the hero stack.
@@ -61,9 +62,31 @@ function makeFrostTexture() {
     return texture;
 }
 
+/** The scene's surfaces, taken from the design tokens so the 3D object follows the theme. */
+function stackPaint() {
+    const background = tokenRgb('--background');
+    const foreground = tokenRgb('--foreground');
+    const muted = tokenRgb('--muted');
+    const logo = tokenRgb('--logo-primary');
+    const css = (rgb: Rgb) => rgbHex(rgb);
+    return {
+        porcelain: css(mixRgb(background, muted, 0.6)),
+        graphite: css(mixRgb(foreground, background, 0.86)),
+        screen: css(foreground),
+        glass: css(mixRgb(muted, logo, 0.1)),
+        slab: css(mixRgb(mixRgb(tokenRgb('--border'), tokenRgb('--muted-foreground'), 0.25), logo, 0.12)),
+        steel: css(mixRgb(tokenRgb('--muted-foreground'), background, 0.3)),
+        // The logo red on solid faces, and a lighter tint of it on the parts meant to look powered (status lights,
+        // data packets, the top board).
+        brand: css(logo),
+        lit: css(mixRgb(logo, tokenRgb('--primary-foreground'), 0.18)),
+    };
+}
+
 export function useStackKit(): StackKit {
     const kit = React.useMemo<StackKit>(() => {
     const frost = makeFrostTexture();
+    const paint = stackPaint();
     return ({
         // A unit rounded box, scaled per prop — one buffer for every block.
         box: new RoundedBoxGeometry(1, 1, 1, 3, 0.16),
@@ -73,16 +96,16 @@ export function useStackKit(): StackKit {
         sphere: new THREE.SphereGeometry(0.5, 20, 14),
         wire: new THREE.CylinderGeometry(0.5, 0.5, 1, 6),
         porcelain: new THREE.MeshPhysicalMaterial({
-            color: '#F7F7F7', roughness: 0.3, metalness: 0.02,
+            color: paint.porcelain, roughness: 0.3, metalness: 0.02,
             clearcoat: 0.85, clearcoatRoughness: 0.22,
         }),
         graphite: new THREE.MeshPhysicalMaterial({
-            color: '#232323', roughness: 0.33, metalness: 0.2,
+            color: paint.graphite, roughness: 0.33, metalness: 0.2,
             clearcoat: 0.8, clearcoatRoughness: 0.25,
         }),
         // Near-black and glossy, so panels read as displays rather than slabs.
         screen: new THREE.MeshPhysicalMaterial({
-            color: '#111111', roughness: 0.12, metalness: 0.3,
+            color: paint.screen, roughness: 0.12, metalness: 0.3,
             clearcoat: 1, clearcoatRoughness: 0.06,
         }),
         // Deliberately not `transmission`: real refraction makes three.js
@@ -90,7 +113,7 @@ export function useStackKit(): StackKit {
         // every frame, which cost ~500ms/frame here. At this size a plain
         // translucent surface with a strong clearcoat is visually equivalent.
         glass: new THREE.MeshPhysicalMaterial({
-            color: '#EDF1F5', roughness: 0.08, metalness: 0.05,
+            color: paint.glass, roughness: 0.08, metalness: 0.05,
             clearcoat: 1, clearcoatRoughness: 0.04,
             transparent: true, opacity: 0.32,
         }),
@@ -110,35 +133,35 @@ export function useStackKit(): StackKit {
         // all. Depth *testing* still applies, so props standing on the sheet
         // are unaffected.
         glassSlab: new THREE.MeshPhysicalMaterial({
-            color: '#C4CFD8', roughness: 0.55, metalness: 0,
+            color: paint.slab, roughness: 0.55, metalness: 0,
             roughnessMap: frost,
             clearcoat: 1, clearcoatRoughness: 0.3,
             ior: 1.45, envMapIntensity: 1.2,
             transparent: true, opacity: 0.68, depthWrite: false,
         }),
         steel: new THREE.MeshPhysicalMaterial({
-            color: '#9E9E9E', roughness: 0.25, metalness: 0.6, clearcoat: 0.6,
+            color: paint.steel, roughness: 0.25, metalness: 0.6, clearcoat: 0.6,
         }),
         // Brand crimson, in two weights.
         //
-        // `brand` is the platform's --color-brand on solid faces: the core's
-        // chip, a keycap, a dial's index mark. `brandLit` is --color-brand-soft
+        // `brand` is the platform's --primary on solid faces: the core's
+        // chip, a keycap, a dial's index mark. `brandLit` is --primary-foreground
         // carrying emissive, for the things that are meant to look *powered* —
         // status lights, data packets, the pulse running a graph edge. There is
         // no bloom pass in this scene, so emissive is what makes a 5cm sphere
         // read as lit rather than merely painted.
         brand: new THREE.MeshPhysicalMaterial({
-            color: '#8C181B', roughness: 0.28, metalness: 0.08,
+            color: paint.brand, roughness: 0.28, metalness: 0.08,
             clearcoat: 1, clearcoatRoughness: 0.12,
-            emissive: new THREE.Color('#8C181B'), emissiveIntensity: 0.25,
+            emissive: new THREE.Color(paint.brand), emissiveIntensity: 0.25,
         }),
         brandLit: new THREE.MeshPhysicalMaterial({
-            color: '#9C1B20', roughness: 0.18, metalness: 0,
+            color: paint.lit, roughness: 0.18, metalness: 0,
             clearcoat: 1, clearcoatRoughness: 0.06,
             // Emitting the deep brand crimson rather than the lighter soft tint:
             // a hot emissive washes the hue toward a generic bright red, which
             // stops reading as the platform's colour at all.
-            emissive: new THREE.Color('#8C181B'), emissiveIntensity: 0.7,
+            emissive: new THREE.Color(paint.lit), emissiveIntensity: 0.7,
         }),
     });
     }, []);

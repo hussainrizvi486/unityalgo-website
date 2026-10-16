@@ -26,7 +26,7 @@ export function SidebarOverview({
     const [activeIndex, setActiveIndex] = useState(0);
 
     return (
-        <section className="bg-white site-section-spacing">
+        <section className="bg-card site-section-spacing">
             <div className="site-container site-gutters site-container-wide">
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
@@ -34,13 +34,13 @@ export function SidebarOverview({
                     viewport={{ once: true }}
                     className="text-center mb-16"
                 >
-                    <h2 className="text-3xl font-bold mb-4">{heading}</h2>
-                    <p className="text-ink-600 max-w-2xl mx-auto">{subheading}</p>
+                    <h2 className="text-3xl mb-4">{heading}</h2>
+                    <p className="text-foreground/70 max-w-2xl mx-auto">{subheading}</p>
                 </motion.div>
 
-                <div className="grid md:grid-cols-12 gap-8 items-start">
+                <div className="grid md:grid-cols-12 gap-gap-xl items-start">
                     {/* Sidebar options */}
-                    <div className="md:col-span-4 flex flex-col divide-y divide-ink-100 border border-ink-100 rounded-xl overflow-hidden">
+                    <div className="md:col-span-4 flex flex-col divide-y divide-border/60 border border-border/60 rounded-xl overflow-hidden">
                         {options.map((option, idx) => {
                             const isActive = idx === activeIndex;
                             return (
@@ -55,10 +55,10 @@ export function SidebarOverview({
                                         // tinted fill on the selected row reads as a
                                         // warning or an error, and pairs badly with
                                         // the focus ring landing on top of it.
-                                        'border-l-2 outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:relative',
+                                        'border-l-2 outline-none focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:relative',
                                         isActive
-                                            ? 'border-l-ink-900 bg-ink-50 text-ink-950'
-                                            : 'border-l-transparent bg-white text-ink-600 hover:bg-ink-50/70 hover:text-ink-900'
+                                            ? 'border-l-ink-900 bg-muted text-foreground'
+                                            : 'border-l-transparent bg-card text-foreground/70 hover:bg-muted/70 hover:text-foreground'
                                     )}
                                 >
                                     <span className="font-semibold text-sm md:text-base">{option.title}</span>
@@ -82,9 +82,9 @@ export function SidebarOverview({
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, y: -10 }}
                                 transition={{ duration: 0.3 }}
-                                className="rounded-xl overflow-hidden border border-ink-100"
+                                className="rounded-xl overflow-hidden border border-border/60"
                             >
-                                <div className="aspect-[16/9] bg-ink-100 relative">
+                                <div className="aspect-16/9 bg-secondary relative">
                                     <Image
                                         src={options[activeIndex].image}
                                         alt={options[activeIndex].title}
@@ -94,10 +94,10 @@ export function SidebarOverview({
                                     />
                                 </div>
                                 <div className="p-6 md:p-8">
-                                    <h3 className="text-xl font-bold text-ink-900 mb-3">
+                                    <h3 className="text-xl text-foreground mb-3">
                                         {options[activeIndex].title}
                                     </h3>
-                                    <p className="text-ink-600 leading-relaxed">
+                                    <p className="text-foreground/70 leading-relaxed">
                                         {options[activeIndex].description}
                                     </p>
                                 </div>

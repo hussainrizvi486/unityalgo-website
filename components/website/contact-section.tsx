@@ -3,7 +3,6 @@ import Link from "next/link"
 import { useState } from 'react';
 import { Mail, Phone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import toast from 'react-hot-toast';
 import { motion } from 'motion/react';
 
@@ -53,8 +52,8 @@ export function Contact() {
   return (
     <section id="contact" className="relative overflow-hidden site-section-spacing">
 
-      <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-brand/5 rounded-full blur-[120px] pointer-events-none translate-x-1/3 -translate-y-1/3" />
-      <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-ink-200/20 rounded-full blur-[100px] pointer-events-none -translate-x-1/3 translate-y-1/3" />
+      <div className="absolute top-0 right-0 w-150 h-150 bg-primary/5 rounded-full blur-3xl pointer-events-none translate-x-1/3 -translate-y-1/3" />
+      <div className="absolute bottom-0 left-0 w-100 h-100 bg-border/20 rounded-full blur-3xl pointer-events-none -translate-x-1/3 translate-y-1/3" />
 
       <div className="site-container relative z-10 site-gutters">
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-24 items-start">
@@ -68,10 +67,10 @@ export function Contact() {
               {/* h2, not h1: the hero owns the page's single h1, and a second
                   one leaves the document with no unambiguous title for search
                   engines or a screen reader's heading list. */}
-              <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-6">
+              <h2 className="text-4xl md:text-5xl tracking-tight mb-6">
                 Great things start when we build together.
               </h2>
-              <p className="text-base text-ink-600 mb-12 max-w-lg leading-relaxed">
+              <p className="text-base text-foreground/70 mb-12 max-w-lg leading-relaxed">
                 Have an idea you’re excited about? We’re here to help transform your vision into something meaningful, impactful, and built to last. From shaping the initial concept and defining the right strategy to bringing every detail to life, we work closely with you throughout the entire journey. Our goal is to turn great ideas into thoughtful, high-quality solutions that not only meet your expectations but create lasting value and make a real difference.
 
 
@@ -99,14 +98,14 @@ export function Contact() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.2 }}
-            className="bg-white/80 p-4 md:p-8 rounded shadow-md"
+            className="bg-card/80 p-4 md:p-8 rounded shadow-md"
           >
-            <form onSubmit={handleSubmit} className="space-y-8">
+            <form onSubmit={handleSubmit} className="space-y-gap-xl">
              <div>
                <div className="font-bold text-lg">Let’s Stay in Touch</div>
-               <div className="text-sm text-ink-600">Share your details below and we’ll reach out to you shortly.</div>
+               <div className="text-sm text-foreground/70">Share your details below and we’ll reach out to you shortly.</div>
              </div>
-              <div className="grid md:grid-cols-2 gap-6">
+              <div className="grid md:grid-cols-2 gap-gap-lg">
                 <div className="relative mt-6">
                   <input
                     type="text"
@@ -115,11 +114,11 @@ export function Contact() {
                     onChange={handleChange}
                     required
                     placeholder=" "
-                    className="peer h-10 w-full border-b-2 border-ink-300 text-ink-900 focus:outline-none focus:border-ink-900 transition-colors bg-transparent"
+                    className="peer h-10 w-full border-b-2 border-input text-foreground focus:outline-none focus:border-foreground transition-colors bg-transparent"
                   />
                   <label
                     htmlFor="first_name"
-                    className="absolute left-0 -top-3.5 text-ink-600 text-xs font-semibold tracking-wider transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:font-normal peer-placeholder-shown:normal-case peer-placeholder-shown:tracking-normal peer-placeholder-shown:text-ink-400 peer-placeholder-shown:top-2 peer-focus:-top-3.5 peer-focus:text-black peer-focus:text-xs peer-focus:font-semibold peer-focus:tracking-wider pointer-events-none"
+                    className="absolute left-0 -top-3.5 text-foreground/70 text-xs font-semibold tracking-wider transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:font-normal peer-placeholder-shown:normal-case peer-placeholder-shown:tracking-normal peer-placeholder-shown:text-muted-foreground peer-placeholder-shown:top-2 peer-focus:-top-3.5 peer-focus:text-foreground peer-focus:text-xs peer-focus:font-semibold peer-focus:tracking-wider pointer-events-none"
                   >
                     First Name
                   </label>
@@ -133,11 +132,11 @@ export function Contact() {
                     onChange={handleChange}
                     required
                     placeholder=" "
-                    className="peer h-10 w-full border-b-2 border-ink-300 text-ink-900 focus:outline-none focus:border-ink-900 transition-colors bg-transparent"
+                    className="peer h-10 w-full border-b-2 border-input text-foreground focus:outline-none focus:border-foreground transition-colors bg-transparent"
                   />
                   <label
                     htmlFor="last_name"
-                    className="absolute left-0 -top-3.5 text-ink-600 text-xs font-semibold tracking-wider transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:font-normal peer-placeholder-shown:normal-case peer-placeholder-shown:tracking-normal peer-placeholder-shown:text-ink-400 peer-placeholder-shown:top-2 peer-focus:-top-3.5 peer-focus:text-black peer-focus:text-xs peer-focus:font-semibold peer-focus:tracking-wider pointer-events-none"
+                    className="absolute left-0 -top-3.5 text-foreground/70 text-xs font-semibold tracking-wider transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:font-normal peer-placeholder-shown:normal-case peer-placeholder-shown:tracking-normal peer-placeholder-shown:text-muted-foreground peer-placeholder-shown:top-2 peer-focus:-top-3.5 peer-focus:text-foreground peer-focus:text-xs peer-focus:font-semibold peer-focus:tracking-wider pointer-events-none"
                   >
                     Last Name
                   </label>
@@ -152,11 +151,11 @@ export function Contact() {
                   onChange={handleChange}
                   required
                   placeholder=" "
-                  className="peer h-10 w-full border-b-2 border-ink-300 text-ink-900 focus:outline-none focus:border-ink-900 transition-colors bg-transparent"
+                  className="peer h-10 w-full border-b-2 border-input text-foreground focus:outline-none focus:border-foreground transition-colors bg-transparent"
                 />
                 <label
                   htmlFor="email"
-                  className="absolute left-0 -top-3.5 text-ink-600 text-sm font-medium tracking-wider transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:font-normal peer-placeholder-shown:normal-case peer-placeholder-shown:tracking-normal peer-placeholder-shown:text-ink-400 peer-placeholder-shown:top-2 peer-focus:-top-3.5 peer-focus:text-black peer-focus:text-xs peer-focus:font-semibold peer-focus:tracking-wider pointer-events-none"
+                  className="absolute left-0 -top-3.5 text-foreground/70 text-sm font-medium tracking-wider transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:font-normal peer-placeholder-shown:normal-case peer-placeholder-shown:tracking-normal peer-placeholder-shown:text-muted-foreground peer-placeholder-shown:top-2 peer-focus:-top-3.5 peer-focus:text-foreground peer-focus:text-xs peer-focus:font-semibold peer-focus:tracking-wider pointer-events-none"
                 >
                   Email Address
                 </label>
@@ -170,11 +169,11 @@ export function Contact() {
                   onChange={handleChange}
                   required
                   placeholder=" "
-                  className="peer h-10 w-full border-b-2 border-ink-300 text-ink-900 focus:outline-none focus:border-ink-900 transition-colors bg-transparent"
+                  className="peer h-10 w-full border-b-2 border-input text-foreground focus:outline-none focus:border-foreground transition-colors bg-transparent"
                 />
                 <label
                   htmlFor="phone"
-                  className="absolute left-0 -top-3.5 text-ink-600 text-xs font-semibold tracking-wider transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:font-normal peer-placeholder-shown:normal-case peer-placeholder-shown:tracking-normal peer-placeholder-shown:text-ink-400 peer-placeholder-shown:top-2 peer-focus:-top-3.5 peer-focus:text-black peer-focus:text-xs peer-focus:font-semibold peer-focus:tracking-wider pointer-events-none"
+                  className="absolute left-0 -top-3.5 text-foreground/70 text-xs font-semibold tracking-wider transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:font-normal peer-placeholder-shown:normal-case peer-placeholder-shown:tracking-normal peer-placeholder-shown:text-muted-foreground peer-placeholder-shown:top-2 peer-focus:-top-3.5 peer-focus:text-foreground peer-focus:text-xs peer-focus:font-semibold peer-focus:tracking-wider pointer-events-none"
                 >
                   Phone Number
                 </label>
@@ -188,7 +187,7 @@ export function Contact() {
                   onChange={handleChange}
                   required
                   placeholder=""
-                  className="peer h-10 w-full border-b-2 border-input text-ink-900 focus:outline-none focus:border-ink-900 transition-colors bg-transparent"
+                  className="peer h-10 w-full border-b-2 border-input text-foreground focus:outline-none focus:border-foreground transition-colors bg-transparent"
                 />
                 {/* <input
                   id="message"
@@ -196,11 +195,11 @@ export function Contact() {
                   onChange={handleChange}
                   required
                   placeholder=" "
-                  className="peer w-full border-b-2 border-ink-300 text-ink-900 focus:outline-none focus:border-ink-900 transition-colors bg-transparent min-h-[100px] resize-none pt-2"
+                  className="peer w-full border-b-2 border-input text-foreground focus:outline-none focus:border-foreground transition-colors bg-transparent min-h-25 resize-none pt-2"
                 /> */}
                 <label
                   htmlFor="message"
-                  className="absolute left-0 -top-3.5 text-ink-600 text-xs font-semibold tracking-wider transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:font-normal peer-placeholder-shown:normal-case peer-placeholder-shown:tracking-normal peer-placeholder-shown:text-ink-400 peer-placeholder-shown:top-2 peer-focus:-top-3.5 peer-focus:text-black peer-focus:text-xs peer-focus:font-semibold peer-focus:tracking-wider pointer-events-none"
+                  className="absolute left-0 -top-3.5 text-foreground/70 text-xs font-semibold tracking-wider transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:font-normal peer-placeholder-shown:normal-case peer-placeholder-shown:tracking-normal peer-placeholder-shown:text-muted-foreground peer-placeholder-shown:top-2 peer-focus:-top-3.5 peer-focus:text-foreground peer-focus:text-xs peer-focus:font-semibold peer-focus:tracking-wider pointer-events-none"
                 >
                   Message
                 </label>
@@ -209,7 +208,7 @@ export function Contact() {
 
               <div className='flex gap-2 items-center '>
                 <Button
-                  className="py-4 bg-ink-900 hover:bg-ink-800 text-white text-sm rounded font-bold flex-auto"
+                  className="py-4 bg-primary hover:bg-primary/90 text-primary-foreground text-sm rounded font-bold flex-auto"
                   type="submit"
                   disabled={isSubmitting}
                 >
@@ -217,7 +216,7 @@ export function Contact() {
                 </Button>
                
               </div>
-               <div className='text-[0.65rem] text-center'>
+               <div className='text-micro text-center'>
                   By sending this form,  I confirm that I have read <br /> and accepted the &nbsp;
                   <Link href={"/privacy-policy"} className="underline">Privacy Policy.
                   </Link>

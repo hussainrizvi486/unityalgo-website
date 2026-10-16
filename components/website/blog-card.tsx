@@ -19,9 +19,9 @@ export function BlogCard({ post }: { post: BlogCardPost }) {
     return (
         <Link
             href={`/blog/${post.slug}`}
-            className="group flex flex-col rounded border bg-ink-50 border-ink-100 overflow-hidden hover:shadow-md hover:shadow-ink-900/5 hover:border-brand/25 transition-all duration-300"
+            className="group flex flex-col rounded border bg-muted border-border/60 overflow-hidden hover:shadow-md hover:shadow-foreground/5 hover:border-primary/25 transition-all duration-300"
         >
-            <div className="aspect-16/10 bg-ink-100 relative overflow-hidden">
+            <div className="aspect-16/10 bg-secondary relative overflow-hidden">
                 {/* A listing renders many of these, so serving the originals
                     raw multiplies the cost by the number of posts. `sizes`
                     describes the three-column grid so each card pulls a
@@ -37,12 +37,12 @@ export function BlogCard({ post }: { post: BlogCardPost }) {
                 ) : null}
             </div>
             <div className="p-6">
-                <h3 className="text-lg font-bold text-ink-900 group-hover:opacity-75 transition-colors mb-2">
+                <h3 className="text-lg text-foreground group-hover:opacity-75 transition-colors mb-2">
                     {post.title}
                 </h3>
-                <p className="text-sm text-ink-600 leading-relaxed line-clamp-3">{post.excerpt}</p>
+                <p className="text-sm text-foreground/70 leading-relaxed line-clamp-3">{post.excerpt}</p>
                 {post.publishedAt && (
-                    <span className="text-xs text-ink-400 mt-2">{formatDate(post.publishedAt)}</span>
+                    <span className="text-xs text-muted-foreground mt-2">{formatDate(post.publishedAt)}</span>
                 )}
             </div>
         </Link>

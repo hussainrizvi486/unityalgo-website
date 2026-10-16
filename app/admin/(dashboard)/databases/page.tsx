@@ -27,8 +27,10 @@ export default async function AdminDatabasesPage({ searchParams }: PageProps) {
     const rows: DatabaseRow[] = databases.map((db) => ({
         id: db.id,
         name: db.name,
+        engine: db.engine,
         kind:
-            (db.role === 'cluster' ? (db.is_default ? 'Default cluster' : 'Cluster') : 'External')
+            (db.engine === 'mariadb' ? 'MariaDB · ' : '')
+            + (db.role === 'cluster' ? (db.is_default ? 'Default cluster' : 'Cluster') : 'External')
             + (db.host_from_worker ? ` · workers use ${db.host_from_worker}` : ''),
         isDefault: db.is_default,
         address: `${db.host}:${db.port}/${db.database_name}`,
@@ -42,7 +44,7 @@ export default async function AdminDatabasesPage({ searchParams }: PageProps) {
             <AdminPageHeader
                 title="Databases"
                 subtitle={
-                    `${clusters.length} cluster${clusters.length === 1 ? '' : 's'} hosting tenants`
+                    `${clusters.length} cluster${clusters.length === 1 ? '' : 's'} hosting tenants and sites`
                     + (external > 0 ? `, ${external} external` : '')
                 }
                 action={{ label: 'Register Database', href: '/admin/databases/new' }}

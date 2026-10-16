@@ -2,7 +2,8 @@
 
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import { prisma } from '@/lib/db';
+import { eq } from 'drizzle-orm';
+import { db, errorText, one, schema } from '@/lib/db';
 import { requireAdmin } from '@/lib/admin-session';
 import type { AdminFormState } from '@/components/admin/dynamic-form';
 import { NUMBER_FORMATS } from '@/lib/currency';
@@ -36,7 +37,7 @@ function validate(f: ReturnType<typeof readFields>) {
 }
 
 function friendly(error: unknown) {
-    const text = error instanceof Error ? error.message : String(error);
+    const text = errorText(error);
     if (text.includes('Currency_code_key')) return 'A currency with that code already exists.';
     return 'Could not save the currency. Check the values and try again.';
 }
@@ -51,7 +52,7 @@ export async function createCurrencyAction(
     if (invalid) return { error: invalid };
 
     try {
-        await prisma.currency.create({ data: fields });
+        await db.insert(schema.currency).values(fields);
     } catch (error) {
         return { error: friendly(error) };
     }
@@ -72,7 +73,7 @@ export async function updateCurrencyAction(
     if (invalid) return { error: invalid };
 
     try {
-        await prisma.currency.update({ where: { id }, data: fields });
+        one(await db.update(schema.currency).set(fields).where(eq(schema.currency.id, id)).returning({ id: schema.currency.id }), 'Currency');
     } catch (error) {
         return { error: friendly(error) };
     }
@@ -86,7 +87,7 @@ export async function deleteCurrencyAction(formData: FormData) {
     if (!id) return;
     // Plans referencing it are not deleted — the foreign key is ON DELETE SET
     // NULL, so they fall back to the default display currency instead.
-    await prisma.currency.delete({ where: { id } });
+    await db.delete(schema.currency).where(eq(schema.currency.id, id));
     revalidatePath('/admin/currencies');
     revalidatePath('/admin/plans');
 }

@@ -14,7 +14,9 @@ would roll back with it -- destroying exactly the diagnostics you need. Paying
 one short transaction per step buys durable forensics.
 """
 
+import re
 import time
+import traceback
 import uuid
 from contextlib import contextmanager
 from datetime import datetime, timezone
@@ -31,6 +33,39 @@ def _uuid_or_none(value):
         return uuid.UUID(str(value))
     except (ValueError, AttributeError, TypeError):
         return None
+
+
+# Secrets that command lines and tracebacks carry. Anything matching is replaced before it is stored.
+_SECRET_FLAG = re.compile(r"(--[\w-]*(?:password|passwd|secret|token|api-key)[\w-]*[= ])(\S+)", re.I)
+_SECRET_ASSIGN = re.compile(r"((?:password|passwd|secret|token)['\"]?\s*[:=]\s*['\"]?)([^\s'\",}]+)", re.I)
+
+
+_GITHUB_TOKEN = re.compile(r"\b(?:gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,})\b")
+
+
+def redact(text):
+    """Hide passwords and tokens in text headed for the log (command flags and key=value pairs)."""
+    if not text:
+        return text
+    text = _GITHUB_TOKEN.sub("[redacted]", str(text))
+    text = _SECRET_FLAG.sub(r"\1[redacted]", text)
+    return _SECRET_ASSIGN.sub(r"\1[redacted]", text)
+
+
+def redact_value(value):
+    """redact() applied to every string inside a JSON-able structure (log details), leaving its shape intact."""
+    if isinstance(value, str):
+        return redact(value)
+    if isinstance(value, dict):
+        return {key: redact_value(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [redact_value(item) for item in value]
+    return value
+
+
+def format_exception(exc):
+    """Full "Type: message" plus traceback, including chained causes."""
+    return "".join(traceback.format_exception(type(exc), exc, exc.__traceback__)).strip()
 
 
 class OperationRecorder:
@@ -131,9 +166,9 @@ class ActivityLogger:
             step_name=step_name,
             step_index=step_index,
             status=status,
-            message=message,
-            details=details,
-            error_message=str(error) if error else None,
+            message=redact(message),
+            details=redact_value(details),
+            error_message=redact(str(error)) if error else None,
             duration_ms=duration_ms,
             actor=context.get("actor") or self.actor,
             **self._subject_columns(context),
@@ -180,7 +215,7 @@ class ActivityLogger:
             if op is None:
                 return
             op.status = status
-            op.error_message = str(error) if error else None
+            op.error_message = redact(str(error)) if error else None
             op.completed_at = datetime.now(timezone.utc)
             if started_monotonic is not None:
                 op.duration_ms = int((time.monotonic() - started_monotonic) * 1000)
@@ -212,14 +247,18 @@ class ActivityLogger:
         try:
             yield recorder
         except Exception as exc:
+            # Keep the whole failure, not just str(exc): the traceback is what an
+            # operator needs when the message is a generic "step failed".
+            full = format_exception(exc)
             recorder.step(
                 "Operation failed",
                 status="failed",
-                message=type(exc).__name__,
-                error=exc,
+                message=f"{type(exc).__name__}: {str(exc).splitlines()[0][:200] if str(exc) else ''}",
+                error=full,
+                details={"exception": type(exc).__name__, "traceback": full},
             )
             self.finish_operation(
-                operation_id, "failed", error=exc, started_monotonic=started
+                operation_id, "failed", error=full, started_monotonic=started
             )
             raise
         else:

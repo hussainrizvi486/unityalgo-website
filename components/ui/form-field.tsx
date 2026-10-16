@@ -31,17 +31,17 @@ export function FormField({
 }) {
     return (
         <div className={cn('min-w-0', className)}>
-            <Label htmlFor={id} className="mb-1.5 text-sm text-ink-700">
+            <Label htmlFor={id} className="mb-1.5 text-sm text-foreground/80">
                 {label}
-                {optional && <span className="ml-1 font-normal text-ink-400">(optional)</span>}
+                {optional && <span className="ml-1 font-normal text-muted-foreground">(optional)</span>}
             </Label>
             {children}
             {error ? (
-                <p id={`${id}-error`} role="alert" className="mt-1.5 text-xs text-error-600">
+                <p id={`${id}-error`} role="alert" className="mt-1.5 text-xs text-destructive">
                     {error}
                 </p>
             ) : help ? (
-                <p id={`${id}-help`} className="mt-1.5 text-xs text-ink-500">
+                <p id={`${id}-help`} className="mt-1.5 text-xs text-muted-foreground">
                     {help}
                 </p>
             ) : null}

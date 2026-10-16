@@ -2,90 +2,254 @@
 @plugin "@tailwindcss/typography";
 @plugin "tailwindcss-animate";
 
-@theme {
-  --color-brand: #8C181B;
-  --color-brand-deep: #711316;
-  --color-brand-press: #591013;
-  --color-brand-soft: #BC292E;
-  --color-brand-subdued: #F8E9EA;
+@custom-variant dark (&:where(.dark, .dark *));
 
-  --color-gold: #B45309;
-  --color-link: #0066CC;
+:root {
+  color-scheme: light;
 
-  --color-ink-50: #F7F7F7;
-  --color-ink-100: #F0F0F0;
-  --color-ink-200: #E0E0E0;
-  --color-ink-300: #CCCCCC;
-  --color-ink-400: #9E9E9E;
-  --color-ink-500: #707070;
-  --color-ink-600: #575757;
-  --color-ink-700: #404040;
-  --color-ink-800: #2B2B2B;
-  --color-ink-900: #1F1F1F;
-  --color-ink-950: #151515;
+  --radius: 8px;
+  --font-sans: var(--font-geist), "Geist", ui-sans-serif, system-ui, sans-serif;
+  --font-logo: var(--font-poppins), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: ui-monospace, "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
 
-  --color-success-50: #F0FDF4;
-  --color-success-100: #DCFCE7;
-  --color-success-500: #16A34A;
-  --color-success-600: #15803D;
-  --color-success-700: #166534;
-  --color-warning-50: #FFFBEB;
-  --color-warning-500: #F59E0B;
-  --color-warning-600: #D97706;
-  --color-warning-700: #B45309;
-  --color-error-50: #FEF2F2;
-  --color-error-100: #FEE2E2;
-  --color-error-500: #EF4444;
-  --color-error-600: #DC2626;
-  --color-error-700: #B91C1C;
-  --color-info-50: #EFF6FF;
-  --color-info-500: #3B82F6;
-  --color-info-600: #2563EB;
+  --page-pad: 24px;
+  --section-gap: 56px;
+  --card-pad: 20px;
+  --gap: 16px;
+  --header-h: 64px;
+  --max-w: 1280px;
 
-  --color-background: #FFFFFF;
-  --color-foreground: var(--color-ink-900);
-  --color-input: var(--color-ink-200);
-  --color-primary: var(--color-ink-900);
-  --color-primary-foreground: #FFFFFF;
-  --color-secondary: var(--color-ink-100);
-  --color-secondary-foreground: var(--color-ink-900);
-  --color-accent: var(--color-brand-subdued);
-  --color-accent-foreground: var(--color-brand);
-  --color-destructive: var(--color-error-600);
-  --color-destructive-foreground: #FFFFFF;
-  --color-muted: var(--color-ink-50);
-  --color-muted-foreground: var(--color-ink-500);
-  --color-border: var(--color-ink-200);
-  --color-ring: var(--color-ink-500);
-  --color-popover: #FFFFFF;
-  --color-popover-foreground: var(--color-foreground);
+  --text-scale: 1;
+  --display-size: 48px;
+  --heading-weight: 600;
+  --border-width: 1px;
+  --btn-h: 36px;
+  --shadow: 0 1px 2px rgb(0 0 0 / 0.06);
 
-  --color-sidebar: #FFFFFF;
-  --color-sidebar-foreground: var(--color-ink-700);
-  --color-sidebar-primary: var(--color-ink-900);
-  --color-sidebar-primary-foreground: #FFFFFF;
-  --color-sidebar-accent: var(--color-accent);
-  --color-sidebar-accent-foreground: var(--color-brand);
-  --color-sidebar-border: var(--color-ink-200);
-  --color-sidebar-ring: var(--color-ring);
+  --primary: #0a0a0a;
+  /* The logo's red. A brand accent for the hero scene and decorative highlights; not a UI action colour. */
+  --logo-primary: #8C181B;
+  --primary-foreground: #fafafa;
+  --ring: #0a0a0a;
+  --background: #ffffff;
+  --foreground: #0a0a0a;
+  --card: #ffffff;
+  --muted: #f5f5f5;
+  --muted-foreground: #737373;
+  --secondary: #f5f5f5;
+  --secondary-foreground: #0a0a0a;
+  --accent: #f5f5f5;
+  --border: #e5e5e5;
+  --input: #d4d4d4;
+  --success: #15803d;
+  --warning: #b45309;
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
 
-  --radius: 0.5rem;
-  --radius-xs: calc(var(--radius) - 6px);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
+  /* Backdrops and image overlays stay dark in every theme. */
+  --scrim: #000000;
+  --on-scrim: #ffffff;
+}
+
+.dashboard {
+  --primary: #383838;
+  --primary-foreground: #fafafa;
+  --ring: #0a0a0a;
+  --background: #f7f7f7;
+  --foreground: #0a0a0a;
+  --card: #ffffff;
+  --muted: #f4f4f5;
+  --muted-foreground: #71717a;
+  --secondary: #f4f4f5;
+  --secondary-foreground: #18181b;
+  --accent: #f4f4f5;
+  --border: #e4e4e7;
+  --input: #d4d4d8;
+  --success: #15803d;
+  --warning: #b45309;
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #52525b;
+  --sidebar-accent: #f4f4f5;
+}
+
+/* Customer panel: dark */
+.dashboard.dark {
+  color-scheme: dark;
+  --primary: #fafafa;
+  --primary-foreground: #0a0a0a;
+  --ring: #d4d4d4;
+  --background: #0a0a0a;
+  --foreground: #fafafa;
+  --card: #111111;
+  --muted: #1a1a1a;
+  --muted-foreground: #a3a3a3;
+  --secondary: #1f1f1f;
+  --secondary-foreground: #fafafa;
+  --accent: #1f1f1f;
+  --border: #262626;
+  --input: #333333;
+  --success: #4ade80;
+  --warning: #fbbf24;
+  --destructive: #f87171;
+  --destructive-foreground: #0a0a0a;
+  --sidebar: #0a0a0a;
+  --sidebar-foreground: #a3a3a3;
+  --sidebar-accent: #1f1f1f;
+}
+
+/*
+ * Values the design parameters do not name but the UI still needs. They are derived from the tokens above
+ * (or are fixed engineering constants such as stacking order), so they follow the active scope too.
+ */
+:root {
+  /* Type scale for small text. Sizes from 2xl up derive from --display-size in @theme below. */
+  --fs-micro: 0.625rem;
+  --fs-small: 0.6875rem;
+  --fs-xs: 0.75rem;
+  --fs-sm: 0.875rem;
+  --fs-base: 1rem;
+  --fs-lg: 1.125rem;
+  --fs-xl: 1.25rem;
+  --track-eyebrow: 0.18em;
+  --track-caps: 0.13em;
+  --descender: 0.13em;
+
+  --control-px: 0.75rem;
+  --panel-w: 15rem;
+  --panel-w-mobile: 18rem;
+  --panel-w-icon: 3rem;
+  --content-narrow: 32rem;
+  --content-form: 42rem;
+  --content-detail: 56rem;
+  --content-reading: 48rem;
+  --content-wide: 72rem;
+  --grid-h: 620px;
+  --grid-row-h: 60px;
+  --grid-head-h: 44px;
+  --grid-cell-px: 20px;
+  --terminal-font-size: 13px;
+
+  --elevation-lg: var(--shadow), 0 10px 15px -3px rgb(0 0 0 / 0.08);
+  --elevation-xl: var(--shadow), 0 20px 25px -5px rgb(0 0 0 / 0.1);
+
+  --layer-header: 50;
+  --layer-navigation: 40;
+  --layer-overlay: 60;
+  --layer-tooltip: 70;
+}
+
+@theme inline {
+  /* Colour roles. Each reads the live token, so a scope's override reaches every utility. */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--foreground);
+  --color-popover: var(--card);
+  --color-popover-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-logo-primary: var(--logo-primary);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--secondary-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-scrim: var(--scrim);
+  --color-on-scrim: var(--on-scrim);
+
+  --color-sidebar: var(--sidebar, var(--background));
+  --color-sidebar-foreground: var(--sidebar-foreground, var(--foreground));
+  --color-sidebar-primary: var(--primary);
+  --color-sidebar-primary-foreground: var(--primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent, var(--accent));
+  --color-sidebar-accent-foreground: var(--foreground);
+  --color-sidebar-border: var(--border);
+  --color-sidebar-ring: var(--ring);
+
+  /* Radius scale, proportional to --radius. */
+  --radius-xs: calc(var(--radius) * 0.25);
+  --radius-sm: calc(var(--radius) * 0.5);
+  --radius-md: calc(var(--radius) * 0.75);
   --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-  --radius-2xl: calc(var(--radius) + 8px);
-  --radius-3xl: calc(var(--radius) + 16px);
+  --radius-xl: calc(var(--radius) * 1.5);
+  --radius-2xl: calc(var(--radius) * 2);
+  --radius-3xl: calc(var(--radius) * 3);
 
-  --shadow-color: 21 21 21;
-  --shadow-2xs: 0 1px rgb(var(--shadow-color) / 0.05);
-  --shadow-xs: 0 1px 2px 0 rgb(var(--shadow-color) / 0.05);
-  --shadow-sm: 0 1px 3px 0 rgb(var(--shadow-color) / 0.08), 0 1px 2px -1px rgb(var(--shadow-color) / 0.08);
-  --shadow-md: 0 4px 6px -1px rgb(var(--shadow-color) / 0.08), 0 2px 4px -2px rgb(var(--shadow-color) / 0.08);
-  --shadow-lg: 0 10px 15px -3px rgb(var(--shadow-color) / 0.08), 0 4px 6px -4px rgb(var(--shadow-color) / 0.08);
-  --shadow-xl: 0 20px 25px -5px rgb(var(--shadow-color) / 0.10), 0 8px 10px -6px rgb(var(--shadow-color) / 0.10);
-  --shadow-2xl: 0 25px 50px -12px rgb(var(--shadow-color) / 0.20);
+  /* Spacing roles: p-page, py-section, p-card, gap-gap, h-header, h-btn … */
+  --spacing-page: var(--page-pad);
+  --spacing-section: var(--section-gap);
+  --spacing-card: var(--card-pad);
+  --spacing-gap: var(--gap);
+  --spacing-gap-sm: calc(var(--gap) * 0.5);
+  --spacing-gap-lg: calc(var(--gap) * 1.5);
+  --spacing-gap-xl: calc(var(--gap) * 2);
+  --spacing-hero: calc(var(--header-h) + var(--section-gap));
+  --spacing-header: var(--header-h);
+  --spacing-btn: var(--btn-h);
+  --container-site: var(--max-w);
+  --container-narrow: var(--content-narrow);
+  --container-form: var(--content-form);
+  --container-detail: var(--content-detail);
+  --container-reading: var(--content-reading);
+  --container-wide: var(--content-wide);
+
+  /* One base unit drives every p-*, m-*, gap-*, w-*, h-*, size-* and inset-* class: 4px at the default --gap. */
+  --spacing: calc(var(--gap) / 4);
+
+  /* Type scale: body sizes from the fs tokens, headline sizes as fractions of --display-size. */
+  --text-micro: var(--fs-micro);
+  --text-small: var(--fs-small);
+  --text-xs: var(--fs-xs);
+  --text-sm: var(--fs-sm);
+  --text-base: var(--fs-base);
+  --text-lg: var(--fs-lg);
+  --text-xl: var(--fs-xl);
+  --text-2xl: calc(var(--display-size) * 0.5);
+  --text-3xl: calc(var(--display-size) * 0.625);
+  --text-4xl: calc(var(--display-size) * 0.75);
+  --text-5xl: var(--display-size);
+  --text-6xl: calc(var(--display-size) * 1.25);
+  --text-7xl: calc(var(--display-size) * 1.5);
+  --text-8xl: calc(var(--display-size) * 2);
+  --text-9xl: calc(var(--display-size) * 2.6667);
+
+  /* Container widths (max-w-sm … max-w-7xl) are fractions of --max-w. */
+  --container-3xs: calc(var(--max-w) * 0.2);
+  --container-2xs: calc(var(--max-w) * 0.225);
+  --container-xs: calc(var(--max-w) * 0.25);
+  --container-sm: calc(var(--max-w) * 0.3);
+  --container-md: calc(var(--max-w) * 0.35);
+  --container-lg: calc(var(--max-w) * 0.4);
+  --container-xl: calc(var(--max-w) * 0.45);
+  --container-2xl: calc(var(--max-w) * 0.525);
+  --container-3xl: calc(var(--max-w) * 0.6);
+  --container-4xl: calc(var(--max-w) * 0.7);
+  --container-5xl: calc(var(--max-w) * 0.8);
+  --container-6xl: calc(var(--max-w) * 0.9);
+  --container-7xl: var(--max-w);
+  --text-display: clamp(calc(var(--display-size) * 0.62), 5.2vw, var(--display-size));
+  --text-display--line-height: 1.05;
+  --tracking-eyebrow: var(--track-eyebrow);
+  --tracking-caps: var(--track-caps);
+  --font-weight-heading: var(--heading-weight);
+
+  --shadow-2xs: var(--shadow);
+  --shadow-xs: var(--shadow);
+  --shadow-sm: var(--shadow);
+  --shadow-md: var(--shadow);
+  --shadow-lg: var(--elevation-lg);
+  --shadow-xl: var(--elevation-xl);
+  --shadow-2xl: var(--elevation-xl);
 
   --animate-blob: blob 7s infinite;
   --animate-drift: drift 24s ease-in-out infinite;
@@ -96,19 +260,64 @@
   --animate-caret-blink: caret-blink 1.25s ease-out infinite;
 }
 
+/* Text scale: every rem-based size in the UI follows this one number. */
+html {
+  font-size: calc(16px * var(--text-scale));
+}
+
+@layer base {
+
+  /* Tailwind's default border width is fixed at 1px; route it through --border-width. */
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--border);
+  }
+}
+
 @layer utilities {
   .text-balance {
     text-wrap: balance;
   }
 
+  .border {
+    border-width: var(--border-width);
+  }
+
+  .border-x {
+    border-inline-width: var(--border-width);
+  }
+
+  .border-y {
+    border-block-width: var(--border-width);
+  }
+
+  .border-t {
+    border-top-width: var(--border-width);
+  }
+
+  .border-r {
+    border-right-width: var(--border-width);
+  }
+
+  .border-b {
+    border-bottom-width: var(--border-width);
+  }
+
+  .border-l {
+    border-left-width: var(--border-width);
+  }
+
   .bg-grid-pattern {
-    background-size: 40px 40px;
-    background-image: linear-gradient(to right, rgb(var(--shadow-color) / 0.05) 1px, transparent 1px),
-      linear-gradient(to bottom, rgb(var(--shadow-color) / 0.05) 1px, transparent 1px);
+    background-size: calc(var(--spacing) * 10) calc(var(--spacing) * 10);
+    background-image: linear-gradient(to right, color-mix(in srgb, var(--foreground) 5%, transparent) 1px, transparent 1px),
+      linear-gradient(to bottom, color-mix(in srgb, var(--foreground) 5%, transparent) 1px, transparent 1px);
   }
 
   .glass {
-    @apply bg-white/70 backdrop-blur-lg border border-white/20;
+    @apply bg-background/70 backdrop-blur-lg border border-background/20;
   }
 
   .scrollbar-none {
@@ -133,6 +342,7 @@
 }
 
 @keyframes cell-fade {
+
   0%,
   62%,
   100% {
@@ -146,6 +356,7 @@
 }
 
 @keyframes drift {
+
   0%,
   100% {
     transform: translate3d(0, 0, 0) scale(1);
@@ -195,41 +406,67 @@
 }
 
 @keyframes caret-blink {
-  0%, 70%, 100% {
+
+  0%,
+  70%,
+  100% {
     opacity: 1;
   }
 
-  20%, 50% {
+  20%,
+  50% {
     opacity: 0;
   }
 }
 
-:root {
-  color-scheme: light;
-  --site-content-width: 80rem;
-  --site-wide-width: 72rem;
-  --site-reading-width: 48rem;
-  --site-detail-width: 56rem;
-  --site-gutter: 1rem;
-  --site-section-spacing: 5rem;
-  --site-anchor-offset: 6rem;
-  --ui-control-height: 2.25rem;
-  --ui-control-font-size: 0.875rem;
-  --ui-control-padding: 0.75rem;
-  --ui-control-radius: var(--radius-md);
-  --ui-button-padding: 1rem;
-  --ui-button-small-height: 2rem;
-  --ui-button-large-height: 2.75rem;
-  --footer-heading-size: 1.125rem;
-  --footer-body-line-height: 1.6;
-  --layer-header: 50;
-  --layer-navigation: 40;
-  --layer-overlay: 60;
-  --layer-tooltip: 70;
-}
 
 /* Shared public layout and primitive sizing; utility overrides stay available. */
+:root {
+  --site-content-width: var(--max-w);
+  --site-wide-width: var(--content-wide);
+  --site-reading-width: var(--content-reading);
+  --site-detail-width: var(--content-detail);
+  --site-gutter: var(--page-pad);
+  --site-section-spacing: var(--section-gap);
+  --site-anchor-offset: calc(var(--header-h) + var(--gap));
+  --ui-control-height: var(--btn-h);
+  --ui-control-font-size: var(--fs-sm);
+  --ui-control-padding: var(--control-px);
+  --ui-control-radius: var(--radius-md);
+  --ui-button-padding: calc(var(--control-px) * 1.33);
+  --ui-button-small-height: calc(var(--btn-h) - var(--spacing));
+  --ui-button-large-height: calc(var(--btn-h) + var(--spacing) * 2);
+  --footer-heading-size: var(--fs-lg);
+  --footer-body-line-height: 1.6;
+}
+
 @layer components {
+
+  /* Hero sphere, drawn from the tokens so it follows the theme. */
+  .orbital-glow {
+    background: radial-gradient(circle, color-mix(in srgb, var(--primary) 22%, transparent), transparent 70%);
+  }
+
+  .orbital-sphere {
+    background: radial-gradient(circle at 32% 26%,
+        var(--background) 0%,
+        color-mix(in srgb, var(--primary) 8%, var(--background)) 9%,
+        color-mix(in srgb, var(--primary) 35%, var(--background)) 21%,
+        color-mix(in srgb, var(--primary) 60%, var(--background)) 38%,
+        color-mix(in srgb, var(--primary) 80%, var(--background)) 54%,
+        var(--primary) 75%,
+        color-mix(in srgb, var(--primary) 75%, var(--scrim)) 100%);
+    box-shadow: var(--elevation-xl);
+  }
+
+  .orbital-grid {
+    mask-image: radial-gradient(circle at 40% 34%, var(--scrim) 30%, transparent 78%);
+  }
+
+  .orbital-highlight {
+    background: radial-gradient(circle at 30% 24%, color-mix(in srgb, var(--on-scrim) 38%, transparent), transparent 38%);
+  }
+
   .site-container {
     width: 100%;
     max-width: var(--site-content-width);
@@ -242,15 +479,42 @@
     padding: var(--site-section-spacing) var(--site-gutter);
   }
 
-  .site-container-wide { max-width: var(--site-wide-width); }
-  .site-container-reading { max-width: var(--site-reading-width); }
-  .site-container-detail { max-width: var(--site-detail-width); }
-  .site-gutters { padding-inline: var(--site-gutter); }
-  .site-section-spacing { padding-block: var(--site-section-spacing); }
-  .footer-heading { font-size: var(--footer-heading-size); font-weight: 600; }
-  .footer-description { line-height: var(--footer-body-line-height); }
-  .site-header-layer { z-index: var(--layer-header); }
-  .site-navigation-layer { z-index: var(--layer-navigation); }
+  .site-container-wide {
+    max-width: var(--site-wide-width);
+  }
+
+  .site-container-reading {
+    max-width: var(--site-reading-width);
+  }
+
+  .site-container-detail {
+    max-width: var(--site-detail-width);
+  }
+
+  .site-gutters {
+    padding-inline: var(--site-gutter);
+  }
+
+  .site-section-spacing {
+    padding-block: var(--site-section-spacing);
+  }
+
+  .footer-heading {
+    font-size: var(--footer-heading-size);
+    font-weight: var(--heading-weight);
+  }
+
+  .footer-description {
+    line-height: var(--footer-body-line-height);
+  }
+
+  .site-header-layer {
+    z-index: var(--layer-header);
+  }
+
+  .site-navigation-layer {
+    z-index: var(--layer-navigation);
+  }
 
   [data-slot='button'] {
     min-height: var(--ui-control-height);
@@ -294,32 +558,27 @@
 }
 
 :is([data-slot='dialog-content'], [data-slot='alert-dialog-content']) {
-  max-height: calc(100dvh - 2rem);
+  max-height: calc(100dvh - 2 * var(--gap));
   overflow-y: auto;
-}
-
-@media (min-width: 768px) {
-  :root {
-    --site-gutter: 1.5rem;
-    --site-section-spacing: 7rem;
-  }
 }
 
 body {
   @apply bg-background text-foreground antialiased;
-  font-family: var(--font-geist);
+  font-family: var(--font-sans);
 }
 
 h1,
 h2,
-h3 {
-  font-family: var(--font-geist);
+h3,
+h4 {
+  font-family: var(--font-sans);
+  font-weight: var(--heading-weight);
 }
 
 .font-logo {
-  font-family: var(--font-poppins);
+  font-family: var(--font-logo);
 }
 
 .font-display {
-  font-family: var(--font-display, var(--font-geist));
+  font-family: var(--font-sans);
 }

@@ -1,12 +1,13 @@
 import { notFound } from 'next/navigation';
-import { prisma } from '@/lib/db';
+import { eq } from 'drizzle-orm';
+import { db, schema } from '@/lib/db';
 import { updateUserAction, updateUserPasswordAction } from '@/app/admin/actions';
 import { UserForm } from '../../user-form';
 import { ChangePasswordForm } from '../../change-password-form';
 
 export default async function EditUserPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
-    const user = await prisma.user.findUnique({ where: { id } });
+    const user = await db.query.user.findFirst({ where: eq(schema.user.id, id) });
 
     if (!user) {
         notFound();
@@ -26,9 +27,9 @@ export default async function EditUserPage({ params }: { params: Promise<{ id: s
                 />
             </div>
 
-            <div className="portal-form-narrow pt-8 border-t border-ink-200">
-                <h2 className="text-lg font-bold mb-1">Change Password</h2>
-                <p className="portal-text-body text-ink-500 mb-6">Set a new password for {user.email}.</p>
+            <div className="portal-form-narrow pt-8 border-t border-border">
+                <h2 className="text-lg mb-1">Change Password</h2>
+                <p className="portal-text-body text-muted-foreground mb-6">Set a new password for {user.email}.</p>
                 <ChangePasswordForm action={boundPasswordAction} />
             </div>
         </div>

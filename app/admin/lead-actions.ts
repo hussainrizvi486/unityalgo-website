@@ -1,10 +1,11 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { prisma } from '@/lib/db';
+import { eq } from 'drizzle-orm';
+import { db, one, schema } from '@/lib/db';
 import { requireAdmin } from '@/lib/admin-session';
 import { LEAD_STATUSES } from '@/lib/leads';
-import type { LeadStatus } from '@prisma/client';
+import type { LeadStatus } from '@/db/types';
 
 export interface LeadFormState {
     error?: string;
@@ -29,10 +30,14 @@ export async function updateLeadAction(
         return { error: 'Choose a valid status.' };
     }
 
-    await prisma.lead.update({
-        where: { id },
-        data: { status: status as LeadStatus, notes: notes || null },
-    });
+    one(
+        await db
+            .update(schema.lead)
+            .set({ status: status as LeadStatus, notes: notes || null })
+            .where(eq(schema.lead.id, id))
+            .returning({ id: schema.lead.id }),
+        'Lead',
+    );
 
     revalidatePath('/admin/leads');
     revalidatePath(`/admin/leads/${id}`);
@@ -43,6 +48,6 @@ export async function deleteLeadAction(formData: FormData) {
     await requireAdmin();
     const id = String(formData.get('id') ?? '');
     if (!id) return;
-    await prisma.lead.delete({ where: { id } });
+    await db.delete(schema.lead).where(eq(schema.lead.id, id));
     revalidatePath('/admin/leads');
 }

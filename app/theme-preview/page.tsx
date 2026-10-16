@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import Link from 'next/link';
 import {
     Rocket, ArrowRight, ArrowUpRight, ShieldCheck, Zap, Layers, BrainCircuit,
@@ -50,6 +50,7 @@ import { AdminPageHeader, AdminPageError, AdminPageNotice } from '@/components/a
 import { AdminListView, renderedColumn, type ListViewColumn } from '@/components/admin/list-view';
 import { ActionsCell, AvatarCell, BadgeCell, MutedCell } from '@/components/admin/grid-cells';
 import { ControllerOffline } from '@/components/admin/controller-offline';
+import { TokenReference } from './token-reference';
 import { Logo } from '@/components/Logo';
 import { Footer } from '@/components/layouts/footer';
 import { FaqSection } from '@/components/website/faq-section';
@@ -70,7 +71,7 @@ const navGroups = [
         sections: [
             { id: 'overview', label: 'Overview' },
             { id: 'branding', label: 'Logo & Branding' },
-            { id: 'colors', label: 'Color Palette' },
+            { id: 'colors', label: 'Design tokens' },
             { id: 'typography', label: 'Typography' },
             { id: 'borders', label: 'Borders & Radius' },
             { id: 'shadows', label: 'Shadows' },
@@ -139,12 +140,12 @@ function SectionHeading({
     return (
         <div id={id} className="scroll-mt-24 mb-8">
             <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                <h2 className="text-2xl md:text-3xl font-bold text-ink-900">{title}</h2>
+                <h2 className="text-2xl md:text-3xl font-bold text-foreground">{title}</h2>
                 {source && (
-                    <code className="font-mono text-xs text-ink-400">{source}</code>
+                    <code className="font-mono text-xs text-muted-foreground">{source}</code>
                 )}
             </div>
-            {description && <p className="text-ink-500 mt-2 max-w-2xl leading-relaxed">{description}</p>}
+            {description && <p className="text-muted-foreground mt-2 max-w-2xl leading-relaxed">{description}</p>}
         </div>
     );
 }
@@ -174,14 +175,14 @@ function Spec({
         <div className={cn('min-w-0', className)}>
             {label && (
                 <div className="mb-2.5 flex flex-wrap items-baseline gap-x-2">
-                    <span className="text-xs font-semibold text-ink-600">{label}</span>
-                    {hint && <span className="text-xs text-ink-400">{hint}</span>}
+                    <span className="text-xs font-semibold text-foreground/70">{label}</span>
+                    {hint && <span className="text-xs text-muted-foreground">{hint}</span>}
                 </div>
             )}
             <div
                 className={cn(
-                    surface === 'panel' && 'rounded-xl border border-ink-200 bg-white p-5',
-                    surface === 'muted' && 'rounded-xl border border-ink-100 bg-ink-50 p-5',
+                    surface === 'panel' && 'rounded-xl border border-border bg-card p-5',
+                    surface === 'muted' && 'rounded-xl border border-border/60 bg-muted p-5',
                 )}
             >
                 {children}
@@ -201,33 +202,8 @@ function Spec({
 function SubHeading({ label, description }: { label: string; description?: string }) {
     return (
         <div className="mb-4">
-            <h3 className="text-xs font-semibold text-ink-500 uppercase tracking-wider">{label}</h3>
-            {description && <p className="text-sm text-ink-400 mt-1 max-w-3xl leading-relaxed">{description}</p>}
-        </div>
-    );
-}
-
-function Swatch({
-    name,
-    className,
-    value,
-    textClassName = 'text-white',
-}: {
-    name: string;
-    className: string;
-    value?: string;
-    textClassName?: string;
-}) {
-    return (
-        <div className="flex flex-col rounded-lg overflow-hidden border border-ink-100">
-            {/* px-3 matches the caption below, so the hex and the token name sit
-                on the same left edge instead of 4px apart. */}
-            <div className={cn('h-20 flex items-end px-3 py-2', className)}>
-                <span className={cn('text-[11px] font-mono leading-snug', textClassName)}>{value}</span>
-            </div>
-            <div className="px-3 py-2 bg-white border-t border-ink-100">
-                <p className="text-xs font-semibold text-ink-800 truncate" title={name}>{name}</p>
-            </div>
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{label}</h3>
+            {description && <p className="text-sm text-muted-foreground mt-1 max-w-3xl leading-relaxed">{description}</p>}
         </div>
     );
 }
@@ -411,7 +387,7 @@ async function demoFormAction(): Promise<{ success: string }> {
 
 function CodeLabel({ children, className }: { children: React.ReactNode; className?: string }) {
     return (
-        <code className={cn('inline-block text-xs bg-ink-100 text-ink-600 rounded px-1.5 py-0.5 font-mono', className)}>
+        <code className={cn('inline-block text-xs bg-secondary text-foreground/70 rounded px-1.5 py-0.5 font-mono', className)}>
             {children}
         </code>
     );
@@ -436,19 +412,28 @@ const flowStages = [
     { number: '04', title: 'Support', description: 'Ongoing maintenance and new functionality after launch.' },
 ];
 
-export default function ThemePreviewPage() {
+/** The list-view demo reads the URL, which has to sit inside a Suspense boundary to prerender. */
+export default function ThemePreviewRoute() {
+    return (
+        <Suspense>
+            <ThemePreviewPage />
+        </Suspense>
+    );
+}
+
+function ThemePreviewPage() {
     const [dialogOpen, setDialogOpen] = useState(false);
 
     return (
         <div className="bg-background text-foreground min-h-screen">
             {/* --- PAGE HEADER --- */}
-            <div className="border-b border-ink-100 bg-white/80 backdrop-blur-md sticky top-0 z-40">
+            <div className="border-b border-border/60 bg-card/80 backdrop-blur-md sticky top-0 z-40">
                 <div className="site-container site-gutters py-4 flex items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
                         <Logo className="h-9" />
-                        <span className="text-sm font-semibold text-ink-400 hidden sm:inline">/ Theme Preview</span>
+                        <span className="text-sm font-semibold text-muted-foreground hidden sm:inline">/ Theme Preview</span>
                     </div>
-                    <Link href="/" className="text-sm font-medium text-link hover:underline flex items-center gap-1">
+                    <Link href="/" className="text-sm font-medium text-primary hover:underline flex items-center gap-1">
                         Back to site <ArrowUpRight className="w-3.5 h-3.5" />
                     </Link>
                 </div>
@@ -457,18 +442,18 @@ export default function ThemePreviewPage() {
             <div className="site-container site-gutters py-10 flex gap-10">
                 {/* --- STICKY TOC --- */}
                 <nav className="hidden lg:block w-60 shrink-0">
-                    <div className="sticky top-24 max-h-[calc(100vh-8rem)] overflow-y-auto pb-6 space-y-5">
+                    <div className="sticky top-24 max-h-[calc(100vh-var(--header-h)-var(--gap))] overflow-y-auto pb-6 space-y-5">
                         {navGroups.map((group) => (
                             <div key={group.label} className="space-y-0.5">
-                                <p className="mb-1.5 flex items-baseline justify-between px-3 text-xs font-semibold uppercase tracking-wider text-ink-400">
+                                <p className="mb-1.5 flex items-baseline justify-between px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                                     {group.label}
-                                    <span className="font-mono text-[10px] text-ink-300">{group.sections.length}</span>
+                                    <span className="font-mono text-micro text-muted-foreground/50">{group.sections.length}</span>
                                 </p>
                                 {group.sections.map((s) => (
                                     <a
                                         key={s.id}
                                         href={`#${s.id}`}
-                                        className="block rounded-md px-3 py-1.5 text-sm text-ink-600 transition-colors hover:bg-ink-100 hover:text-ink-900"
+                                        className="block rounded-md px-3 py-1.5 text-sm text-foreground/70 transition-colors hover:bg-secondary hover:text-foreground"
                                     >
                                         {s.label}
                                     </a>
@@ -482,14 +467,14 @@ export default function ThemePreviewPage() {
                 <div className="flex-1 min-w-0 space-y-24">
                     {/* OVERVIEW */}
                     <section id="overview" className="scroll-mt-24">
-                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent border border-brand/15 mb-6">
-                            <span className="w-2 h-2 rounded-full bg-brand animate-pulse" />
-                            <span className="text-xs font-semibold text-brand tracking-wide uppercase">Design System</span>
+                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent border border-primary/15 mb-6">
+                            <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                            <span className="text-xs font-semibold text-primary tracking-wide uppercase">Design System</span>
                         </div>
-                        <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-ink-900 mb-4 text-balance">
+                        <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-foreground mb-4 text-balance">
                             UnityAlgo Theme Preview
                         </h1>
-                        <p className="text-lg text-ink-600 max-w-2xl leading-relaxed">
+                        <p className="text-lg text-foreground/70 max-w-2xl leading-relaxed">
                             Every color, type style, and component used across the site, in one place — a living reference
                             for reviewing consistency and branding as the product grows.
                         </p>
@@ -499,148 +484,62 @@ export default function ThemePreviewPage() {
                     <section>
                         <SectionHeading id="branding" title="Logo & Branding" source="components/Logo.tsx" description="components/Logo.tsx — Poppins wordmark + SVG mark, two size presets used across the site." />
                         <div className="grid sm:grid-cols-2 gap-6">
-                            <div className="flex flex-col items-start gap-4 p-8 rounded-xl border border-ink-100 bg-white">
+                            <div className="flex flex-col items-start gap-4 p-8 rounded-xl border border-border/60 bg-card">
                                 <Logo className="h-12" />
                                 <CodeLabel>{'<Logo className="h-12" />'}</CodeLabel>
-                                <span className="text-xs text-ink-400">Used in Header</span>
+                                <span className="text-xs text-muted-foreground">Used in Header</span>
                             </div>
-                            <div className="flex flex-col items-start gap-4 p-8 rounded-xl bg-ink-950">
+                            <div className="flex flex-col items-start gap-4 p-8 rounded-xl bg-primary">
                                 <Logo className="h-10" />
                                 <CodeLabel>{'<Logo className="h-10" />'}</CodeLabel>
-                                <span className="text-xs text-ink-300">Used in Footer, on dark background</span>
+                                <span className="text-xs text-primary-foreground/50">Used in Footer, on dark background</span>
                             </div>
                         </div>
                     </section>
 
-                    {/* COLORS */}
+                    {/* TOKENS */}
                     <section>
-                        <SectionHeading id="colors" title="Color Palette" source="app/globals.css" description="Crimson brand with 5 explicit named roles (primary/deep/press/soft/subdued), a warm gold secondary accent, true-grayscale ink neutrals, and a stark white background. Buttons and cards deliberately fill with neutral ink-900, not brand — brand is reserved for links, icons, badges, and small accents. All defined once in app/globals.css under @theme." />
-
-                        <SubHeading
-                            label="Brand"
-                            description="Five explicit roles, not a computed scale. brand-soft is decorative only — never for text."
-                        />
-                        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-10">
-                            <Swatch name="brand (primary)" className="bg-brand" value="#8C181B" />
-                            <Swatch name="brand-deep (hover)" className="bg-brand-deep" value="#711316" />
-                            <Swatch name="brand-press (active)" className="bg-brand-press" value="#591013" />
-                            <Swatch name="brand-soft (decorative)" className="bg-brand-soft" value="#BC292E" />
-                            <Swatch name="brand-subdued (tint bg)" className="bg-brand-subdued" textClassName="text-ink-900" value="#F8E9EA" />
-                        </div>
-
-                        <SubHeading
-                            label="Link & accent"
-                            description="Decoupled from brand — link is used only for hyperlink-styled text."
-                        />
-                        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-10">
-                            <Swatch name="link" className="bg-link" value="#0066CC" />
-                            <Swatch name="gold (secondary accent)" className="bg-gold" value="#B45309" />
-                        </div>
-
-                        <SubHeading
-                            label="Ink (neutral)"
-                            description="True grayscale, used for body text, borders and muted surfaces."
-                        />
-                        <div className="grid grid-cols-3 sm:grid-cols-6 gap-3 mb-10">
-                            <Swatch name="ink-50" className="bg-ink-50" textClassName="text-ink-900" />
-                            <Swatch name="ink-100" className="bg-ink-100" textClassName="text-ink-900" />
-                            <Swatch name="ink-200" className="bg-ink-200" textClassName="text-ink-900" />
-                            <Swatch name="ink-300" className="bg-ink-300" textClassName="text-ink-900" />
-                            <Swatch name="ink-400" className="bg-ink-400" />
-                            <Swatch name="ink-500" className="bg-ink-500" />
-                            <Swatch name="ink-600" className="bg-ink-600" />
-                            <Swatch name="ink-700" className="bg-ink-700" />
-                            <Swatch name="ink-800" className="bg-ink-800" />
-                            <Swatch name="ink-900" className="bg-ink-900" />
-                            <Swatch name="ink-950" className="bg-ink-950" />
-                        </div>
-
-                        <SubHeading
-                            label="Logo against the palette"
-                            description="The mark and the primary brand colour share one hue."
-                        />
-                        <div className="grid sm:grid-cols-2 gap-3 mb-10">
-                            <div className="flex items-center gap-4 p-6 rounded-xl border border-ink-100 bg-white">
-                                <Logo className="h-10" />
-                                <span className="text-xs text-ink-400">on light</span>
-                            </div>
-                            <div className="flex items-center gap-4 p-6 rounded-xl bg-ink-950">
-                                <Logo className="h-10" />
-                                <span className="text-xs text-white/50">on ink-950 (footer)</span>
-                            </div>
-                        </div>
-
-                        <SubHeading
-                            label="Base tokens"
-                            description="The shadcn-convention layer most components actually reference."
-                        />
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-10">
-                            <Swatch name="background → #FFFFFF" className="bg-background border" textClassName="text-ink-500" />
-                            <Swatch name="foreground → ink-900" className="bg-foreground" />
-                            <Swatch name="primary → ink-900 (not brand)" className="bg-primary" />
-                            <Swatch name="secondary → ink-100" className="bg-secondary" textClassName="text-ink-900" />
-                            <Swatch name="accent → brand-subdued" className="bg-accent" textClassName="text-ink-900" />
-                            <Swatch name="destructive → error-600" className="bg-destructive" />
-                            <Swatch name="muted → ink-50" className="bg-muted" textClassName="text-ink-900" />
-                            <Swatch name="input → ink-200" className="bg-input" textClassName="text-ink-900" />
-                        </div>
-
-                        {/* The "Neutral Scale" strip that used to sit here showed the
-                            same ink tokens as the group above in a second, different
-                            treatment — two visual languages for one scale. */}
-
-                        <SubHeading
-                            label="Status"
-                            description="Success, warning, error and info — each with the surface it is used on."
-                        />
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                            <Swatch name="success-600" className="bg-success-600" value="Published badges, confirmations" />
-                            {/* Dark caption: white on warning-600 (#D97706) is ~3.1:1,
-                                under the 4.5:1 needed at this size. The other three
-                                status colours clear it with white. */}
-                            <Swatch name="warning-600" className="bg-warning-600" textClassName="text-ink-900" value="Caution states" />
-                            <Swatch name="error-600" className="bg-error-600" value="Delete, destructive, validation" />
-                            <Swatch name="info-600" className="bg-info-600" value="Informational callouts" />
-                        </div>
+                        <SectionHeading id="colors" title="Design tokens" source="app/globals.css" description="Every colour, size, space, radius, weight and shadow comes from the token block at the top of app/globals.css: :root for the public site, .dashboard for the customer portal and admin panel, .dashboard.dark for dark mode. Nothing below is copied; each value is read live." />
+                        <TokenReference />
                     </section>
 
                     {/* TYPOGRAPHY */}
                     <section>
                         <SectionHeading id="typography" title="Typography" description="Geist everywhere — body{} and h1,h2,h3{} both reference next/font's --font-geist variable. The wordmark alone pins Poppins via the .font-logo utility. .font-display is an opt-in hook for a hero display face, but no dedicated display font is loaded today, so it falls back to Geist." />
-                        <div className="space-y-5 p-8 rounded-xl border border-ink-100 bg-white">
+                        <div className="space-y-5 p-8 rounded-xl border border-border/60 bg-card">
                             <div>
-                                <h1 className="text-5xl font-bold tracking-tight text-ink-900">Heading 1 / text-5xl</h1>
+                                <h1 className="text-5xl font-bold tracking-tight text-foreground">Heading 1 / text-5xl</h1>
                                 <CodeLabel className="mt-2">font-bold · text-5xl</CodeLabel>
                             </div>
                             <div>
-                                <h2 className="text-4xl font-bold text-ink-900">Heading 2 / text-4xl</h2>
+                                <h2 className="text-4xl font-bold text-foreground">Heading 2 / text-4xl</h2>
                                 <CodeLabel className="mt-2">font-bold · text-4xl</CodeLabel>
                             </div>
                             <div>
-                                <h3 className="text-2xl font-bold text-ink-900">Heading 3 / text-2xl</h3>
+                                <h3 className="text-2xl font-bold text-foreground">Heading 3 / text-2xl</h3>
                                 <CodeLabel className="mt-2">font-bold · text-2xl</CodeLabel>
                             </div>
                             <div>
-                                <h4 className="text-lg font-bold text-ink-900">Heading 4 / text-lg</h4>
+                                <h4 className="text-lg font-bold text-foreground">Heading 4 / text-lg</h4>
                                 <CodeLabel className="mt-2">font-bold · text-lg</CodeLabel>
                             </div>
                             <div>
-                                <p className="text-xl text-ink-600 leading-relaxed">
+                                <p className="text-xl text-foreground/70 leading-relaxed">
                                     Lead paragraph / text-xl — used under hero headings to set up the value proposition.
                                 </p>
                             </div>
                             <div>
-                                <p className="text-base text-ink-600 leading-relaxed">
+                                <p className="text-base text-foreground/70 leading-relaxed">
                                     Body text / text-base — the default reading size for paragraphs across marketing pages.
                                 </p>
                             </div>
                             <div>
-                                <p className="text-sm text-ink-500">Small / text-sm — captions, meta info, helper text.</p>
+                                <p className="text-sm text-muted-foreground">Small / text-sm — captions, meta info, helper text.</p>
                             </div>
                             <div>
-                                <p className="text-xs text-ink-400 uppercase tracking-widest font-semibold">Eyebrow / text-xs uppercase tracking-widest</p>
+                                <p className="text-xs text-muted-foreground uppercase tracking-widest font-semibold">Eyebrow / text-xs uppercase tracking-widest</p>
                             </div>
-                            <div className="flex flex-wrap gap-x-6 gap-y-2 pt-5 border-t border-ink-100">
+                            <div className="flex flex-wrap gap-x-6 gap-y-2 pt-5 border-t border-border/60">
                                 <span className="font-light">Light 300</span>
                                 <span className="font-normal">Regular 400</span>
                                 <span className="font-medium">Medium 500</span>
@@ -648,7 +547,7 @@ export default function ThemePreviewPage() {
                                 <span className="font-bold">Bold 700</span>
                             </div>
                             <div>
-                                <Link href="#" className="text-link hover:underline font-semibold">Link text example →</Link>
+                                <Link href="#" className="text-primary hover:underline font-semibold">Link text example →</Link>
                             </div>
                         </div>
                     </section>
@@ -660,7 +559,7 @@ export default function ThemePreviewPage() {
                         <div className="overflow-x-auto">
                             <table className="min-w-full text-sm mb-8">
                                 <thead>
-                                    <tr className="text-left text-ink-400 text-xs uppercase tracking-wide">
+                                    <tr className="text-left text-muted-foreground text-xs uppercase tracking-wide">
                                         <th className="py-2 pr-4">Variant</th>
                                         <th className="py-2 pr-4">sm</th>
                                         <th className="py-2 pr-4">default</th>
@@ -671,8 +570,8 @@ export default function ThemePreviewPage() {
                                 </thead>
                                 <tbody>
                                     {(['default', 'secondary', 'outline', 'ghost', 'destructive', 'link'] as const).map((variant) => (
-                                        <tr key={variant} className="border-t border-ink-100">
-                                            <td className="py-3 pr-4 font-mono text-xs text-ink-500">{variant}</td>
+                                        <tr key={variant} className="border-t border-border/60">
+                                            <td className="py-3 pr-4 font-mono text-xs text-muted-foreground">{variant}</td>
                                             <td className="py-3 pr-4"><Button variant={variant} size="sm">Button</Button></td>
                                             <td className="py-3 pr-4"><Button variant={variant}>Button</Button></td>
                                             <td className="py-3 pr-4"><Button variant={variant} size="lg">Button</Button></td>
@@ -686,18 +585,18 @@ export default function ThemePreviewPage() {
 
                         <SubHeading label="Real treatments used on marketing pages" />
                         <div className="flex flex-wrap items-center gap-3">
-                            <Button size="lg" className="bg-ink-900 hover:bg-ink-800 text-white shadow-lg shadow-ink-900/10 hover:scale-105 transition-all">
+                            <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-foreground/10 hover:scale-105 transition-all">
                                 Get Started <ArrowRight className="ml-1 size-4" />
                             </Button>
-                            <Button variant="outline" size="lg" className="bg-white/60 backdrop-blur-md shadow-md border-input hover:bg-white">
+                            <Button variant="outline" size="lg" className="bg-card/60 backdrop-blur-md shadow-md border-input hover:bg-card">
                                 Our Services
                             </Button>
                             {/* This one is white-on-white against the page, so it needs
                                 the dark surface it is actually used on to be legible. */}
-                            <div className="flex items-center rounded-xl bg-ink-950 px-4 py-3">
-                                <Button className="bg-white text-ink-900 hover:bg-ink-100">CTA on dark background</Button>
+                            <div className="flex items-center rounded-xl bg-primary px-4 py-3">
+                                <Button className="bg-card text-foreground hover:bg-secondary">CTA on dark background</Button>
                             </div>
-                            <Button variant="ghost" className="rounded hover:bg-ink-100 text-ink-600">
+                            <Button variant="ghost" className="rounded hover:bg-secondary text-foreground/70">
                                 Learn more <ArrowUpRight className="ml-1 w-4 h-4" />
                             </Button>
                         </div>
@@ -732,16 +631,16 @@ export default function ThemePreviewPage() {
                             <div>
                                 <SubHeading label="Grouped" description="Segmented actions share one border; the divider is the neighbour's edge, not an extra element." />
                                 <div className="inline-flex rounded border border-input overflow-hidden">
-                                    <button type="button" className="px-3 py-1.5 text-sm bg-ink-900 text-white">Day</button>
-                                    <button type="button" className="px-3 py-1.5 text-sm border-l border-input hover:bg-ink-50">Week</button>
-                                    <button type="button" className="px-3 py-1.5 text-sm border-l border-input hover:bg-ink-50">Month</button>
+                                    <button type="button" className="px-3 py-1.5 text-sm bg-primary text-primary-foreground">Day</button>
+                                    <button type="button" className="px-3 py-1.5 text-sm border-l border-input hover:bg-muted">Week</button>
+                                    <button type="button" className="px-3 py-1.5 text-sm border-l border-input hover:bg-muted">Month</button>
                                 </div>
                             </div>
 
                             <div>
                                 <SubHeading label="Full width" description="Used in the login card and in narrow drawers, where a button that hugs its label reads as unfinished." />
                                 <div className="max-w-xs space-y-2.5">
-                                    <Button className="w-full bg-ink-900 text-white hover:bg-ink-800">Sign in</Button>
+                                    <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/90">Sign in</Button>
                                     <Button variant="outline" className="w-full">Create an account</Button>
                                 </div>
                             </div>
@@ -782,21 +681,21 @@ export default function ThemePreviewPage() {
                         />
                         <div className="mb-10 grid gap-6 md:grid-cols-3">
                             <div>
-                                <Label htmlFor="tp-anatomy-1" className="mb-1.5 text-sm text-ink-700">Company name</Label>
+                                <Label htmlFor="tp-anatomy-1" className="mb-1.5 text-sm text-foreground/80">Company name</Label>
                                 <Input id="tp-anatomy-1" defaultValue="North &amp; Co." />
-                                <p className="mt-1.5 text-xs text-ink-400">Appears on invoices.</p>
+                                <p className="mt-1.5 text-xs text-muted-foreground">Appears on invoices.</p>
                             </div>
                             <div>
-                                <Label htmlFor="tp-anatomy-2" className="mb-1.5 text-sm text-ink-700">
-                                    Company name <span className="font-normal text-ink-400">(optional)</span>
+                                <Label htmlFor="tp-anatomy-2" className="mb-1.5 text-sm text-foreground/80">
+                                    Company name <span className="font-normal text-muted-foreground">(optional)</span>
                                 </Label>
                                 <Input id="tp-anatomy-2" placeholder="North &amp; Co." />
-                                <p className="mt-1.5 text-xs text-ink-400">Optional is marked on the label, not the placeholder.</p>
+                                <p className="mt-1.5 text-xs text-muted-foreground">Optional is marked on the label, not the placeholder.</p>
                             </div>
                             <div>
-                                <Label htmlFor="tp-anatomy-3" className="mb-1.5 text-sm text-ink-700">Company name</Label>
+                                <Label htmlFor="tp-anatomy-3" className="mb-1.5 text-sm text-foreground/80">Company name</Label>
                                 <Input id="tp-anatomy-3" defaultValue="!!" aria-invalid aria-describedby="tp-anatomy-3-error" />
-                                <p id="tp-anatomy-3-error" role="alert" className="mt-1.5 text-xs text-error-600">
+                                <p id="tp-anatomy-3-error" role="alert" className="mt-1.5 text-xs text-destructive">
                                     Enter at least two characters.
                                 </p>
                             </div>
@@ -806,19 +705,19 @@ export default function ThemePreviewPage() {
                         <div className="mb-10 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                             <Spec label="Leading icon" hint="admin search">
                                 <div className="relative">
-                                    <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-ink-400" />
+                                    <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                                     <Input placeholder="Search…" className="pl-9" />
                                 </div>
                             </Spec>
                             <Spec label="Trailing unit">
                                 <div className="relative">
                                     <Input defaultValue="30" className="pr-14 tabular-nums" />
-                                    <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-ink-400">days</span>
+                                    <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">days</span>
                                 </div>
                             </Spec>
                             <Spec label="Prefix">
                                 <div className="flex">
-                                    <span className="inline-flex items-center rounded-l border border-r-0 border-input bg-ink-50 px-3 text-sm text-ink-500">
+                                    <span className="inline-flex items-center rounded-l border border-r-0 border-input bg-muted px-3 text-sm text-muted-foreground">
                                         https://
                                     </span>
                                     <Input defaultValue="northandco.com" className="rounded-l-none" />
@@ -827,7 +726,7 @@ export default function ThemePreviewPage() {
                             <Spec label="Inline action">
                                 <div className="relative">
                                     <Input readOnly value="sk_live_9f2c…a41" className="pr-10 font-mono text-xs" />
-                                    <button type="button" aria-label="Copy" className="absolute right-1 top-1/2 flex size-7 -translate-y-1/2 items-center justify-center rounded text-ink-400 hover:bg-ink-100 hover:text-ink-700">
+                                    <button type="button" aria-label="Copy" className="absolute right-1 top-1/2 flex size-7 -translate-y-1/2 items-center justify-center rounded text-muted-foreground hover:bg-secondary hover:text-foreground/80">
                                         <Copy className="size-3.5" />
                                     </button>
                                 </div>
@@ -844,31 +743,31 @@ export default function ThemePreviewPage() {
                         <div className="grid gap-6 md:grid-cols-2">
                             <div className="space-y-5">
                                 <div>
-                                    <Label className="mb-1.5 text-sm text-ink-700">Textarea</Label>
+                                    <Label className="mb-1.5 text-sm text-foreground/80">Textarea</Label>
                                     <Textarea rows={4} placeholder="Tell us about your project…" />
                                 </div>
                                 <div>
-                                    <Label className="mb-1.5 text-sm text-ink-700">Textarea — invalid</Label>
+                                    <Label className="mb-1.5 text-sm text-foreground/80">Textarea — invalid</Label>
                                     <Textarea rows={3} defaultValue="Too short" aria-invalid />
                                 </div>
                             </div>
                             <div className="space-y-5">
                                 <div>
-                                    <Label className="mb-1.5 text-sm text-ink-700">Colour field <span className="font-normal text-ink-400">(admin)</span></Label>
+                                    <Label className="mb-1.5 text-sm text-foreground/80">Colour field <span className="font-normal text-muted-foreground">(admin)</span></Label>
                                     <div className="flex items-center gap-2">
-                                        <div className="size-9 shrink-0 rounded border border-input" style={{ backgroundColor: '#8C181B' }} />
-                                        <Input value="#8C181B" readOnly className="font-mono" />
+                                        <div className="size-9 shrink-0 rounded border border-input bg-primary" />
+                                        <Input value="--primary" readOnly className="font-mono" />
                                     </div>
                                 </div>
                                 <div>
-                                    <Label className="mb-1.5 text-sm text-ink-700">Upload field <span className="font-normal text-ink-400">(admin)</span></Label>
+                                    <Label className="mb-1.5 text-sm text-foreground/80">Upload field <span className="font-normal text-muted-foreground">(admin)</span></Label>
                                     <div className="flex items-center gap-3">
                                         <Button type="button" variant="outline"><Upload className="size-3.5" /> Choose file</Button>
-                                        <span className="text-xs text-ink-400">No file selected</span>
+                                        <span className="text-xs text-muted-foreground">No file selected</span>
                                     </div>
                                 </div>
                                 <div>
-                                    <Label className="mb-1.5 text-sm text-ink-700">Date</Label>
+                                    <Label className="mb-1.5 text-sm text-foreground/80">Date</Label>
                                     <Input type="date" defaultValue="2026-09-01" />
                                 </div>
                             </div>
@@ -884,12 +783,12 @@ export default function ThemePreviewPage() {
                             description="One component covers whole numbers, decimals, money and percentages. It is always type=text — type=number cannot show a grouping separator or a symbol, and hands back an empty string for anything the browser dislikes, so a mistyped value is indistinguishable from a cleared one."
                         />
 
-                        <div className="mb-8 rounded-xl border border-ink-200 bg-ink-50 px-5 py-4 text-sm text-ink-600">
-                            <p className="font-semibold text-ink-800">Click into any field below to see the difference.</p>
+                        <div className="mb-8 rounded-xl border border-border bg-muted px-5 py-4 text-sm text-foreground/70">
+                            <p className="font-semibold text-foreground">Click into any field below to see the difference.</p>
                             <p className="mt-1 leading-relaxed">
                                 Formatting appears on blur and disappears on focus, so separators never shuffle under the caret
                                 mid-word. Whatever it displays, the value posted to the server is always plain —
-                                <code className="mx-1 font-mono text-xs text-ink-500">1234.5</code>
+                                <code className="mx-1 font-mono text-xs text-muted-foreground">1234.5</code>
                                 — carried on a hidden input beside the visible one.
                             </p>
                         </div>
@@ -997,7 +896,7 @@ export default function ThemePreviewPage() {
                                 </Select>
                             </Spec>
                             <Spec label="Native select" hint="admin filter bars — kept native so it posts without JS">
-                                <select className="h-9 w-full rounded border border-input bg-white px-3 text-sm">
+                                <select className="h-9 w-full rounded border border-input bg-card px-3 text-sm">
                                     <option>All statuses</option>
                                     <option>Published</option>
                                     <option>Draft</option>
@@ -1043,16 +942,16 @@ export default function ThemePreviewPage() {
 
                         <SubHeading label="Checkbox states" />
                         <div className="mb-10 flex flex-wrap items-center gap-x-10 gap-y-4">
-                            <label className="flex items-center gap-2.5 text-sm text-ink-700">
+                            <label className="flex items-center gap-2.5 text-sm text-foreground/80">
                                 <Checkbox defaultChecked /> Checked
                             </label>
-                            <label className="flex items-center gap-2.5 text-sm text-ink-700">
+                            <label className="flex items-center gap-2.5 text-sm text-foreground/80">
                                 <Checkbox /> Unchecked
                             </label>
-                            <label className="flex items-center gap-2.5 text-sm text-ink-400">
+                            <label className="flex items-center gap-2.5 text-sm text-muted-foreground">
                                 <Checkbox disabled defaultChecked /> Disabled, checked
                             </label>
-                            <label className="flex items-center gap-2.5 text-sm text-ink-400">
+                            <label className="flex items-center gap-2.5 text-sm text-muted-foreground">
                                 <Checkbox disabled /> Disabled
                             </label>
                         </div>
@@ -1081,7 +980,7 @@ export default function ThemePreviewPage() {
                                 </div>
                             </Spec>
                             <Spec label="On a dark ground" hint="tone=&quot;dark&quot;">
-                                <div className="flex items-center gap-4 rounded-lg bg-ink-950 px-4 py-3">
+                                <div className="flex items-center gap-4 rounded-lg bg-primary px-4 py-3">
                                     <Switch tone="dark" aria-label="Dark off" />
                                     <Switch tone="dark" defaultChecked aria-label="Dark on" />
                                 </div>
@@ -1089,15 +988,15 @@ export default function ThemePreviewPage() {
                         </div>
 
                         <SubHeading label="With a label" description="The switch is the control, so the whole row is the label — clicking the text throws it too." />
-                        <div className="mb-10 max-w-2xl divide-y divide-ink-100 rounded-xl border border-ink-200">
+                        <div className="mb-10 max-w-2xl divide-y divide-border/60 rounded-xl border border-border">
                             {[
                                 { id: 'tp-sw-1', title: 'Annual billing', body: 'Roughly two months free compared with monthly.', on: true },
                                 { id: 'tp-sw-2', title: 'Email me about new features', body: 'Product announcements only. Never more than once a month.', on: false },
                             ].map((row) => (
-                                <label key={row.id} htmlFor={row.id} className="flex items-start justify-between gap-6 px-5 py-4 text-sm text-ink-700">
+                                <label key={row.id} htmlFor={row.id} className="flex items-start justify-between gap-6 px-5 py-4 text-sm text-foreground/80">
                                     <span>
                                         {row.title}
-                                        <span className="mt-0.5 block text-xs leading-relaxed text-ink-500">{row.body}</span>
+                                        <span className="mt-0.5 block text-xs leading-relaxed text-muted-foreground">{row.body}</span>
                                     </span>
                                     <Switch id={row.id} defaultChecked={row.on} className="mt-0.5" />
                                 </label>
@@ -1105,17 +1004,17 @@ export default function ThemePreviewPage() {
                         </div>
 
                         <SubHeading label="Setting rows" description="The pattern used throughout the admin panel: the constraint or consequence sits under the label, at 12px, rather than in a tooltip nobody opens." />
-                        <div className="max-w-2xl divide-y divide-ink-100 rounded-xl border border-ink-200">
+                        <div className="max-w-2xl divide-y divide-border/60 rounded-xl border border-border">
                             {[
                                 { title: 'Use as the default account', body: 'Any purpose without its own mailbox sends from here. Only one account can be the default.', checked: true },
                                 { title: 'Implicit TLS', body: 'On for port 465. Leave off for 587 and 25, which start plaintext and upgrade via STARTTLS.', checked: false },
                                 { title: 'Active', body: 'Inactive accounts are kept but never selected for sending.', checked: true },
                             ].map((row) => (
-                                <label key={row.title} className="flex items-start gap-3 px-5 py-4 text-sm text-ink-700">
+                                <label key={row.title} className="flex items-start gap-3 px-5 py-4 text-sm text-foreground/80">
                                     <Checkbox defaultChecked={row.checked} className="mt-0.5" />
                                     <span>
                                         {row.title}
-                                        <span className="mt-0.5 block text-xs leading-relaxed text-ink-500">{row.body}</span>
+                                        <span className="mt-0.5 block text-xs leading-relaxed text-muted-foreground">{row.body}</span>
                                     </span>
                                 </label>
                             ))}
@@ -1130,7 +1029,7 @@ export default function ThemePreviewPage() {
                             source="components/admin/dynamic-form.tsx"
                             description="The real AdminDynamicForm, rendered live from a field array — not a mock-up of one. Tabs, sections and columns are breaks rather than containers, so a caller lists fields in order and never closes anything. Submitting here runs a local stub instead of a server action."
                         />
-                        <div className="rounded-xl border border-ink-200 bg-white p-6 md:p-8">
+                        <div className="rounded-xl border border-border bg-card p-6 md:p-8">
                             <AdminDynamicForm
                                 fields={demoFormFields}
                                 action={demoFormAction}
@@ -1171,9 +1070,9 @@ export default function ThemePreviewPage() {
                                     align="start"
                                     trigger={
                                         <Button variant="ghost" className="gap-2">
-                                            <AvatarInitials name="Ada Lovelace" className="size-6 text-[10px]" />
+                                            <AvatarInitials name="Ada Lovelace" className="size-6 text-micro" />
                                             Ada Lovelace
-                                            <ChevronDown className="size-4 text-ink-400" />
+                                            <ChevronDown className="size-4 text-muted-foreground" />
                                         </Button>
                                     }
                                 >
@@ -1221,11 +1120,11 @@ export default function ThemePreviewPage() {
 
                         <SubHeading label="Bespoke chips" description="One-off treatments that are not the Badge component." />
                         <div className="flex flex-wrap items-center gap-3">
-                            <span className="text-xs font-semibold text-brand bg-accent border border-brand/15 rounded-full px-3 py-1 uppercase tracking-wide">Blog Tag</span>
-                            <span className="px-2.5 py-1 text-xs font-medium bg-ink-100 rounded-full border border-ink-200">Tech Chip</span>
-                            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent border border-brand/15">
-                                <span className="w-2 h-2 rounded-full bg-brand animate-pulse" />
-                                <span className="text-xs font-semibold text-brand tracking-wide uppercase">Eyebrow Badge</span>
+                            <span className="text-xs font-semibold text-primary bg-accent border border-primary/15 rounded-full px-3 py-1 uppercase tracking-wide">Blog Tag</span>
+                            <span className="px-2.5 py-1 text-xs font-medium bg-secondary rounded-full border border-border">Tech Chip</span>
+                            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent border border-primary/15">
+                                <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                                <span className="text-xs font-semibold text-primary tracking-wide uppercase">Eyebrow Badge</span>
                             </span>
                         </div>
                     </section>
@@ -1241,7 +1140,7 @@ export default function ThemePreviewPage() {
                         <div className="space-y-3">
                             <Notice tone="error">Cannot delete the last remaining admin user.</Notice>
                             <Notice tone="success">Password updated.</Notice>
-                            <Notice tone="warning">Colors must be valid hex values, e.g. #ffffff.</Notice>
+                            <Notice tone="warning">Colours must be valid hex values.</Notice>
                             <Notice tone="info">Optional — leave blank to use the site default.</Notice>
                             <Notice tone="info" icon={false}>Without an icon, for a dense context.</Notice>
                         </div>
@@ -1263,24 +1162,24 @@ export default function ThemePreviewPage() {
                     <section>
                         <SectionHeading id="cards" title="Cards" description="Every recurring card treatment in the product — the four surface styles the marketing site uses, then the admin panel's data cards." />
                         <div className="grid sm:grid-cols-2 gap-6">
-                            <div className="p-8 rounded-2xl border border-ink-100 hover:border-brand/25 hover:shadow-xl hover:shadow-ink-900/5 transition-all duration-300">
-                                <h3 className="text-lg font-bold text-ink-900 mb-2">Bordered Card</h3>
-                                <p className="text-sm text-ink-600">rounded-2xl · border-ink-100 · hover:shadow-ink-900/5</p>
+                            <div className="p-8 rounded-2xl border border-border/60 hover:border-primary/25 hover:shadow-xl hover:shadow-foreground/5 transition-all duration-300">
+                                <h3 className="text-lg font-bold text-foreground mb-2">Bordered Card</h3>
+                                <p className="text-sm text-foreground/70">rounded-2xl · border-border/60 · hover:shadow-foreground/5</p>
                             </div>
-                            <div className="p-8 rounded-2xl bg-white/60 backdrop-blur-md border border-white/60 hover:bg-white hover:border-brand/15 hover:shadow-2xl hover:shadow-ink-900/5 transition-all duration-300">
-                                <h3 className="text-lg font-bold text-ink-900 mb-2">Glass Card</h3>
-                                <p className="text-sm text-ink-600">bg-white/60 · backdrop-blur-md · border-white/60</p>
+                            <div className="p-8 rounded-2xl bg-card/60 backdrop-blur-md border border-background/60 hover:bg-card hover:border-primary/15 hover:shadow-2xl hover:shadow-foreground/5 transition-all duration-300">
+                                <h3 className="text-lg font-bold text-foreground mb-2">Glass Card</h3>
+                                <p className="text-sm text-foreground/70">bg-card/60 · backdrop-blur-md · border-background/60</p>
                             </div>
-                            <div className="p-8 rounded bg-white shadow-sm hover:shadow-xl transition-all duration-300">
+                            <div className="p-8 rounded bg-card shadow-sm hover:shadow-xl transition-all duration-300">
                                 <div className="w-14 h-14 rounded-xl bg-accent flex items-center justify-center mb-6">
-                                    <Zap className="w-7 h-7 text-brand" />
+                                    <Zap className="w-7 h-7 text-primary" />
                                 </div>
-                                <h3 className="text-lg font-bold text-ink-900 mb-2">Feature Card</h3>
-                                <p className="text-sm text-ink-600">rounded · shadow-sm → shadow-xl on hover</p>
+                                <h3 className="text-lg font-bold text-foreground mb-2">Feature Card</h3>
+                                <p className="text-sm text-foreground/70">rounded · shadow-sm → shadow-xl on hover</p>
                             </div>
-                            <div className="p-8 rounded-2xl bg-gradient-to-br from-ink-950 to-black text-white">
+                            <div className="p-8 rounded-2xl bg-gradient-to-br from-primary to-scrim text-primary-foreground">
                                 <h3 className="text-lg font-bold mb-2">Dark CTA Card</h3>
-                                <p className="text-sm text-white/70">bg-gradient-to-br from-ink-950 to-black</p>
+                                <p className="text-sm text-primary-foreground/70">bg-gradient-to-br from-primary to-scrim</p>
                             </div>
                         </div>
 
@@ -1296,19 +1195,19 @@ export default function ThemePreviewPage() {
                                     { label: 'Open tickets', value: '17', delta: '-8.0%', up: false, icon: Inbox },
                                     { label: 'New customers', value: '96', delta: '+21.7%', up: true, icon: Users },
                                 ].map((stat) => (
-                                    <div key={stat.label} className="rounded-xl border border-ink-200 bg-white p-5">
+                                    <div key={stat.label} className="rounded-xl border border-border bg-card p-5">
                                         <div className="flex items-start justify-between gap-3">
-                                            <span className="text-xs font-medium text-ink-500">{stat.label}</span>
-                                            <stat.icon className="size-4 shrink-0 text-ink-300" />
+                                            <span className="text-xs font-medium text-muted-foreground">{stat.label}</span>
+                                            <stat.icon className="size-4 shrink-0 text-muted-foreground/50" />
                                         </div>
-                                        <p className="mt-3 text-2xl font-bold tabular-nums text-ink-900">{stat.value}</p>
+                                        <p className="mt-3 text-2xl font-bold tabular-nums text-foreground">{stat.value}</p>
                                         <p className={cn(
                                             'mt-1.5 flex items-center gap-1 text-xs font-medium',
-                                            stat.up ? 'text-success-600' : 'text-error-600',
+                                            stat.up ? 'text-success' : 'text-destructive',
                                         )}>
                                             {stat.up ? <TrendingUp className="size-3.5" /> : <TrendingDown className="size-3.5" />}
                                             {stat.delta}
-                                            <span className="font-normal text-ink-400">vs last month</span>
+                                            <span className="font-normal text-muted-foreground">vs last month</span>
                                         </p>
                                     </div>
                                 ))}
@@ -1318,18 +1217,18 @@ export default function ThemePreviewPage() {
                         <div className="mt-12 grid gap-6 lg:grid-cols-3">
                             <div>
                                 <SubHeading label="List card" />
-                                <div className="overflow-hidden rounded-xl border border-ink-200 bg-white">
-                                    <div className="flex items-center justify-between border-b border-ink-100 px-5 py-3.5">
-                                        <h4 className="text-sm font-semibold text-ink-900">Recent signups</h4>
-                                        <Button variant="ghost" size="sm" className="text-ink-500">View all</Button>
+                                <div className="overflow-hidden rounded-xl border border-border bg-card">
+                                    <div className="flex items-center justify-between border-b border-border/60 px-5 py-3.5">
+                                        <h4 className="text-sm font-semibold text-foreground">Recent signups</h4>
+                                        <Button variant="ghost" size="sm" className="text-muted-foreground">View all</Button>
                                     </div>
-                                    <div className="divide-y divide-ink-100">
+                                    <div className="divide-y divide-border/60">
                                         {demoRows.slice(0, 3).map((row) => (
                                             <div key={row.id} className="flex items-center gap-3 px-5 py-3">
                                                 <AvatarInitials name={row.name} className="size-8 text-xs" />
                                                 <div className="min-w-0 flex-1">
-                                                    <p className="truncate text-sm font-medium text-ink-800">{row.name}</p>
-                                                    <p className="truncate text-xs text-ink-400">{row.email}</p>
+                                                    <p className="truncate text-sm font-medium text-foreground">{row.name}</p>
+                                                    <p className="truncate text-xs text-muted-foreground">{row.email}</p>
                                                 </div>
                                                 <Badge variant="neutral">{row.plan}</Badge>
                                             </div>
@@ -1341,22 +1240,22 @@ export default function ThemePreviewPage() {
                             <div>
                                 <SubHeading label="Selectable card" description="The plan picker. Selection is a border and a tick, not colour alone." />
                                 <div className="space-y-3">
-                                    <div className="relative rounded-xl border-2 border-brand bg-brand-subdued/40 p-5">
-                                        <CircleCheck className="absolute right-4 top-4 size-5 text-brand" />
-                                        <p className="text-sm font-semibold text-ink-900">Scale</p>
-                                        <p className="mt-1 text-xs text-ink-500">Up to 25 users · $49/mo</p>
+                                    <div className="relative rounded-xl border-2 border-primary bg-accent/40 p-5">
+                                        <CircleCheck className="absolute right-4 top-4 size-5 text-primary" />
+                                        <p className="text-sm font-semibold text-foreground">Scale</p>
+                                        <p className="mt-1 text-xs text-muted-foreground">Up to 25 users · $49/mo</p>
                                     </div>
-                                    <div className="rounded-xl border-2 border-ink-200 p-5 hover:border-ink-300">
-                                        <p className="text-sm font-semibold text-ink-900">Launch</p>
-                                        <p className="mt-1 text-xs text-ink-500">Up to 5 users · $19/mo</p>
+                                    <div className="rounded-xl border-2 border-border p-5 hover:border-input">
+                                        <p className="text-sm font-semibold text-foreground">Launch</p>
+                                        <p className="mt-1 text-xs text-muted-foreground">Up to 5 users · $19/mo</p>
                                     </div>
                                 </div>
                             </div>
 
                             <div>
                                 <SubHeading label="Summary card" description="Key–value pairs on a detail page." />
-                                <div className="rounded-xl border border-ink-200 bg-white p-5">
-                                    <h4 className="text-sm font-semibold text-ink-900">Subscription</h4>
+                                <div className="rounded-xl border border-border bg-card p-5">
+                                    <h4 className="text-sm font-semibold text-foreground">Subscription</h4>
                                     <dl className="mt-4 space-y-3 text-sm">
                                         {[
                                             ['Status', <Badge key="s" variant="success" dot>Active</Badge>],
@@ -1365,8 +1264,8 @@ export default function ThemePreviewPage() {
                                             ['Seats', '18 of 25'],
                                         ].map(([term, value]) => (
                                             <div key={String(term)} className="flex items-center justify-between gap-4">
-                                                <dt className="text-ink-500">{term}</dt>
-                                                <dd className="font-medium text-ink-800">{value}</dd>
+                                                <dt className="text-muted-foreground">{term}</dt>
+                                                <dd className="font-medium text-foreground">{value}</dd>
                                             </div>
                                         ))}
                                     </dl>
@@ -1385,7 +1284,7 @@ export default function ThemePreviewPage() {
                         />
 
                         <SubHeading label="Admin page header" description="Title, supporting line, and the primary action pinned right. Every admin list and detail page opens with this." />
-                        <div className="mb-10 rounded-xl border border-ink-200 bg-white p-6">
+                        <div className="mb-10 rounded-xl border border-border bg-card p-6">
                             <AdminPageHeader
                                 title="Plans"
                                 subtitle="12 plans across 2 products"
@@ -1397,35 +1296,35 @@ export default function ThemePreviewPage() {
                         </div>
 
                         <SubHeading label="Form section" description="A heading, an optional explanatory line, and a rule above. The first section drops the rule, so a form never opens with a stray border." />
-                        <div className="mb-10 max-w-2xl space-y-7 rounded-xl border border-ink-200 bg-white p-6 md:p-8">
+                        <div className="mb-10 max-w-2xl space-y-7 rounded-xl border border-border bg-card p-6 md:p-8">
                             <section className="space-y-5">
                                 <div>
-                                    <h2 className="text-sm font-semibold text-ink-900">Identity</h2>
-                                    <p className="mt-1 text-xs text-ink-500">What this account is called and who it sends as.</p>
+                                    <h2 className="text-sm font-semibold text-foreground">Identity</h2>
+                                    <p className="mt-1 text-xs text-muted-foreground">What this account is called and who it sends as.</p>
                                 </div>
                                 <div className="grid gap-6 md:grid-cols-2">
                                     <div>
-                                        <Label className="mb-1.5 text-sm text-ink-700">Label</Label>
+                                        <Label className="mb-1.5 text-sm text-foreground/80">Label</Label>
                                         <Input defaultValue="Support" />
                                     </div>
                                     <div>
-                                        <Label className="mb-1.5 text-sm text-ink-700">Email address</Label>
+                                        <Label className="mb-1.5 text-sm text-foreground/80">Email address</Label>
                                         <Input defaultValue="support@unityalgo.com" />
                                     </div>
                                 </div>
                             </section>
-                            <section className="space-y-5 border-t border-ink-200 pt-7">
+                            <section className="space-y-5 border-t border-border pt-7">
                                 <div>
-                                    <h2 className="text-sm font-semibold text-ink-900">Outgoing mail</h2>
-                                    <p className="mt-1 text-xs text-ink-500">Required. This is what sends mail.</p>
+                                    <h2 className="text-sm font-semibold text-foreground">Outgoing mail</h2>
+                                    <p className="mt-1 text-xs text-muted-foreground">Required. This is what sends mail.</p>
                                 </div>
                                 <div className="grid gap-6 md:grid-cols-3">
                                     <div className="md:col-span-2">
-                                        <Label className="mb-1.5 text-sm text-ink-700">Host</Label>
+                                        <Label className="mb-1.5 text-sm text-foreground/80">Host</Label>
                                         <Input defaultValue="smtp.gmail.com" />
                                     </div>
                                     <div>
-                                        <Label className="mb-1.5 text-sm text-ink-700">Port</Label>
+                                        <Label className="mb-1.5 text-sm text-foreground/80">Port</Label>
                                         <SmartInput name="tp-section-port" kind="integer" min={1} max={65535} defaultValue="587" />
                                     </div>
                                 </div>
@@ -1433,16 +1332,16 @@ export default function ThemePreviewPage() {
                         </div>
 
                         <SubHeading label="Marketing section rhythm" description="An eyebrow badge, a heading, a supporting paragraph capped near 65 characters, then the content. The width cap is the point — a full-bleed paragraph is measurably harder to read." />
-                        <div className="rounded-xl border border-ink-100 bg-ink-50 px-6 py-14 text-center">
+                        <div className="rounded-xl border border-border/60 bg-muted px-6 py-14 text-center">
                             <Badge variant="brand" className="mb-4">Why UnityAlgo</Badge>
-                            <h2 className="mx-auto max-w-2xl text-3xl font-bold text-ink-900 md:text-4xl">
+                            <h2 className="mx-auto max-w-2xl text-3xl font-bold text-foreground md:text-4xl">
                                 Software that fits how your business already works
                             </h2>
-                            <p className="mx-auto mt-4 max-w-xl leading-relaxed text-ink-600">
+                            <p className="mx-auto mt-4 max-w-xl leading-relaxed text-foreground/70">
                                 One heading, one supporting paragraph, one action. Anything more competes with the section that follows it.
                             </p>
                             <div className="mt-7 flex flex-wrap justify-center gap-3">
-                                <Button size="lg" className="bg-ink-900 text-white hover:bg-ink-800">Get started <ArrowRight /></Button>
+                                <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90">Get started <ArrowRight /></Button>
                                 <Button size="lg" variant="outline">Talk to us</Button>
                             </div>
                         </div>
@@ -1463,13 +1362,13 @@ export default function ThemePreviewPage() {
                                     <TabsTrigger value="activity">Activity</TabsTrigger>
                                     <TabsTrigger value="settings">Settings</TabsTrigger>
                                 </TabsList>
-                                <TabsContent value="overview" className="pt-4 text-sm text-ink-600">
+                                <TabsContent value="overview" className="pt-4 text-sm text-foreground/70">
                                     The selected panel. Only one is mounted at a time.
                                 </TabsContent>
-                                <TabsContent value="activity" className="pt-4 text-sm text-ink-600">
+                                <TabsContent value="activity" className="pt-4 text-sm text-foreground/70">
                                     Tab state lives in the component; nothing is written to the URL.
                                 </TabsContent>
-                                <TabsContent value="settings" className="pt-4 text-sm text-ink-600">
+                                <TabsContent value="settings" className="pt-4 text-sm text-foreground/70">
                                     For state that should survive a refresh or be linkable, use routes instead.
                                 </TabsContent>
                             </Tabs>
@@ -1570,12 +1469,12 @@ export default function ThemePreviewPage() {
                                     {['Ada Lovelace', 'Grace Hopper', 'Alan Turing', 'Katherine Johnson'].map((name) => (
                                         <div key={name} className="flex items-center gap-2">
                                             <AvatarInitials name={name} />
-                                            <span className="text-sm text-ink-600">{name}</span>
+                                            <span className="text-sm text-foreground/70">{name}</span>
                                         </div>
                                     ))}
                                 </div>
                                 <Separator className="my-5" />
-                                <div className="flex h-5 items-center gap-3 text-sm text-ink-500">
+                                <div className="flex h-5 items-center gap-3 text-sm text-muted-foreground">
                                     <span>Horizontal above</span>
                                     <Separator orientation="vertical" />
                                     <span>vertical between</span>
@@ -1606,7 +1505,7 @@ export default function ThemePreviewPage() {
                                     label="Cell renderers"
                                     description="components/admin/grid-cells.tsx — a column names the renderer it wants instead of repeating markup."
                                 />
-                                <div className="rounded-xl border border-ink-200 bg-white divide-y divide-ink-100 text-sm">
+                                <div className="rounded-xl border border-border bg-card divide-y divide-border/60 text-sm">
                                     {[
                                         ['StackedCell', 'Title over a dimmer subtitle, optionally linked'],
                                         ['AvatarCell', 'Same, led by the initials avatar'],
@@ -1616,8 +1515,8 @@ export default function ThemePreviewPage() {
                                         ['ActionsCell', 'Trailing badge, links, form submits, delete'],
                                     ].map(([name, what]) => (
                                         <div key={name} className="flex flex-wrap items-baseline gap-x-3 px-4 py-2.5">
-                                            <code className="font-mono text-xs text-ink-900">{name}</code>
-                                            <span className="text-xs text-ink-500">{what}</span>
+                                            <code className="font-mono text-xs text-foreground">{name}</code>
+                                            <span className="text-xs text-muted-foreground">{what}</span>
                                         </div>
                                     ))}
                                 </div>
@@ -1627,14 +1526,14 @@ export default function ThemePreviewPage() {
                                     label="Why sorting and rendering are separate"
                                     description="The one rule to know before adding a column."
                                 />
-                                <div className="rounded-xl border border-ink-200 bg-white p-5 text-sm leading-relaxed text-ink-600">
+                                <div className="rounded-xl border border-border bg-card p-5 text-sm leading-relaxed text-foreground/70">
                                     <p>
                                         A column supplies <CodeLabel>text</CodeLabel> for what it sorts and searches by,
                                         and <CodeLabel>get</CodeLabel> for the object the renderer draws. Keeping them
                                         apart is what lets a Name column search on the plain name while rendering an
                                         avatar, a link and a subtitle — sorting a React element would not work.
                                     </p>
-                                    <pre className="mt-4 overflow-x-auto rounded-lg bg-ink-950 p-4 text-[11px] leading-relaxed text-ink-100">
+                                    <pre className="mt-4 overflow-x-auto rounded-lg bg-primary p-4 text-small leading-relaxed text-primary-foreground/90">
 {`renderedColumn<Row, StackedValue>({
   headerName: 'Customer',
   icon: <Mail />,
@@ -1657,11 +1556,11 @@ export default function ThemePreviewPage() {
                         <SectionHeading
                             id="tables"
                             title="Tables & Pagination"
-                            description="The static table treatment — header on ink-50, rows divided by ink-100, actions right-aligned. The admin list views themselves now render through components/admin/list-view.tsx (AG Grid), which reuses these same tokens."
+                            description="The static table treatment — header on muted, rows divided by border, actions right-aligned. The admin list views themselves now render through components/admin/list-view.tsx (AG Grid), which reuses these same tokens."
                         />
-                        <div className="bg-white border border-ink-100 rounded-xl overflow-hidden mb-6">
+                        <div className="bg-card border border-border/60 rounded-xl overflow-hidden mb-6">
                             <table className="w-full text-sm">
-                                <thead className="bg-ink-50 text-left text-ink-500 uppercase text-xs tracking-wide">
+                                <thead className="bg-muted text-left text-muted-foreground uppercase text-xs tracking-wide">
                                     <tr>
                                         <th className="px-6 py-4">Title</th>
                                         <th className="px-6 py-4">Status</th>
@@ -1669,19 +1568,19 @@ export default function ThemePreviewPage() {
                                         <th className="px-6 py-4 text-right">Actions</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-ink-100">
+                                <tbody className="divide-y divide-border/60">
                                     {[
                                         { title: 'Finance Transformation', status: 'Published' },
                                         { title: 'Choosing a Modern POS', status: 'Draft' },
                                     ].map((row) => (
                                         <tr key={row.title}>
-                                            <td className="px-6 py-4 font-medium text-ink-900">{row.title}</td>
+                                            <td className="px-6 py-4 font-medium text-foreground">{row.title}</td>
                                             <td className="px-6 py-4">
                                                 <Badge variant={row.status === 'Published' ? 'success' : 'neutral'}>
                                                     {row.status}
                                                 </Badge>
                                             </td>
-                                            <td className="px-6 py-4 text-ink-500">Jul 22, 2026</td>
+                                            <td className="px-6 py-4 text-muted-foreground">Jul 22, 2026</td>
                                             <td className="px-6 py-4">
                                                 <div className="flex items-center justify-end gap-2">
                                                     <Button size="sm" variant="outline" >Edit</Button>
@@ -1703,14 +1602,14 @@ export default function ThemePreviewPage() {
                             ~450px it is wider than this column on a phone. Scrolling
                             the panel keeps its real shape instead of letting it push
                             the whole page sideways. */}
-                        <div className="p-6 rounded-xl border border-ink-100 bg-ink-50 mb-6 overflow-x-auto">
-                            <nav className="inline-flex items-center gap-1 bg-white/80 backdrop-blur-md px-2 py-1.5 rounded-lg border border-white/20 shadow-sm">
+                        <div className="p-6 rounded-xl border border-border/60 bg-muted mb-6 overflow-x-auto">
+                            <nav className="inline-flex items-center gap-1 bg-card/80 backdrop-blur-md px-2 py-1.5 rounded-lg border border-primary-foreground/20 shadow-sm">
                                 {['Home', 'Services', 'About Us', 'Blog', 'Contact'].map((item, i) => (
                                     <button
                                         key={item}
                                         className={cn(
                                             'relative px-5 py-2 text-sm font-medium rounded-md transition-colors',
-                                            i === 0 ? 'bg-ink-200/50 text-ink-900' : 'text-ink-600 hover:bg-ink-100'
+                                            i === 0 ? 'bg-border/50 text-foreground' : 'text-foreground/70 hover:bg-secondary'
                                         )}
                                     >
                                         {item}
@@ -1718,16 +1617,16 @@ export default function ThemePreviewPage() {
                                 ))}
                             </nav>
                         </div>
-                        <div className="rounded-xl border border-ink-100 overflow-hidden max-w-xs">
-                            <aside className="w-full bg-white">
-                                <div className="px-4 py-3 border-b border-ink-100 font-bold text-sm">Admin</div>
+                        <div className="rounded-xl border border-border/60 overflow-hidden max-w-xs">
+                            <aside className="w-full bg-card">
+                                <div className="px-4 py-3 border-b border-border/60 font-bold text-sm">Admin</div>
                                 <nav className="p-2 space-y-1">
                                     {['Blogs', 'Users', 'Contacts'].map((item, i) => (
                                         <div
                                             key={item}
                                             className={cn(
                                                 'px-3 py-2 rounded-md text-sm font-medium',
-                                                i === 0 ? 'bg-accent text-brand' : 'text-ink-600'
+                                                i === 0 ? 'bg-accent text-primary' : 'text-foreground/70'
                                             )}
                                         >
                                             {item}
@@ -1741,12 +1640,12 @@ export default function ThemePreviewPage() {
                     {/* ACCORDION */}
                     <section>
                         <SectionHeading id="accordion" title="Accordion" source="components/ui/accordion.tsx" description="components/ui/accordion.tsx — used for FAQs and the module-page overview sidebar." />
-                        <div className="max-w-2xl bg-white rounded-xl border border-ink-100 px-4">
+                        <div className="max-w-2xl bg-card rounded-xl border border-border/60 px-4">
                             <Accordion type="single" collapsible defaultValue="item-0">
                                 {faqItems.map((item, idx) => (
                                     <AccordionItem key={idx} value={`item-${idx}`}>
-                                        <AccordionTrigger className="text-base text-ink-900">{item.question}</AccordionTrigger>
-                                        <AccordionContent className="text-ink-600 leading-relaxed">{item.answer}</AccordionContent>
+                                        <AccordionTrigger className="text-base text-foreground">{item.question}</AccordionTrigger>
+                                        <AccordionContent className="text-foreground/70 leading-relaxed">{item.answer}</AccordionContent>
                                     </AccordionItem>
                                 ))}
                             </Accordion>
@@ -1767,13 +1666,13 @@ export default function ThemePreviewPage() {
                                     <Button variant="outline" >Open Popover</Button>
                                 </PopoverTrigger>
                                 <PopoverContent>
-                                    <p className="text-sm text-ink-600 px-2 py-1">Popover content — bg-popover, shadow-md, border-ink-200.</p>
+                                    <p className="text-sm text-foreground/70 px-2 py-1">Popover content — bg-popover, shadow-md, border-border.</p>
                                 </PopoverContent>
                             </Popover>
 
                             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                                 <DialogTrigger asChild>
-                                    <Button className="bg-ink-900 hover:bg-ink-800 text-white">Open Dialog</Button>
+                                    <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">Open Dialog</Button>
                                 </DialogTrigger>
                                 <DialogContent>
                                     <DialogHeader>
@@ -1784,7 +1683,7 @@ export default function ThemePreviewPage() {
                                         <DialogClose asChild>
                                             <Button variant="outline" >Cancel</Button>
                                         </DialogClose>
-                                        <Button className="bg-ink-900 hover:bg-ink-800 text-white">Confirm</Button>
+                                        <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">Confirm</Button>
                                     </DialogFooter>
                                 </DialogContent>
                             </Dialog>
@@ -1826,9 +1725,9 @@ export default function ThemePreviewPage() {
                             </AlertDialog>
                         </div>
 
-                        <div className="mt-6 rounded-xl border border-ink-100 bg-ink-50 p-5">
-                            <p className="text-sm leading-relaxed text-ink-600">
-                                <span className="font-semibold text-ink-900">Choosing between them.</span>{' '}
+                        <div className="mt-6 rounded-xl border border-border/60 bg-muted p-5">
+                            <p className="text-sm leading-relaxed text-foreground/70">
+                                <span className="font-semibold text-foreground">Choosing between them.</span>{' '}
                                 Popover for a hint that needs no decision · Sheet when the underlying list must stay
                                 in view · Dialog for a self-contained task · Alert dialog only when the action
                                 destroys something.
@@ -1847,7 +1746,7 @@ export default function ThemePreviewPage() {
 
                         <div className="space-y-8">
                             <Spec label="Page header" hint="title, count, primary action — every admin list opens with it">
-                                <div className="rounded-xl border border-ink-200 bg-white px-5 pt-5">
+                                <div className="rounded-xl border border-border bg-card px-5 pt-5">
                                     <AdminPageHeader
                                         title="Tenants"
                                         subtitle="24 storefronts"
@@ -1869,14 +1768,14 @@ export default function ThemePreviewPage() {
                                 label="Empty state"
                                 hint="says what would be here and how to create the first one"
                             >
-                                <div className="flex min-h-64 flex-col items-center justify-center rounded-xl border border-dashed border-ink-300 bg-white p-6 text-center">
-                                    <Boxes className="h-10 w-10 text-ink-300" />
-                                    <h3 className="mt-4 text-lg font-bold text-ink-900">No tenants yet</h3>
-                                    <p className="mt-2 max-w-sm text-sm text-ink-500">
+                                <div className="flex min-h-64 flex-col items-center justify-center rounded-xl border border-dashed border-input bg-card p-6 text-center">
+                                    <Boxes className="h-10 w-10 text-muted-foreground/50" />
+                                    <h3 className="mt-4 text-lg font-bold text-foreground">No tenants yet</h3>
+                                    <p className="mt-2 max-w-sm text-sm text-muted-foreground">
                                         Creating a tenant reserves its slug and database. Provisioning it deploys the
                                         container.
                                     </p>
-                                    <Button asChild className="bg-ink-900 text-white hover:bg-ink-800"><Link href="#states" className="mt-5">New tenant</Link></Button>
+                                    <Button asChild className="bg-primary text-primary-foreground hover:bg-primary/90"><Link href="#states" className="mt-5">New tenant</Link></Button>
                                 </div>
                             </Spec>
 
@@ -1884,9 +1783,9 @@ export default function ThemePreviewPage() {
                                 label="No search results"
                                 hint="distinct from empty — the list has rows, this filter does not"
                             >
-                                <div className="flex min-h-40 flex-col items-center justify-center rounded-xl border border-ink-200 bg-white p-6 text-center">
-                                    <Inbox className="h-8 w-8 text-ink-300" />
-                                    <p className="mt-3 text-sm text-ink-500">No matches for that search.</p>
+                                <div className="flex min-h-40 flex-col items-center justify-center rounded-xl border border-border bg-card p-6 text-center">
+                                    <Inbox className="h-8 w-8 text-muted-foreground/50" />
+                                    <p className="mt-3 text-sm text-muted-foreground">No matches for that search.</p>
                                 </div>
                             </Spec>
 
@@ -1917,8 +1816,8 @@ export default function ThemePreviewPage() {
                                 { label: 'rounded-full', cls: 'rounded-full' },
                             ].map((r) => (
                                 <div key={r.label} className="flex flex-col items-center gap-2">
-                                    <div className={cn('w-16 h-16 bg-accent border-2 border-brand', r.cls)} />
-                                    <span className="text-xs font-mono text-ink-500">{r.label}</span>
+                                    <div className={cn('w-16 h-16 bg-accent border-2 border-primary', r.cls)} />
+                                    <span className="text-xs font-mono text-muted-foreground">{r.label}</span>
                                 </div>
                             ))}
                         </div>
@@ -1930,30 +1829,30 @@ export default function ThemePreviewPage() {
                             id="shadows"
                             title="Shadows"
                             source="app/globals.css — --shadow-*"
-                            description="One neutral elevation scale, defined once in globals.css and tinted from ink-950 rather than from the brand. A coloured shadow reads as a glow, which competes with the status colours; the scale stays achromatic so elevation only ever communicates height."
+                            description="One neutral elevation scale, defined once in globals.css and tinted from the foreground token rather than from an accent. A coloured shadow reads as a glow, which competes with the status colours; the scale stays achromatic so elevation only ever communicates height."
                         />
                         {/* One grid, not two: the tinted shadows used to sit in a
                             separate max-w-md grid below, so their tiles never lined
                             up with the elevation scale above them.
 
-                            The ink-50 surface matters — a white tile casting a soft
+                            The muted surface matters — a white tile casting a soft
                             shadow onto a white page makes shadow-sm and shadow-md
                             effectively invisible. The py-8 keeps the largest shadow
                             from being clipped by the panel edge. */}
-                        <div className="rounded-xl border border-ink-100 bg-ink-50 px-6 py-8">
+                        <div className="rounded-xl border border-border/60 bg-muted px-6 py-8">
                             <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-x-4 gap-y-8">
                                 {[
-                                    { label: 'shadow-sm', cls: 'shadow-sm', tile: 'bg-white' },
-                                    { label: 'shadow-md', cls: 'shadow-md', tile: 'bg-white' },
-                                    { label: 'shadow-lg', cls: 'shadow-lg', tile: 'bg-white' },
-                                    { label: 'shadow-xl', cls: 'shadow-xl', tile: 'bg-white' },
-                                    { label: 'shadow-2xl', cls: 'shadow-2xl', tile: 'bg-white' },
-                                    { label: 'shadow-xs', cls: 'shadow-xs', tile: 'bg-white' },
-                                    { label: 'shadow-ink-900/5', cls: 'shadow-xl shadow-ink-900/5', tile: 'bg-white' },
+                                    { label: 'shadow-sm', cls: 'shadow-sm', tile: 'bg-card' },
+                                    { label: 'shadow-md', cls: 'shadow-md', tile: 'bg-card' },
+                                    { label: 'shadow-lg', cls: 'shadow-lg', tile: 'bg-card' },
+                                    { label: 'shadow-xl', cls: 'shadow-xl', tile: 'bg-card' },
+                                    { label: 'shadow-2xl', cls: 'shadow-2xl', tile: 'bg-card' },
+                                    { label: 'shadow-xs', cls: 'shadow-xs', tile: 'bg-card' },
+                                    { label: 'shadow-foreground/5', cls: 'shadow-xl shadow-foreground/5', tile: 'bg-card' },
                                 ].map((s) => (
                                     <div key={s.label} className="flex flex-col items-center gap-3">
                                         <div className={cn('w-16 h-16 rounded-lg', s.tile, s.cls)} />
-                                        <span className="text-[11px] font-mono text-ink-500 text-center">{s.label}</span>
+                                        <span className="text-small font-mono text-muted-foreground text-center">{s.label}</span>
                                     </div>
                                 ))}
                             </div>
@@ -1967,12 +1866,12 @@ export default function ThemePreviewPage() {
                             point of the scale — so the row carries the token and the
                             px value too, rather than leaving most of the width blank
                             with nothing but an unlabelled bar. */}
-                        <div className="max-w-xl rounded-xl border border-ink-100 bg-white divide-y divide-ink-100">
+                        <div className="max-w-xl rounded-xl border border-border/60 bg-card divide-y divide-border/60">
                             {[1, 2, 3, 4, 6, 8, 10, 12, 16, 20, 24].map((n) => (
                                 <div key={n} className="flex items-center gap-4 px-5 py-2.5">
-                                    <span className="w-12 shrink-0 text-xs font-mono text-ink-700 tabular-nums">{n}</span>
-                                    <span className="w-14 shrink-0 text-xs font-mono text-ink-400 tabular-nums">{n * 4}px</span>
-                                    <div className="h-3 bg-brand rounded-sm" style={{ width: `${n * 4}px` }} />
+                                    <span className="w-12 shrink-0 text-xs font-mono text-foreground/80 tabular-nums">{n}</span>
+                                    <span className="w-14 shrink-0 text-xs font-mono text-muted-foreground tabular-nums">{n * 4}px</span>
+                                    <div className="h-3 bg-primary rounded-sm" style={{ width: `${n * 4}px` }} />
                                 </div>
                             ))}
                         </div>
@@ -1984,59 +1883,59 @@ export default function ThemePreviewPage() {
                             id="surfaces"
                             title="Surfaces & Background Colors"
                             source="app/globals.css"
-                            description="The flat fills a component can sit on, and what belongs on each. These are semantic tokens, not raw hexes: --color-muted is ink-50 today, and anything using it follows if that changes."
+                            description="The flat fills a component can sit on, and what belongs on each. These are semantic tokens, not raw values: anything using bg-muted follows if --muted changes."
                         />
 
                         <SubHeading label="Page and panel surfaces" description="Each swatch shows body text and a muted line on that fill, so contrast can be judged rather than assumed." />
                         <div className="mb-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                             {[
-                                { token: 'bg-background', hex: '#FFFFFF', use: 'The page itself.', cls: 'bg-background border-ink-200', text: 'text-ink-900', muted: 'text-ink-500' },
-                                { token: 'bg-muted', hex: 'ink-50 · #F7F7F7', use: 'Table headers, inset wells, read-only rows.', cls: 'bg-muted border-ink-200', text: 'text-ink-900', muted: 'text-ink-500' },
-                                { token: 'bg-ink-100', hex: '#F0F0F0', use: 'Hover on a menu item or list row.', cls: 'bg-ink-100 border-ink-200', text: 'text-ink-900', muted: 'text-ink-500' },
-                                { token: 'bg-accent', hex: 'brand-subdued · #F8E9EA', use: 'Active sidebar item, icon tiles, soft brand emphasis.', cls: 'bg-accent border-brand/15', text: 'text-brand', muted: 'text-brand/60' },
-                                { token: 'bg-ink-900', hex: '#1F1F1F', use: 'Primary buttons and dark CTA panels.', cls: 'bg-ink-900 border-ink-900', text: 'text-white', muted: 'text-white/60' },
-                                { token: 'bg-brand', hex: '#8C181B', use: 'Reserved. Small accents only — never a page or card fill.', cls: 'bg-brand border-brand', text: 'text-white', muted: 'text-white/70' },
+                                { token: 'bg-background', hex: '--background', use: 'The page itself.', cls: 'bg-background border-border', text: 'text-foreground', muted: 'text-muted-foreground' },
+                                { token: 'bg-card', hex: '--card', use: 'Cards, panels and popovers.', cls: 'bg-card border-border', text: 'text-foreground', muted: 'text-muted-foreground' },
+                                { token: 'bg-muted', hex: '--muted', use: 'Table headers, inset wells, read-only rows.', cls: 'bg-muted border-border', text: 'text-foreground', muted: 'text-muted-foreground' },
+                                { token: 'bg-secondary', hex: '--secondary', use: 'Hover on a menu item or list row.', cls: 'bg-secondary border-border', text: 'text-foreground', muted: 'text-muted-foreground' },
+                                { token: 'bg-accent', hex: '--accent', use: 'Active sidebar item, icon tiles, soft emphasis.', cls: 'bg-accent border-border', text: 'text-foreground', muted: 'text-muted-foreground' },
+                                { token: 'bg-primary', hex: '--primary', use: 'Primary buttons and dark call-to-action panels.', cls: 'bg-primary border-foreground', text: 'text-primary-foreground', muted: 'text-primary-foreground/60' },
                             ].map((surface) => (
                                 <div key={surface.token} className={cn('rounded-xl border p-5', surface.cls)}>
                                     <p className={cn('font-mono text-xs', surface.text)}>{surface.token}</p>
-                                    <p className={cn('mt-1 font-mono text-[11px]', surface.muted)}>{surface.hex}</p>
+                                    <p className={cn('mt-1 font-mono text-small', surface.muted)}>{surface.hex}</p>
                                     <p className={cn('mt-3 text-sm leading-relaxed', surface.muted)}>{surface.use}</p>
                                 </div>
                             ))}
                         </div>
 
-                        <SubHeading label="Status surfaces" description="Every banner, badge background and inline message pairs a 50-level fill with a 600/700-level text, which clears 4.5:1 in each case." />
+                        <SubHeading label="Status surfaces" description="Every banner, badge background and inline message pairs a tint of the status token with the token itself as text." />
                         <div className="mb-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                             {[
-                                { name: 'Success', fill: 'bg-success-50', ink: 'text-success-700', border: 'border-success-500/20', body: 'Saved. Changes are live.' },
-                                { name: 'Warning', fill: 'bg-warning-50', ink: 'text-warning-700', border: 'border-warning-500/20', body: 'This plan has no Paddle price.' },
-                                { name: 'Error', fill: 'bg-error-50', ink: 'text-error-700', border: 'border-error-500/20', body: 'That email is already registered.' },
-                                { name: 'Info', fill: 'bg-info-50', ink: 'text-info-600', border: 'border-info-500/20', body: 'Provisioning can take a few minutes.' },
+                                { name: 'Success', fill: 'bg-success/10', ink: 'text-success', border: 'border-success/20', body: 'Saved. Changes are live.' },
+                                { name: 'Warning', fill: 'bg-warning/10', ink: 'text-warning', border: 'border-warning/20', body: 'This plan has no Paddle price.' },
+                                { name: 'Error', fill: 'bg-destructive/10', ink: 'text-destructive', border: 'border-destructive/20', body: 'That email is already registered.' },
+                                { name: 'Info', fill: 'bg-primary/10', ink: 'text-primary', border: 'border-primary/20', body: 'Provisioning can take a few minutes.' },
                             ].map((tone) => (
                                 <div key={tone.name} className={cn('rounded-xl border p-5', tone.fill, tone.border)}>
                                     <p className={cn('text-xs font-semibold uppercase tracking-wider', tone.ink)}>{tone.name}</p>
                                     <p className={cn('mt-2 text-sm leading-relaxed', tone.ink)}>{tone.body}</p>
-                                    <p className={cn('mt-3 font-mono text-[11px] opacity-60', tone.ink)}>{tone.fill} · {tone.ink}</p>
+                                    <p className={cn('mt-3 font-mono text-small opacity-60', tone.ink)}>{tone.fill} · {tone.ink}</p>
                                 </div>
                             ))}
                         </div>
 
                         <SubHeading label="On dark" description="What stays legible once the surface inverts. Body text drops to white/70 rather than a grey, so it dims with the background instead of fighting it." />
-                        <div className="rounded-2xl bg-ink-950 p-8">
+                        <div className="rounded-2xl bg-primary p-8">
                             <div className="flex flex-wrap items-center gap-3">
-                                <Button className="bg-white text-ink-900 hover:bg-ink-100">Primary</Button>
-                                <Button variant="outline" className="border-white/25 bg-transparent text-white hover:bg-white/10 hover:text-white">Outline</Button>
-                                <Button variant="ghost" className="text-white/70 hover:bg-white/10 hover:text-white">Ghost</Button>
+                                <Button className="bg-card text-foreground hover:bg-secondary">Primary</Button>
+                                <Button variant="outline" className="border-primary-foreground/25 bg-transparent text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground">Outline</Button>
+                                <Button variant="ghost" className="text-primary-foreground/70 hover:bg-primary-foreground/10 hover:text-primary-foreground">Ghost</Button>
                                 <Badge variant="success" dot>Live</Badge>
-                                <span className="rounded border border-white/20 px-2.5 py-1 text-xs text-white/70">border-white/20</span>
+                                <span className="rounded border border-primary-foreground/20 px-2.5 py-1 text-xs text-primary-foreground/70">border-primary-foreground/20</span>
                             </div>
-                            <p className="mt-6 max-w-md text-sm leading-relaxed text-white/70">
-                                Supporting copy on a dark panel — text-white/70. Headings stay full white; anything below 60% opacity fails contrast at body sizes.
+                            <p className="mt-6 max-w-md text-sm leading-relaxed text-primary-foreground/70">
+                                Supporting copy on a dark panel — text-primary-foreground/70. Headings stay full white; anything below 60% opacity fails contrast at body sizes.
                             </p>
                             <div className="mt-6 grid gap-3 sm:grid-cols-3">
-                                {['bg-white/5', 'bg-white/10', 'bg-white/[0.02]'].map((fill) => (
-                                    <div key={fill} className={cn('rounded-lg border border-white/10 p-4', fill)}>
-                                        <span className="font-mono text-[11px] text-white/60">{fill}</span>
+                                {['bg-primary-foreground/5', 'bg-primary-foreground/10', 'bg-card/[0.02]'].map((fill) => (
+                                    <div key={fill} className={cn('rounded-lg border border-primary-foreground/10 p-4', fill)}>
+                                        <span className="font-mono text-small text-primary-foreground/60">{fill}</span>
                                     </div>
                                 ))}
                             </div>
@@ -2047,26 +1946,26 @@ export default function ThemePreviewPage() {
                     <section>
                         <SectionHeading id="backgrounds" title="Decorative Backgrounds" description="Decorative surfaces layered behind hero and CTA sections." />
                         <div className="grid sm:grid-cols-2 gap-6">
-                            <div className="relative h-32 rounded-xl overflow-hidden border border-ink-100">
-                                <div className="absolute inset-0 bg-grid-pattern mask-[radial-gradient(ellipse_at_center,black_30%,transparent_70%)] opacity-40" />
-                                <span className="absolute bottom-3 left-3 text-xs font-mono text-ink-500">.bg-grid-pattern</span>
+                            <div className="relative h-32 rounded-xl overflow-hidden border border-border/60">
+                                <div className="absolute inset-0 bg-grid-pattern mask-[radial-gradient(ellipse_at_center,var(--scrim)_30%,transparent_70%)] opacity-40" />
+                                <span className="absolute bottom-3 left-3 text-xs font-mono text-muted-foreground">.bg-grid-pattern</span>
                             </div>
-                            <div className="relative h-32 rounded-xl overflow-hidden glass border border-white/20">
-                                <span className="absolute bottom-3 left-3 text-xs font-mono text-ink-500">.glass</span>
+                            <div className="relative h-32 rounded-xl overflow-hidden glass border border-primary-foreground/20">
+                                <span className="absolute bottom-3 left-3 text-xs font-mono text-muted-foreground">.glass</span>
                             </div>
-                            <div className="relative h-32 rounded-xl overflow-hidden bg-gradient-to-br from-ink-950 to-black">
-                                <span className="absolute bottom-3 left-3 text-xs font-mono text-white/60">from-ink-950 to-black</span>
+                            <div className="relative h-32 rounded-xl overflow-hidden bg-gradient-to-br from-primary to-scrim">
+                                <span className="absolute bottom-3 left-3 text-xs font-mono text-primary-foreground/60">from-primary to-scrim</span>
                             </div>
-                            <div className="relative h-32 rounded-xl overflow-hidden bg-brand">
-                                <span className="absolute bottom-3 left-3 text-xs font-mono text-white/80">bg-brand (solid, no scale)</span>
+                            <div className="relative h-32 rounded-xl overflow-hidden bg-primary">
+                                <span className="absolute bottom-3 left-3 text-xs font-mono text-primary-foreground/80">bg-primary (solid, no scale)</span>
                             </div>
-                            <div className="relative h-32 rounded-xl overflow-hidden bg-ink-900">
-                                <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/70 to-black/40" />
-                                <span className="absolute bottom-3 left-3 text-xs font-mono text-white/60">image overlay gradient</span>
+                            <div className="relative h-32 rounded-xl overflow-hidden bg-primary">
+                                <div className="absolute inset-0 bg-gradient-to-r from-scrim/85 via-scrim/70 to-scrim/40" />
+                                <span className="absolute bottom-3 left-3 text-xs font-mono text-primary-foreground/60">image overlay gradient</span>
                             </div>
                             <div className="relative h-32 rounded-xl overflow-hidden bg-accent flex items-center justify-center">
-                                <div className="w-16 h-16 bg-brand/20 rounded-full blur-2xl animate-blob" />
-                                <span className="absolute bottom-3 left-3 text-xs font-mono text-ink-500">.animate-blob</span>
+                                <div className="w-16 h-16 bg-primary/20 rounded-full blur-2xl animate-blob" />
+                                <span className="absolute bottom-3 left-3 text-xs font-mono text-muted-foreground">.animate-blob</span>
                             </div>
                         </div>
                     </section>
@@ -2076,7 +1975,7 @@ export default function ThemePreviewPage() {
                         <SectionHeading id="icons" title="Icons" description="lucide-react — the icon set used site-wide. A representative sample." />
                         <div className="grid grid-cols-4 sm:grid-cols-8 gap-4">
                             {[Rocket, ArrowRight, ShieldCheck, Zap, Layers, BrainCircuit, CheckCircle2, Check, Info, AlertTriangle, XCircle, Facebook, Linkedin, ChevronDown, Search, Upload, LinkIcon, TableIcon].map((Icon, i) => (
-                                <div key={i} className="flex items-center justify-center h-14 rounded-lg border border-ink-100 text-brand">
+                                <div key={i} className="flex items-center justify-center h-14 rounded-lg border border-border/60 text-primary">
                                     <Icon className="w-5 h-5" />
                                 </div>
                             ))}
@@ -2088,23 +1987,23 @@ export default function ThemePreviewPage() {
                         <SectionHeading id="components" title="Composed Components" description="Full site sections, rendered live with sample data, exactly as they appear on real pages." />
 
                         <div className="space-y-16">
-                            <div className="rounded-xl overflow-hidden border border-ink-100">
-                                <div className="px-6 py-3 bg-ink-50 text-xs font-semibold text-ink-500 uppercase tracking-wide">FaqSection</div>
+                            <div className="rounded-xl overflow-hidden border border-border/60">
+                                <div className="px-6 py-3 bg-muted text-xs font-semibold text-muted-foreground uppercase tracking-wide">FaqSection</div>
                                 <FaqSection items={faqItems} />
                             </div>
 
-                            <div className="rounded-xl overflow-hidden border border-ink-100">
-                                <div className="px-6 py-3 bg-ink-50 text-xs font-semibold text-ink-500 uppercase tracking-wide">PricingTable</div>
+                            <div className="rounded-xl overflow-hidden border border-border/60">
+                                <div className="px-6 py-3 bg-muted text-xs font-semibold text-muted-foreground uppercase tracking-wide">PricingTable</div>
                                 <PricingTable plans={pricingPlans} />
                             </div>
 
-                            <div className="rounded-xl overflow-hidden border border-ink-100">
-                                <div className="px-6 py-3 bg-ink-50 text-xs font-semibold text-ink-500 uppercase tracking-wide">ProjectFlow</div>
+                            <div className="rounded-xl overflow-hidden border border-border/60">
+                                <div className="px-6 py-3 bg-muted text-xs font-semibold text-muted-foreground uppercase tracking-wide">ProjectFlow</div>
                                 <ProjectFlow stages={flowStages} />
                             </div>
 
-                            <div className="rounded-xl overflow-hidden border border-ink-100">
-                                <div className="px-6 py-3 bg-ink-50 text-xs font-semibold text-ink-500 uppercase tracking-wide">FeaturesGrid</div>
+                            <div className="rounded-xl overflow-hidden border border-border/60">
+                                <div className="px-6 py-3 bg-muted text-xs font-semibold text-muted-foreground uppercase tracking-wide">FeaturesGrid</div>
                                 <FeaturesGrid features={['Financial Management', 'Accounts Receivable', 'Asset Management', 'Cash & Banking', 'Reporting & Analytics', 'Budgeting', 'Tax & Compliance', 'Automation']} />
                             </div>
                         </div>
@@ -2115,8 +2014,8 @@ export default function ThemePreviewPage() {
             {/* FOOTER */}
             <section id="footer" className="scroll-mt-24 mt-24">
                 <div className="site-container site-gutters mb-6">
-                    <h2 className="text-2xl md:text-3xl font-bold text-ink-900">Footer</h2>
-                    <p className="text-ink-500 mt-2">The live Footer component, rendered as-is.</p>
+                    <h2 className="text-2xl md:text-3xl font-bold text-foreground">Footer</h2>
+                    <p className="text-muted-foreground mt-2">The live Footer component, rendered as-is.</p>
                 </div>
                 <Footer />
             </section>

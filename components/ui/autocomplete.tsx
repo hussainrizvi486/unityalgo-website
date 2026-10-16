@@ -144,7 +144,7 @@ export function Autocomplete({
             <Popover open={open} onOpenChange={setOpen}>
                 <PopoverAnchor asChild>
                     <div className="relative">
-                        <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-ink-400" />
+                        <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                         <Input
                             id={id}
                             ref={inputRef}
@@ -175,7 +175,7 @@ export function Autocomplete({
                             aria-hidden
                             disabled={disabled}
                             onClick={() => { setOpen((v) => !v); inputRef.current?.focus(); }}
-                            className="absolute right-1 top-1/2 flex size-7 -translate-y-1/2 items-center justify-center rounded text-ink-400 hover:text-ink-600 disabled:pointer-events-none"
+                            className="absolute right-1 top-1/2 flex size-7 -translate-y-1/2 items-center justify-center rounded text-muted-foreground hover:text-foreground/70 disabled:pointer-events-none"
                         >
                             <ChevronsUpDown className="size-4" />
                         </button>
@@ -188,11 +188,11 @@ export function Autocomplete({
                     // Focus has to stay in the input for typing to keep working,
                     // so the popover must not pull it into the list on open.
                     onOpenAutoFocus={(event) => event.preventDefault()}
-                    className="w-[var(--radix-popover-trigger-width)] min-w-[12rem] p-1"
+                    className="w-[var(--radix-popover-trigger-width)] min-w-48 p-1"
                 >
                     <div ref={listRef} id={listId} role="listbox" className="max-h-64 overflow-y-auto">
                         {matches.length === 0 ? (
-                            <p className="px-3 py-6 text-center text-sm text-ink-400">{emptyMessage}</p>
+                            <p className="px-3 py-6 text-center text-sm text-muted-foreground">{emptyMessage}</p>
                         ) : (
                             matches.map((option, index) => {
                                 const active = index === activeIndex;
@@ -212,15 +212,15 @@ export function Autocomplete({
                                         onClick={() => commit(option)}
                                         className={cn(
                                             'flex cursor-pointer items-start gap-2 rounded px-2.5 py-2 text-sm',
-                                            active && 'bg-ink-100',
+                                            active && 'bg-secondary',
                                             option.disabled && 'cursor-not-allowed opacity-50',
                                         )}
                                     >
-                                        <Check className={cn('mt-0.5 size-4 shrink-0 text-brand', !chosen && 'invisible')} />
+                                        <Check className={cn('mt-0.5 size-4 shrink-0 text-primary', !chosen && 'invisible')} />
                                         <span className="min-w-0">
-                                            <span className="block truncate text-ink-800">{option.label}</span>
+                                            <span className="block truncate text-foreground">{option.label}</span>
                                             {option.description && (
-                                                <span className="block truncate text-xs text-ink-400">{option.description}</span>
+                                                <span className="block truncate text-xs text-muted-foreground">{option.description}</span>
                                             )}
                                         </span>
                                     </div>

@@ -4,8 +4,9 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import bcrypt from 'bcryptjs';
-import type { VerificationPurpose } from '@prisma/client';
-import { prisma } from '@/lib/db';
+import { and, asc, desc, eq, isNull, ne, or, sql } from 'drizzle-orm';
+import type { VerificationPurpose } from '@/db/types';
+import { db, schema } from '@/lib/db';
 import { sendVerificationEmail } from '@/lib/email';
 import { CommentEntityType, createComment } from '@/lib/comments';
 import {
@@ -71,15 +72,22 @@ async function issueOtp(email: string, purpose: VerificationPurpose) {
     const expiresAt = new Date(Date.now() + OTP_TTL_MINUTES * 60 * 1000);
 
     // Invalidate any earlier unverified codes for this email + purpose before issuing a new one.
-    await prisma.emailVerification.deleteMany({ where: { email, purpose, verifiedAt: null } });
-    const verification = await prisma.emailVerification.create({ data: { email, otp, purpose, expiresAt } });
+    await db.delete(schema.emailVerification).where(and(
+        eq(schema.emailVerification.email, email),
+        eq(schema.emailVerification.purpose, purpose),
+        isNull(schema.emailVerification.verifiedAt),
+    ));
+    const [verification] = await db.insert(schema.emailVerification).values({ email, otp, purpose, expiresAt }).returning();
 
     try {
         await sendVerificationEmail(email, otp);
     } catch (error) {
         // A failed send must not leave an undelivered code active. Limit this
         // cleanup to this attempt so a concurrent successful resend survives.
-        await prisma.emailVerification.deleteMany({ where: { id: verification.id, verifiedAt: null } });
+        await db.delete(schema.emailVerification).where(and(
+            eq(schema.emailVerification.id, verification.id),
+            isNull(schema.emailVerification.verifiedAt),
+        ));
         console.error('Failed to send verification email:', error);
         throw new Error('We could not send a verification email right now. Please try again shortly.');
     }
@@ -101,7 +109,7 @@ export async function requestEmailVerificationAction(
         return { fieldErrors: { email: 'Enter a valid email address.' }, values };
     }
 
-    const existing = await prisma.user.findUnique({ where: { email } });
+    const existing = await db.query.user.findFirst({ where: eq(schema.user.email, email) });
     if (existing) {
         return {
             fieldErrors: { email: 'An account with this email already exists. Try signing in instead.' },
@@ -162,9 +170,13 @@ export async function verifyEmailOtpAction(
         return { error: 'Enter the 6-digit code from your email.' };
     }
 
-    const record = await prisma.emailVerification.findFirst({
-        where: { email: pending.email, purpose: 'REGISTRATION', verifiedAt: null },
-        orderBy: { createdAt: 'desc' },
+    const record = await db.query.emailVerification.findFirst({
+        where: and(
+            eq(schema.emailVerification.email, pending.email),
+            eq(schema.emailVerification.purpose, 'REGISTRATION'),
+            isNull(schema.emailVerification.verifiedAt),
+        ),
+        orderBy: desc(schema.emailVerification.createdAt),
     });
 
     if (!record || record.expiresAt < new Date()) {
@@ -175,7 +187,7 @@ export async function verifyEmailOtpAction(
         return { error: 'That code is incorrect.' };
     }
 
-    await prisma.emailVerification.update({ where: { id: record.id }, data: { verifiedAt: new Date() } });
+    await db.update(schema.emailVerification).set({ verifiedAt: new Date() }).where(eq(schema.emailVerification.id, record.id));
 
     const verifiedToken = await signVerifiedEmailToken(pending.email);
     cookieStore.set(REG_VERIFIED_COOKIE, verifiedToken, { ...COOKIE_BASE, maxAge: REG_VERIFIED_DURATION_SECONDS });
@@ -213,7 +225,7 @@ export async function createCustomerAction(
         return { fieldErrors, values };
     }
 
-    const existing = await prisma.user.findUnique({ where: { email: verified.email } });
+    const existing = await db.query.user.findFirst({ where: eq(schema.user.email, verified.email) });
     if (existing) {
         return {
             error: 'An account with this email already exists. Try signing in instead.',
@@ -223,8 +235,7 @@ export async function createCustomerAction(
 
     const passwordHash = await bcrypt.hash(password, 10);
 
-    const user = await prisma.user.create({
-        data: {
+    const [user] = await db.insert(schema.user).values({
             email: verified.email,
             passwordHash,
             role: 'CUSTOMER',
@@ -233,8 +244,7 @@ export async function createCustomerAction(
             phone,
             name: `${firstName} ${lastName}`,
             emailVerifiedAt: new Date(),
-        },
-    });
+        }).returning();
 
     cookieStore.delete(REG_VERIFIED_COOKIE);
     cookieStore.delete(REG_PENDING_COOKIE);
@@ -265,7 +275,7 @@ export async function requestPasswordResetAction(
         return { error: 'Enter a valid email address.' };
     }
 
-    const user = await prisma.user.findUnique({ where: { email } });
+    const user = await db.query.user.findFirst({ where: eq(schema.user.email, email) });
     if (!user || user.role !== 'CUSTOMER') {
         return { error: 'No account found with this email address.' };
     }
@@ -322,9 +332,13 @@ export async function verifyPasswordResetOtpAction(
         return { error: 'Enter the 6-digit code from your email.' };
     }
 
-    const record = await prisma.emailVerification.findFirst({
-        where: { email: pending.email, purpose: 'PASSWORD_RESET', verifiedAt: null },
-        orderBy: { createdAt: 'desc' },
+    const record = await db.query.emailVerification.findFirst({
+        where: and(
+            eq(schema.emailVerification.email, pending.email),
+            eq(schema.emailVerification.purpose, 'PASSWORD_RESET'),
+            isNull(schema.emailVerification.verifiedAt),
+        ),
+        orderBy: desc(schema.emailVerification.createdAt),
     });
 
     if (!record || record.expiresAt < new Date()) {
@@ -335,7 +349,7 @@ export async function verifyPasswordResetOtpAction(
         return { error: 'That code is incorrect.' };
     }
 
-    await prisma.emailVerification.update({ where: { id: record.id }, data: { verifiedAt: new Date() } });
+    await db.update(schema.emailVerification).set({ verifiedAt: new Date() }).where(eq(schema.emailVerification.id, record.id));
 
     const verifiedToken = await signResetVerifiedToken(pending.email);
     cookieStore.set(RESET_VERIFIED_COOKIE, verifiedToken, { ...COOKIE_BASE, maxAge: RESET_VERIFIED_DURATION_SECONDS });
@@ -368,18 +382,19 @@ export async function resetPasswordAction(
         return { error: 'Passwords do not match.' };
     }
 
-    const user = await prisma.user.findUnique({ where: { email: verified.email } });
+    const user = await db.query.user.findFirst({ where: eq(schema.user.email, verified.email) });
     if (!user || user.role !== 'CUSTOMER') {
         return { error: 'No account found with this email address.' };
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
-    await prisma.user.update({ where: { id: user.id }, data: { passwordHash } });
+    await db.update(schema.user).set({ passwordHash }).where(eq(schema.user.id, user.id));
 
     cookieStore.delete(RESET_VERIFIED_COOKIE);
     cookieStore.delete(RESET_PENDING_COOKIE);
 
-    await prisma.loginSession.updateMany({ where: { userId: user.id, revokedAt: null }, data: { revokedAt: new Date() } });
+    await db.update(schema.loginSession).set({ revokedAt: new Date() })
+        .where(and(eq(schema.loginSession.userId, user.id), isNull(schema.loginSession.revokedAt)));
 
     redirect('/login?reset=success');
 }
@@ -398,13 +413,14 @@ export async function customerLogoutAction() {
     const token = cookieStore.get(CUSTOMER_SESSION_COOKIE)?.value;
     const session = token ? await verifyCustomerSessionToken(token) : null;
     if (session?.sessionId) {
-        await prisma.loginSession.updateMany({ where: { id: session.sessionId, userId: session.userId }, data: { revokedAt: new Date() } });
+        await db.update(schema.loginSession).set({ revokedAt: new Date() })
+            .where(and(eq(schema.loginSession.id, session.sessionId), eq(schema.loginSession.userId, session.userId)));
     }
     cookieStore.delete(CUSTOMER_SESSION_COOKIE);
     redirect('/login');
 }
 
-const SUBSCRIPTION_INCLUDE = { plan: true, addOns: { include: { addOn: true } } } as const;
+const SUBSCRIPTION_WITH = { plan: true, addOns: { with: { addOn: true } } } as const;
 
 // A customer can hold at most one subscription per product (one AlgoSuite
 // plan + one Unity Commerce plan at the same time) — enforced by the
@@ -412,20 +428,20 @@ const SUBSCRIPTION_INCLUDE = { plan: true, addOns: { include: { addOn: true } } 
 export async function getSubscriptions(userId: string) {
     const session = await requireCustomerSession();
     if (session.userId !== userId) throw new Error('You cannot access another customer account.');
-    return prisma.subscription.findMany({
-        where: { userId },
-        include: SUBSCRIPTION_INCLUDE,
-        orderBy: { productId: 'asc' },
+    return db.query.subscription.findMany({
+        where: eq(schema.subscription.userId, userId),
+        with: SUBSCRIPTION_WITH,
+        orderBy: asc(schema.subscription.productId),
     });
 }
 
 export async function getSubscriptionForProduct(userId: string, product: string) {
     const session = await requireCustomerSession();
     if (session.userId !== userId) throw new Error('You cannot access another customer account.');
-    return prisma.subscription.findUnique({
-        where: { userId_productId: { userId, productId: product } },
-        include: SUBSCRIPTION_INCLUDE,
-    });
+    return (await db.query.subscription.findFirst({
+        where: and(eq(schema.subscription.userId, userId), eq(schema.subscription.productId, product)),
+        with: SUBSCRIPTION_WITH,
+    })) ?? null;
 }
 
 // Purchase (or switch) a plan. Custom-quote plans (no price) aren't
@@ -460,7 +476,7 @@ export async function startPlanCheckoutAction(planId: string): Promise<CheckoutI
     const session = await requireCustomerSession();
     if (!planId) return { ok: false, error: 'No plan selected.' };
 
-    const plan = await prisma.plan.findUnique({ where: { id: planId } });
+    const plan = await db.query.plan.findFirst({ where: eq(schema.plan.id, planId) });
     if (!plan || !plan.isActive) return { ok: false, error: 'That plan is not available.' };
     if (plan.priceAmount == null) {
         return { ok: false, error: 'This plan is quoted individually — please contact sales.' };
@@ -472,9 +488,9 @@ export async function startPlanCheckoutAction(planId: string): Promise<CheckoutI
         };
     }
 
-    const user = await prisma.user.findUnique({
-        where: { id: session.userId },
-        select: { email: true },
+    const user = await db.query.user.findFirst({
+        where: eq(schema.user.id, session.userId),
+        columns: { email: true },
     });
 
     return {
@@ -504,15 +520,15 @@ export async function checkoutSettlementAction(planId: string): Promise<{
     const session = await requireCustomerSession();
     if (!planId) return { settled: false };
 
-    const plan = await prisma.plan.findUnique({
-        where: { id: planId },
-        select: { productId: true },
+    const plan = await db.query.plan.findFirst({
+        where: eq(schema.plan.id, planId),
+        columns: { productId: true },
     });
     if (!plan) return { settled: false };
 
-    const subscription = await prisma.subscription.findUnique({
-        where: { userId_productId: { userId: session.userId, productId: plan.productId } },
-        select: { status: true, planId: true },
+    const subscription = await db.query.subscription.findFirst({
+        where: and(eq(schema.subscription.userId, session.userId), eq(schema.subscription.productId, plan.productId)),
+        columns: { status: true, planId: true },
     });
     if (!subscription) return { settled: false };
 
@@ -537,15 +553,16 @@ export async function startPlanCheckoutBySlugAction(nameOrSlug: string): Promise
     const needle = nameOrSlug.trim();
     if (!needle) return { ok: false, error: 'No plan selected.' };
 
-    const plan = await prisma.plan.findFirst({
-        where: {
-            isActive: true,
-            OR: [
-                { slug: { equals: needle, mode: 'insensitive' } },
-                { name: { equals: needle, mode: 'insensitive' } },
-            ],
-        },
-        select: { id: true },
+    // Case-insensitive equality. Not ILIKE: that would treat % and _ in the visitor's text as wildcards.
+    const plan = await db.query.plan.findFirst({
+        where: and(
+            eq(schema.plan.isActive, true),
+            or(
+                sql`lower(${schema.plan.slug}) = ${needle.toLowerCase()}`,
+                sql`lower(${schema.plan.name}) = ${needle.toLowerCase()}`,
+            ),
+        ),
+        columns: { id: true },
     });
     if (!plan) return { ok: false, error: `We could not find a plan called "${needle}".` };
 
@@ -561,17 +578,16 @@ export async function addSubscriptionAddOnAction(formData: FormData) {
     const addOnId = String(formData.get('addOnId') ?? '');
     if (!addOnId) return;
 
-    const addOn = await prisma.addOn.findUnique({ where: { id: addOnId } });
+    const addOn = await db.query.addOn.findFirst({ where: eq(schema.addOn.id, addOnId) });
     if (!addOn || !addOn.isActive) return;
 
     const subscription = await getSubscriptionForProduct(session.userId, addOn.productId);
     if (!subscription) return;
 
-    await prisma.subscriptionAddOn.upsert({
-        where: { subscriptionId_addOnId: { subscriptionId: subscription.id, addOnId } },
-        update: {},
-        create: { subscriptionId: subscription.id, addOnId },
-    });
+    await db
+        .insert(schema.subscriptionAddOn)
+        .values({ subscriptionId: subscription.id, addOnId })
+        .onConflictDoNothing({ target: [schema.subscriptionAddOn.subscriptionId, schema.subscriptionAddOn.addOnId] });
 
     revalidatePath('/dashboard/subscription');
     revalidatePath('/dashboard');
@@ -582,13 +598,16 @@ export async function removeSubscriptionAddOnAction(formData: FormData) {
     const addOnId = String(formData.get('addOnId') ?? '');
     if (!addOnId) return;
 
-    const addOn = await prisma.addOn.findUnique({ where: { id: addOnId } });
+    const addOn = await db.query.addOn.findFirst({ where: eq(schema.addOn.id, addOnId) });
     if (!addOn) return;
 
     const subscription = await getSubscriptionForProduct(session.userId, addOn.productId);
     if (!subscription) return;
 
-    await prisma.subscriptionAddOn.deleteMany({ where: { subscriptionId: subscription.id, addOnId } });
+    await db.delete(schema.subscriptionAddOn).where(and(
+        eq(schema.subscriptionAddOn.subscriptionId, subscription.id),
+        eq(schema.subscriptionAddOn.addOnId, addOnId),
+    ));
 
     revalidatePath('/dashboard/subscription');
     revalidatePath('/dashboard');
@@ -630,15 +649,13 @@ export async function updateProfileAction(_prevState: AccountFormState | undefin
     }
 
     if (username) {
-        const existing = await prisma.user.findUnique({ where: { username } });
+        const existing = await db.query.user.findFirst({ where: eq(schema.user.username, username) });
         if (existing && existing.id !== session.userId) {
             return { error: 'That username is already taken.' };
         }
     }
 
-    await prisma.user.update({
-        where: { id: session.userId },
-        data: {
+    await db.update(schema.user).set({
             firstName,
             lastName,
             name: `${firstName} ${lastName}`.trim(),
@@ -646,8 +663,7 @@ export async function updateProfileAction(_prevState: AccountFormState | undefin
             phone: phone || null,
             company: company || null,
             companyEmail: companyEmail || null,
-        },
-    });
+        }).where(eq(schema.user.id, session.userId));
 
     revalidatePath('/dashboard/settings');
     revalidatePath('/dashboard/settings/profile');
@@ -671,7 +687,7 @@ export async function updateCustomerPasswordAction(
         return { error: 'New passwords do not match.' };
     }
 
-    const user = await prisma.user.findUnique({ where: { id: session.userId } });
+    const user = await db.query.user.findFirst({ where: eq(schema.user.id, session.userId) });
     if (!user) redirect('/login');
 
     const currentPasswordMatches = await bcrypt.compare(currentPassword, user.passwordHash);
@@ -684,10 +700,15 @@ export async function updateCustomerPasswordAction(
     }
 
     const passwordHash = await bcrypt.hash(newPassword, 10);
-    await prisma.$transaction([
-        prisma.user.update({ where: { id: user.id }, data: { passwordHash } }),
-        prisma.loginSession.updateMany({ where: { userId: user.id, id: { not: session.sessionId }, revokedAt: null }, data: { revokedAt: new Date() } }),
-    ]);
+    await db.transaction(async (tx) => {
+        await tx.update(schema.user).set({ passwordHash }).where(eq(schema.user.id, user.id));
+        // Every other signed-in device must log in again with the new password.
+        await tx.update(schema.loginSession).set({ revokedAt: new Date() }).where(and(
+            eq(schema.loginSession.userId, user.id),
+            ne(schema.loginSession.id, session.sessionId),
+            isNull(schema.loginSession.revokedAt),
+        ));
+    });
 
     return { success: 'Password updated. Other login sessions have been signed out.' };
 }
@@ -718,16 +739,16 @@ export async function createAddressAction(_prevState: AccountFormState | undefin
     const error = validateAddressFields(fields);
     if (error) return { error };
 
-    const existingCount = await prisma.address.count({ where: { userId: session.userId } });
+    const existingCount = await db.$count(schema.address, eq(schema.address.userId, session.userId));
     const makeDefault = fields.isDefault || existingCount === 0;
 
     if (makeDefault) {
-        await prisma.$transaction([
-            prisma.address.updateMany({ where: { userId: session.userId }, data: { isDefault: false } }),
-            prisma.address.create({ data: { ...fields, isDefault: true, userId: session.userId } }),
-        ]);
+        await db.transaction(async (tx) => {
+            await tx.update(schema.address).set({ isDefault: false }).where(eq(schema.address.userId, session.userId));
+            await tx.insert(schema.address).values({ ...fields, isDefault: true, userId: session.userId });
+        });
     } else {
-        await prisma.address.create({ data: { ...fields, userId: session.userId } });
+        await db.insert(schema.address).values({ ...fields, userId: session.userId });
     }
 
     revalidatePath('/dashboard/settings/addresses');
@@ -740,7 +761,7 @@ export async function updateAddressAction(
     formData: FormData
 ): Promise<AccountFormState> {
     const session = await requireCustomerSession();
-    const existing = await prisma.address.findUnique({ where: { id } });
+    const existing = await db.query.address.findFirst({ where: eq(schema.address.id, id) });
     if (!existing || existing.userId !== session.userId) {
         return { error: 'Address not found.' };
     }
@@ -750,12 +771,12 @@ export async function updateAddressAction(
     if (error) return { error };
 
     if (fields.isDefault) {
-        await prisma.$transaction([
-            prisma.address.updateMany({ where: { userId: session.userId }, data: { isDefault: false } }),
-            prisma.address.update({ where: { id }, data: { ...fields, isDefault: true } }),
-        ]);
+        await db.transaction(async (tx) => {
+            await tx.update(schema.address).set({ isDefault: false }).where(eq(schema.address.userId, session.userId));
+            await tx.update(schema.address).set({ ...fields, isDefault: true }).where(eq(schema.address.id, id));
+        });
     } else {
-        await prisma.address.update({ where: { id }, data: fields });
+        await db.update(schema.address).set(fields).where(eq(schema.address.id, id));
     }
 
     revalidatePath('/dashboard/settings/addresses');
@@ -767,18 +788,18 @@ export async function deleteAddressAction(formData: FormData) {
     const id = String(formData.get('id') ?? '');
     if (!id) return;
 
-    const existing = await prisma.address.findUnique({ where: { id } });
+    const existing = await db.query.address.findFirst({ where: eq(schema.address.id, id) });
     if (!existing || existing.userId !== session.userId) return;
 
-    await prisma.address.delete({ where: { id } });
+    await db.delete(schema.address).where(eq(schema.address.id, id));
 
     // If the deleted address was the default and other addresses remain,
     // promote the most recently added one so there's always a default
     // whenever at least one address exists.
     if (existing.isDefault) {
-        const fallback = await prisma.address.findFirst({ where: { userId: session.userId }, orderBy: { createdAt: 'desc' } });
+        const fallback = await db.query.address.findFirst({ where: eq(schema.address.userId, session.userId), orderBy: desc(schema.address.createdAt) });
         if (fallback) {
-            await prisma.address.update({ where: { id: fallback.id }, data: { isDefault: true } });
+            await db.update(schema.address).set({ isDefault: true }).where(eq(schema.address.id, fallback.id));
         }
     }
 
@@ -790,13 +811,13 @@ export async function setDefaultAddressAction(formData: FormData) {
     const id = String(formData.get('id') ?? '');
     if (!id) return;
 
-    const existing = await prisma.address.findUnique({ where: { id } });
+    const existing = await db.query.address.findFirst({ where: eq(schema.address.id, id) });
     if (!existing || existing.userId !== session.userId) return;
 
-    await prisma.$transaction([
-        prisma.address.updateMany({ where: { userId: session.userId }, data: { isDefault: false } }),
-        prisma.address.update({ where: { id }, data: { isDefault: true } }),
-    ]);
+    await db.transaction(async (tx) => {
+        await tx.update(schema.address).set({ isDefault: false }).where(eq(schema.address.userId, session.userId));
+        await tx.update(schema.address).set({ isDefault: true }).where(eq(schema.address.id, id));
+    });
 
     revalidatePath('/dashboard/settings/addresses');
 }
@@ -810,9 +831,7 @@ export async function createSupportTicketAction(_prevState: AccountFormState | u
         return { error: 'Subject and description are required.' };
     }
 
-    const ticket = await prisma.supportTicket.create({
-        data: { userId: session.userId, subject, description, status: 'OPEN' },
-    });
+    const [ticket] = await db.insert(schema.supportTicket).values({ userId: session.userId, subject, description, status: 'OPEN' }).returning();
 
     revalidatePath('/dashboard/support');
     redirect(`/dashboard/support/${ticket.id}`);
@@ -824,7 +843,7 @@ export async function addTicketCommentAction(formData: FormData) {
     const body = String(formData.get('body') ?? '').trim();
     if (!ticketId || !body) return;
 
-    const ticket = await prisma.supportTicket.findUnique({ where: { id: ticketId } });
+    const ticket = await db.query.supportTicket.findFirst({ where: eq(schema.supportTicket.id, ticketId) });
     if (!ticket || ticket.userId !== session.userId) return;
 
     await createComment(CommentEntityType.SUPPORT_TICKET, ticketId, session.userId, body);

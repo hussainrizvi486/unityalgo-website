@@ -38,6 +38,7 @@ class ServerSerializer(BaseSerializer):
             "used_memory_mb": server.used_memory_mb,
             "available_memory_mb": max_memory - used_memory,
             "max_containers": server.max_containers,
+            "max_sites": server.max_sites,
             "active_containers": server.active_containers,
             "role": server.role,
             "private_ip": server.private_ip,
@@ -368,6 +369,7 @@ class DatabaseConnectionSerializer(BaseSerializer):
         # there is no legitimate API use for handing this back to a client.
         return {
             "id": str(connection.id),
+            "engine": connection.engine,
             "name": connection.name,
             "host": connection.host,
             "port": connection.port,

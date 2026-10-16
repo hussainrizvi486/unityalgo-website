@@ -1,4 +1,4 @@
-import type { LeadStatus, LeadSource } from '@prisma/client';
+import type { LeadStatus, LeadSource } from '@/db/types';
 
 type BadgeVariant = 'neutral' | 'success' | 'info' | 'warning' | 'error' | 'brand';
 

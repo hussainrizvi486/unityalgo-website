@@ -1,13 +1,14 @@
 import { listProducts } from '@/lib/products';
 import { notFound } from 'next/navigation';
-import { prisma } from '@/lib/db';
+import { eq } from 'drizzle-orm';
+import { db, schema } from '@/lib/db';
 import { updateAddOnAction } from '@/app/admin/actions';
 import { AddOnForm } from '../../addon-form';
 
 export default async function EditAddOnPage({ params }: { params: Promise<{ id: string }> }) {
     const products = await listProducts();
     const { id } = await params;
-    const addOn = await prisma.addOn.findUnique({ where: { id } });
+    const addOn = await db.query.addOn.findFirst({ where: eq(schema.addOn.id, id) });
 
     if (!addOn) {
         notFound();

@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
-import { Prisma } from '@prisma/client';
-import { prisma } from '@/lib/db';
+import { and, eq, notInArray, sql } from 'drizzle-orm';
+import { db, schema } from '@/lib/db';
+
+/** The handle a transaction callback receives, which carries the same query methods as `db`. */
+type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 import {
     HANDLED_PADDLE_EVENTS,
     PADDLE_EVENTS,
@@ -74,10 +77,10 @@ async function resolveTarget(data: Record<string, unknown>): Promise<Target | nu
 
     if (userId && planId) {
         const [user, plan] = await Promise.all([
-            prisma.user.findUnique({ where: { id: userId }, select: { id: true } }),
-            prisma.plan.findUnique({
-                where: { id: planId },
-                select: { id: true, productId: true, name: true },
+            db.query.user.findFirst({ where: eq(schema.user.id, userId), columns: { id: true } }),
+            db.query.plan.findFirst({
+                where: eq(schema.plan.id, planId),
+                columns: { id: true, productId: true, name: true },
             }),
         ]);
         if (user && plan) return { userId: user.id, plan };
@@ -93,15 +96,15 @@ async function resolveTarget(data: Record<string, unknown>): Promise<Target | nu
     const subscriptionId = asString(data.subscription_id) ?? asString(data.id);
     const [planByPrice, known] = await Promise.all([
         priceId
-            ? prisma.plan.findUnique({
-                where: { paddlePriceId: priceId },
-                select: { id: true, productId: true, name: true },
+            ? db.query.plan.findFirst({
+                where: eq(schema.plan.paddlePriceId, priceId),
+                columns: { id: true, productId: true, name: true },
             })
             : null,
         subscriptionId
-            ? prisma.subscription.findUnique({
-                where: { paddleSubscriptionId: subscriptionId },
-                select: { userId: true, planId: true },
+            ? db.query.subscription.findFirst({
+                where: eq(schema.subscription.paddleSubscriptionId, subscriptionId),
+                columns: { userId: true, planId: true },
             })
             : null,
     ]);
@@ -109,9 +112,9 @@ async function resolveTarget(data: Record<string, unknown>): Promise<Target | nu
     const plan =
         planByPrice
         ?? (known
-            ? await prisma.plan.findUnique({
-                where: { id: known.planId },
-                select: { id: true, productId: true, name: true },
+            ? await db.query.plan.findFirst({
+                where: eq(schema.plan.id, known.planId),
+                columns: { id: true, productId: true, name: true },
             })
             : null);
 
@@ -122,7 +125,7 @@ async function resolveTarget(data: Record<string, unknown>): Promise<Target | nu
 
 /** Grants or updates the subscription an event describes. */
 async function applySubscription(
-    tx: Prisma.TransactionClient,
+    tx: Tx,
     event: PaddleWebhookEvent,
     target: Target,
 ) {
@@ -154,19 +157,9 @@ async function applySubscription(
         }
         : { cancelAtPeriodEnd, ...(scheduledAction ? {} : { canceledAt: null }) };
 
-    await tx.subscription.upsert({
-        // One subscription per customer per product, which is the existing
-        // rule — buying a second AlgoSuite plan replaces the first.
-        where: { userId_productId: { userId, productId: plan.productId } },
-        update: {
-            planId: plan.id,
-            status,
-            ...cancellation,
-            ...(paddleSubscriptionId ? { paddleSubscriptionId } : {}),
-            ...(paddleCustomerId ? { paddleCustomerId } : {}),
-            ...(currentPeriodEnd ? { currentPeriodEnd } : {}),
-        },
-        create: {
+    await tx
+        .insert(schema.subscription)
+        .values({
             userId,
             planId: plan.id,
             productId: plan.productId,
@@ -176,13 +169,25 @@ async function applySubscription(
             currentPeriodEnd,
             canceledAt: canceled ? new Date() : null,
             cancelAtPeriodEnd,
-        },
-    });
+        })
+        .onConflictDoUpdate({
+            // One subscription per customer per product, which is the existing
+            // rule — buying a second AlgoSuite plan replaces the first.
+            target: [schema.subscription.userId, schema.subscription.productId],
+            set: {
+                planId: plan.id,
+                status,
+                ...cancellation,
+                ...(paddleSubscriptionId ? { paddleSubscriptionId } : {}),
+                ...(paddleCustomerId ? { paddleCustomerId } : {}),
+                ...(currentPeriodEnd ? { currentPeriodEnd } : {}),
+            },
+        });
 }
 
 /** Records the payment behind a completed transaction. */
 async function recordBilling(
-    tx: Prisma.TransactionClient,
+    tx: Tx,
     event: PaddleWebhookEvent,
     target: Target,
 ) {
@@ -194,21 +199,17 @@ async function recordBilling(
     const totals = asRecord(details.totals);
     const amount = fromMinorUnits(totals.grand_total) ?? 0;
 
-    const subscription = await tx.subscription.findUnique({
-        where: { userId_productId: { userId: target.userId, productId: target.plan.productId } },
-        select: { id: true },
+    const subscription = await tx.query.subscription.findFirst({
+        where: and(eq(schema.subscription.userId, target.userId), eq(schema.subscription.productId, target.plan.productId)),
+        columns: { id: true },
     });
 
     const period = asRecord(data.billing_period);
     const paidAt = asDate(data.billed_at) ?? new Date();
 
-    await tx.billingRecord.upsert({
-        // The invoice number is unique, and deriving it from Paddle's
-        // transaction id is what keeps a retried delivery from writing a
-        // second invoice for one payment.
-        where: { invoiceNumber: transactionId },
-        update: { status: 'PAID', amount, paidAt },
-        create: {
+    await tx
+        .insert(schema.billingRecord)
+        .values({
             userId: target.userId,
             subscriptionId: subscription?.id ?? null,
             invoiceNumber: transactionId,
@@ -225,8 +226,14 @@ async function recordBilling(
             paidAt,
             paymentMethod: 'Paddle',
             paymentReference: transactionId,
-        },
-    });
+        })
+        .onConflictDoUpdate({
+            // The invoice number is unique, and deriving it from Paddle's
+            // transaction id is what keeps a retried delivery from writing a
+            // second invoice for one payment.
+            target: schema.billingRecord.invoiceNumber,
+            set: { status: 'PAID', amount, paidAt },
+        });
 }
 
 /**
@@ -238,7 +245,7 @@ async function recordBilling(
  * — Paddle raises the transaction before it charges.
  */
 async function recordFailedPayment(
-    tx: Prisma.TransactionClient,
+    tx: Tx,
     event: PaddleWebhookEvent,
     target: Target,
 ) {
@@ -251,17 +258,14 @@ async function recordFailedPayment(
     const amount = fromMinorUnits(totals.grand_total) ?? 0;
     const period = asRecord(data.billing_period);
 
-    const subscription = await tx.subscription.findUnique({
-        where: { userId_productId: { userId: target.userId, productId: target.plan.productId } },
-        select: { id: true },
+    const subscription = await tx.query.subscription.findFirst({
+        where: and(eq(schema.subscription.userId, target.userId), eq(schema.subscription.productId, target.plan.productId)),
+        columns: { id: true },
     });
 
-    await tx.billingRecord.upsert({
-        where: { invoiceNumber: transactionId },
-        // Never downgrade a payment that already settled: a `payment_failed`
-        // for one attempt can arrive after a later attempt succeeded.
-        update: { status: 'OVERDUE', notes: 'Payment attempt declined by the provider.' },
-        create: {
+    await tx
+        .insert(schema.billingRecord)
+        .values({
             userId: target.userId,
             subscriptionId: subscription?.id ?? null,
             invoiceNumber: transactionId,
@@ -275,8 +279,14 @@ async function recordFailedPayment(
             paymentMethod: 'Paddle',
             paymentReference: transactionId,
             notes: 'Payment attempt declined by the provider.',
-        },
-    });
+        })
+        .onConflictDoUpdate({
+            target: schema.billingRecord.invoiceNumber,
+            set: { status: 'OVERDUE', notes: 'Payment attempt declined by the provider.' },
+            // Never downgrade a payment that already settled: a `payment_failed` for one attempt can arrive
+            // after a later attempt succeeded. (The previous code overwrote the status unconditionally.)
+            setWhere: notInArray(schema.billingRecord.status, ['PAID', 'REFUNDED']),
+        });
 }
 
 /**
@@ -286,14 +296,14 @@ async function recordFailedPayment(
  * and must not invent an invoice: an adjustment against a transaction we never
  * recorded is nothing this app can act on.
  */
-async function recordAdjustment(tx: Prisma.TransactionClient, event: PaddleWebhookEvent) {
+async function recordAdjustment(tx: Tx, event: PaddleWebhookEvent) {
     const data = event.data;
     const transactionId = asString(data.transaction_id);
     if (!transactionId) return;
 
-    const existing = await tx.billingRecord.findUnique({
-        where: { invoiceNumber: transactionId },
-        select: { id: true, amount: true },
+    const existing = await tx.query.billingRecord.findFirst({
+        where: eq(schema.billingRecord.invoiceNumber, transactionId),
+        columns: { id: true, amount: true },
     });
     if (!existing) return;
 
@@ -308,14 +318,14 @@ async function recordAdjustment(tx: Prisma.TransactionClient, event: PaddleWebho
     // Partial refunds keep the invoice PAID: the customer did pay, just less.
     const fullyRefunded = refunded >= existing.amount - 0.005;
 
-    await tx.billingRecord.update({
-        where: { id: existing.id },
-        data: {
+    await tx
+        .update(schema.billingRecord)
+        .set({
             status: fullyRefunded ? 'REFUNDED' : 'PAID',
             refundedAt: asDate(data.created_at) ?? new Date(),
             refundedAmount: refunded,
-        },
-    });
+        })
+        .where(eq(schema.billingRecord.id, existing.id));
 }
 
 export async function POST(request: Request) {
@@ -347,26 +357,29 @@ export async function POST(request: Request) {
     }
 
     const handled = HANDLED_PADDLE_EVENTS.has(event.event_type);
-    const payload = JSON.parse(rawBody) as Prisma.InputJsonValue;
+    const payload: unknown = JSON.parse(rawBody);
 
     // Claim the delivery before doing any work. Paddle retries until it gets a
     // 2xx, so the same event id arrives repeatedly. `attempts` counts those
     // deliveries; only a PROCESSED row short-circuits one.
-    let claim;
+    let claim: { status: 'PENDING' | 'PROCESSED' | 'IGNORED' | 'FAILED'; attempts: number };
     try {
-        claim = await prisma.paddleEvent.upsert({
-            where: { id: event.event_id },
-            update: { attempts: { increment: 1 } },
-            create: {
+        // One atomic statement: claim a new delivery, or count a repeat of one we already have.
+        [claim] = await db
+            .insert(schema.paddleEvent)
+            .values({
                 id: event.event_id,
                 eventType: event.event_type,
                 payload,
                 status: handled ? 'PENDING' : 'IGNORED',
                 attempts: 1,
                 ...(handled ? {} : { processedAt: new Date() }),
-            },
-            select: { status: true, attempts: true },
-        });
+            })
+            .onConflictDoUpdate({
+                target: schema.paddleEvent.id,
+                set: { attempts: sql`${schema.paddleEvent.attempts} + 1` },
+            })
+            .returning({ status: schema.paddleEvent.status, attempts: schema.paddleEvent.attempts });
     } catch (error) {
         // Logged and answered rather than thrown: an unhandled throw returns
         // an empty 500 that says nothing about a payment that may have
@@ -400,7 +413,7 @@ export async function POST(request: Request) {
         // One transaction: a granted subscription with no invoice behind it,
         // or an invoice for access nobody got, are both worse than retrying
         // the pair.
-        await prisma.$transaction(async (tx) => {
+        await db.transaction(async (tx) => {
             switch (event.event_type) {
                 case PADDLE_EVENTS.ADJUSTMENT_CREATED:
                 case PADDLE_EVENTS.ADJUSTMENT_UPDATED:
@@ -423,20 +436,19 @@ export async function POST(request: Request) {
             }
         });
 
-        await prisma.paddleEvent.update({
-            where: { id: event.event_id },
-            data: { status: 'PROCESSED', processedAt: new Date(), error: null },
-        });
+        await db
+            .update(schema.paddleEvent)
+            .set({ status: 'PROCESSED', processedAt: new Date(), error: null })
+            .where(eq(schema.paddleEvent.id, event.event_id));
     } catch (error) {
         // The row stays, carrying why. Paddle's retry finds it PENDING/FAILED
         // and is allowed to run the handler again; deleting it, as this used
         // to, destroyed the only evidence the delivery ever arrived.
         const message = error instanceof Error ? error.message : String(error);
-        await prisma.paddleEvent
-            .update({
-                where: { id: event.event_id },
-                data: { status: 'FAILED', error: message.slice(0, 1000) },
-            })
+        await db
+            .update(schema.paddleEvent)
+            .set({ status: 'FAILED', error: message.slice(0, 1000) })
+            .where(eq(schema.paddleEvent.id, event.event_id))
             .catch(() => {});
         console.error('[paddle] failed to handle', event.event_type, error);
         return NextResponse.json({ error: 'Handler failed' }, { status: 500 });

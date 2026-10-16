@@ -1,5 +1,6 @@
 import 'server-only';
-import { prisma } from '@/lib/db';
+import { asc, eq } from 'drizzle-orm';
+import { db, schema } from '@/lib/db';
 
 /**
  * Currencies offerable on a plan.
@@ -9,9 +10,15 @@ import { prisma } from '@/lib/db';
  * one. Mirrors how `listProducts` gates on isActive.
  */
 export function listCurrencies() {
-    return prisma.currency.findMany({
-        where: { isActive: true },
-        select: { id: true, code: true, name: true, symbol: true, numberFormat: true },
-        orderBy: [{ sortOrder: 'asc' }, { code: 'asc' }],
-    });
+    return db
+        .select({
+            id: schema.currency.id,
+            code: schema.currency.code,
+            name: schema.currency.name,
+            symbol: schema.currency.symbol,
+            numberFormat: schema.currency.numberFormat,
+        })
+        .from(schema.currency)
+        .where(eq(schema.currency.isActive, true))
+        .orderBy(asc(schema.currency.sortOrder), asc(schema.currency.code));
 }

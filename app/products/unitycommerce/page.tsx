@@ -3,7 +3,8 @@ import Script from 'next/script';
 import { Header, Footer } from '@/components/layouts';
 import { generateBreadcrumbJsonLd, generatePageMetadata } from '@/lib/metadata';
 import { MainContent, type UnityCommercePlan } from './client';
-import { prisma } from '@/lib/db';
+import { and, asc, eq } from 'drizzle-orm';
+import { db, schema } from '@/lib/db';
 import { formatCurrencyAmount } from '@/lib/currency';
 
 const breadcrumbs = generateBreadcrumbJsonLd([
@@ -32,7 +33,7 @@ const Page = async () => {
     const plans = await loadPlans();
 
     return (
-        <div className="bg-white text-ink-950 min-h-screen overflow-hidden">
+        <div className="bg-card text-foreground min-h-screen overflow-hidden">
             <Script
                 id="unity-commerce-breadcrumbs"
                 type="application/ld+json"
@@ -51,10 +52,10 @@ export default Page;
 const ANNUAL_DISCOUNT = 0.8;
 
 async function loadPlans(): Promise<UnityCommercePlan[]> {
-    const plans = await prisma.plan.findMany({
-        where: { productId: 'unity_commerce', isActive: true },
-        include: { currency: true },
-        orderBy: { sortOrder: 'asc' },
+    const plans = await db.query.plan.findMany({
+        where: and(eq(schema.plan.productId, 'unity_commerce'), eq(schema.plan.isActive, true)),
+        with: { currency: true },
+        orderBy: asc(schema.plan.sortOrder),
     });
 
     return plans.map((plan, index) => ({

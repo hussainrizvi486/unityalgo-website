@@ -1,4 +1,4 @@
-import type { Currency } from '@prisma/client';
+import type { Currency } from '@/db/types';
 
 /**
  * Formatting an amount with a currency's own grouping pattern.

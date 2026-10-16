@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { ArrowLeft, MapPin, Pencil, Star } from 'lucide-react';
-import { prisma } from '@/lib/db';
+import { desc, eq } from 'drizzle-orm';
+import { db, schema } from '@/lib/db';
 import { requireCustomerSession } from '@/lib/customer-session';
 import { deleteAddressAction, setDefaultAddressAction } from '@/app/customer/actions';
 import { Button } from '@/components/ui/button';
@@ -10,43 +11,43 @@ import { DeleteButton } from '@/components/admin/delete-button';
 export default async function AddressesPage() {
   const session = await requireCustomerSession();
 
-  const addresses = await prisma.address.findMany({
-    where: { userId: session.userId },
-    orderBy: [{ isDefault: 'desc' }, { createdAt: 'desc' }],
+  const addresses = await db.query.address.findMany({
+    where: eq(schema.address.userId, session.userId),
+    orderBy: [desc(schema.address.isDefault), desc(schema.address.createdAt)],
   });
 
   return (
     <div className="mx-auto portal-page">
-      <Link href="/dashboard/settings" className="mb-6 inline-flex items-center gap-2 portal-text-body font-semibold text-ink-500 hover:text-ink-700">
+      <Link href="/dashboard/settings" className="mb-6 inline-flex items-center gap-2 portal-text-body font-semibold text-muted-foreground hover:text-foreground/80">
         <ArrowLeft className="h-4 w-4" />Back to settings
       </Link>
       <div className="flex items-center justify-between">
         <div>
-          <p className="portal-text-caption font-bold uppercase tracking-[.18em] text-brand">Settings</p>
+          <p className="portal-text-caption font-bold uppercase tracking-eyebrow text-primary">Settings</p>
           <h1 className="portal-page-title mt-2">Addresses</h1>
-          <p className="mt-2 portal-text-body text-ink-500">Manage the addresses on your account.</p>
+          <p className="mt-2 portal-text-body text-muted-foreground">Manage the addresses on your account.</p>
         </div>
         <Button asChild className="rounded-md"><Link href="/dashboard/settings/addresses/new">Add address</Link></Button>
       </div>
 
       {addresses.length === 0 ? (
-        <section className="mt-8 flex min-h-56 flex-col items-center justify-center rounded-xl border border-dashed border-ink-300 bg-white p-6 text-center">
-          <MapPin className="h-10 w-10 text-ink-300" />
-          <h2 className="mt-4 text-lg font-bold text-ink-900">No addresses yet</h2>
-          <p className="mt-2 max-w-sm portal-text-body text-ink-500">Add an address to speed up checkout and support requests.</p>
+        <section className="mt-8 flex min-h-56 flex-col items-center justify-center rounded-xl border border-dashed border-input bg-card p-card text-center">
+          <MapPin className="h-10 w-10 text-muted-foreground/50" />
+          <h2 className="mt-4 text-lg text-foreground">No addresses yet</h2>
+          <p className="mt-2 max-w-sm portal-text-body text-muted-foreground">Add an address to speed up checkout and support requests.</p>
         </section>
       ) : (
-        <div className="mt-8 space-y-4">
+        <div className="mt-8 space-y-gap">
           {addresses.map((address) => (
             <div key={address.id} className="p-5 sm:p-6 portal-surface">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div className="flex flex-col gap-gap sm:flex-row sm:items-start sm:justify-between">
                 <div className="flex items-start gap-3">
-                  <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent text-brand"><MapPin className="h-4 w-4" /></span>
-                  <div className="portal-text-body text-ink-700">
+                  <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent text-primary"><MapPin className="h-4 w-4" /></span>
+                  <div className="portal-text-body text-foreground/80">
                     <div className="mb-1.5 flex items-center gap-2">
                       {address.isDefault ? <Badge variant="brand">Default</Badge> : null}
                     </div>
-                    <p className="font-semibold text-ink-900">{address.addressLine1}</p>
+                    <p className="font-semibold text-foreground">{address.addressLine1}</p>
                     {address.addressLine2 ? <p>{address.addressLine2}</p> : null}
                     <p>{address.city}, {address.state} {address.postcode}</p>
                     <p>{address.country}</p>

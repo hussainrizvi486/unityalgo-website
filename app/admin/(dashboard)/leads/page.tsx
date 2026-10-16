@@ -1,4 +1,5 @@
-import { prisma } from '@/lib/db';
+import { desc } from 'drizzle-orm';
+import { db, schema } from '@/lib/db';
 import { ADMIN_LIST_LIMIT } from '@/lib/pagination';
 import { formatDate } from '@/lib/admin-format';
 import { AdminPageHeader } from '@/components/admin/page-header';
@@ -7,11 +8,11 @@ import { LeadsList, type LeadRow } from './leads-list';
 
 export default async function AdminLeadsPage() {
     const [leads, totalCount] = await Promise.all([
-        prisma.lead.findMany({
-            orderBy: { createdAt: 'desc' },
-            take: ADMIN_LIST_LIMIT,
+        db.query.lead.findMany({
+            orderBy: desc(schema.lead.createdAt),
+            limit: ADMIN_LIST_LIMIT,
         }),
-        prisma.lead.count(),
+        db.$count(schema.lead),
     ]);
 
     const rows: LeadRow[] = leads.map((lead) => ({

@@ -1,4 +1,5 @@
-import { prisma } from '@/lib/db';
+import { desc } from 'drizzle-orm';
+import { db, schema } from '@/lib/db';
 import { ADMIN_LIST_LIMIT } from '@/lib/pagination';
 import { formatDate } from '@/lib/admin-format';
 import { AdminPageHeader } from '@/components/admin/page-header';
@@ -7,12 +8,12 @@ import { TicketsList, type TicketRow } from './tickets-list';
 
 export default async function AdminTicketsPage() {
     const [tickets, totalCount] = await Promise.all([
-        prisma.supportTicket.findMany({
-            include: { user: { select: { email: true, name: true, firstName: true, lastName: true } } },
-            orderBy: { updatedAt: 'desc' },
-            take: ADMIN_LIST_LIMIT,
+        db.query.supportTicket.findMany({
+            with: { user: { columns: { email: true, name: true, firstName: true, lastName: true } } },
+            orderBy: desc(schema.supportTicket.updatedAt),
+            limit: ADMIN_LIST_LIMIT,
         }),
-        prisma.supportTicket.count(),
+        db.$count(schema.supportTicket),
     ]);
 
     const rows: TicketRow[] = tickets.map((ticket) => ({

@@ -1,6 +1,7 @@
 import { getCustomerSession } from '@/lib/customer-session';
 import { listNotifications } from '@/lib/customer-notifications';
-import { prisma } from '@/lib/db';
+import { and, eq, isNull } from 'drizzle-orm';
+import { db, schema } from '@/lib/db';
 
 export async function GET() {
     const session = await getCustomerSession();
@@ -29,13 +30,16 @@ export async function POST(request: Request) {
             { error: 'A notification id is required.' },
             { status: 400 },
         );
-    await prisma.notification.updateMany({
-        where: {
-            userId: session.userId,
-            readAt: null,
-            ...(data.all === true ? {} : { id: data.id }),
-        },
-        data: { readAt: new Date() },
-    });
+    await db
+        .update(schema.notification)
+        .set({ readAt: new Date() })
+        .where(
+            and(
+                eq(schema.notification.userId, session.userId),
+                isNull(schema.notification.readAt),
+                // Everything unread, or just the one the user opened.
+                data.all === true ? undefined : eq(schema.notification.id, data.id),
+            ),
+        );
     return Response.json(await listNotifications(session.userId));
 }

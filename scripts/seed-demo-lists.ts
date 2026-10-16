@@ -8,15 +8,14 @@
  * touches rows it did not create.
  */
 import 'dotenv/config';
-import { PrismaPg } from '@prisma/adapter-pg';
-import { PrismaClient } from '@prisma/client';
+import { like } from 'drizzle-orm';
+import { closeDb, db, schema } from '../lib/db';
 
-const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }) });
 const PREFIX = 'demo-list-';
 
 async function clean() {
-    await prisma.contactSubmission.deleteMany({ where: { email: { startsWith: PREFIX } } });
-    await prisma.post.deleteMany({ where: { slug: { startsWith: PREFIX } } });
+    await db.delete(schema.contactSubmission).where(like(schema.contactSubmission.email, `${PREFIX}%`));
+    await db.delete(schema.post).where(like(schema.post.slug, `${PREFIX}%`));
     console.log('demo rows removed');
 }
 
@@ -32,7 +31,7 @@ async function seed() {
             'We are evaluating Unity Commerce for a multi-region rollout and would like to discuss ' +
             'pricing, migration support and the timeline for onboarding our existing catalogue.',
     }));
-    await prisma.contactSubmission.createMany({ data: contacts });
+    await db.insert(schema.contactSubmission).values(contacts);
 
     const posts = Array.from({ length: 8 }, (_, i) => ({
         title: `Demo post ${i + 1}: scaling storefronts`,
@@ -43,17 +42,17 @@ async function seed() {
         published: i % 3 !== 0,
         publishedAt: i % 3 !== 0 ? new Date(Date.now() - i * 86_400_000) : null,
     }));
-    for (const post of posts) await prisma.post.create({ data: post });
+    await db.insert(schema.post).values(posts);
 
     console.log(`seeded ${contacts.length} contacts, ${posts.length} posts`);
 }
 
 const run = process.argv.includes('--clean') ? clean : seed;
 run()
-    .then(() => prisma.$disconnect())
+    .then(() => closeDb())
     .catch(async (error) => {
         console.error(error);
-        await prisma.$disconnect();
+        await closeDb();
         process.exit(1);
     });
 

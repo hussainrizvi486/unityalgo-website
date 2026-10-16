@@ -1,4 +1,5 @@
-import { prisma } from '@/lib/db';
+import { desc } from 'drizzle-orm';
+import { db, schema } from '@/lib/db';
 import { ADMIN_LIST_LIMIT } from '@/lib/pagination';
 import { formatDate } from '@/lib/admin-format';
 import { AdminPageHeader } from '@/components/admin/page-header';
@@ -7,8 +8,8 @@ import { BlogsList, type BlogRow } from './blogs-list';
 
 export default async function AdminBlogsPage() {
     const [posts, totalCount] = await Promise.all([
-        prisma.post.findMany({ orderBy: { createdAt: 'desc' }, take: ADMIN_LIST_LIMIT }),
-        prisma.post.count(),
+        db.query.post.findMany({ orderBy: desc(schema.post.createdAt), limit: ADMIN_LIST_LIMIT }),
+        db.$count(schema.post),
     ]);
 
     const rows: BlogRow[] = posts.map((post) => ({

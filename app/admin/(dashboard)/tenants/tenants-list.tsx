@@ -125,7 +125,7 @@ export function TenantsList({ rows }: { rows: TenantRow[] }) {
                     ]}
                 />
             }
-            emptyIcon={<Boxes className="h-10 w-10 text-ink-300" />}
+            emptyIcon={<Boxes className="h-10 w-10 text-muted-foreground/50" />}
             emptyTitle="No tenants yet"
             emptyMessage="Creating a tenant reserves its slug and database. Provisioning it deploys the container."
             emptyAction={{ label: 'New tenant', href: '/admin/tenants/new' }}

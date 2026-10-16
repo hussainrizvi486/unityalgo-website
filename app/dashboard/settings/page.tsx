@@ -2,7 +2,8 @@ import {
     requireCustomer,
     requireCustomerSession,
 } from '@/lib/customer-session';
-import { prisma } from '@/lib/db';
+import { and, desc, eq, gt, isNull } from 'drizzle-orm';
+import { db, schema } from '@/lib/db';
 import { SettingsClient } from './settings-client';
 export const metadata = { title: 'Settings' };
 export default async function SettingsPage({
@@ -13,13 +14,13 @@ export default async function SettingsPage({
     const user = await requireCustomer();
     const current = await requireCustomerSession();
     const query = await searchParams;
-    const sessions = await prisma.loginSession.findMany({
-        where: {
-            userId: user.id,
-            revokedAt: null,
-            expiresAt: { gt: new Date() },
-        },
-        orderBy: { lastSeenAt: 'desc' },
+    const sessions = await db.query.loginSession.findMany({
+        where: and(
+            eq(schema.loginSession.userId, user.id),
+            isNull(schema.loginSession.revokedAt),
+            gt(schema.loginSession.expiresAt, new Date()),
+        ),
+        orderBy: desc(schema.loginSession.lastSeenAt),
     });
     return (
         <SettingsClient

@@ -1,14 +1,11 @@
 'use client';
 
-import Link from 'next/link';
-import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import {
     BarChart3,
     CreditCard,
     Headphones,
     Layers,
-    LogOut,
     Settings,
     AppWindow,
     Globe,
@@ -16,39 +13,28 @@ import {
 } from 'lucide-react';
 import { NotificationBell } from './notification-bell';
 import type { listNotifications } from '@/lib/customer-notifications';
-import { Logo } from '@/components/Logo';
 import { customerLogoutAction } from '@/app/customer/actions';
 import { useAvatarUrl } from '@/lib/use-avatar';
-import { ThemeScope } from '@/components/ui/theme-scope';
-import {
-    Sidebar,
-    SidebarContent,
-    SidebarFooter,
-    SidebarGroup,
-    SidebarGroupContent,
-    SidebarHeader,
-    SidebarInset,
-    SidebarMenu,
-    SidebarMenuButton,
-    SidebarMenuItem,
-    SidebarProvider,
-    SidebarSeparator,
-    SidebarTrigger,
-} from '@/components/ui/sidebar';
+import { DashboardRoot, ThemeToggle } from '@/components/ui/dashboard-root';
+import { AppSidebar, type SidebarNavGroup } from '@/components/ui/app-sidebar';
+import { SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
+import { Separator } from '@/components/ui/separator';
 
-const navItems = [
-    { label: 'Dashboard', href: '/dashboard', icon: BarChart3 },
-    { label: 'Sites', href: '/dashboard/sites', icon: Globe },
-    { label: 'App Store', href: '/dashboard/app-store', icon: AppWindow },
-    { label: 'Plans', href: '/dashboard/plans', icon: Layers },
-    {
-        label: 'Subscription',
-        href: '/dashboard/subscription',
-        icon: CreditCard,
-    },
-    { label: 'Support', href: '/dashboard/support', icon: Headphones },
-    { label: 'Settings', href: '/dashboard/settings', icon: Settings },
-    { label: 'Components', href: '/dashboard/components', icon: Component },
+/** The customer portal's pages. `description` is the line shown under the title in the top bar. */
+const pages = [
+    { title: 'Dashboard', description: 'Your account and sites at a glance', href: '/dashboard', icon: BarChart3, exact: true },
+    { title: 'Sites', description: 'Create, manage and monitor your Frappe sites', href: '/dashboard/sites', icon: Globe },
+    { title: 'App Store', description: 'Browse and install marketplace apps onto your sites', href: '/dashboard/app-store', icon: AppWindow },
+    { title: 'Plans', description: 'Compare plans and choose what fits', href: '/dashboard/plans', icon: Layers },
+    { title: 'Subscription', description: 'Your plan, billing and invoices', href: '/dashboard/subscription', icon: CreditCard },
+    { title: 'Support', description: 'Ask for help and follow your tickets', href: '/dashboard/support', icon: Headphones },
+    { title: 'Settings', description: 'Profile, password and addresses', href: '/dashboard/settings', icon: Settings },
+    { title: 'Components', description: 'Live reference for the portal design system', href: '/dashboard/components', icon: Component },
+];
+
+const groups: SidebarNavGroup[] = [
+    { label: 'Workspace', items: pages.slice(0, 3) },
+    { label: 'Account', items: pages.slice(3) },
 ];
 
 interface CustomerShellUser {
@@ -61,130 +47,50 @@ export function CustomerShell({
     children,
     user,
     notifications,
-    themeClassName,
+    initialDark,
 }: {
     children: React.ReactNode;
     user: CustomerShellUser;
     notifications: Awaited<ReturnType<typeof listNotifications>>;
-    themeClassName: string;
+    initialDark: boolean;
 }) {
     const pathname = usePathname();
     const avatarUrl = useAvatarUrl();
-
     const fullName = `${user.firstName} ${user.lastName}`.trim() || user.email;
-    const initials =
-        `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`.toUpperCase() ||
-        user.email.charAt(0).toUpperCase();
+    const current =
+        pages.find((page) => (page.exact ? pathname === page.href : pathname.startsWith(page.href) && page.href !== '/dashboard'))
+        ?? pages[0];
 
     return (
-        <ThemeScope.Provider value={themeClassName}>
-            <SidebarProvider className={`${themeClassName} text-foreground`}>
-                <Sidebar collapsible="icon">
-                    <SidebarHeader className="border-b border-sidebar-border">
-                        <Link
-                            href="/"
-                            className="flex items-center gap-2.5 overflow-hidden rounded-md px-2 py-0.5 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
-                        >
-                            <Image src="/logo.svg" alt="" width={28} height={28} className="size-8.5 shrink-0" priority />
-                            <span className="truncate font-logo portal-brand-title font-bold leading-none text-ink-900 group-data-[collapsible=icon]:hidden">
-                                UnityAlgo
-                            </span>
-                        </Link>
-                    </SidebarHeader>
-                    <SidebarSeparator />
-                    <SidebarContent>
-                        <SidebarGroup>
-                            <SidebarGroupContent>
-                                <SidebarMenu>
-                                    {navItems.map((item) => {
-                                        const active =
-                                            item.href === '/dashboard'
-                                                ? pathname === item.href
-                                                : pathname.startsWith(
-                                                    item.href,
-                                                );
-                                        return (
-                                            <SidebarMenuItem key={item.href}>
-                                                <SidebarMenuButton
-                                                    asChild
-                                                    isActive={active}
-                                                    tooltip={item.label}
-                                                >
-                                                    <Link href={item.href}>
-                                                        <item.icon />
-                                                        <span>
-                                                            {item.label}
-                                                        </span>
-                                                    </Link>
-                                                </SidebarMenuButton>
-                                            </SidebarMenuItem>
-                                        );
-                                    })}
-                                </SidebarMenu>
-                            </SidebarGroupContent>
-                        </SidebarGroup>
-                    </SidebarContent>
-                    <SidebarFooter>
-                        <SidebarSeparator className="mb-1" />
-                        <div className="flex items-center gap-2.5 overflow-hidden rounded-md px-2 py-1.5 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0">
-                            {avatarUrl ? (
-                                <Image
-                                    src={avatarUrl}
-                                    alt={fullName}
-                                    width={32}
-                                    height={32}
-                                    unoptimized
-                                    className="h-8 w-8 shrink-0 rounded-full object-cover"
-                                />
-                            ) : (
-                                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand portal-text-caption font-bold text-white">
-                                    {initials}
-                                </span>
-                            )}
-                            <div className="min-w-0 group-data-[collapsible=icon]:hidden">
-                                <p className="truncate portal-text-body font-semibold text-ink-900">
-                                    {fullName}
-                                </p>
-                                <p className="truncate portal-text-caption text-ink-400">
-                                    {user.email}
-                                </p>
-                            </div>
+        <DashboardRoot initialDark={initialDark}>
+            <AppSidebar
+                brand={{ name: 'UnityAlgo', tagline: 'Customer portal', href: '/dashboard' }}
+                groups={groups}
+                user={{ name: fullName, email: user.email, avatarUrl }}
+                accountLinks={[
+                    { label: 'Profile', href: '/dashboard/settings/profile', icon: Settings },
+                    { label: 'Subscription', href: '/dashboard/subscription', icon: CreditCard },
+                    { label: 'Support', href: '/dashboard/support', icon: Headphones },
+                ]}
+                logoutAction={customerLogoutAction}
+            />
+            <SidebarInset>
+                <header className="portal-topbar sticky top-0 flex items-center justify-between gap-3 border-b border-border bg-card">
+                    <div className="flex min-w-0 items-center gap-3">
+                        <SidebarTrigger />
+                        <Separator orientation="vertical" className="h-8" />
+                        <div className="min-w-0 leading-tight">
+                            <p className="truncate font-semibold text-foreground">{current.title}</p>
+                            <p className="truncate portal-text-caption text-muted-foreground">{current.description}</p>
                         </div>
-                        <SidebarMenu>
-                            <SidebarMenuItem>
-                                <form action={customerLogoutAction}>
-                                    <SidebarMenuButton
-                                        type="submit"
-                                        tooltip="Log out"
-                                        className="text-ink-500 hover:bg-error-50 hover:text-error-700"
-                                    >
-                                        <LogOut />
-                                        <span>Log out</span>
-                                    </SidebarMenuButton>
-                                </form>
-                            </SidebarMenuItem>
-                        </SidebarMenu>
-                    </SidebarFooter>
-                </Sidebar>
-                <SidebarInset>
-                    <header className="portal-topbar sticky top-0 flex items-center justify-between gap-3 border-b border-ink-200 bg-white">
-                        <div className="flex items-center gap-3">
-                            <SidebarTrigger />
-                            <span className="portal-text-body font-medium text-ink-600">
-                                {navItems.find(
-                                    (item) =>
-                                        item.href !== '/dashboard' &&
-                                        pathname.startsWith(item.href),
-                                )?.label || 'Dashboard'}
-                            </span>
-                        </div>
+                    </div>
+                    <div className="flex items-center gap-1">
+                        <ThemeToggle />
                         <NotificationBell initial={notifications} />
-                    </header>
-                    <main className="portal-content">
-                        {children}
-                    </main>
-                </SidebarInset>
-            </SidebarProvider>
-        </ThemeScope.Provider>
+                    </div>
+                </header>
+                <main className="portal-content">{children}</main>
+            </SidebarInset>
+        </DashboardRoot>
     );
 }

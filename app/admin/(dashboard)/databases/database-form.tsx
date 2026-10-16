@@ -15,6 +15,7 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@
 import type { ControllerFormState } from '@/app/admin/controller-actions';
 
 export interface DatabaseFormValues {
+    engine: 'postgres' | 'mariadb';
     name: string;
     host: string;
     port: string;
@@ -51,16 +52,31 @@ export function DatabaseForm({ action, defaultValues, submitLabel, isEdit }: Dat
     // The cluster-only fields are meaningless for an external connection, so
     // they're revealed rather than shown greyed out.
     const [role, setRole] = useState<string>(defaultValues?.role ?? 'external');
+    // PostgreSQL hosts UnityCommerce tenants; MariaDB hosts Frappe sites.
+    const [engine, setEngine] = useState<string>(defaultValues?.engine ?? 'postgres');
+    const mariadb = engine === 'mariadb';
 
     return (
         <form action={formAction} className="portal-stack portal-form">
-            <div className="grid md:grid-cols-2 gap-6">
+            <div className="md:w-1/2">
+                <Label htmlFor="engine" className="portal-text-body text-foreground/80 mb-1.5">Engine</Label>
+                <Select name="engine" defaultValue={engine} onValueChange={setEngine} disabled={isEdit}>
+                    <SelectTrigger id="engine" className="w-full"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="postgres">PostgreSQL — UnityCommerce tenants</SelectItem>
+                        <SelectItem value="mariadb">MariaDB — Frappe / ERP sites</SelectItem>
+                    </SelectContent>
+                </Select>
+                {isEdit && <input type="hidden" name="engine" value={engine} />}
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-gap-lg">
                 <div>
-                    <Label htmlFor="name" className="portal-text-body text-ink-700 mb-1.5">Name</Label>
+                    <Label htmlFor="name" className="portal-text-body text-foreground/80 mb-1.5">Name</Label>
                     <Input id="name" name="name" required defaultValue={defaultValues?.name} placeholder="primary-eu" />
                 </div>
                 <div>
-                    <Label htmlFor="role" className="portal-text-body text-ink-700 mb-1.5">Role</Label>
+                    <Label htmlFor="role" className="portal-text-body text-foreground/80 mb-1.5">Role</Label>
                     <Select name="role" defaultValue={role} onValueChange={setRole}>
                         <SelectTrigger id="role" className="w-full"><SelectValue /></SelectTrigger>
                         <SelectContent>
@@ -71,85 +87,91 @@ export function DatabaseForm({ action, defaultValues, submitLabel, isEdit }: Dat
                 </div>
             </div>
 
-            <div className="grid md:grid-cols-3 gap-6">
+            <div className="grid md:grid-cols-3 gap-gap-lg">
                 <div className="md:col-span-2">
-                    <Label htmlFor="host" className="portal-text-body text-ink-700 mb-1.5">Host</Label>
+                    <Label htmlFor="host" className="portal-text-body text-foreground/80 mb-1.5">Host</Label>
                     <Input id="host" name="host" required defaultValue={defaultValues?.host} placeholder="db.example.com" />
                 </div>
                 <div>
-                    <Label htmlFor="port" className="portal-text-body text-ink-700 mb-1.5">Port</Label>
-                    <SmartInput id="port" name="port" kind="integer" min={1} max={65535} defaultValue={defaultValues?.port ?? '5432'} />
+                    <Label htmlFor="port" className="portal-text-body text-foreground/80 mb-1.5">Port</Label>
+                    <SmartInput key={engine} id="port" name="port" kind="integer" min={1} max={65535} defaultValue={defaultValues?.port ?? (mariadb ? '3306' : '5432')} />
                 </div>
             </div>
 
-            <div className="grid md:grid-cols-3 gap-6">
+            <div className="grid md:grid-cols-3 gap-gap-lg">
                 <div>
-                    <Label htmlFor="database_name" className="portal-text-body text-ink-700 mb-1.5">
+                    <Label htmlFor="database_name" className="portal-text-body text-foreground/80 mb-1.5">
                         {role === 'cluster' ? 'Maintenance database' : 'Database'}
                     </Label>
-                    <Input id="database_name" name="database_name" required defaultValue={defaultValues?.database_name} placeholder="postgres" />
+                    <Input key={engine} id="database_name" name="database_name" required defaultValue={defaultValues?.database_name ?? (mariadb ? 'mysql' : '')} placeholder={mariadb ? 'mysql' : 'postgres'} />
                     {role === 'cluster' && (
-                        <p className="mt-1 portal-text-caption text-ink-400">Connected to in order to CREATE DATABASE. Usually <code>postgres</code>.</p>
+                        <p className="mt-1 portal-text-caption text-muted-foreground">
+                            {mariadb
+                                ? <>Frappe creates one database and user per site. The account needs <code>ALL PRIVILEGES … WITH GRANT OPTION</code>.</>
+                                : <>Connected to in order to CREATE DATABASE. Usually <code>postgres</code>.</>}
+                        </p>
                     )}
                 </div>
                 <div>
-                    <Label htmlFor="username" className="portal-text-body text-ink-700 mb-1.5">Username</Label>
+                    <Label htmlFor="username" className="portal-text-body text-foreground/80 mb-1.5">Username</Label>
                     <Input id="username" name="username" required defaultValue={defaultValues?.username} />
                 </div>
                 <div>
-                    <Label htmlFor="password" className="portal-text-body text-ink-700 mb-1.5">
-                        Password {isEdit && <span className="text-ink-400 font-normal">(blank = unchanged)</span>}
+                    <Label htmlFor="password" className="portal-text-body text-foreground/80 mb-1.5">
+                        Password {isEdit && <span className="text-muted-foreground font-normal">(blank = unchanged)</span>}
                     </Label>
                     <PasswordInput id="password" name="password" autoComplete="new-password" required={!isEdit} />
                 </div>
             </div>
 
             <div>
-                <Label htmlFor="sslmode" className="portal-text-body text-ink-700 mb-1.5">SSL mode</Label>
-                <Select name="sslmode" defaultValue={defaultValues?.sslmode ?? 'prefer'}>
+                <Label htmlFor="sslmode" className="portal-text-body text-foreground/80 mb-1.5">SSL mode</Label>
+                <Select key={engine} name="sslmode" defaultValue={defaultValues?.sslmode ?? (mariadb ? 'disable' : 'prefer')}>
                     <SelectTrigger id="sslmode" className="w-full md:w-56"><SelectValue /></SelectTrigger>
                     <SelectContent>
-                        {SSL_MODES.map((mode) => <SelectItem key={mode} value={mode}>{mode}</SelectItem>)}
+                        {(mariadb ? ['disable', 'require'] : SSL_MODES).map((mode) => <SelectItem key={mode} value={mode}>{mode}</SelectItem>)}
                     </SelectContent>
                 </Select>
-                <p className="mt-1 portal-text-caption text-ink-400">Managed Postgres usually requires <code>require</code>.</p>
+                <p className="mt-1 portal-text-caption text-muted-foreground">
+                    {mariadb ? <>Use <code>disable</code> for a local MariaDB without TLS.</> : <>Managed Postgres usually requires <code>require</code>.</>}
+                </p>
             </div>
 
             {role === 'cluster' && (
-                <div className="portal-stack rounded-xl border border-ink-100 bg-ink-50/50 p-5">
+                <div className="portal-stack rounded-xl border border-border/60 bg-muted/50 p-card">
                     <div>
-                        <Label htmlFor="host_from_worker" className="portal-text-body text-ink-700 mb-1.5">
-                            Host as seen from workers <span className="text-ink-400 font-normal">(optional)</span>
+                        <Label htmlFor="host_from_worker" className="portal-text-body text-foreground/80 mb-1.5">
+                            Host as seen from workers <span className="text-muted-foreground font-normal">(optional)</span>
                         </Label>
                         <Input id="host_from_worker" name="host_from_worker" defaultValue={defaultValues?.host_from_worker} placeholder="10.0.0.5 or db.internal" />
-                        <p className="mt-1 portal-text-caption text-ink-400">
+                        <p className="mt-1 portal-text-caption text-muted-foreground">
                             Tenant containers run on remote nodes and often cannot reach this database by the same host
                             the controller uses. Leave blank if the address above works from a worker.
                         </p>
                     </div>
 
-                    <Label htmlFor="is_default" className="portal-text-body text-ink-700">
+                    <Label htmlFor="is_default" className="portal-text-body text-foreground/80">
                         <Checkbox id="is_default" name="is_default" defaultChecked={defaultValues?.is_default} />
-                        Default cluster — new tenants are provisioned here
+                        Default cluster — new tenants / sites are provisioned here
                     </Label>
                 </div>
             )}
 
-            <div className="rounded-md border border-warning-500/30 bg-warning-50/50 p-4">
-                <Label htmlFor="allow_writes" className="portal-text-body text-ink-800">
+            {!mariadb && <div className="rounded-md border border-warning/30 bg-warning/25 p-4">
+                <Label htmlFor="allow_writes" className="portal-text-body text-foreground">
                     <Checkbox id="allow_writes" name="allow_writes" defaultChecked={defaultValues?.allow_writes} />
                     Allow the query console to modify data
                 </Label>
-                <p className="mt-1.5 pl-6 portal-text-caption text-ink-600">
+                <p className="mt-1.5 pl-6 portal-text-caption text-foreground/70">
                     Off by default. While off, statements run inside a read-only transaction and the
                     database itself refuses any INSERT, UPDATE, DELETE or DDL — including ones hidden
                     in a CTE. Turn this on only for a connection you intend to change data through.
                 </p>
-            </div>
+            </div>}
 
             <div>
-                <Label htmlFor="notes" className="portal-text-body text-ink-700 mb-1.5">
-                    Notes <span className="text-ink-400 font-normal">(optional)</span>
+                <Label htmlFor="notes" className="portal-text-body text-foreground/80 mb-1.5">
+                    Notes <span className="text-muted-foreground font-normal">(optional)</span>
                 </Label>
                 <Textarea id="notes" name="notes" rows={2} defaultValue={defaultValues?.notes} />
             </div>

@@ -1,10 +1,7 @@
 import 'dotenv/config';
 import bcrypt from 'bcryptjs';
-import { PrismaClient } from '@prisma/client';
-import { PrismaPg } from '@prisma/adapter-pg';
-
-const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
-const prisma = new PrismaClient({ adapter });
+import { and, asc, eq } from 'drizzle-orm';
+import { closeDb, db, one, schema } from '../lib/db';
 
 function usage(): never {
   console.log(`Usage:
@@ -23,11 +20,11 @@ async function main() {
       const [email, password, name] = args;
       if (!email || !password) usage();
       const passwordHash = await bcrypt.hash(password, 10);
-      const user = await prisma.user.upsert({
-        where: { email: email.toLowerCase() },
-        update: { passwordHash, name, role: 'ADMIN' },
-        create: { email: email.toLowerCase(), passwordHash, name, role: 'ADMIN' },
-      });
+      const [user] = await db
+        .insert(schema.user)
+        .values({ email: email.toLowerCase(), passwordHash, name, role: 'ADMIN' })
+        .onConflictDoUpdate({ target: schema.user.email, set: { passwordHash, name, role: 'ADMIN' } })
+        .returning();
       console.log(`Admin user ready: ${user.email}`);
       break;
     }
@@ -35,15 +32,15 @@ async function main() {
       const [email, password] = args;
       if (!email || !password) usage();
       const passwordHash = await bcrypt.hash(password, 10);
-      const user = await prisma.user.update({
-        where: { email: email.toLowerCase() },
-        data: { passwordHash },
-      });
+      const user = one(
+        await db.update(schema.user).set({ passwordHash }).where(eq(schema.user.email, email.toLowerCase())).returning(),
+        `No user with email ${email}`,
+      );
       console.log(`Password updated for: ${user.email}`);
       break;
     }
     case 'list': {
-      const users = await prisma.user.findMany({ where: { role: 'ADMIN' }, orderBy: { createdAt: 'asc' } });
+      const users = await db.query.user.findMany({ where: eq(schema.user.role, 'ADMIN'), orderBy: asc(schema.user.createdAt) });
       if (users.length === 0) {
         console.log('No admin users yet.');
         break;
@@ -56,7 +53,10 @@ async function main() {
     case 'delete': {
       const [email] = args;
       if (!email) usage();
-      await prisma.user.delete({ where: { email: email.toLowerCase(), role: 'ADMIN' } });
+      one(
+        await db.delete(schema.user).where(and(eq(schema.user.email, email.toLowerCase()), eq(schema.user.role, 'ADMIN'))).returning({ id: schema.user.id }),
+        `No admin with email ${email}`,
+      );
       console.log(`Deleted admin user: ${email}`);
       break;
     }
@@ -70,4 +70,4 @@ main()
     console.error(err.message ?? err);
     process.exit(1);
   })
-  .finally(() => prisma.$disconnect());
+  .finally(() => closeDb());

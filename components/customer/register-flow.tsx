@@ -35,7 +35,7 @@ const STEPS = ['Email', 'Verify', 'Your details'];
 function SubmitButton({ label, pendingLabel }: { label: string; pendingLabel: string }) {
     const { pending } = useFormStatus();
     return (
-        <Button type="submit" disabled={pending} className="h-9 w-full rounded-md bg-ink-900 text-white hover:bg-ink-800">
+        <Button type="submit" disabled={pending} className="h-9 w-full rounded-md bg-primary text-primary-foreground hover:bg-primary/90">
             {pending ? pendingLabel : label}<ArrowRight className="h-4 w-4" />
         </Button>
     );
@@ -63,10 +63,10 @@ export function EmailStep() {
     return (
         <AuthFrame eyebrow="Create your account" title="Start with your email" description="We'll send a verification code to confirm it's really you before setting up your account.">
             <StepIndicator labels={STEPS} step={1} />
-            <form action={formAction} noValidate className="space-y-4">
+            <form action={formAction} noValidate className="space-y-gap">
                 <FormField id="email" label="Email address" error={error}>
                     <div className="relative">
-                        <Mail className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-ink-400" />
+                        <Mail className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                         <Input
                             id="email"
                             name="email"
@@ -84,7 +84,7 @@ export function EmailStep() {
                 <ErrorMessage state={state} />
                 <SubmitButton label="Send verification code" pendingLabel="Sending…" />
             </form>
-            <div className="mt-7 flex items-center justify-center gap-2 text-xs text-ink-400">
+            <div className="mt-7 flex items-center justify-center gap-2 text-xs text-muted-foreground">
                 <ShieldCheck className="h-4 w-4" />Your details are encrypted and never shared</div>
         </AuthFrame>
     );
@@ -130,7 +130,7 @@ export function OtpStep({ email }: { email: string }) {
             <StepIndicator labels={STEPS} step={2} />
             <form action={formAction} className="space-y-5">
                 <div>
-                    <Label htmlFor="otp" className="mb-2 text-sm text-ink-700">Verification code</Label>
+                    <Label htmlFor="otp" className="mb-2 text-sm text-foreground/80">Verification code</Label>
                     <InputOTP id="otp" name="otp" maxLength={6} required pattern={REGEXP_ONLY_DIGITS} containerClassName="justify-center">
                         <InputOTPGroup>
                             <InputOTPSlot index={0} />
@@ -153,7 +153,7 @@ export function OtpStep({ email }: { email: string }) {
                     <button
                         type="submit"
                         // disabled={cooldown > 0}
-                        className="inline-flex items-center gap-1.5 font-semibold text-link hover:underline disabled:cursor-not-allowed disabled:text-ink-400 disabled:no-underline"
+                        className="inline-flex items-center gap-1.5 font-semibold text-primary hover:underline disabled:cursor-not-allowed disabled:text-muted-foreground disabled:no-underline"
                     >
                         <RefreshCw className="h-3.5 w-3.5" />
                         Resend code
@@ -161,10 +161,10 @@ export function OtpStep({ email }: { email: string }) {
                     </button>
                 </form>
                 <form action={restartRegistrationAction}>
-                    <button type="submit" className="text-ink-500 hover:text-ink-700">Use a different email</button>
+                    <button type="submit" className="text-muted-foreground hover:text-foreground/80">Use a different email</button>
                 </form>
             </div>
-            {resendState?.error ? <p role="alert" className="mt-3 text-sm text-error-700">{resendState.error}</p> : null}
+            {resendState?.error ? <p role="alert" className="mt-3 text-sm text-destructive">{resendState.error}</p> : null}
             {resendNotice ? (
                 <Notice tone="success" className="mt-3">A new verification code has been sent to your email.</Notice>
             ) : null}
@@ -223,8 +223,8 @@ export function CustomerInfoStep({ email }: { email: string }) {
             <StepIndicator labels={STEPS} step={3} />
             {/* noValidate: the browser's own bubbles would pre-empt these
                 messages and say something different from the server. */}
-            <form action={formAction} noValidate className="space-y-4">
-                <div className="grid gap-4 sm:grid-cols-2">
+            <form action={formAction} noValidate className="space-y-gap">
+                <div className="grid gap-gap sm:grid-cols-2">
                     <FormField id="firstName" label="First name" error={errorFor('firstName')}>
                         <Input {...fieldProps('firstName')} autoComplete="given-name" placeholder="John" />
                     </FormField>
@@ -236,7 +236,7 @@ export function CustomerInfoStep({ email }: { email: string }) {
                     <Input {...fieldProps('phone')} type="tel" autoComplete="tel" placeholder="+92 300 0000000" />
                 </FormField>
                 <FormField id="email" label="Email address" help="Verified in the previous step.">
-                    <Input id="email" value={email} readOnly disabled className={cn('bg-ink-50 text-ink-500')} />
+                    <Input id="email" value={email} readOnly disabled className={cn('bg-muted text-muted-foreground')} />
                 </FormField>
                 <FormField
                     id="password"

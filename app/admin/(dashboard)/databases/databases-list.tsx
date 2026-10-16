@@ -10,6 +10,7 @@ import {
 export interface DatabaseRow {
     id: string;
     name: string;
+    engine: 'postgres' | 'mariadb';
     kind: string;
     isDefault: boolean;
     address: string;
@@ -81,8 +82,9 @@ export function DatabasesList({
             cellRenderer: ActionsCell,
             get: (row) => ({
                 submits: [{ label: 'Test', action: testAction, id: row.id }],
+                // The schema browser and query console work on both engines.
                 actions: [
-                    { label: 'Browse', href: `/admin/databases/${row.id}/browse`, tone: 'solid' },
+                    { label: 'Browse', href: `/admin/databases/${row.id}/browse`, tone: 'solid' as const },
                     { label: 'Manage', href: `/admin/databases/${row.id}` },
                 ],
             }),
@@ -95,9 +97,9 @@ export function DatabasesList({
             columns={columns}
             getRowId={(row) => row.id}
             searchPlaceholder="Search by name or host…"
-            emptyIcon={<Database className="h-10 w-10 text-ink-300" />}
+            emptyIcon={<Database className="h-10 w-10 text-muted-foreground/50" />}
             emptyTitle="No databases registered"
-            emptyMessage="Register a PostgreSQL instance to host tenant databases on it."
+            emptyMessage="Register a PostgreSQL instance for tenant databases, or a MariaDB server for Frappe sites."
             emptyAction={{ label: 'Register a database', href: '/admin/databases/new' }}
         />
     );

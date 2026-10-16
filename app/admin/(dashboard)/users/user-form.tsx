@@ -36,29 +36,29 @@ export function UserForm({ action, defaultValues, submitLabel, includePassword }
     return (
         <form action={formAction} className="portal-stack portal-form-narrow">
             <div>
-                <Label htmlFor="email" className="portal-text-body text-ink-700 mb-1.5">
+                <Label htmlFor="email" className="portal-text-body text-foreground/80 mb-1.5">
                     Email
                 </Label>
                 <Input id="email" name="email" type="email" required defaultValue={defaultValues?.email} />
             </div>
 
             <div>
-                <Label htmlFor="name" className="portal-text-body text-ink-700 mb-1.5">
-                    Name <span className="text-ink-400 font-normal">(optional)</span>
+                <Label htmlFor="name" className="portal-text-body text-foreground/80 mb-1.5">
+                    Name <span className="text-muted-foreground font-normal">(optional)</span>
                 </Label>
                 <Input id="name" name="name" defaultValue={defaultValues?.name} />
             </div>
 
             {includePassword && (
                 <div>
-                    <Label htmlFor="password" className="portal-text-body text-ink-700 mb-1.5">
+                    <Label htmlFor="password" className="portal-text-body text-foreground/80 mb-1.5">
                         Password
                     </Label>
                     <Input id="password" name="password" type="password" required minLength={8} autoComplete="new-password" />
                 </div>
             )}
 
-            {state?.error && <p className="portal-text-body text-error-600">{state.error}</p>}
+            {state?.error && <p className="portal-text-body text-destructive">{state.error}</p>}
 
             <div className="flex items-center gap-3">
                 <SubmitButton label={submitLabel} />

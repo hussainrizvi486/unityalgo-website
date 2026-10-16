@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
-import { prisma } from '@/lib/db';
+import { eq } from 'drizzle-orm';
+import { db, schema } from '@/lib/db';
 import { requireAdmin } from '@/lib/admin-session';
 import { updateEmailAccountAction } from '@/app/admin/email-actions';
 import { AdminPageHeader } from '@/components/admin/page-header';
@@ -11,9 +12,10 @@ export default async function EditEmailAccountPage({ params }: { params: Promise
 
     // Password columns are deliberately not selected: the form shows a blank
     // field meaning "unchanged", so the stored secret never has to travel.
-    const account = await prisma.emailAccount.findUnique({
-        where: { id },
-        select: {
+    // Passwords are deliberately not selected: the form's password field means "unchanged" when blank.
+    const account = await db.query.emailAccount.findFirst({
+        where: eq(schema.emailAccount.id, id),
+        columns: {
             id: true, label: true, address: true, fromName: true, purpose: true,
             smtpHost: true, smtpPort: true, smtpSecure: true, smtpUsername: true,
             imapHost: true, imapPort: true, imapSecure: true, imapUsername: true,

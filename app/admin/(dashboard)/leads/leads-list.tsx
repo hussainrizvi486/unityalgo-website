@@ -131,7 +131,7 @@ export function LeadsList({ rows }: { rows: LeadRow[] }) {
                     ]}
                 />
             }
-            emptyIcon={<Inbox className="h-10 w-10 text-ink-300" />}
+            emptyIcon={<Inbox className="h-10 w-10 text-muted-foreground/50" />}
             emptyTitle="No leads yet"
             emptyMessage="Enquiries from the website contact form arrive here."
         />

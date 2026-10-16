@@ -82,7 +82,7 @@ export function AdminListView<Row>({
                 <div className="mb-4 flex flex-wrap items-center gap-3">
                     {searchPlaceholder && (
                         <div className="relative min-w-56 flex-1">
-                            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-ink-400" />
+                            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                             <Input
                                 value={query}
                                 onChange={(event) => setQuery(event.target.value)}
@@ -95,7 +95,7 @@ export function AdminListView<Row>({
                                     type="button"
                                     onClick={() => setQuery('')}
                                     aria-label="Clear search"
-                                    className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-md p-0.5 text-ink-400 hover:bg-ink-100 hover:text-ink-600"
+                                    className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-md p-0.5 text-muted-foreground hover:bg-secondary hover:text-foreground/70"
                                 >
                                     <X className="size-3.5" />
                                 </button>
@@ -107,10 +107,10 @@ export function AdminListView<Row>({
             )}
 
             {isEmpty ? (
-                <div className="flex min-h-64 flex-col items-center justify-center rounded-xl border border-dashed border-ink-300 bg-white p-6 text-center">
+                <div className="flex min-h-64 flex-col items-center justify-center rounded-xl border border-dashed border-input bg-card p-card text-center">
                     {emptyIcon ?? null}
-                    <h2 className="mt-4 text-lg font-bold text-ink-900">{emptyTitle}</h2>
-                    {emptyMessage && <p className="mt-2 max-w-sm portal-text-body text-ink-500">{emptyMessage}</p>}
+                    <h2 className="mt-4 text-lg text-foreground">{emptyTitle}</h2>
+                    {emptyMessage && <p className="mt-2 max-w-sm portal-text-body text-muted-foreground">{emptyMessage}</p>}
                     {emptyAction && (
                         <Button asChild className=""><Link href={emptyAction.href} className="mt-5">
                                 {emptyAction.label}

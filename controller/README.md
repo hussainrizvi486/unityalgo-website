@@ -69,21 +69,21 @@ contributor might, so the convention is:
 
 | Owner | Naming | Tables |
 |---|---|---|
-| **Prisma** (`prisma/schema.prisma`) | `PascalCase` | `User`, `Subscription`, `Plan`, `AddOn`, `Address`, `BillingRecord`, `SupportTicket`, `Comment`, `Post`, … |
+| **Drizzle** (`db/schema.ts`) | `PascalCase` | `User`, `Subscription`, `Plan`, `AddOn`, `Address`, `BillingRecord`, `SupportTicket`, `Comment`, `Post`, … |
 | **Alembic** (`controller/alembic/`) | `snake_case` | `server_nodes`, `tenants`, `deployments`, `domain_mappings`, `tenant_backups`, `tenant_migrations`, `operations`, `activity_logs`, `database_connections` |
 
 Rules of thumb:
 
-- **Anything about people, billing or the product catalogue → Prisma.**
+- **Anything about people, billing or the product catalogue → the website (Drizzle).**
 - **Anything about infrastructure → Alembic.**
 - Foreign keys may cross the boundary. `tenants.user_id → "User"(id)` and
   `BillingRecord.tenantId → tenants(id)` both exist today; declare each one in
   whichever tool owns the table carrying the column.
 - Never have both tools manage the same table.
 
-### Reading Prisma's tables from Python
+### Reading the website's tables from Python
 
-`app/models/platform.py` maps a few Prisma-owned tables **read-only**
+`app/models/platform.py` maps a few website-owned tables **read-only**
 (`PlatformUser`, `PlatformSubscription`, `PlatformBillingRecord`). They exist
 for two reasons: so `ForeignKey("User.id")` on `tenants` can be constructed at
 all (SQLAlchemy cannot reference a table absent from its MetaData), and so the
@@ -93,31 +93,31 @@ Two things keep this safe, and both matter:
 
 1. **`alembic/env.py` filters them out of autogenerate** via `include_object`
    and `PRISMA_OWNED_TABLES`. Without it, `makemigration` would emit DDL
-   against tables Prisma owns — altering the mirrored ones (the mirror is
+   against tables The website (Drizzle) owns — altering the mirrored ones (the mirror is
    deliberately partial, so it would "helpfully" drop columns) and dropping the
    ten it does not mirror. An end-to-end check asserts this filter is still
    wired up.
 2. **Nothing in the controller writes them.** Writes go through the Next.js
    app, which owns the business rules.
 
-The mirror is hand-maintained against `schema.prisma`. Keep it to the minimum
-the controller genuinely reads: a Prisma column that is not mirrored is simply
+The mirror is hand-maintained against `db/schema.ts` (the constant is still called `PRISMA_OWNED_TABLES`, a name from before the move to Drizzle). Keep it to the minimum
+the controller genuinely reads: a website column that is not mirrored is simply
 invisible here, which is harmless, whereas every mirrored column is one more
 thing to keep in sync.
 
-### A note on prisma-client-py
+### A note on using the website's ORM from Python
 
-Using the Python Prisma client instead was considered and rejected. It would
+Using an ORM for the website's tables from Python was considered and rejected. It would
 not have solved the foreign-key problem — a second client does not put `User`
 into SQLAlchemy's MetaData — while adding a second connection pool, an
 async-first API to a deliberately sync service, and a Node build step, all for
 what amounted to two queries.
 
-`_prisma_migrations` and `alembic_version` coexist as separate ledgers. Run
+`drizzle.__drizzle_migrations` and `alembic_version` coexist as separate ledgers. Run
 both on deploy:
 
 ```bash
-npx prisma migrate deploy            # from the repo root
+npm run db:migrate                    # from the repo root
 python main.py migrate               # from controller/
 ```
 
@@ -169,7 +169,7 @@ it would strand the data on the old cluster.
 
 ## Identity
 
-There is exactly one user table: Prisma's `User`, with a `role` of `ADMIN` or
+There is exactly one user table: the website's `User`, with a `role` of `ADMIN` or
 `CUSTOMER`. The controller used to keep its own `admin_users`, `customers`,
 `addresses` and `billing_records`; those were merged into the platform tables
 and dropped (`scripts/migrate-controller-customers.ts`, then Alembic
@@ -182,7 +182,7 @@ subscription**, and the subscription is what ties it to both a person and a
 plan:
 
 ```
-User ──< Subscription >── Plan          (Prisma)
+User ──< Subscription >── Plan          (website)
               │
               │ tenants.subscription_id  (unique)
               ▼

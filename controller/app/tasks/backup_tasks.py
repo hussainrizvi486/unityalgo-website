@@ -13,7 +13,6 @@ restore_backup() path with no special cases.
 Off unless BACKUP_SCHEDULE_ENABLED is set. See app/config.py for why.
 """
 
-import os
 from pathlib import Path
 
 from sqlalchemy import select

@@ -79,7 +79,7 @@ export function ContactsList({
             columns={columns}
             getRowId={(row) => row.id}
             searchPlaceholder="Search by name, email or message…"
-            emptyIcon={<MessageSquareText className="h-10 w-10 text-ink-300" />}
+            emptyIcon={<MessageSquareText className="h-10 w-10 text-muted-foreground/50" />}
             emptyTitle="No contact submissions"
             emptyMessage="Messages sent through the website's contact form land here."
         />

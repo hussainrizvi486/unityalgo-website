@@ -471,7 +471,7 @@ function WorkspacePreview({ shot, sidebar = false }: { shot: Shot; sidebar?: boo
             target="_blank"
             rel="noopener noreferrer"
             aria-label={`Open full-size image: ${screenshot.alt}`}
-            className="group block overflow-hidden rounded-lg border border-ink-200 bg-white shadow-xl shadow-ink-900/5 focus-visible:outline-2 focus-visible:outline-offset-4"
+            className="group block overflow-hidden rounded-lg border border-border bg-card shadow-xl shadow-foreground/5 focus-visible:outline-2 focus-visible:outline-offset-4"
         >
             <Image
                 src={screenshot.src}
@@ -485,7 +485,7 @@ function WorkspacePreview({ shot, sidebar = false }: { shot: Shot; sidebar?: boo
         </a>
     );
 }
-const eyebrow = 'text-sm font-medium text-brand';
+const eyebrow = 'text-sm font-medium text-primary';
 const heading =
     'mt-4 text-3xl font-semibold leading-tight tracking-tight md:text-5xl';
 const container = 'site-container';
@@ -495,36 +495,36 @@ export const MainContent = () => (
     <main>
         <section
             id="overview"
-            className="scroll-mt-24 bg-ink-50 px-4 pb-16 pt-32 md:px-6 md:pb-20 md:pt-40"
+            className="scroll-mt-24 bg-muted px-4 pb-16 pt-32 md:px-6 md:pb-20 md:pt-40"
         >
             <div className={container}>
-                {/* <div className="mb-10 flex gap-2 text-xs text-ink-500">
-                    <Link href="/" className="hover:text-brand">
+                {/* <div className="mb-10 flex gap-2 text-xs text-muted-foreground">
+                    <Link href="/" className="hover:text-primary">
                         Home
                     </Link>
                     <span>/</span>
                     <span>Products</span>
                     <span>/</span>
-                    <span className="text-ink-900">AlgoSuite</span>
+                    <span className="text-foreground">AlgoSuite</span>
                 </div> */}
                 <div className="grid items-center gap-12 lg:grid-cols-[1fr_1.08fr] lg:gap-16">
                     <div>
                         {/* <div className="mb-6 flex flex-wrap items-center gap-3">
-                            <span className="text-sm font-semibold text-brand">
+                            <span className="text-sm font-semibold text-primary">
                                 AlgoSuite / Business management
                             </span>
-                            <span className="border-l border-ink-300 pl-3 text-xs text-ink-500">
+                            <span className="border-l border-input pl-3 text-xs text-muted-foreground">
                                 In development
                             </span>
                         </div> */}
-                        <h1 className="max-w-xl text-4xl font-bold leading-[1.04] tracking-[-0.065em] sm:text-6xl xl:text-7xl">
+                        <h1 className="max-w-xl text-4xl leading-none tracking-tighter sm:text-6xl xl:text-7xl">
                             Your whole business.
                             <br />
-                            <span className="text-brand">
+                            <span className="text-primary">
                                 Working together.
                             </span>
                         </h1>
-                        <p className="mt-7 max-w-lg text-sm leading-relaxed text-ink-600">
+                        <p className="mt-7 max-w-lg text-sm leading-relaxed text-foreground/70">
                             AlgoSuite is business software we are building at
                             UnityAlgo. Orders, stock, invoices, and your team&apos;s
                             records live in one system, so nobody retypes
@@ -549,14 +549,14 @@ export const MainContent = () => (
                                 </Link>
                             </Button>
                         </div>
-                        <p className="mt-5 text-sm text-ink-500">
+                        <p className="mt-5 text-sm text-muted-foreground">
                             AlgoSuite is still in development. Talk to us and
                             we will tell you honestly where it stands.
                         </p>
                     </div>
                     <div className="min-w-0">
                         <WorkspacePreview shot="workspace" sidebar />
-                        <p className="mt-4 text-xs text-ink-500">
+                        <p className="mt-4 text-xs text-muted-foreground">
                             The AlgoSuite home workspace, from a preview build.
                         </p>
                     </div>
@@ -566,12 +566,12 @@ export const MainContent = () => (
 
         <nav
             aria-label="AlgoSuite page sections"
-            className="border-y border-ink-200 px-4 md:px-6"
+            className="border-y border-border px-4 md:px-6"
         >
             <div
-                className={`${container} flex items-center gap-8 overflow-x-auto py-5 text-sm`}
+                className={`${container} flex items-center gap-gap-xl overflow-x-auto py-5 text-sm`}
             >
-                <span className="hidden shrink-0 border-r border-ink-200 pr-8 font-semibold sm:block">
+                <span className="hidden shrink-0 border-r border-border pr-8 font-semibold sm:block">
                     AlgoSuite
                 </span>
                 {[
@@ -587,7 +587,7 @@ export const MainContent = () => (
                     <a
                         key={id}
                         href={`#${id}`}
-                        className="shrink-0 text-ink-600 hover:text-ink-800 active:text-ink-900 focus-visible:outline-2 focus-visible:outline-offset-4"
+                        className="shrink-0 text-foreground/70 hover:text-foreground active:text-foreground focus-visible:outline-2 focus-visible:outline-offset-4"
                     >
                         {label}
                     </a>
@@ -598,22 +598,22 @@ export const MainContent = () => (
         <section id="what-is-erp" className={section}>
             <div className={container}>
                 <div className="grid gap-10 md:grid-cols-[0.65fr_1fr]">
-                    <h2 className="text-3xl font-semibold leading-tight tracking-tight md:text-4xl">
+                    <h2 className="text-3xl leading-tight tracking-tight md:text-4xl">
                         What an ERP actually changes
                     </h2>
                     <div>
-                        <p className="max-w-2xl text-lg leading-relaxed text-ink-600">
+                        <p className="max-w-2xl text-lg leading-relaxed text-foreground/70">
                             ERP stands for enterprise resource planning. In
                             practice it means finance, stock, sales, and HR
                             share one database instead of each keeping their
                             own. Here is what that looks like day to day.
                         </p>
-                        <dl className="mt-10 divide-y divide-ink-200 border-y border-ink-200">
+                        <dl className="mt-10 divide-y divide-border border-y border-border">
                             {comparison.map(([topic, before, after]) => (
-                                <div key={topic} className="grid gap-2 py-6 sm:grid-cols-[10rem_1fr_1fr] sm:gap-8">
+                                <div key={topic} className="grid gap-2 py-6 sm:grid-cols-[calc(var(--spacing)*40)_1fr_1fr] sm:gap-gap-xl">
                                     <dt className="font-semibold">{topic}</dt>
-                                    <dd className="text-sm leading-7 text-ink-500">Today: {before}</dd>
-                                    <dd className="text-sm leading-7 text-ink-800">With AlgoSuite: {after}</dd>
+                                    <dd className="text-sm leading-7 text-muted-foreground">Today: {before}</dd>
+                                    <dd className="text-sm leading-7 text-foreground">With AlgoSuite: {after}</dd>
                                 </div>
                             ))}
                         </dl>
@@ -624,13 +624,13 @@ export const MainContent = () => (
 
         <section className={section}>
             <div className={container}>
-                <div className="grid gap-8 md:grid-cols-[0.65fr_1fr]">
+                <div className="grid gap-gap-xl md:grid-cols-[0.65fr_1fr]">
                     <p className={eyebrow}>Why we are building it</p>
                     <div>
-                        <h2 className="text-3xl font-semibold leading-tight tracking-tight md:text-5xl">
+                        <h2 className="text-3xl leading-tight tracking-tight md:text-5xl">
                             Your teams already depend on each other. The software usually does not.
                         </h2>
-                        <p className="mt-6 max-w-2xl text-lg leading-relaxed text-ink-600">
+                        <p className="mt-6 max-w-2xl text-lg leading-relaxed text-foreground/70">
                             A single sale touches stock, cash, and someone&apos;s
                             to-do list. When each lives in a different tool,
                             people fill the gaps by hand. AlgoSuite starts with
@@ -638,7 +638,7 @@ export const MainContent = () => (
                         </p>
                     </div>
                 </div>
-                <div className="mt-14 grid gap-8 border-t border-ink-200 pt-8 md:grid-cols-3">
+                <div className="mt-14 grid gap-gap-xl border-t border-border pt-8 md:grid-cols-3">
                     {[
                         [
                             'One record, many teams',
@@ -654,10 +654,10 @@ export const MainContent = () => (
                         ],
                     ].map(([title, text]) => (
                         <div key={title}>
-                            <h3 className="text-xl font-semibold">
+                            <h3 className="text-xl ">
                                 {title}
                             </h3>
-                            <p className="mt-3 text-sm leading-7 text-ink-600">
+                            <p className="mt-3 text-sm leading-7 text-foreground/70">
                                 {text}
                             </p>
                         </div>
@@ -666,13 +666,13 @@ export const MainContent = () => (
             </div>
         </section>
 
-        <section id="modules" className={`${section} bg-ink-50`}>
+        <section id="modules" className={`${section} bg-muted`}>
             <div className={container}>
                 <div className="mb-10 flex flex-col justify-between gap-5 md:flex-row md:items-end">
                     <div>
                         <h2 className={heading}>Modules we provide.</h2>
                     </div>
-                    <p className="max-w-sm text-sm leading-6 text-ink-600">
+                    <p className="max-w-sm text-sm leading-6 text-foreground/70">
                         Pick the part of the business you care about most. Scope
                         and availability are not final.
                     </p>
@@ -682,34 +682,34 @@ export const MainContent = () => (
                         <a
                             key={module.name}
                             href="#contact"
-                            className="group flex flex-col rounded-sm border border-ink-200 bg-white p-7 transition-colors hover:border-ink-300 hover:bg-ink-50 active:border-ink-500 active:bg-ink-100 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ink-600"
+                            className="group flex flex-col rounded-sm border border-border bg-card p-7 transition-colors hover:border-input hover:bg-muted active:border-muted-foreground active:bg-secondary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
                         >
-                            <module.icon className="size-7 text-ink-600" />
-                            <h3 className="mt-6 text-xl font-semibold tracking-tight group-active:text-ink-800">{module.name}</h3>
-                            <p className="mt-4 flex-1 text-sm leading-7 text-ink-600">{module.text}</p>
-                            <span className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-ink-700 group-hover:text-ink-900">Ask about {module.name} <ArrowUpRight className="size-4" /></span>
+                            <module.icon className="size-7 text-foreground/70" />
+                            <h3 className="mt-6 text-xl tracking-tight group-active:text-foreground">{module.name}</h3>
+                            <p className="mt-4 flex-1 text-sm leading-7 text-foreground/70">{module.text}</p>
+                            <span className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-foreground/80 group-hover:text-foreground">Ask about {module.name} <ArrowUpRight className="size-4" /></span>
                         </a>
                     ))}
-                    <div className="flex flex-col justify-center rounded-sm border border-ink-200 bg-ink-100 p-7">
-                        <ClipboardList className="size-7 text-ink-600" />
-                        <h3 className="mt-6 text-xl font-semibold">Planned around your team</h3>
-                        <p className="mt-4 text-sm leading-7 text-ink-600">People &amp; HR is also part of the planned suite. Final module scope and availability will be confirmed as development progresses.</p>
+                    <div className="flex flex-col justify-center rounded-sm border border-border bg-secondary p-7">
+                        <ClipboardList className="size-7 text-foreground/70" />
+                        <h3 className="mt-6 text-xl ">Planned around your team</h3>
+                        <p className="mt-4 text-sm leading-7 text-foreground/70">People &amp; HR is also part of the planned suite. Final module scope and availability will be confirmed as development progresses.</p>
                     </div>
                 </div>
                 <div className="mb-8 max-w-2xl">
-                    <h3 className="text-3xl font-semibold tracking-tight md:text-4xl">Features by area of the business</h3>
-                    <p className="mt-4 text-base leading-7 text-ink-600">Choose an area to see what we are planning to cover. Screenshots come from preview builds and may change.</p>
+                    <h3 className="text-3xl tracking-tight md:text-4xl">Features by area of the business</h3>
+                    <p className="mt-4 text-base leading-7 text-foreground/70">Choose an area to see what we are planning to cover. Screenshots come from preview builds and may change.</p>
                 </div>
-                <Tabs defaultValue="accounting" orientation="vertical" className="gap-8 lg:grid lg:grid-cols-[17rem_1fr] lg:gap-12">
+                <Tabs defaultValue="accounting" orientation="vertical" className="gap-gap-xl lg:grid lg:grid-cols-[var(--panel-w)_1fr] lg:gap-12">
                     <TabsList
                         aria-label="Feature areas"
-                        className="h-auto w-full flex-row justify-start gap-1 overflow-x-auto rounded-none border-b border-ink-200 bg-transparent p-0 lg:sticky lg:top-28 lg:flex-col lg:items-stretch lg:gap-0 lg:self-start lg:border-b-0 lg:border-l"
+                        className="h-auto w-full flex-row justify-start gap-1 overflow-x-auto rounded-none border-b border-border bg-transparent p-0 lg:sticky lg:top-28 lg:flex-col lg:items-stretch lg:gap-0 lg:self-start lg:border-b-0 lg:border-l"
                     >
                         {areas.map((area) => (
                             <TabsTrigger
                                 key={area.id}
                                 value={area.id}
-                                className="h-auto flex-none justify-start whitespace-nowrap rounded-none border-0 border-b-2 border-transparent px-3 py-3 text-left text-sm font-medium text-ink-600 hover:bg-ink-100 hover:text-ink-900 data-[state=active]:border-ink-900 data-[state=active]:bg-transparent data-[state=active]:font-semibold data-[state=active]:text-ink-900 data-[state=active]:shadow-none lg:-ml-px lg:whitespace-normal lg:border-b-0 lg:border-l-2 lg:px-5 lg:py-3.5"
+                                className="h-auto flex-none justify-start whitespace-nowrap rounded-none border-0 border-b-2 border-transparent px-3 py-3 text-left text-sm font-medium text-foreground/70 hover:bg-secondary hover:text-foreground data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:font-semibold data-[state=active]:text-foreground data-[state=active]:shadow-none lg:-ml-px lg:whitespace-normal lg:border-b-0 lg:border-l-2 lg:px-5 lg:py-3.5"
                             >
                                 {area.label}
                             </TabsTrigger>
@@ -718,25 +718,25 @@ export const MainContent = () => (
                     <div className="min-w-0">
                         {areas.map((area) => (
                             <TabsContent key={area.id} value={area.id}>
-                                <div className={`grid items-start gap-8 ${area.shot ? 'xl:grid-cols-[1fr_0.9fr] xl:gap-12' : ''}`}>
+                                <div className={`grid items-start gap-gap-xl ${area.shot ? 'xl:grid-cols-[1fr_0.9fr] xl:gap-12' : ''}`}>
                                     <div>
-                                        <h3 className="max-w-lg text-3xl font-semibold leading-tight tracking-tight">
+                                        <h3 className="max-w-lg text-3xl leading-tight tracking-tight">
                                             {area.title}
                                         </h3>
-                                        <p className="mt-4 max-w-xl text-base leading-7 text-ink-600">
+                                        <p className="mt-4 max-w-xl text-base leading-7 text-foreground/70">
                                             {area.description}
                                         </p>
                                         <ul className="mt-5 space-y-2.5">
                                             {area.highlights.map((h) => (
-                                                <li key={h} className="flex items-start gap-3 text-sm text-ink-700">
-                                                    <Check className="mt-0.5 size-4 shrink-0 text-ink-600" />
+                                                <li key={h} className="flex items-start gap-3 text-sm text-foreground/80">
+                                                    <Check className="mt-0.5 size-4 shrink-0 text-foreground/70" />
                                                     {h}
                                                 </li>
                                             ))}
                                         </ul>
                                         <a
                                             href="#contact"
-                                            className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-ink-600 hover:text-ink-800 hover:underline"
+                                            className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-foreground/70 hover:text-foreground hover:underline"
                                         >
                                             Ask about {area.label.toLowerCase()} <ArrowRight className="size-4" />
                                         </a>
@@ -744,24 +744,24 @@ export const MainContent = () => (
                                     {area.shot && (
                                         <div className="min-w-0">
                                             <WorkspacePreview shot={area.shot} />
-                                            <p className="mt-3 text-xs leading-6 text-ink-500">
+                                            <p className="mt-3 text-xs leading-6 text-muted-foreground">
                                                 From a preview build. Select to enlarge.
                                             </p>
                                         </div>
                                     )}
                                 </div>
-                                <div className="mt-10 grid gap-x-8 gap-y-9 border-t border-ink-200 pt-9 sm:grid-cols-2">
+                                <div className="mt-10 grid gap-x-gap-xl gap-y-9 border-t border-border pt-9 sm:grid-cols-2">
                                     {area.items.map((item) => (
                                         <article key={item.title}>
-                                            <item.icon className="size-6 text-ink-600" />
-                                            <h4 className="mt-3 text-lg font-semibold">{item.title}</h4>
-                                            <p className="mt-2 text-sm leading-7 text-ink-600">{item.text}</p>
+                                            <item.icon className="size-6 text-foreground/70" />
+                                            <h4 className="mt-3 text-lg ">{item.title}</h4>
+                                            <p className="mt-2 text-sm leading-7 text-foreground/70">{item.text}</p>
                                         </article>
                                     ))}
                                 </div>
-                                <div className="mt-10 border-l-2 border-brand bg-white p-6">
-                                    <h4 className="font-semibold">{area.callout.title}</h4>
-                                    <p className="mt-2 max-w-3xl text-sm leading-7 text-ink-600">{area.callout.text}</p>
+                                <div className="mt-10 border-l-2 border-primary bg-card p-6">
+                                    <h4 className="">{area.callout.title}</h4>
+                                    <p className="mt-2 max-w-3xl text-sm leading-7 text-foreground/70">{area.callout.text}</p>
                                 </div>
                             </TabsContent>
                         ))}
@@ -773,14 +773,14 @@ export const MainContent = () => (
         <section id="roles" className={section}>
             <div className={container}>
                 <div className="grid gap-10 md:grid-cols-[0.65fr_1fr]">
-                    <h2 className="text-3xl font-semibold leading-tight tracking-tight md:text-4xl">
+                    <h2 className="text-3xl leading-tight tracking-tight md:text-4xl">
                         What it means for your role
                     </h2>
-                    <dl className="divide-y divide-ink-200 border-y border-ink-200">
+                    <dl className="divide-y divide-border border-y border-border">
                         {roles.map(([role, text]) => (
-                            <div key={role} className="grid gap-2 py-6 sm:grid-cols-[12rem_1fr] sm:gap-8">
+                            <div key={role} className="grid gap-2 py-6 sm:grid-cols-[calc(var(--spacing)*48)_1fr] sm:gap-gap-xl">
                                 <dt className="font-semibold">{role}</dt>
-                                <dd className="text-sm leading-7 text-ink-600">{text}</dd>
+                                <dd className="text-sm leading-7 text-foreground/70">{text}</dd>
                             </div>
                         ))}
                     </dl>
@@ -788,16 +788,16 @@ export const MainContent = () => (
             </div>
         </section>
 
-        <section id="workflow" className={`${section} bg-ink-950 text-white`}>
+        <section id="workflow" className={`${section} bg-primary text-primary-foreground`}>
             <div className={container}>
-                <div className="grid gap-6 md:grid-cols-2">
+                <div className="grid gap-gap-lg md:grid-cols-2">
                     <div>
                         <h2 className={heading}>
                             Follow one order
                             <br />through the company
                         </h2>
                     </div>
-                    <p className="max-w-lg self-end text-base leading-7 text-ink-300">
+                    <p className="max-w-lg self-end text-base leading-7 text-primary-foreground/80">
                         This is the everyday workflow we are designing around.
                         Each team does its part, and the order details travel
                         with the work.
@@ -807,30 +807,30 @@ export const MainContent = () => (
                     {workflow.map((step, index) => (
                         <li
                             key={step.label}
-                            className="relative border-t border-white/20 py-8 pr-6 md:border-r md:px-6 md:first:pl-0 md:last:border-r-0"
+                            className="relative border-t border-primary-foreground/20 py-8 pr-6 md:border-r md:px-6 md:first:pl-0 md:last:border-r-0"
                         >
                             <div className="flex justify-between">
-                                <step.icon className="size-6 text-ink-300" />
-                                <span className="font-mono text-xs text-ink-300">
+                                <step.icon className="size-6 text-primary-foreground/80" />
+                                <span className="font-mono text-xs text-primary-foreground/80">
                                     0{index + 1}
                                 </span>
                             </div>
-                            <p className="mt-8 text-sm text-ink-300">
+                            <p className="mt-8 text-sm text-primary-foreground/80">
                                 {step.label}
                             </p>
-                            <h3 className="mt-3 text-xl font-semibold">
+                            <h3 className="mt-3 text-xl ">
                                 {step.title}
                             </h3>
-                            <p className="mt-3 text-sm leading-7 text-ink-300">
+                            <p className="mt-3 text-sm leading-7 text-primary-foreground/80">
                                 {step.text}
                             </p>
                             {index < 3 && (
-                                <ArrowRight className="absolute -right-3 top-12 hidden size-5 bg-ink-950 text-ink-300 md:block" />
+                                <ArrowRight className="absolute -right-3 top-12 hidden size-5 bg-primary text-muted-foreground/50 md:block" />
                             )}
                         </li>
                     ))}
                 </ol>
-                <p className="border-t border-white/20 pt-6 text-sm leading-6 text-ink-300">
+                <p className="border-t border-primary-foreground/20 pt-6 text-sm leading-6 text-primary-foreground/80">
                     The aim is simple: anyone can see where an order is, from the
                     first call to the final payment.
                 </p>
@@ -842,7 +842,7 @@ export const MainContent = () => (
                 <h2 className={`${heading} max-w-2xl`}>
                     Who it is for
                 </h2>
-                <p className="mt-5 max-w-2xl text-base leading-7 text-ink-600">
+                <p className="mt-5 max-w-2xl text-base leading-7 text-foreground/70">
                     These are the kinds of business we are shaping AlgoSuite
                     around. If yours is different, tell us.
                 </p>
@@ -850,18 +850,18 @@ export const MainContent = () => (
                     {industries.map((industry) => (
                         <article
                             key={industry.title}
-                            className="flex flex-col border rounded-sm border-ink-200 p-4 transition-colors hover:border-ink-400 hover:bg-ink-50 focus-within:border-ink-400 focus-within:bg-ink-50"
+                            className="flex flex-col border rounded-sm border-border p-4 transition-colors hover:border-input hover:bg-muted focus-within:border-input focus-within:bg-muted"
                         >
-                            <industry.icon className="size-7 text-ink-600" />
-                            <h3 className="mt-7 text-2xl font-semibold tracking-tight">
+                            <industry.icon className="size-7 text-foreground/70" />
+                            <h3 className="mt-7 text-2xl tracking-tight">
                                 {industry.title}
                             </h3>
-                            <p className="mt-4 flex-1 text-sm leading-7 text-ink-600">
+                            <p className="mt-4 flex-1 text-sm leading-7 text-foreground/70">
                                 {industry.text}
                             </p>
                             <a
                                 href="#contact"
-                                className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-ink-700 hover:text-ink-800 active:text-ink-900 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ink-600"
+                                className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-foreground/80 hover:text-foreground active:text-foreground focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
                             >
                                 Talk about your business{' '}
                                 <ArrowUpRight className="size-4" />
@@ -872,9 +872,9 @@ export const MainContent = () => (
             </div>
         </section>
 
-        <section className="border-y border-ink-200 bg-ink-50">
-            <div className="mx-auto grid max-w-7xl lg:grid-cols-2">
-                <div className="relative min-h-72 lg:min-h-[460px]">
+        <section className="border-y border-border bg-muted">
+            <div className="mx-auto grid max-w-site lg:grid-cols-2">
+                <div className="relative min-h-72 lg:min-h-115">
                     <Image
                         src="/images/services/software-development.jpg"
                         alt="A software team collaborating around a table of laptops"
@@ -884,17 +884,17 @@ export const MainContent = () => (
                     />
                 </div>
                 <div className="px-6 py-12 md:p-14 lg:p-16">
-                    <h2 className="text-3xl font-semibold tracking-tight md:text-4xl">
+                    <h2 className="text-3xl tracking-tight md:text-4xl">
                         We build business software for a living
                     </h2>
-                    <p className="mt-6 text-base leading-7 text-ink-600">
+                    <p className="mt-6 text-base leading-7 text-foreground/70">
                         UnityAlgo writes custom software and implements ERP for
                         clients. AlgoSuite comes out of that work: the same
                         questions keep coming up about who needs which
                         information, what happens next, and where a process
                         gets stuck.
                     </p>
-                    <p className="mt-7 border-t border-ink-200 pt-6 text-sm leading-7 text-ink-600">
+                    <p className="mt-7 border-t border-border pt-6 text-sm leading-7 text-foreground/70">
                         Permissions, data handling, and system connections
                         belong in the requirements conversation from the
                         beginning.
@@ -911,37 +911,37 @@ export const MainContent = () => (
 
         <section id="implementation" className={section}>
             <div className={container}>
-                <div className="grid gap-6 md:grid-cols-2">
+                <div className="grid gap-gap-lg md:grid-cols-2">
                     <div>
                         <h2 className={heading}>
                             How a rollout would work
                         </h2>
                     </div>
-                    <p className="max-w-lg self-end text-base leading-7 text-ink-600">
+                    <p className="max-w-lg self-end text-base leading-7 text-foreground/70">
                         A new system changes how people work, not just which
                         screen they use. This is the order we would suggest.
                     </p>
                 </div>
-                <div className="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+                <div className="mt-12 grid gap-gap-xl sm:grid-cols-2 lg:grid-cols-4">
                     {rollout.map((step, index) => (
                         <div
                             key={step.title}
-                            className="border-t border-ink-300 pt-5"
+                            className="border-t border-input pt-5"
                         >
-                            <span className="font-mono text-sm text-brand">
+                            <span className="font-mono text-sm text-primary">
                                 0{index + 1}
                             </span>
-                            <h3 className="mt-6 text-xl font-semibold">
+                            <h3 className="mt-6 text-xl ">
                                 {step.title}
                             </h3>
-                            <p className="mt-3 text-sm leading-7 text-ink-600">
+                            <p className="mt-3 text-sm leading-7 text-foreground/70">
                                 {step.text}
                             </p>
                         </div>
                     ))}
                 </div>
-                <div className="mt-12 flex flex-col justify-between gap-4 border-l-2 border-brand bg-ink-50 p-6 sm:flex-row sm:items-center">
-                    <p className="text-sm leading-6 text-ink-600">
+                <div className="mt-12 flex flex-col justify-between gap-gap border-l-2 border-primary bg-muted p-6 sm:flex-row sm:items-center">
+                    <p className="text-sm leading-6 text-foreground/70">
                         Need something sooner? We also work on custom software
                         and ERP implementations.
                     </p>
@@ -955,15 +955,15 @@ export const MainContent = () => (
             </div>
         </section>
 
-        <section id="faqs" className={`${section} border-t border-ink-200`}>
+        <section id="faqs" className={`${section} border-t border-border`}>
             <div
                 className={`${container} grid gap-10 lg:grid-cols-[0.7fr_1fr]`}
             >
                 <div>
-                    <h2 className="text-3xl font-semibold tracking-tight md:text-4xl">
+                    <h2 className="text-3xl tracking-tight md:text-4xl">
                         Questions we get
                     </h2>
-                    {/* <p className="mt-5 max-w-sm text-sm leading-7 text-ink-600">
+                    {/* <p className="mt-5 max-w-sm text-sm leading-7 text-foreground/70">
                         AlgoSuite is still being built, so some answers are
                         &ldquo;not yet&rdquo;.
                     </p> */}
@@ -973,12 +973,12 @@ export const MainContent = () => (
                         <AccordionItem
                             key={item.question}
                             value={`question-${index}`}
-                            className="border-ink-200"
+                            className="border-border"
                         >
                             <AccordionTrigger className="py-6 pr-2 text-base">
                                 {item.question}
                             </AccordionTrigger>
-                            <AccordionContent className="max-w-2xl pb-6 text-sm leading-7 text-ink-600">
+                            <AccordionContent className="max-w-2xl pb-6 text-sm leading-7 text-foreground/70">
                                 {item.answer}
                             </AccordionContent>
                         </AccordionItem>
@@ -987,26 +987,26 @@ export const MainContent = () => (
             </div>
         </section>
 
-        <section id="contact" className={`${section} bg-ink-100`}>
+        <section id="contact" className={`${section} bg-secondary`}>
             <div
                 className={`${container} grid gap-10 md:grid-cols-[1fr_0.7fr] md:items-center`}
             >
                 <div>
-                    <h2 className="max-w-2xl text-4xl font-semibold leading-tight tracking-tight md:text-5xl">
+                    <h2 className="max-w-2xl text-4xl leading-tight tracking-tight md:text-5xl">
                         Tell us how your business runs today
                     </h2>
-                    <p className="mt-6 max-w-xl text-base leading-7 text-ink-600">
+                    <p className="mt-6 max-w-xl text-base leading-7 text-foreground/70">
                         What tools do you use, where does work get stuck, and
                         what do you need next? We will tell you whether
                         AlgoSuite is a fit or whether something else would
                         serve you better.
                     </p>
                 </div>
-                <div className="border-l border-ink-300 pl-6 md:pl-10">
-                    <h3 className="text-xl font-semibold">
+                <div className="border-l border-input pl-6 md:pl-10">
+                    <h3 className="text-xl ">
                         Get in touch
                     </h3>
-                    <p className="mt-3 mb-3 text-sm leading-6 text-ink-600">
+                    <p className="mt-3 mb-3 text-sm leading-6 text-foreground/70">
                         Ask about modules, availability, or implementation. You
                         do not need a full requirements list.
                     </p>
@@ -1015,7 +1015,7 @@ export const MainContent = () => (
                             Contact us <ArrowUpRight className="size-4" />
                         </Link>
                     </Button>
-                    <p className="mt-4 text-xs leading-6 text-ink-500">
+                    <p className="mt-4 text-xs leading-6 text-muted-foreground">
                         AlgoSuite is in development. Launch timing and pricing
                         are to be confirmed.
                     </p>

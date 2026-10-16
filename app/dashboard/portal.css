@@ -1,272 +1,180 @@
-/* Shared portal geometry. Edit here to update pages and scoped overlays together. */
-:is(.customer-portal, .admin-portal) {
-    --dens: 1;
-    --control-height: 32px;
-    --control-font-size: 12px;
-    --control-line-height: 16px;
-    --control-radius: 6px;
-    --control-padding-x: 12px;
-    --label-gap: 6px;
-    --panel-padding: 24px;
-    --portal-page-width: 80rem;
-    --portal-detail-width: 56rem;
-    --portal-form-width: 42rem;
-    --portal-form-narrow-width: 32rem;
-    --portal-page-padding: 1rem;
-    --portal-section-gap: 1.5rem;
-    --portal-field-gap: 1.25rem;
-    --portal-title-size: 1.5rem;
+/*
+ * Portal geometry for the customer portal and the admin panel (the `.dashboard` scope).
+ * Nothing here defines a colour or a raw size: every value comes from the design tokens in globals.css.
+ */
+.dashboard {
+    --control-height: var(--btn-h);
+    --control-font-size: var(--fs-xs);
+    --control-line-height: calc(var(--control-font-size) * 1.33);
+    --control-radius: var(--radius-md);
+    --control-padding-x: var(--control-px);
+    --label-gap: calc(var(--gap) * 0.375);
+    --panel-padding: var(--card-pad);
+    --portal-page-width: var(--max-w);
+    --portal-detail-width: var(--content-detail);
+    --portal-form-width: var(--content-form);
+    --portal-form-narrow-width: var(--content-narrow);
+    --portal-page-padding: var(--page-pad);
+    --portal-section-gap: calc(var(--gap) * 1.5);
+    --portal-field-gap: calc(var(--gap) * 1.25);
+    --portal-title-size: calc(var(--display-size) * 0.5);
     --portal-title-line-height: 1.25;
-    --portal-body-size: 0.875rem;
-    --portal-caption-size: 0.75rem;
-    --portal-micro-size: 0.625rem;
-    --portal-small-size: 0.6875rem;
-    --portal-brand-size: 1rem;
-    --portal-actions-gap: 0.75rem;
-    --portal-terminal-font-size: 13px;
-    --portal-terminal-font-family: Menlo, Monaco, 'Courier New', monospace;
-    --portal-grid-height: 620px;
-    --portal-grid-row-height: 60px;
-    --portal-grid-header-height: 44px;
-    --portal-grid-cell-padding: 20px;
-    --portal-topbar-height: 3.5rem;
+    --portal-body-size: var(--fs-sm);
+    --portal-caption-size: var(--fs-xs);
+    --portal-micro-size: var(--fs-micro);
+    --portal-small-size: var(--fs-small);
+    --portal-brand-size: var(--fs-base);
+    --portal-actions-gap: calc(var(--gap) * 0.75);
+    --portal-terminal-font-size: var(--terminal-font-size);
+    --portal-terminal-font-family: var(--font-mono);
+    --portal-grid-height: var(--grid-h);
+    --portal-grid-row-height: var(--grid-row-h);
+    --portal-grid-header-height: var(--grid-head-h);
+    --portal-grid-cell-padding: var(--grid-cell-px);
+    --portal-topbar-height: var(--header-h);
+    
     --portal-layer-header: 20;
     --portal-layer-menu: 30;
     --portal-layer-overlay: 60;
     --portal-layer-tooltip: 70;
-}
 
-/* Customer palette; admin continues to use the global brand palette. */
-.customer-portal {
-    --page: #fafafa;
-    --surface: #ffffff;
-    --border: #e7e7ea;
-    --border-strong: #d5d5da;
-    --primary: #141416;
-    --primary-hover: #000000;
-    --on-primary: #ffffff;
-    --muted: #77777e;
-    --positive: #1a7f4b;
-    --caution: #8a5a00;
-    --critical: #b3261e;
-    --neutral-accent: #2f5c8f;
-    --radius: 10px;
-    --font-ui:
-        var(--font-portal-ui), 'Inter', ui-sans-serif, system-ui, sans-serif;
-    --font-display:
-        var(--font-portal-display), 'Inter Tight', ui-sans-serif, sans-serif;
-
-    --color-ink-50: #f7f7f8;
-    --color-ink-100: #efeff1;
-    --color-ink-200: var(--border);
-    --color-ink-300: var(--border-strong);
-    --color-ink-400: #9b9ba1;
-    --color-ink-500: var(--muted);
-    --color-ink-600: #57575d;
-    --color-ink-700: #3a3a3f;
-    --color-ink-800: #1f1f22;
-    --color-ink-900: var(--primary);
-    --color-ink-950: var(--primary);
-    --color-brand: var(--primary);
-    --color-brand-deep: var(--primary-hover);
-    --color-brand-press: var(--primary-hover);
-    --color-brand-soft: var(--neutral-accent);
-    --color-brand-subdued: #efeff1;
-    --color-link: var(--neutral-accent);
-    --color-success-50: #eef7f1;
-    --color-success-100: #eef7f1;
-    --color-success-500: var(--positive);
-    --color-success-600: var(--positive);
-    --color-success-700: var(--positive);
-    --color-warning-50: #fbf5e9;
-    --color-warning-500: var(--caution);
-    --color-warning-600: var(--caution);
-    --color-warning-700: var(--caution);
-    --color-error-50: #fbeeed;
-    --color-error-100: #fbeeed;
-    --color-error-500: var(--critical);
-    --color-error-600: var(--critical);
-    --color-error-700: var(--critical);
-    --color-info-50: #eef3f9;
-    --color-info-500: var(--neutral-accent);
-    --color-info-600: var(--neutral-accent);
-    --color-background: var(--surface);
-    --color-foreground: var(--primary);
-    --color-primary: var(--primary);
-    --color-primary-foreground: var(--on-primary);
-    --color-secondary: #efeff1;
-    --color-secondary-foreground: var(--primary);
-    --color-accent: #efeff1;
-    --color-accent-foreground: var(--primary);
-    --color-muted: #f7f7f8;
-    --color-muted-foreground: var(--muted);
-    --color-input: var(--border-strong);
-    --color-border: var(--border);
-    --color-ring: var(--neutral-accent);
-    --color-destructive: var(--critical);
-    --color-destructive-foreground: var(--on-primary);
-    --color-popover: var(--surface);
-    --color-popover-foreground: var(--primary);
-    --color-sidebar: var(--surface);
-    --color-sidebar-foreground: #3a3a3f;
-    --color-sidebar-primary: var(--primary);
-    --color-sidebar-primary-foreground: var(--on-primary);
-    --color-sidebar-accent: #efeff1;
-    --color-sidebar-accent-foreground: var(--primary);
-    --color-sidebar-border: var(--border);
-    --color-sidebar-ring: var(--neutral-accent);
-    --radius-xs: 2px;
-    --radius-sm: 4px;
-    --radius-md: 6px;
-    --radius-lg: 8px;
-    --radius-xl: var(--radius);
-    --radius-2xl: 14px;
-    --radius-3xl: 20px;
-
-    font-family: var(--font-ui);
-    font-feature-settings: 'cv05', 'ss03';
+    font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
 }
 
-.customer-portal [data-slot='sidebar-inset'] {
-    background: var(--page);
+.dashboard [data-slot='sidebar-inset'] {
+    background: var(--background);
 }
 
-.customer-portal :is(h1, h2, h3, h4) {
-    font-family: var(--font-display);
-}
-
-.customer-portal.rounded,
-.customer-portal .rounded {
-    border-radius: var(--radius-sm);
-}
-
-.customer-portal.rounded-md,
-.customer-portal .rounded-md {
-    border-radius: var(--radius-md);
-}
-
-.customer-portal :is(.bg-brand, .bg-ink-950, .bg-primary):is(button, a):hover {
-    background-color: var(--primary-hover);
+.dashboard :is(h1, h2, h3, h4) {
+    font-family: var(--font-sans);
 }
 
 /* One sizing contract for every portal form, including composed inputs. */
-:is(.customer-portal, .admin-portal)
-    :is(
-        [data-slot='input'],
-        [data-slot='select-trigger'],
-        [data-slot='button']
-    ) {
-    height: calc(var(--control-height) * var(--dens));
+.dashboard :is([data-slot='input'],
+    [data-slot='select-trigger'],
+    [data-slot='button']) {
+    height: var(--control-height);
     min-height: 0;
     font-size: var(--control-font-size);
     line-height: var(--control-line-height);
     border-radius: var(--control-radius);
 }
-:is(.customer-portal, .admin-portal) [data-slot='button'] {
+
+.dashboard [data-slot='button'] {
     padding-block: 0;
 }
-:is(.customer-portal, .admin-portal) [data-slot='button'][data-size='sm'] {
-    height: calc((var(--control-height) - 4px) * var(--dens));
+
+.dashboard [data-slot='button'][data-size='sm'] {
+    height: calc(var(--control-height) - var(--spacing));
 }
-:is(.customer-portal, .admin-portal) [data-slot='button'][data-size='lg'] {
-    height: calc((var(--control-height) + 8px) * var(--dens));
+
+.dashboard [data-slot='button'][data-size='lg'] {
+    height: calc(var(--control-height) + var(--spacing) * 2);
 }
-:is(.customer-portal, .admin-portal) [data-slot='button'][data-size='icon'] {
-    width: calc(var(--control-height) * var(--dens));
+
+.dashboard [data-slot='button'][data-size='icon'] {
+    width: var(--control-height);
     padding: 0;
 }
-:is(.customer-portal, .admin-portal) [data-slot='label'] {
+
+.dashboard [data-slot='label'] {
     font-size: var(--control-font-size);
     line-height: var(--control-line-height);
     font-weight: 500;
     margin-bottom: var(--label-gap);
 }
-:is(.customer-portal, .admin-portal) [data-slot='textarea'] {
+
+.dashboard [data-slot='textarea'] {
     font-size: var(--control-font-size);
     line-height: 1.6;
     border-radius: var(--control-radius);
 }
-:is(.customer-portal, .admin-portal) [data-slot='portal-panel'] {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--portal-panel-radius, var(--radius));
-    padding: calc(var(--panel-padding) * var(--dens));
+
+.dashboard [data-slot='portal-panel'] {
+    background: var(--card);
+    border: var(--border-width) solid var(--border);
+    border-radius: var(--portal-panel-radius, var(--radius-xl));
+    padding: var(--panel-padding);
 }
-:is(.customer-portal, .admin-portal) [data-slot='portal-panel'][data-padding='none'] {
+
+.dashboard [data-slot='portal-panel'][data-padding='none'] {
     padding: 0;
 }
-:is(.customer-portal, .admin-portal) [data-slot='button']:not([data-size='icon']) {
+
+.dashboard [data-slot='button']:not([data-size='icon']) {
     padding-inline: var(--control-padding-x);
 }
 
-.admin-portal {
-    --surface: var(--color-background);
-    --border: var(--color-border);
-    --portal-panel-radius: var(--radius-xl);
-    --portal-sidebar-width: 15rem;
-}
-
-:is(.customer-portal, .admin-portal) .portal-content {
+.dashboard .portal-content {
     min-width: 0;
     flex: 1;
+    background-color: var(--card);
     padding: var(--portal-page-padding);
 }
 
-:is(.customer-portal, .admin-portal) .portal-page {
+.dashboard .portal-page {
     width: 100%;
     max-width: var(--portal-page-width);
     margin-inline: auto;
     min-width: 0;
 }
 
-:is(.customer-portal, .admin-portal) .portal-detail {
+.dashboard .portal-detail {
     max-width: var(--portal-detail-width);
     min-width: 0;
 }
 
-:is(.customer-portal, .admin-portal) .portal-form {
+.dashboard .portal-form {
     max-width: var(--portal-form-width);
     min-width: 0;
 }
 
-:is(.customer-portal, .admin-portal) .portal-form-narrow {
+.dashboard .portal-form-narrow {
     max-width: var(--portal-form-narrow-width);
     min-width: 0;
 }
 
-:is(.customer-portal, .admin-portal) .portal-page-title {
+.dashboard .portal-page-title {
     font-size: var(--portal-title-size);
     line-height: var(--portal-title-line-height);
-    font-weight: 600;
+    font-weight: var(--heading-weight);
     letter-spacing: -0.025em;
-    color: var(--color-foreground);
+    color: var(--foreground);
     overflow-wrap: anywhere;
 }
 
-:is(.customer-portal, .admin-portal) .portal-text-body {
+.dashboard .portal-text-body {
     font-size: var(--portal-body-size);
     line-height: 1.5;
 }
 
-:is(.customer-portal, .admin-portal) .portal-text-caption {
+.dashboard .portal-text-caption {
     font-size: var(--portal-caption-size);
     line-height: 1.5;
 }
 
-:is(.customer-portal, .admin-portal) .portal-text-micro { font-size: var(--portal-micro-size); }
-:is(.customer-portal, .admin-portal) .portal-text-small { font-size: var(--portal-small-size); }
-:is(.customer-portal, .admin-portal) .portal-brand-title { font-size: var(--portal-brand-size); }
+.dashboard .portal-text-micro {
+    font-size: var(--portal-micro-size);
+}
 
-:is(.customer-portal, .admin-portal) .portal-stack > :not(:last-child) {
+.dashboard .portal-text-small {
+    font-size: var(--portal-small-size);
+}
+
+.dashboard .portal-brand-title {
+    font-size: var(--portal-brand-size);
+}
+
+.dashboard .portal-stack> :not(:last-child) {
     margin-block-end: var(--portal-section-gap);
 }
 
-:is(.customer-portal, .admin-portal) .portal-fields > :not(:last-child) {
+.dashboard .portal-fields> :not(:last-child) {
     margin-block-end: var(--portal-field-gap);
 }
 
-:is(.customer-portal, .admin-portal) .portal-page-header {
+.dashboard .portal-page-header {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
@@ -275,85 +183,78 @@
     margin-bottom: var(--portal-section-gap);
 }
 
-:is(.customer-portal, .admin-portal) .portal-actions {
+.dashboard .portal-actions {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     gap: var(--portal-actions-gap);
 }
 
-:is(.customer-portal, .admin-portal) :is(.portal-pagination-link, .portal-filter-button) {
+.dashboard :is(.portal-pagination-link, .portal-filter-button) {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    height: calc(var(--control-height) * var(--dens));
-    min-width: calc(var(--control-height) * var(--dens));
+    height: var(--control-height);
+    min-width: var(--control-height);
     padding-inline: var(--control-padding-x);
     border-radius: var(--control-radius);
     font-size: var(--control-font-size);
     line-height: var(--control-line-height);
 }
 
-:is(.customer-portal, .admin-portal) :is(.portal-grid-loading, .portal-list-grid) {
+.dashboard :is(.portal-grid-loading, .portal-list-grid) {
     height: var(--portal-grid-height);
 }
 
-:is(.customer-portal, .admin-portal) .portal-surface {
-    background: var(--color-background);
-    border: 1px solid var(--color-border);
-    border-radius: var(--portal-panel-radius, var(--radius));
+.dashboard .portal-surface {
+    background: var(--card);
+    border: var(--border-width) solid var(--border);
+    border-radius: var(--portal-panel-radius, var(--radius-xl));
     min-width: 0;
 }
 
-:is(.customer-portal, .admin-portal) .portal-panel-padding {
-    padding: calc(var(--panel-padding) * var(--dens));
+.dashboard .portal-panel-padding {
+    padding: var(--panel-padding);
 }
 
-:is(.customer-portal, .admin-portal) .portal-topbar {
+.dashboard .portal-topbar {
     height: var(--portal-topbar-height);
     padding-inline: var(--portal-page-padding);
     z-index: var(--portal-layer-header);
 }
 
-:is(.customer-portal, .admin-portal) .portal-menu-layer {
+.dashboard .portal-menu-layer {
     z-index: var(--portal-layer-menu);
 }
 
-:is(.customer-portal, .admin-portal) [data-slot='tabs-list'] {
+.dashboard [data-slot='tabs-list'] {
     max-width: 100%;
     overflow-x: auto;
     justify-content: flex-start;
 }
 
 /* Overlays sit above sticky navigation; long dialogs stay within the viewport. */
-:is(.customer-portal, .admin-portal)[data-slot$='overlay'],
-:is(.customer-portal, .admin-portal)[data-slot='sheet-content'],
-:is(.customer-portal, .admin-portal)[data-slot='dialog-content'],
-:is(.customer-portal, .admin-portal)[data-slot='alert-dialog-content'],
-:is(.customer-portal, .admin-portal)[data-slot='popover-content'],
-:is(.customer-portal, .admin-portal)[data-slot='select-content'] {
+.dashboard[data-slot$='overlay'],
+.dashboard[data-slot='sheet-content'],
+.dashboard[data-slot='dialog-content'],
+.dashboard[data-slot='alert-dialog-content'],
+.dashboard[data-slot='popover-content'],
+.dashboard[data-slot='select-content'] {
     z-index: var(--portal-layer-overlay);
 }
 
-:is(.customer-portal, .admin-portal)[data-slot='tooltip-content'] {
+.dashboard[data-slot='tooltip-content'] {
     z-index: var(--portal-layer-tooltip);
 }
 
-:is(.customer-portal, .admin-portal)[data-slot='dialog-content'],
-:is(.customer-portal, .admin-portal)[data-slot='alert-dialog-content'] {
-    max-height: calc(100dvh - 2rem);
+.dashboard[data-slot='dialog-content'],
+.dashboard[data-slot='alert-dialog-content'] {
+    max-height: calc(100dvh - 2 * var(--gap));
     overflow-y: auto;
 }
 
 @media (min-width: 640px) {
-    :is(.customer-portal, .admin-portal) {
-        --portal-page-padding: 1.5rem;
-        --portal-title-size: 1.875rem;
-    }
-}
-
-@media (min-width: 1024px) {
-    .customer-portal {
-        --portal-page-padding: 2.5rem;
+    .dashboard {
+        --portal-title-size: calc(var(--display-size) * 0.625);
     }
 }

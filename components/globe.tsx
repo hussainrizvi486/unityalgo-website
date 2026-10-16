@@ -3,6 +3,7 @@
 import { cn } from '@/utils';
 import createGlobe from 'cobe';
 import { useEffect, useRef } from 'react';
+import { mixRgb, rgbUnit, tokenRgb } from '@/lib/css-token';
 
 export const Globe = ({ className }: { className?: string }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -22,9 +23,9 @@ export const Globe = ({ className }: { className?: string }) => {
             diffuse: 1.2,
             mapSamples: 16000,
             mapBrightness: 6,
-            baseColor: [1, 1, 1], // White base
-            markerColor: [0.48, 0.06, 0.06], // Deep Red (#7B0F0F converted to RGB 0-1)
-            glowColor: [0.8, 0.8, 0.8],
+            baseColor: rgbUnit(tokenRgb('--background')),
+            markerColor: rgbUnit(tokenRgb('--primary')),
+            glowColor: rgbUnit(mixRgb(tokenRgb('--background'), tokenRgb('--foreground'), 0.2)),
             markers: [
                 // Example coordinates (Lat, Long)
                 { location: [37.7595, -122.4367], size: 0.03 }, // San Francisco
@@ -50,8 +51,7 @@ export const Globe = ({ className }: { className?: string }) => {
         <div className={cn("relative flex items-center justify-center", className)}>
             <canvas
                 ref={canvasRef}
-                style={{ width: 600, height: 600, maxWidth: "100%", aspectRatio: 1 }}
-                className="w-full h-full opacity-90 transition-opacity hover:opacity-100"
+                className="aspect-square size-full max-w-full opacity-90 transition-opacity hover:opacity-100"
             />
         </div>
     );

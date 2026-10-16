@@ -1,9 +1,6 @@
 import 'dotenv/config';
-import { PrismaClient, type PriceUnit, type AddOnPricingType } from '@prisma/client';
-import { PrismaPg } from '@prisma/adapter-pg';
-
-const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
-const prisma = new PrismaClient({ adapter });
+import type { PriceUnit, AddOnPricingType } from '../db/types';
+import { closeDb, db, schema } from '../lib/db';
 
 // Placeholder pricing — the source brief only gave "$X" placeholders for
 // most tiers. Edit real numbers afterwards from /admin/plans and
@@ -17,6 +14,10 @@ interface PlanSeed {
   priceAmount: number | null;
   transactionFeePercent: number | null;
   userLimit: number | null;
+  // Frappe site resources (AlgoSuite only); admin-editable afterwards.
+  vcpu?: number;
+  ramMb?: number;
+  storageGb?: number;
   features: string[];
   sortOrder: number;
 }
@@ -41,6 +42,9 @@ const plans: PlanSeed[] = [
     priceAmount: 29,
     transactionFeePercent: null,
     userLimit: 5,
+    vcpu: 1,
+    ramMb: 2048,
+    storageGb: 10,
     features: ['Accounting + Inventory (core only)', 'Email support, business hours'],
     sortOrder: 0,
   },
@@ -53,6 +57,9 @@ const plans: PlanSeed[] = [
     priceAmount: 49,
     transactionFeePercent: null,
     userLimit: 25,
+    vcpu: 2,
+    ramMb: 4096,
+    storageGb: 30,
     features: ['Accounting + HR + Inventory + CRM', 'Priority email + chat support'],
     sortOrder: 1,
   },
@@ -65,6 +72,9 @@ const plans: PlanSeed[] = [
     priceAmount: null,
     transactionFeePercent: null,
     userLimit: null,
+    vcpu: 4,
+    ramMb: 8192,
+    storageGb: 100,
     features: ['Full suite + custom module access', 'Dedicated account manager, SLA-backed support'],
     sortOrder: 2,
   },
@@ -148,21 +158,19 @@ const addOns: AddOnSeed[] = [
 async function main() {
   for (const plan of plans) {
     const { productId, slug, ...data } = plan;
-    await prisma.plan.upsert({
-      where: { productId_slug: { productId, slug } },
-      update: data,
-      create: { productId, slug, ...data },
-    });
+    await db
+      .insert(schema.plan)
+      .values({ productId, slug, ...data })
+      .onConflictDoUpdate({ target: [schema.plan.productId, schema.plan.slug], set: data });
     console.log(`Plan ready: ${plan.productId} / ${plan.name}`);
   }
 
   for (const addOn of addOns) {
     const { productId, slug, ...data } = addOn;
-    await prisma.addOn.upsert({
-      where: { productId_slug: { productId, slug } },
-      update: data,
-      create: { productId, slug, ...data },
-    });
+    await db
+      .insert(schema.addOn)
+      .values({ productId, slug, ...data })
+      .onConflictDoUpdate({ target: [schema.addOn.productId, schema.addOn.slug], set: data });
     console.log(`Add-on ready: ${addOn.productId} / ${addOn.name}`);
   }
 }
@@ -172,4 +180,4 @@ main()
     console.error(err.message ?? err);
     process.exit(1);
   })
-  .finally(() => prisma.$disconnect());
+  .finally(() => closeDb());

@@ -1,7 +1,8 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Send, UserRound } from 'lucide-react';
-import { prisma } from '@/lib/db';
+import { eq } from 'drizzle-orm';
+import { db, schema } from '@/lib/db';
 import { requireCustomerSession } from '@/lib/customer-session';
 import { addTicketCommentAction } from '@/app/customer/actions';
 import { listComments, CommentEntityType } from '@/lib/comments';
@@ -14,7 +15,7 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
   const { id } = await params;
   const session = await requireCustomerSession();
 
-  const ticket = await prisma.supportTicket.findUnique({ where: { id } });
+  const ticket = await db.query.supportTicket.findFirst({ where: eq(schema.supportTicket.id, id) });
   if (!ticket || ticket.userId !== session.userId) {
     notFound();
   }
@@ -24,26 +25,26 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
 
   return (
     <div className="mx-auto portal-detail">
-      <Link href="/dashboard/support" className="mb-6 inline-flex items-center gap-2 portal-text-body font-semibold text-ink-500 hover:text-ink-700">
+      <Link href="/dashboard/support" className="mb-6 inline-flex items-center gap-2 portal-text-body font-semibold text-muted-foreground hover:text-foreground/80">
         <ArrowLeft className="h-4 w-4" />Back to tickets
       </Link>
 
       <section className="p-5 sm:p-7 portal-surface">
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex items-start justify-between gap-gap">
           <div className="min-w-0">
-            <p className="portal-text-caption font-semibold text-ink-400">Ticket · {new Intl.DateTimeFormat('en-US', { dateStyle: 'medium' }).format(ticket.createdAt)}</p>
+            <p className="portal-text-caption font-semibold text-muted-foreground">Ticket · {new Intl.DateTimeFormat('en-US', { dateStyle: 'medium' }).format(ticket.createdAt)}</p>
             <h1 className="portal-page-title mt-1">{ticket.subject}</h1>
           </div>
           <Badge variant={TICKET_STATUS_BADGE_VARIANT[ticket.status]}>{TICKET_STATUS_LABEL[ticket.status]}</Badge>
         </div>
-        <p className="mt-4 whitespace-pre-wrap portal-text-body leading-6 text-ink-700">{ticket.description}</p>
+        <p className="mt-4 whitespace-pre-wrap portal-text-body leading-6 text-foreground/80">{ticket.description}</p>
       </section>
 
       <section className="mt-6 p-5 sm:p-7 portal-surface">
-        <h2 className="mb-5 font-bold text-ink-900">Conversation</h2>
+        <h2 className="mb-5 text-foreground">Conversation</h2>
 
         {comments.length === 0 ? (
-          <p className="portal-text-body text-ink-400">No replies yet.</p>
+          <p className="portal-text-body text-muted-foreground">No replies yet.</p>
         ) : (
           <div className="portal-fields">
             {comments.map((comment) => {
@@ -53,15 +54,15 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
                 : comment.author.name || [comment.author.firstName, comment.author.lastName].filter(Boolean).join(' ') || 'You';
               return (
                 <div key={comment.id} className="flex gap-3">
-                  <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full portal-text-caption font-bold text-white ${isAdmin ? 'bg-brand' : 'bg-ink-900'}`}>
+                  <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full portal-text-caption font-bold text-primary-foreground ${isAdmin ? 'bg-primary' : 'bg-primary'}`}>
                     {isAdmin ? 'ST' : <UserRound className="h-4 w-4" />}
                   </span>
-                  <div className="min-w-0 flex-1 rounded-lg bg-ink-50 p-4">
+                  <div className="min-w-0 flex-1 rounded-lg bg-muted p-4">
                     <div className="flex items-center justify-between gap-3">
-                      <p className="portal-text-body font-semibold text-ink-900">{displayName}</p>
-                      <p className="portal-text-caption text-ink-400">{dateFormatter.format(comment.createdAt)}</p>
+                      <p className="portal-text-body font-semibold text-foreground">{displayName}</p>
+                      <p className="portal-text-caption text-muted-foreground">{dateFormatter.format(comment.createdAt)}</p>
                     </div>
-                    <p className="mt-2 whitespace-pre-wrap portal-text-body leading-6 text-ink-700">{comment.body}</p>
+                    <p className="mt-2 whitespace-pre-wrap portal-text-body leading-6 text-foreground/80">{comment.body}</p>
                   </div>
                 </div>
               );
@@ -70,7 +71,7 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
         )}
 
         {ticket.status !== 'CLOSED' ? (
-          <form action={addTicketCommentAction} className="mt-6 space-y-3 border-t border-ink-100 pt-6">
+          <form action={addTicketCommentAction} className="mt-6 space-y-3 border-t border-border/60 pt-6">
             <input type="hidden" name="ticketId" value={ticket.id} />
             <Textarea name="body" required className="min-h-28 rounded-lg" placeholder="Write a reply…" />
             <Button type="submit" className="gap-2">
@@ -78,7 +79,7 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
             </Button>
           </form>
         ) : (
-          <p className="mt-6 border-t border-ink-100 pt-6 portal-text-body text-ink-400">This ticket is closed. Raise a new ticket if you need further help.</p>
+          <p className="mt-6 border-t border-border/60 pt-6 portal-text-body text-muted-foreground">This ticket is closed. Raise a new ticket if you need further help.</p>
         )}
       </section>
     </div>

@@ -1,7 +1,8 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowLeft, Boxes, CreditCard, Store } from 'lucide-react';
-import { prisma } from '@/lib/db';
+import { desc, eq } from 'drizzle-orm';
+import { db, schema } from '@/lib/db';
 import { requireAdmin } from '@/lib/admin-session';
 import { tenantsForUser } from '@/lib/tenant-accounts';
 import { Badge } from '@/components/ui/badge';
@@ -27,14 +28,14 @@ export default async function AdminUserDetailPage({ params }: { params: Promise<
     await requireAdmin();
     const { id } = await params;
 
-    const user = await prisma.user.findUnique({
-        where: { id },
-        include: {
+    const user = await db.query.user.findFirst({
+        where: eq(schema.user.id, id),
+        with: {
             subscriptions: {
-                include: { plan: true, product: true, addOns: { include: { addOn: true } } },
-                orderBy: { createdAt: 'desc' },
+                with: { plan: true, product: true, addOns: { with: { addOn: true } } },
+                orderBy: desc(schema.subscription.createdAt),
             },
-            addresses: { orderBy: { isDefault: 'desc' } },
+            addresses: { orderBy: desc(schema.address.isDefault) },
         },
     });
     if (!user) notFound();
@@ -48,11 +49,11 @@ export default async function AdminUserDetailPage({ params }: { params: Promise<
 
     return (
         <div className="portal-detail">
-            <Link href="/admin/users" className="mb-6 inline-flex items-center gap-2 portal-text-body font-semibold text-ink-500 hover:text-ink-700">
+            <Link href="/admin/users" className="mb-6 inline-flex items-center gap-2 portal-text-body font-semibold text-muted-foreground hover:text-foreground/80">
                 <ArrowLeft className="h-4 w-4" />Back to users
             </Link>
 
-            <div className="flex items-start justify-between gap-4">
+            <div className="flex items-start justify-between gap-gap">
                 <div>
                     <div className="flex items-center gap-3">
                         <h1 className="portal-page-title">{displayName || user.email}</h1>
@@ -60,7 +61,7 @@ export default async function AdminUserDetailPage({ params }: { params: Promise<
                             {user.role === 'ADMIN' ? 'Admin' : 'Customer'}
                         </Badge>
                     </div>
-                    <p className="mt-1 portal-text-body text-ink-500">
+                    <p className="mt-1 portal-text-body text-muted-foreground">
                         {user.email}
                         {user.company ? ` · ${user.company}` : ''} · joined {date(user.createdAt)}
                     </p>
@@ -70,38 +71,38 @@ export default async function AdminUserDetailPage({ params }: { params: Promise<
 
             {/* --- subscriptions --- */}
             <section className="mt-8 p-5 sm:p-6 portal-surface">
-                <h2 className="flex items-center gap-2 font-bold text-ink-900">
-                    <CreditCard className="h-4 w-4 text-ink-400" />Subscriptions
+                <h2 className="flex items-center gap-2 text-foreground">
+                    <CreditCard className="h-4 w-4 text-muted-foreground" />Subscriptions
                 </h2>
                 {user.subscriptions.length === 0 ? (
-                    <p className="mt-4 portal-text-body text-ink-500">No subscriptions.</p>
+                    <p className="mt-4 portal-text-body text-muted-foreground">No subscriptions.</p>
                 ) : (
-                    <ul className="mt-4 divide-y divide-ink-100">
+                    <ul className="mt-4 divide-y divide-border/60">
                         {user.subscriptions.map((sub) => {
                             const store = storeFor.get(sub.id);
                             return (
                                 <li key={sub.id} className="flex flex-wrap items-start justify-between gap-3 py-3.5 first:pt-0 last:pb-0">
                                     <div>
-                                        <div className="font-medium text-ink-900">
+                                        <div className="font-medium text-foreground">
                                             {sub.plan.name}
-                                            <span className="ml-2 portal-text-caption font-normal text-ink-400">
+                                            <span className="ml-2 portal-text-caption font-normal text-muted-foreground">
                                                 {sub.product.label}
                                             </span>
                                         </div>
-                                        <div className="portal-text-body text-ink-500">
+                                        <div className="portal-text-body text-muted-foreground">
                                             {money(sub.plan.priceAmount)} · started {date(sub.startedAt)}
                                             {sub.storeName ? ` · ${sub.storeName}` : ''}
                                         </div>
                                         {sub.productId === 'unity_commerce' && (
                                             <div className="mt-1 portal-text-body">
                                                 {store ? (
-                                                    <Link href={`/admin/tenants/${store.id}`} className="inline-flex items-center gap-1.5 font-medium text-link hover:underline">
+                                                    <Link href={`/admin/tenants/${store.id}`} className="inline-flex items-center gap-1.5 font-medium text-primary hover:underline">
                                                         <Store className="h-3.5 w-3.5" />{store.tenant_slug}
                                                     </Link>
                                                 ) : tenants === null ? (
-                                                    <span className="text-ink-400">Storefront status unavailable</span>
+                                                    <span className="text-muted-foreground">Storefront status unavailable</span>
                                                 ) : (
-                                                    <Link href="/admin/tenants/new" className="font-medium text-link hover:underline">
+                                                    <Link href="/admin/tenants/new" className="font-medium text-primary hover:underline">
                                                         No storefront yet — create one →
                                                     </Link>
                                                 )}
@@ -120,24 +121,24 @@ export default async function AdminUserDetailPage({ params }: { params: Promise<
 
             {/* --- storefronts --- */}
             <section className="mt-6 p-5 sm:p-6 portal-surface">
-                <h2 className="flex items-center gap-2 font-bold text-ink-900">
-                    <Boxes className="h-4 w-4 text-ink-400" />Storefronts
+                <h2 className="flex items-center gap-2 text-foreground">
+                    <Boxes className="h-4 w-4 text-muted-foreground" />Storefronts
                 </h2>
                 {tenants === null ? (
-                    <p className="mt-4 portal-text-body text-ink-500">
+                    <p className="mt-4 portal-text-body text-muted-foreground">
                         The controller is unreachable, so this customer&apos;s storefronts cannot be listed.
                     </p>
                 ) : tenants.length === 0 ? (
-                    <p className="mt-4 portal-text-body text-ink-500">No storefronts.</p>
+                    <p className="mt-4 portal-text-body text-muted-foreground">No storefronts.</p>
                 ) : (
-                    <ul className="mt-4 divide-y divide-ink-100">
+                    <ul className="mt-4 divide-y divide-border/60">
                         {tenants.map((tenant) => (
                             <li key={tenant.id} className="flex flex-wrap items-center justify-between gap-3 py-3.5 first:pt-0 last:pb-0">
                                 <div>
-                                    <Link href={`/admin/tenants/${tenant.id}`} className="font-medium text-ink-900 hover:text-link hover:underline">
+                                    <Link href={`/admin/tenants/${tenant.id}`} className="font-medium text-foreground hover:text-primary hover:underline">
                                         {tenant.tenant_slug}
                                     </Link>
-                                    <div className="portal-text-body text-ink-500">
+                                    <div className="portal-text-body text-muted-foreground">
                                         {tenant.custom_domain ?? tenant.assigned_subdomain ?? '—'}
                                         {' · '}{tenant.subscription?.plan?.name ?? tenant.plan_tier}
                                     </div>
@@ -154,10 +155,10 @@ export default async function AdminUserDetailPage({ params }: { params: Promise<
             {/* --- addresses --- */}
             {user.addresses.length > 0 && (
                 <section className="mt-6 p-5 sm:p-6 portal-surface">
-                    <h2 className="font-bold text-ink-900">Addresses</h2>
-                    <ul className="mt-4 grid gap-4 sm:grid-cols-2">
+                    <h2 className=" text-foreground">Addresses</h2>
+                    <ul className="mt-4 grid gap-gap sm:grid-cols-2">
                         {user.addresses.map((address) => (
-                            <li key={address.id} className="portal-text-body text-ink-600">
+                            <li key={address.id} className="portal-text-body text-foreground/70">
                                 {address.isDefault && <Badge variant="neutral" className="mb-1.5">Default</Badge>}
                                 <div>{address.addressLine1}</div>
                                 {address.addressLine2 && <div>{address.addressLine2}</div>}

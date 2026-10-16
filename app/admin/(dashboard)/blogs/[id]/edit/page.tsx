@@ -1,11 +1,12 @@
 import { notFound } from 'next/navigation';
-import { prisma } from '@/lib/db';
+import { eq } from 'drizzle-orm';
+import { db, schema } from '@/lib/db';
 import { updatePostAction } from '@/app/admin/actions';
 import { PostForm } from '../../post-form';
 
 export default async function EditPostPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
-    const post = await prisma.post.findUnique({ where: { id } });
+    const post = await db.query.post.findFirst({ where: eq(schema.post.id, id) });
 
     if (!post) {
         notFound();

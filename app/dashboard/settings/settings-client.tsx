@@ -70,13 +70,13 @@ function SessionRow({ session }: { session: Session }) {
               ? 'Safari'
               : 'Browser';
     return (
-        <div className="border-b border-ink-200 py-5 last:border-0">
-            <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+        <div className="border-b border-border py-5 last:border-0">
+            <div className="flex flex-col justify-between gap-gap sm:flex-row sm:items-center">
                 <div className="flex items-start gap-3">
                     {mobile ? (
-                        <Smartphone className="mt-1 size-5 text-ink-500" />
+                        <Smartphone className="mt-1 size-5 text-muted-foreground" />
                     ) : (
-                        <Monitor className="mt-1 size-5 text-ink-500" />
+                        <Monitor className="mt-1 size-5 text-muted-foreground" />
                     )}
                     <div>
                         <p className="portal-text-body font-semibold">
@@ -91,7 +91,7 @@ function SessionRow({ session }: { session: Session }) {
                                 </Badge>
                             )}
                         </p>
-                        <p className="mt-2 portal-text-caption leading-6 text-ink-500">
+                        <p className="mt-2 portal-text-caption leading-6 text-muted-foreground">
                             Signed in{' '}
                             {new Date(session.createdAt).toLocaleString()}
                             <br />
@@ -106,7 +106,7 @@ function SessionRow({ session }: { session: Session }) {
                 </form>
             </div>
             {state?.error && (
-                <p role="alert" className="mt-3 portal-text-body text-error-700">
+                <p role="alert" className="mt-3 portal-text-body text-destructive">
                     {state.error}
                 </p>
             )}
@@ -126,13 +126,13 @@ export function SettingsClient({
 }) {
     return (
         <div className="mx-auto portal-page">
-            <p className="portal-text-caption font-semibold uppercase tracking-wider text-brand">
+            <p className="portal-text-caption font-semibold uppercase tracking-wider text-primary">
                 Your account
             </p>
             <h1 className="portal-page-title mt-2">
                 Settings
             </h1>
-            <p className="mt-3 portal-text-body text-ink-600">
+            <p className="mt-3 portal-text-body text-foreground/70">
                 Manage your details, signed-in devices, and account security.
             </p>
             <Tabs defaultValue={defaultTab} className="mt-8">
@@ -147,12 +147,12 @@ export function SettingsClient({
                             Your profile has been updated.
                         </Notice>
                     )}
-                    <div className="mb-4 rounded-lg border border-ink-200 p-4">
-                        <h2 className="font-semibold">Verified email</h2>
-                        <p className="mt-2 break-all portal-text-body text-ink-600">
+                    <div className="mb-4 rounded-lg border border-border p-4">
+                        <h2 className="">Verified email</h2>
+                        <p className="mt-2 break-all portal-text-body text-foreground/70">
                             {profile.email}
                         </p>
-                        <p className="mt-2 portal-text-caption text-ink-500">
+                        <p className="mt-2 portal-text-caption text-muted-foreground">
                             Your sign-in email is verified and cannot be edited
                             here.
                         </p>
@@ -160,17 +160,17 @@ export function SettingsClient({
                     <ProfileForm {...profile} embedded />
                     <Link
                         href="/dashboard/settings/addresses"
-                        className="mt-6 inline-block portal-text-body font-medium text-brand hover:underline"
+                        className="mt-6 inline-block portal-text-body font-medium text-primary hover:underline"
                     >
                         Manage saved addresses
                     </Link>
                 </TabsContent>
                 <TabsContent value="sessions">
                     <PortalPanel>
-                        <h2 className="text-xl font-semibold">
+                        <h2 className="text-xl ">
                             Active login sessions
                         </h2>
-                        <p className="mt-2 portal-text-body leading-6 text-ink-600">
+                        <p className="mt-2 portal-text-body leading-6 text-foreground/70">
                             End a session to sign that device out immediately.
                             Changing your password also ends your other
                             sessions.
@@ -179,7 +179,7 @@ export function SettingsClient({
                             <SessionRow key={session.id} session={session} />
                         ))}
                         {!sessions.length && (
-                            <p className="mt-6 portal-text-body text-ink-500">
+                            <p className="mt-6 portal-text-body text-muted-foreground">
                                 No active sessions.
                             </p>
                         )}

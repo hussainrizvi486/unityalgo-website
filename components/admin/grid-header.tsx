@@ -32,7 +32,7 @@ export function AdminGridHeader(params: AdminHeaderParams) {
 
     const label = (
         <>
-            {icon && <span className="[&_svg]:size-4 [&_svg]:text-ink-400 shrink-0">{icon}</span>}
+            {icon && <span className="[&_svg]:size-4 [&_svg]:text-muted-foreground shrink-0">{icon}</span>}
             <span className="truncate">{displayName}</span>
         </>
     );
@@ -41,7 +41,7 @@ export function AdminGridHeader(params: AdminHeaderParams) {
         return (
             <div
                 className={cn(
-                    'flex w-full items-center gap-2 portal-text-body font-medium text-ink-500',
+                    'flex w-full items-center gap-2 portal-text-body font-medium text-muted-foreground',
                     align === 'right' && 'justify-end',
                 )}
             >
@@ -55,17 +55,17 @@ export function AdminGridHeader(params: AdminHeaderParams) {
             type="button"
             onClick={(event) => params.progressSort(event.shiftKey)}
             className={cn(
-                'group flex w-full items-center gap-2 portal-text-body font-medium text-ink-500 transition-colors hover:text-ink-800',
+                'group flex w-full items-center gap-2 portal-text-body font-medium text-muted-foreground transition-colors hover:text-foreground',
                 align === 'right' && 'justify-end',
             )}
         >
             {label}
             {sort === 'asc' ? (
-                <ArrowUp className="size-3.5 shrink-0 text-ink-700" />
+                <ArrowUp className="size-3.5 shrink-0 text-foreground/80" />
             ) : sort === 'desc' ? (
-                <ArrowDown className="size-3.5 shrink-0 text-ink-700" />
+                <ArrowDown className="size-3.5 shrink-0 text-foreground/80" />
             ) : (
-                <ChevronsUpDown className="size-3.5 shrink-0 text-ink-300 opacity-0 transition-opacity group-hover:opacity-100" />
+                <ChevronsUpDown className="size-3.5 shrink-0 text-muted-foreground/50 opacity-0 transition-opacity group-hover:opacity-100" />
             )}
         </button>
     );

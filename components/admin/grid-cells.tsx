@@ -60,15 +60,15 @@ export function StackedCell<Row>({ data, get }: CellProps<Row, StackedValue | nu
     const { primary, secondary, href } = value;
     return (
         <div className={CELL}>
-            <div className="truncate portal-text-body font-medium text-ink-900">
+            <div className="truncate portal-text-body font-medium text-foreground">
                 {href ? (
-                    <Link href={href} className="hover:text-link hover:underline">{primary}</Link>
+                    <Link href={href} className="hover:text-primary hover:underline">{primary}</Link>
                 ) : (
                     primary
                 )}
             </div>
             {secondary != null && secondary !== '' && (
-                <div className="truncate portal-text-caption text-ink-400">{secondary}</div>
+                <div className="truncate portal-text-caption text-muted-foreground">{secondary}</div>
             )}
         </div>
     );
@@ -84,15 +84,15 @@ export function AvatarCell<Row>({ data, get }: CellProps<Row, StackedValue | nul
         <div className="flex h-full items-center gap-3 min-w-0 leading-normal">
             <AvatarInitials name={typeof primary === 'string' ? primary : ''} />
             <div className="min-w-0">
-                <div className="truncate portal-text-body font-medium text-ink-900">
+                <div className="truncate portal-text-body font-medium text-foreground">
                     {href ? (
-                        <Link href={href} className="hover:text-link hover:underline">{primary}</Link>
+                        <Link href={href} className="hover:text-primary hover:underline">{primary}</Link>
                     ) : (
                         primary
                     )}
                 </div>
                 {secondary != null && secondary !== '' && (
-                    <div className="truncate portal-text-caption text-ink-400">{secondary}</div>
+                    <div className="truncate portal-text-caption text-muted-foreground">{secondary}</div>
                 )}
             </div>
         </div>
@@ -107,7 +107,7 @@ export function AvatarCell<Row>({ data, get }: CellProps<Row, StackedValue | nul
  */
 export function MutedCell({ value }: ICellRendererParams) {
     return (
-        <div className={cn(CELL, 'text-ink-600')}>
+        <div className={cn(CELL, 'text-foreground/70')}>
             <span className="truncate">{value}</span>
         </div>
     );
@@ -116,7 +116,7 @@ export function MutedCell({ value }: ICellRendererParams) {
 /** Multi-line text, clamped so a long message cannot stretch the row. */
 export function ClampedCell({ value }: ICellRendererParams) {
     return (
-        <div className={cn(CELL, 'text-ink-600')}>
+        <div className={cn(CELL, 'text-foreground/70')}>
             <p className="line-clamp-2 whitespace-normal leading-snug">{value}</p>
         </div>
     );
@@ -204,7 +204,7 @@ export function ActionsCell<Row>({ data, get }: CellProps<Row, ActionsValue | nu
                         size="sm"
                         variant={action.tone === 'solid' ? 'default' : 'outline'}
                         className={cn(
-                            action.tone === 'solid' && 'bg-ink-900 text-white hover:bg-ink-800',
+                            action.tone === 'solid' && 'bg-primary text-primary-foreground hover:bg-primary/90',
                         )}
                     ><Link href={action.href}>
                         {action.label}

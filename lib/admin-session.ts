@@ -1,7 +1,8 @@
 import 'server-only';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { prisma } from '@/lib/db';
+import { eq } from 'drizzle-orm';
+import { db, schema } from '@/lib/db';
 import { verifySessionToken, SESSION_COOKIE } from '@/lib/auth';
 
 /**
@@ -33,7 +34,7 @@ export async function getCurrentAdminEmail() {
 export async function requireAdmin() {
     const email = await getCurrentAdminEmail();
     if (!email) redirect('/login');
-    const admin = await prisma.user.findUnique({ where: { email } });
+    const admin = await db.query.user.findFirst({ where: eq(schema.user.email, email) });
     if (!admin || admin.role !== 'ADMIN') redirect('/login');
     return admin;
 }

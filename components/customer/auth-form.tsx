@@ -16,7 +16,7 @@ import { loginAction } from '@/app/login/actions';
 
 export function AuthFrame({ children, eyebrow, title, description }: { children: React.ReactNode; eyebrow: string; title: string; description: string }) {
   return (
-    <main className="min-h-screen bg-white px-4 py-10 sm:py-16">
+    <main className="min-h-screen bg-card px-page py-10 sm:py-section">
       <div className="mx-auto w-full max-w-md">
         <div className="mb-6">
           <div >
@@ -34,12 +34,12 @@ export function AuthFrame({ children, eyebrow, title, description }: { children:
           </div>
         </div>
         <div>
-          {/* <div className="rounded-2xl border border-ink-200 bg-white p-6 shadow-[0_20px_60px_rgba(21,21,21,.06)] sm:p-8"> */}
+          {/* <div className="rounded-2xl border border-border bg-card p-card shadow-lg sm:p-8"> */}
           <div>
-            <p className="mb-2 text-xs font-bold uppercase tracking-[.18em] text-link">{eyebrow}</p>
+            <p className="mb-2 text-xs font-bold uppercase tracking-eyebrow text-primary">{eyebrow}</p>
           </div>
-          <h1 className=" text-xl font-bold tracking-tight text-ink-950 sm:text-3xl">{title}</h1>
-          <p className="mb-8 mt-3 text-sm leading-6 text-ink-500">{description}</p>
+          <h1 className=" text-xl tracking-tight text-foreground sm:text-3xl">{title}</h1>
+          <p className="mb-8 mt-3 text-sm leading-6 text-muted-foreground">{description}</p>
           {children}
         </div>
       </div>
@@ -50,7 +50,7 @@ export function AuthFrame({ children, eyebrow, title, description }: { children:
 function SubmitButton({ label, pendingLabel }: { label: string; pendingLabel: string }) {
   const { pending } = useFormStatus();
   return (
-    <Button type="submit" disabled={pending} className="h-10 w-full rounded-md bg-ink-900 text-white hover:bg-ink-800">
+    <Button type="submit" disabled={pending} className="h-10 w-full rounded-md bg-primary text-primary-foreground hover:bg-primary/90">
       {pending ? pendingLabel : label}<ArrowRight className="h-4 w-4" />
     </Button>
   );
@@ -77,12 +77,12 @@ export function CustomerAuthForm() {
       {resetSuccess ? (
         <Notice tone="success" className="mb-4">Your password has been reset. Sign in with your new password.</Notice>
       ) : null}
-      <form action={formAction} className="space-y-4">
+      <form action={formAction} className="space-y-gap">
         <input type="hidden" name="next" value={next} />
         <div>
-          <Label htmlFor="email" className="mb-1.5 text-sm text-ink-700">Email address</Label>
+          <Label htmlFor="email" className="mb-1.5 text-sm text-foreground/80">Email address</Label>
           <div className="relative">
-            <Mail className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-ink-400" />
+            <Mail className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               id="email"
               name="email"
@@ -99,8 +99,8 @@ export function CustomerAuthForm() {
 
         <div>
           <div className="mb-1.5 flex items-center justify-between">
-            <Label htmlFor="password" className="text-sm text-ink-700">Password</Label>
-            <Link href="/customer/forgot-password" className="text-xs font-semibold text-link hover:underline">Forgot password?</Link>
+            <Label htmlFor="password" className="text-sm text-foreground/80">Password</Label>
+            <Link href="/customer/forgot-password" className="text-xs font-semibold text-primary hover:underline">Forgot password?</Link>
           </div>
           <PasswordInput
             id="password"
@@ -114,9 +114,9 @@ export function CustomerAuthForm() {
         {state?.error ? <Notice tone="error">{state.error}</Notice> : null}
         <SubmitButton label="Sign in" pendingLabel="Signing in…" />
       </form>
-      <p className="mt-6 text-center text-sm text-ink-500">New to UnityAlgo? <Link href={query ? `/register?${query}` : "/register"} className="font-semibold text-link hover:underline">Create account</Link>
+      <p className="mt-6 text-center text-sm text-muted-foreground">New to UnityAlgo? <Link href={query ? `/register?${query}` : "/register"} className="font-semibold text-primary hover:underline">Create account</Link>
       </p>
-      <div className="mt-7 flex items-center justify-center gap-2 text-xs text-ink-400">
+      <div className="mt-7 flex items-center justify-center gap-2 text-xs text-muted-foreground">
         <ShieldCheck className="h-4 w-4" />Your details are encrypted and never shared</div>
     </AuthFrame>
   );

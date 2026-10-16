@@ -15,13 +15,13 @@ The dashboard header has a notification bell with an unread count, per-notificat
 
 ## Database ownership and deployment
 
-Prisma owns `AppCatalog`, `LoginSession`, and `Notification`. Alembic owns the `sites` infrastructure table (`Site` model) and the `frappe_enabled` column on `server_nodes`. The site owner is a foreign key to the shared Prisma `User` table; its assigned server is a foreign key to `server_nodes`. Credentials use the controller's existing encrypted column type and never appear in site API responses.
+The website (Drizzle) owns `AppCatalog`, `LoginSession`, and `Notification`. Alembic owns the `sites` infrastructure table (`Site` model) and the `frappe_enabled` column on `server_nodes`. The site owner is a foreign key to the shared Prisma `User` table; its assigned server is a foreign key to `server_nodes`. Credentials use the controller's existing encrypted column type and never appear in site API responses.
 
 Apply both migrations:
 
 ```sh
-npx prisma migrate deploy
-npx prisma generate
+npm run db:baseline   # once, on a database that predates Drizzle
+npm run db:migrate
 cd controller
 python main.py migrate
 ```

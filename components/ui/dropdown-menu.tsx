@@ -23,11 +23,13 @@ export function DropdownMenu({
     trigger,
     children,
     align = 'end',
+    side = 'bottom',
     className,
 }: {
     trigger: React.ReactNode;
     children: React.ReactNode;
     align?: 'start' | 'center' | 'end';
+    side?: 'top' | 'right' | 'bottom' | 'left';
     className?: string;
 }) {
     const [open, setOpen] = React.useState(false);
@@ -57,6 +59,7 @@ export function DropdownMenu({
             <PopoverContent
                 ref={contentRef}
                 align={align}
+                side={side}
                 sideOffset={6}
                 role="menu"
                 onKeyDown={handleKeyDown}
@@ -72,14 +75,14 @@ export function DropdownMenu({
 
 export function DropdownMenuLabel({ children }: { children: React.ReactNode }) {
     return (
-        <div className="px-2.5 py-1.5 text-xs font-semibold uppercase tracking-wider text-ink-400">
+        <div className="px-2.5 py-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             {children}
         </div>
     );
 }
 
 export function DropdownMenuSeparator() {
-    return <div role="separator" className="-mx-1 my-1 h-px bg-ink-100" />;
+    return <div role="separator" className="-mx-1 my-1 h-px bg-secondary" />;
 }
 
 export function DropdownMenuItem({
@@ -112,15 +115,15 @@ export function DropdownMenuItem({
             onClick={() => { onSelect?.(); close(); }}
             className={cn(
                 'flex w-full items-center gap-2.5 rounded px-2.5 py-2 text-left text-sm outline-none',
-                'focus-visible:bg-ink-100 hover:bg-ink-100',
-                tone === 'destructive' ? 'text-error-600 hover:bg-error-50 focus-visible:bg-error-50' : 'text-ink-700',
+                'focus-visible:bg-secondary hover:bg-secondary',
+                tone === 'destructive' ? 'text-destructive hover:bg-destructive/10 focus-visible:bg-destructive/10' : 'text-foreground/80',
                 disabled && 'pointer-events-none opacity-50',
                 className,
             )}
         >
-            {icon && <span className="shrink-0 text-ink-400 [&_svg]:size-4">{icon}</span>}
+            {icon && <span className="shrink-0 text-muted-foreground [&_svg]:size-4">{icon}</span>}
             <span className="min-w-0 flex-1 truncate">{children}</span>
-            {shortcut && <span className="shrink-0 font-mono text-xs text-ink-400">{shortcut}</span>}
+            {shortcut && <span className="shrink-0 font-mono text-xs text-muted-foreground">{shortcut}</span>}
         </button>
     );
 }

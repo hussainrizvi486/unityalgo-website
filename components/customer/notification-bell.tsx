@@ -78,7 +78,7 @@ export function NotificationBell({ initial }: { initial: NotificationData }) {
                 >
                     <Bell className="size-5" />
                     {data.unread > 0 && (
-                        <span className="absolute -right-1 -top-1 rounded-full bg-brand px-1.5 portal-text-micro text-white">
+                        <span className="absolute -right-1 -top-1 rounded-full bg-primary px-1.5 portal-text-micro text-primary-foreground">
                             {data.unread > 99 ? '99+' : data.unread}
                         </span>
                     )}
@@ -86,10 +86,10 @@ export function NotificationBell({ initial }: { initial: NotificationData }) {
             </PopoverTrigger>
             <PopoverContent
                 align="end"
-                className="w-[min(380px,calc(100vw-2rem))] p-0"
+                className="w-[min(calc(var(--spacing)*95),calc(100vw-2*var(--gap)))] p-0"
             >
-                <div className="flex items-center justify-between border-b border-ink-200 p-4">
-                    <h2 className="font-semibold">Notifications</h2>
+                <div className="flex items-center justify-between border-b border-border p-4">
+                    <h2 className="">Notifications</h2>
                     <Button
                         variant="ghost"
                         size="sm"
@@ -101,7 +101,7 @@ export function NotificationBell({ initial }: { initial: NotificationData }) {
                     </Button>
                 </div>
                 {error && (
-                    <p role="alert" className="p-3 portal-text-caption text-error-700">
+                    <p role="alert" className="p-3 portal-text-caption text-destructive">
                         {error}
                     </p>
                 )}
@@ -110,18 +110,18 @@ export function NotificationBell({ initial }: { initial: NotificationData }) {
                         data.items.map((item) => (
                             <div
                                 key={item.id}
-                                className={`border-b border-ink-100 p-4 last:border-0 ${item.read ? '' : 'bg-ink-50'}`}
+                                className={`border-b border-border/60 p-4 last:border-0 ${item.read ? '' : 'bg-muted'}`}
                             >
                                 <p className="portal-text-body font-semibold">
                                     {item.title}
                                 </p>
-                                <p className="mt-1 portal-text-caption leading-5 text-ink-600">
+                                <p className="mt-1 portal-text-caption leading-5 text-foreground/70">
                                     {item.body}
                                 </p>
                                 <div className="mt-2 flex items-center justify-between portal-text-caption">
                                     <time
                                         dateTime={item.createdAt}
-                                        className="text-ink-500"
+                                        className="text-muted-foreground"
                                     >
                                         {new Date(
                                             item.createdAt,
@@ -130,7 +130,7 @@ export function NotificationBell({ initial }: { initial: NotificationData }) {
                                     {item.href && (
                                         <Link
                                             href={item.href}
-                                            className="font-medium text-brand"
+                                            className="font-medium text-primary"
                                             onClick={() => {
                                                 if (!item.read)
                                                     void markRead(item.id);
@@ -143,7 +143,7 @@ export function NotificationBell({ initial }: { initial: NotificationData }) {
                                         <button
                                             disabled={busy}
                                             onClick={() => markRead(item.id)}
-                                            className="text-ink-600 hover:underline"
+                                            className="text-foreground/70 hover:underline"
                                         >
                                             Mark read
                                         </button>
@@ -152,7 +152,7 @@ export function NotificationBell({ initial }: { initial: NotificationData }) {
                             </div>
                         ))
                     ) : (
-                        <p className="p-8 text-center portal-text-body text-ink-500">
+                        <p className="p-8 text-center portal-text-body text-muted-foreground">
                             You are all caught up. Site updates will appear
                             here.
                         </p>

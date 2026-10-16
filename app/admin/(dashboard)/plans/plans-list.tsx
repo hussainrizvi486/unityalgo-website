@@ -142,7 +142,7 @@ export function PlansList({
                     />
                 ) : null
             }
-            emptyIcon={<Layers className="h-10 w-10 text-ink-300" />}
+            emptyIcon={<Layers className="h-10 w-10 text-muted-foreground/50" />}
             emptyTitle="No plans yet"
             emptyMessage="Plans are what customers subscribe to. Create one to start selling."
             emptyAction={{ label: 'New plan', href: '/admin/plans/new' }}

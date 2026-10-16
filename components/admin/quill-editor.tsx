@@ -45,9 +45,9 @@ function ToolbarButton({
             aria-label={label}
             title={label}
             className={cn(
-                'p-2 rounded text-ink-600 hover:bg-ink-100 disabled:opacity-40 disabled:pointer-events-none transition-colors',
+                'p-2 rounded text-foreground/70 hover:bg-secondary disabled:opacity-40 disabled:pointer-events-none transition-colors',
                 // Pressed state, not a status: neutral fill, darker ink.
-                active && 'bg-ink-200 text-ink-950'
+                active && 'bg-border text-foreground'
             )}
         >
             {children}
@@ -165,7 +165,7 @@ export function QuillEditor({ name, defaultValue }: QuillEditorProps) {
 
     return (
         <div className="w-full rounded border border-input overflow-hidden">
-            <div className="flex flex-wrap items-center gap-1 border-b border-input bg-ink-50/60 px-2 py-1.5">
+            <div className="flex flex-wrap items-center gap-1 border-b border-input bg-muted/60 px-2 py-1.5">
                 <ToolbarButton label="Bold" active={!!format.bold} onClick={() => toggleInline('bold')}>
                     <Bold className="w-4 h-4" />
                 </ToolbarButton>
@@ -176,7 +176,7 @@ export function QuillEditor({ name, defaultValue }: QuillEditorProps) {
                     <Strikethrough className="w-4 h-4" />
                 </ToolbarButton>
 
-                <div className="w-px h-5 bg-ink-200 mx-1" />
+                <div className="w-px h-5 bg-border mx-1" />
 
                 <ToolbarButton label="Heading 2" active={format.header === 2} onClick={() => toggleHeader(2)}>
                     <Heading2 className="w-4 h-4" />
@@ -185,7 +185,7 @@ export function QuillEditor({ name, defaultValue }: QuillEditorProps) {
                     <Heading3 className="w-4 h-4" />
                 </ToolbarButton>
 
-                <div className="w-px h-5 bg-ink-200 mx-1" />
+                <div className="w-px h-5 bg-border mx-1" />
 
                 <ToolbarButton label="Bullet List" active={format.list === 'bullet'} onClick={() => toggleList('bullet')}>
                     <List className="w-4 h-4" />
@@ -197,7 +197,7 @@ export function QuillEditor({ name, defaultValue }: QuillEditorProps) {
                     <Quote className="w-4 h-4" />
                 </ToolbarButton>
 
-                <div className="w-px h-5 bg-ink-200 mx-1" />
+                <div className="w-px h-5 bg-border mx-1" />
 
                 <ToolbarButton label="Link" active={!!format.link} onClick={handleSetLink}>
                     <LinkIcon className="w-4 h-4" />
@@ -206,7 +206,7 @@ export function QuillEditor({ name, defaultValue }: QuillEditorProps) {
                     <ImageUp className="w-4 h-4" />
                 </ToolbarButton>
 
-                <div className="w-px h-5 bg-ink-200 mx-1" />
+                <div className="w-px h-5 bg-border mx-1" />
 
                 <ToolbarButton label="Undo" onClick={() => quillRef.current?.history.undo()} disabled={!canUndo}>
                     <Undo className="w-4 h-4" />
@@ -215,12 +215,12 @@ export function QuillEditor({ name, defaultValue }: QuillEditorProps) {
                     <Redo className="w-4 h-4" />
                 </ToolbarButton>
 
-                {uploading && <span className="portal-text-caption text-ink-400 ml-2">Uploading…</span>}
+                {uploading && <span className="portal-text-caption text-muted-foreground ml-2">Uploading…</span>}
             </div>
 
             <div
                 ref={containerRef}
-                className="[&_.ql-editor]:prose [&_.ql-editor]:prose-sm [&_.ql-editor]:max-w-none [&_.ql-editor]:min-h-80 [&_.ql-editor]:px-4 [&_.ql-editor]:py-3 [&_.ql-editor]:outline-none [&_.ql-editor.ql-blank::before]:not-italic [&_.ql-editor.ql-blank::before]:text-ink-400"
+                className="[&_.ql-editor]:prose [&_.ql-editor]:prose-sm [&_.ql-editor]:max-w-none [&_.ql-editor]:min-h-80 [&_.ql-editor]:px-4 [&_.ql-editor]:py-3 [&_.ql-editor]:outline-none [&_.ql-editor.ql-blank::before]:not-italic [&_.ql-editor.ql-blank::before]:text-muted-foreground"
             />
 
             <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />

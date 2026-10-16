@@ -117,6 +117,8 @@ export interface ControllerServer {
     max_memory_mb: number;
     used_memory_mb: number;
     max_containers: number;
+    /** Most customer sites this server may host; null means no limit. */
+    max_sites: number | null;
     active_containers: number;
     is_active: boolean;
     cpu_cores: number | null;
@@ -180,9 +182,12 @@ export interface ControllerTenant {
 }
 
 export type ClusterRole = 'cluster' | 'external';
+export type DatabaseEngine = 'postgres' | 'mariadb';
 
 export interface ControllerDatabase {
     id: string;
+    /** PostgreSQL hosts UnityCommerce tenants; MariaDB hosts Frappe sites. */
+    engine: DatabaseEngine;
     name: string;
     host: string;
     port: number;
@@ -227,6 +232,7 @@ export interface DbTable {
 
 export interface DbSchema {
     database: string;
+    engine?: DatabaseEngine;
     tables: DbTable[];
 }
 
@@ -306,8 +312,12 @@ export interface ControllerActivityLog {
     operation_id: string | null;
     category: string;
     action: string;
+    step_name?: string;
+    step_index?: number;
     status: string;
     message: string | null;
+    error_message?: string | null;
+    duration_ms?: number | null;
     actor: string | null;
     tenant_slug: string | null;
     server_name: string | null;
@@ -331,6 +341,67 @@ export interface AsyncAccepted {
 
 // ------------------------------------------------------------- endpoints
 
+export type SiteAction = 'stop' | 'start' | 'restart' | 'backup' | 'deactivate' | 'reactivate';
+
+/** A site as the admin panel sees it: any customer's, with the account that owns it. */
+export interface AdminSite extends CustomerSite {
+    owner_account_email: string;
+    user_id: string;
+}
+
+export interface SiteUsage {
+    cpu_percent: number;
+    memory_mb: number;
+    memory_limit_mb: number;
+    storage_mb: number;
+}
+
+/** One backup: its database, files and config share a timestamp and are restored together. */
+export interface SiteBackupSet {
+    stamp: string;
+    kind: 'manual' | 'scheduled' | 'safety';
+    size_bytes: number;
+    /** Unix seconds. */
+    created_at: number;
+    files: { name: string; type: 'database' | 'files' | 'private-files' | 'config' | 'other'; size_bytes: number }[];
+}
+
+export interface SiteDomain {
+    id: string;
+    domain: string;
+    status: 'pending' | 'active';
+    error: string | null;
+    tls_status: 'pending' | 'active' | null;
+    verified_at: string | null;
+}
+
+export interface SiteDomains {
+    results: SiteDomain[];
+    /** The site's own address, the CNAME target. */
+    target: string;
+    /** The proxy's address, for an A record. */
+    proxy_ips: string[];
+    limit: number;
+}
+
+/** One site with everything an operator needs to diagnose it. */
+export interface AdminSiteDetail {
+    site: AdminSite;
+    server: { id: string; name: string; ip_address: string; port: number; memory_mb: number; cpu_cores: number | null; status: string | null };
+    database: { name: string; host: string; engine: string } | null;
+    domains: SiteDomain[];
+    backups: { stamp: string; kind: string; created_at: string }[];
+    operations: { id: string; kind: string; label: string; status: string; started_at: string | null; duration_ms: number | null; error: string | null }[];
+}
+
+export interface SiteBackups {
+    results: SiteBackupSet[];
+    available: boolean;
+    schedule: 'off' | 'daily' | 'weekly';
+    retention: number;
+    last_at: string | null;
+}
+
 export interface CustomerSite {
     id: string;
     name: string;
@@ -342,8 +413,142 @@ export interface CustomerSite {
     progress: number;
     message: string;
     apps: string[];
+    plan_id: string | null;
+    plan_name: string | null;
+    owner_email: string | null;
+    /** Registered MariaDB server holding the database; null = the site's own container. */
+    db_server: string | null;
+    /** Background work on a running site, e.g. 'backup'. */
+    activity: string | null;
+    /** 1 for the first provisioning attempt; each retry adds one. */
+    attempt: number;
+    /** What the site's plan grants. */
+    resources: { vcpu: number; ram_mb: number; storage_gb: number; users: number | null };
+    /** The latest seat and storage audit against that plan. */
+    limits: { state: 'ok' | 'users' | 'storage' | 'both' | null; user_count: number | null; storage_used_mb: number | null; audited_at: string | null };
+    backup: { schedule: 'off' | 'daily' | 'weekly'; retention: number; last_at: string | null };
+    error: string | null;
+    steps: { key: string; label: string; state: 'done' | 'active' | 'pending' | 'failed' }[];
     created_at: string;
     updated_at: string;
+}
+
+// ---- App Store: GitHub apps and rollouts ----
+export type Compatibility = 'compatible' | 'incompatible' | 'unknown';
+export interface AppInspection {
+    repo_url: string;
+    owner: string;
+    repo: string;
+    app_name: string;
+    title: string;
+    description: string;
+    publisher: string;
+    stars: number;
+    license: string | null;
+    default_branch: string;
+    branches: string[];
+    branch: string;
+    commit: { sha: string; message: string; date: string | null; author: string | null };
+    version: string | null;
+    frappe_range: string | null;
+    compatibility: { status: Compatibility; reason: string };
+    target_majors: number[];
+    html_url: string;
+    private: boolean;
+}
+export interface GithubAccount {
+    connected: boolean;
+    source: 'account' | 'environment' | null;
+    /** Set when GitHub no longer accepts the saved token. */
+    problem: string | null;
+    login?: string;
+    name?: string | null;
+    avatar_url?: string | null;
+    html_url?: string | null;
+    scopes?: string | null;
+    connected_by?: string | null;
+    connected_at?: string | null;
+    rate_limit?: string | null;
+    rate_remaining?: string | null;
+}
+export interface GithubRepository {
+    full_name: string;
+    private: boolean;
+    description: string;
+    default_branch: string | null;
+    html_url: string | null;
+    pushed_at: string | null;
+}
+export interface AppInstallation {
+    id: string;
+    slug: string;
+    name: string;
+    domain: string;
+    status: string;
+    owner_email: string | null;
+    plan_name: string | null;
+    server_name: string | null;
+    image: string;
+    installed: {
+        version: string | null;
+        commit: string | null;
+        branch: string | null;
+        scanned_at: string | null;
+        up_to_date?: boolean | null;
+        commits_behind?: number | null;
+    } | null;
+    eligible: boolean;
+    reason: string | null;
+}
+export type RolloutStatus = 'running' | 'completed' | 'partial' | 'failed';
+export type RolloutSiteStatus = 'pending' | 'running' | 'success' | 'failed' | 'skipped';
+export interface AppRolloutSite {
+    id: string;
+    site_id: string;
+    site_slug: string;
+    status: RolloutSiteStatus;
+    step: string | null;
+    progress: number;
+    from_version: string | null;
+    from_commit: string | null;
+    to_version: string | null;
+    to_commit: string | null;
+    backup_stamp: string | null;
+    rolled_back: boolean;
+    error: string | null;
+    log?: string | null;
+    operation_id: string | null;
+    started_at: string | null;
+    finished_at: string | null;
+}
+export interface AppRollout {
+    id: string;
+    app_name: string;
+    repo_url: string;
+    branch: string;
+    target_commit: string;
+    target_version: string | null;
+    action: 'install' | 'update';
+    status: RolloutStatus;
+    note: string | null;
+    created_by: string | null;
+    created_at: string;
+    finished_at: string | null;
+    site_count: number;
+    counts: Record<RolloutSiteStatus, number>;
+    sites?: AppRolloutSite[];
+}
+export interface RolloutRequest {
+    app_name: string;
+    repo_url: string;
+    branch: string;
+    action: 'install' | 'update';
+    site_ids?: string[];
+    all_sites?: boolean;
+    commit?: string;
+    note?: string;
+    allow_unverified?: boolean;
+    created_by?: string;
 }
 
 export const controller = {
@@ -373,8 +578,100 @@ export const controller = {
                     timeoutMs: 20_000,
                 },
             ),
+        action: (id: string, userId: string, action: SiteAction) =>
+            request<{ queued: boolean }>(
+                `/api/v1/sites/${encodeURIComponent(id)}/actions/${action}`,
+                { method: 'POST', body: { user_id: userId }, timeoutMs: 20_000 },
+            ),
+        changePlan: (id: string, userId: string, plan: Record<string, unknown>) =>
+            request<{ queued: boolean }>(
+                `/api/v1/sites/${encodeURIComponent(id)}/change-plan`,
+                { method: 'POST', body: { user_id: userId, ...plan }, timeoutMs: 20_000 },
+            ),
+        resetPassword: (id: string, userId: string, newPassword: string) =>
+            request<{ ok: boolean }>(
+                `/api/v1/sites/${encodeURIComponent(id)}/reset-password`,
+                { method: 'POST', body: { user_id: userId, new_password: newPassword }, timeoutMs: 150_000 },
+            ),
+        remove: (id: string, userId: string, confirm: string) =>
+            request<{ queued: boolean }>(
+                `/api/v1/sites/${encodeURIComponent(id)}/delete`,
+                { method: 'POST', body: { user_id: userId, confirm }, timeoutMs: 20_000 },
+            ),
+        adminList: () =>
+            request<{ results: AdminSite[] }>('/api/v1/sites/admin', { timeoutMs: 20_000 }),
+        adminGet: (id: string) =>
+            request<AdminSiteDetail>(`/api/v1/sites/admin/${encodeURIComponent(id)}`, { timeoutMs: 20_000 }),
+        adminAction: (id: string, action: SiteAction) =>
+            request<{ queued: boolean }>(
+                `/api/v1/sites/admin/${encodeURIComponent(id)}/actions/${action}`,
+                { method: 'POST', body: {}, timeoutMs: 20_000 },
+            ),
+        adminUsage: (id: string) =>
+            request<SiteUsage>(`/api/v1/sites/admin/${encodeURIComponent(id)}/usage`, { timeoutMs: 90_000 }),
+        adminQueue: () =>
+            request<{ workers: number; waiting: number | null; sites_waiting: number }>(
+                '/api/v1/sites/admin/queue',
+                { timeoutMs: 10_000 },
+            ),
+        adminForceDelete: (id: string) =>
+            request<{ queued: boolean }>(
+                `/api/v1/sites/admin/${encodeURIComponent(id)}/force-delete`,
+                { method: 'POST', timeoutMs: 20_000 },
+            ),
+        usage: (id: string, userId: string) =>
+            request<SiteUsage>(
+                `/api/v1/sites/${encodeURIComponent(id)}/usage?user_id=${encodeURIComponent(userId)}`,
+                { timeoutMs: 90_000 },
+            ),
+        backups: (id: string, userId: string) =>
+            request<SiteBackups>(
+                `/api/v1/sites/${encodeURIComponent(id)}/backups?user_id=${encodeURIComponent(userId)}`,
+                { timeoutMs: 90_000 },
+            ),
+        domains: (id: string, userId: string) =>
+            request<SiteDomains>(
+                `/api/v1/sites/${encodeURIComponent(id)}/domains?user_id=${encodeURIComponent(userId)}`,
+                { timeoutMs: 30_000 },
+            ),
+        addDomain: (id: string, userId: string, domain: string) =>
+            request<SiteDomain>(
+                `/api/v1/sites/${encodeURIComponent(id)}/domains`,
+                { method: 'POST', body: { user_id: userId, domain }, timeoutMs: 20_000 },
+            ),
+        verifyDomain: (id: string, userId: string, domainId: string) =>
+            request<SiteDomain>(
+                `/api/v1/sites/${encodeURIComponent(id)}/domains/${encodeURIComponent(domainId)}/verify`,
+                { method: 'POST', body: { user_id: userId }, timeoutMs: 60_000 },
+            ),
+        removeDomain: (id: string, userId: string, domainId: string) =>
+            request<void>(
+                `/api/v1/sites/${encodeURIComponent(id)}/domains/${encodeURIComponent(domainId)}?user_id=${encodeURIComponent(userId)}`,
+                { method: 'DELETE', timeoutMs: 60_000 },
+            ),
+        backupSettings: (id: string, userId: string, schedule: string, retention: number) =>
+            request<{ schedule: string; retention: number }>(
+                `/api/v1/sites/${encodeURIComponent(id)}/backup-settings`,
+                { method: 'POST', body: { user_id: userId, schedule, retention }, timeoutMs: 20_000 },
+            ),
+        restore: (id: string, userId: string, stamp: string, confirm: string) =>
+            request<{ queued: boolean }>(
+                `/api/v1/sites/${encodeURIComponent(id)}/restore`,
+                { method: 'POST', body: { user_id: userId, stamp, confirm }, timeoutMs: 20_000 },
+            ),
+        /** The raw response, so a large backup streams to the browser instead of being buffered. */
+        backupFile: (id: string, userId: string, name: string) =>
+            fetch(
+                `${BASE_URL}/api/v1/sites/${encodeURIComponent(id)}/backups/${encodeURIComponent(name)}?user_id=${encodeURIComponent(userId)}`,
+                { headers: { 'X-Controller-Key': apiKey() }, cache: 'no-store' },
+            ),
+        checkSlug: (slug: string) =>
+            request<{ slug: string; available: boolean; reason: string | null }>(
+                `/api/v1/sites/check-slug?slug=${encodeURIComponent(slug)}`,
+                { timeoutMs: 10_000 },
+            ),
         capabilities: () =>
-            request<{ apps: string[]; configured: boolean }>(
+            request<{ apps: string[]; configured: boolean; domain_suffix: string; accepting: boolean }>(
                 '/api/v1/sites/capabilities',
                 { timeoutMs: 20_000 },
             ),
@@ -595,6 +892,50 @@ export const controller = {
                 operation: ControllerOperation;
                 steps: ControllerActivityLog[];
             }>(`/api/v1/logs/operations/${id}`),
+    },
+
+    apps: {
+        inspect: (repoUrl: string, branch?: string) =>
+            request<AppInspection>('/api/v1/apps/inspect', {
+                method: 'POST',
+                body: { repo_url: repoUrl, branch },
+                timeoutMs: 45_000,
+            }),
+        installations: (appName: string, repoUrl?: string | null, branch?: string | null) =>
+            request<{ app_name: string; results: AppInstallation[] }>('/api/v1/apps/installations', {
+                method: 'POST',
+                body: { app_name: appName, repo_url: repoUrl ?? undefined, branch: branch ?? undefined },
+                timeoutMs: 60_000,
+            }),
+        summary: () =>
+            request<{ results: Record<string, { sites: number; commits: Record<string, number> }> }>('/api/v1/apps/summary', {
+                timeoutMs: 20_000,
+            }),
+        scan: () => request<{ queued: boolean }>('/api/v1/apps/scan', { method: 'POST', body: {}, timeoutMs: 20_000 }),
+        rollouts: (appName?: string) =>
+            request<{ results: AppRollout[] }>(
+                `/api/v1/apps/rollouts${toQuery({ app_name: appName })}`,
+                { timeoutMs: 20_000 },
+            ),
+        rollout: (id: string) =>
+            request<AppRollout>(`/api/v1/apps/rollouts/${encodeURIComponent(id)}`, { timeoutMs: 20_000 }),
+        startRollout: (body: RolloutRequest) =>
+            request<AppRollout>('/api/v1/apps/rollouts', { method: 'POST', body, timeoutMs: 60_000 }),
+        retryRollout: (id: string) =>
+            request<{ queued: number }>(`/api/v1/apps/rollouts/${encodeURIComponent(id)}/retry`, {
+                method: 'POST',
+                body: {},
+                timeoutMs: 20_000,
+            }),
+    },
+
+    github: {
+        account: () => request<GithubAccount>('/api/v1/github/account', { timeoutMs: 25_000 }),
+        connect: (token: string, connectedBy: string) =>
+            request<GithubAccount>('/api/v1/github/account', { method: 'PUT', body: { token, connected_by: connectedBy }, timeoutMs: 30_000 }),
+        disconnect: () => request<void>('/api/v1/github/account', { method: 'DELETE', timeoutMs: 20_000 }),
+        repositories: () =>
+            request<{ results: GithubRepository[]; connected: boolean }>('/api/v1/github/repositories', { timeoutMs: 30_000 }),
     },
 
     dashboard: {

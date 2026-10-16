@@ -1,5 +1,6 @@
 import 'server-only';
-import { prisma } from '@/lib/db';
+import { and, desc, eq, ne } from 'drizzle-orm';
+import { db, schema } from '@/lib/db';
 import { controller } from '@/lib/controller-client';
 
 /**
@@ -38,16 +39,16 @@ function displayName(user: { name: string | null; firstName: string | null; last
  * from the list with no explanation is the more confusing failure.
  */
 export async function listSubscriptionOptions(): Promise<SubscriptionOption[]> {
-    const subscriptions = await prisma.subscription.findMany({
+    const subscriptions = await db.query.subscription.findMany({
         // Mirrors UNUSABLE_SUBSCRIPTION_STATUSES in the controller's
         // account_resolver: a canceled subscription cannot take a new store.
-        where: { productId: 'unity_commerce', status: { not: 'CANCELED' } },
-        select: {
-            id: true, status: true, storeName: true,
-            plan: { select: { name: true, slug: true } },
-            user: { select: { name: true, firstName: true, lastName: true, email: true } },
+        where: and(eq(schema.subscription.productId, 'unity_commerce'), ne(schema.subscription.status, 'CANCELED')),
+        columns: { id: true, status: true, storeName: true },
+        with: {
+            plan: { columns: { name: true, slug: true } },
+            user: { columns: { name: true, firstName: true, lastName: true, email: true } },
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy: desc(schema.subscription.createdAt),
     });
     if (subscriptions.length === 0) return [];
 

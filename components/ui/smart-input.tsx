@@ -132,7 +132,7 @@ export function SmartInput({
             />
             <input type="hidden" name={name} value={canonical} />
             {error ? (
-                <p id={`${name}-error`} role="alert" className="mt-1.5 text-xs text-error-600">
+                <p id={`${name}-error`} role="alert" className="mt-1.5 text-xs text-destructive">
                     {error}
                 </p>
             ) : null}

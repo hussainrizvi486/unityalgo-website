@@ -14,7 +14,7 @@ import type { PostFormState } from '@/app/admin/actions';
 
 const QuillEditor = dynamic(
     () => import('@/components/admin/quill-editor').then((mod) => mod.QuillEditor),
-    { ssr: false, loading: () => <div className="w-full rounded border border-input h-95 animate-pulse bg-ink-50" /> }
+    { ssr: false, loading: () => <div className="w-full rounded border border-input h-95 animate-pulse bg-muted" /> }
 );
 
 export interface PostFormValues {
@@ -50,57 +50,57 @@ export function PostForm({ action, defaultValues, submitLabel }: PostFormProps) 
     return (
         <form action={formAction} className="portal-stack">
             <div>
-                <Label htmlFor="title" className="portal-text-body text-ink-700 mb-1.5">
+                <Label htmlFor="title" className="portal-text-body text-foreground/80 mb-1.5">
                     Title
                 </Label>
                 <Input id="title" name="title" required defaultValue={defaultValues?.title} />
             </div>
 
             <div>
-                <Label htmlFor="slug" className="portal-text-body text-ink-700 mb-1.5">
-                    Slug <span className="text-ink-400 font-normal">(optional — auto-generated from title if left blank)</span>
+                <Label htmlFor="slug" className="portal-text-body text-foreground/80 mb-1.5">
+                    Slug <span className="text-muted-foreground font-normal">(optional — auto-generated from title if left blank)</span>
                 </Label>
                 <Input id="slug" name="slug" defaultValue={defaultValues?.slug} />
             </div>
 
             <div>
-                <Label htmlFor="excerpt" className="portal-text-body text-ink-700 mb-1.5">
+                <Label htmlFor="excerpt" className="portal-text-body text-foreground/80 mb-1.5">
                     Excerpt
                 </Label>
                 <Textarea id="excerpt" name="excerpt" required rows={2} defaultValue={defaultValues?.excerpt} />
             </div>
 
             <div>
-                <Label className="portal-text-body text-ink-700 mb-1.5">Cover Image</Label>
+                <Label className="portal-text-body text-foreground/80 mb-1.5">Cover Image</Label>
                 <CoverImageField name="coverImage" defaultValue={defaultValues?.coverImage} />
             </div>
 
             <div>
-                <Label className="portal-text-body text-ink-700 mb-1.5">Content</Label>
+                <Label className="portal-text-body text-foreground/80 mb-1.5">Content</Label>
                 <QuillEditor name="content" defaultValue={defaultValues?.content} />
             </div>
 
-            <div className="grid md:grid-cols-2 gap-6">
+            <div className="grid md:grid-cols-2 gap-gap-lg">
                 <div>
-                    <Label htmlFor="metaTitle" className="portal-text-body text-ink-700 mb-1.5">
-                        Meta Title <span className="text-ink-400 font-normal">(optional)</span>
+                    <Label htmlFor="metaTitle" className="portal-text-body text-foreground/80 mb-1.5">
+                        Meta Title <span className="text-muted-foreground font-normal">(optional)</span>
                     </Label>
                     <Input id="metaTitle" name="metaTitle" defaultValue={defaultValues?.metaTitle} />
                 </div>
                 <div>
-                    <Label htmlFor="metaDescription" className="portal-text-body text-ink-700 mb-1.5">
-                        Meta Description <span className="text-ink-400 font-normal">(optional)</span>
+                    <Label htmlFor="metaDescription" className="portal-text-body text-foreground/80 mb-1.5">
+                        Meta Description <span className="text-muted-foreground font-normal">(optional)</span>
                     </Label>
                     <Input id="metaDescription" name="metaDescription" defaultValue={defaultValues?.metaDescription} />
                 </div>
             </div>
 
-            <Label htmlFor="published" className="portal-text-body text-ink-700">
+            <Label htmlFor="published" className="portal-text-body text-foreground/80">
                 <Checkbox id="published" name="published" defaultChecked={defaultValues?.published} />
                 Published
             </Label>
 
-            {state?.error && <p className="portal-text-body text-error-600">{state.error}</p>}
+            {state?.error && <p className="portal-text-body text-destructive">{state.error}</p>}
 
             <div className="flex items-center gap-3">
                 <SubmitButton label={submitLabel} />

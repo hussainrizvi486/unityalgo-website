@@ -17,10 +17,10 @@ import { cn } from '@/utils';
  */
 
 const TONES = {
-    error: { fill: 'bg-error-50 text-error-700', Icon: XCircle },
-    success: { fill: 'bg-success-50 text-success-600', Icon: CheckCircle2 },
-    warning: { fill: 'bg-warning-50 text-warning-700', Icon: AlertTriangle },
-    info: { fill: 'bg-info-50 text-info-600', Icon: Info },
+    error: { fill: 'bg-destructive/10 text-destructive', Icon: XCircle },
+    success: { fill: 'bg-success/10 text-success', Icon: CheckCircle2 },
+    warning: { fill: 'bg-warning/10 text-warning', Icon: AlertTriangle },
+    info: { fill: 'bg-primary/10 text-primary', Icon: Info },
 } as const;
 
 export type NoticeTone = keyof typeof TONES;

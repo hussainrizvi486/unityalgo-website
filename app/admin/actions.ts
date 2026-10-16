@@ -4,7 +4,8 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import bcrypt from 'bcryptjs';
-import { prisma } from '@/lib/db';
+import { and, eq } from 'drizzle-orm';
+import { db, schema } from '@/lib/db';
 import { createSessionToken, SESSION_COOKIE, SESSION_DURATION_SECONDS } from '@/lib/auth';
 import { CommentEntityType, createComment } from '@/lib/comments';
 import { getCurrentAdminEmail, requireAdmin } from '@/lib/admin-session';
@@ -14,7 +15,7 @@ export async function loginAction(_prevState: { error?: string } | undefined, fo
     const email = String(formData.get('email') ?? '').trim().toLowerCase();
     const password = String(formData.get('password') ?? '');
 
-    const adminUser = await prisma.user.findUnique({ where: { email } });
+    const adminUser = await db.query.user.findFirst({ where: eq(schema.user.email, email) });
     if (!adminUser || adminUser.role !== 'ADMIN') {
         return { error: 'Invalid email or password.' };
     }
@@ -71,13 +72,12 @@ export async function createPostAction(_prevState: PostFormState | undefined, fo
 
     const slug = slugInput ? slugify(slugInput) : slugify(title);
 
-    const existing = await prisma.post.findUnique({ where: { slug } });
+    const existing = await db.query.post.findFirst({ where: eq(schema.post.slug, slug) });
     if (existing) {
         return { error: `Slug "${slug}" is already in use.` };
     }
 
-    await prisma.post.create({
-        data: {
+    await db.insert(schema.post).values({
             title,
             slug,
             excerpt,
@@ -87,8 +87,7 @@ export async function createPostAction(_prevState: PostFormState | undefined, fo
             publishedAt: published ? new Date() : null,
             metaTitle,
             metaDescription,
-        },
-    });
+        });
 
     revalidatePath('/admin/blogs');
     revalidatePath('/blog');
@@ -115,16 +114,14 @@ export async function updatePostAction(
 
     const slug = slugify(slugInput || title);
 
-    const existing = await prisma.post.findUnique({ where: { slug } });
+    const existing = await db.query.post.findFirst({ where: eq(schema.post.slug, slug) });
     if (existing && existing.id !== id) {
         return { error: `Slug "${slug}" is already in use.` };
     }
 
-    const current = await prisma.post.findUnique({ where: { id } });
+    const current = await db.query.post.findFirst({ where: eq(schema.post.id, id) });
 
-    await prisma.post.update({
-        where: { id },
-        data: {
+    await db.update(schema.post).set({
             title,
             slug,
             excerpt,
@@ -134,8 +131,7 @@ export async function updatePostAction(
             publishedAt: published ? current?.publishedAt ?? new Date() : null,
             metaTitle,
             metaDescription,
-        },
-    });
+        }).where(eq(schema.post.id, id));
 
     revalidatePath('/admin/blogs');
     revalidatePath('/blog');
@@ -147,11 +143,11 @@ export async function deletePostAction(formData: FormData) {
     const id = String(formData.get('id') ?? '');
     if (!id) return;
 
-    const post = await prisma.post.delete({ where: { id } });
+    const [post] = await db.delete(schema.post).where(eq(schema.post.id, id)).returning({ slug: schema.post.slug });
 
     revalidatePath('/admin/blogs');
     revalidatePath('/blog');
-    revalidatePath(`/blog/${post.slug}`);
+    if (post) revalidatePath(`/blog/${post.slug}`);
 }
 
 export interface ContactFormState {
@@ -178,7 +174,7 @@ export async function createContactAction(
         return { error: 'All fields are required.' };
     }
 
-    await prisma.contactSubmission.create({ data: fields });
+    await db.insert(schema.contactSubmission).values(fields);
 
     revalidatePath('/admin/contacts');
     redirect('/admin/contacts');
@@ -195,7 +191,7 @@ export async function updateContactAction(
         return { error: 'All fields are required.' };
     }
 
-    await prisma.contactSubmission.update({ where: { id }, data: fields });
+    await db.update(schema.contactSubmission).set(fields).where(eq(schema.contactSubmission.id, id));
 
     revalidatePath('/admin/contacts');
     redirect('/admin/contacts');
@@ -205,7 +201,7 @@ export async function deleteContactSubmissionAction(formData: FormData) {
     const id = String(formData.get('id') ?? '');
     if (!id) return;
 
-    await prisma.contactSubmission.delete({ where: { id } });
+    await db.delete(schema.contactSubmission).where(eq(schema.contactSubmission.id, id));
 
     revalidatePath('/admin/contacts');
 }
@@ -214,18 +210,15 @@ export async function togglePublishAction(formData: FormData) {
     const id = String(formData.get('id') ?? '');
     if (!id) return;
 
-    const post = await prisma.post.findUnique({ where: { id } });
+    const post = await db.query.post.findFirst({ where: eq(schema.post.id, id) });
     if (!post) return;
 
     const nextPublished = !post.published;
 
-    await prisma.post.update({
-        where: { id },
-        data: {
+    await db.update(schema.post).set({
             published: nextPublished,
             publishedAt: nextPublished ? post.publishedAt ?? new Date() : post.publishedAt,
-        },
-    });
+        }).where(eq(schema.post.id, id));
 
     revalidatePath('/admin/blogs');
     revalidatePath('/blog');
@@ -253,7 +246,7 @@ export async function createUserAction(
         return { error: 'Password must be at least 8 characters.' };
     }
 
-    const existing = await prisma.user.findUnique({ where: { email } });
+    const existing = await db.query.user.findFirst({ where: eq(schema.user.email, email) });
     if (existing) {
         return { error: `A user with email "${email}" already exists.` };
     }
@@ -263,7 +256,7 @@ export async function createUserAction(
     // Admin-panel "New User" always creates an ADMIN account — customer accounts
     // can only be created through the public registration flow (app/customer/actions.ts),
     // which hardcodes role: 'CUSTOMER' and never reads a role from the form.
-    await prisma.user.create({ data: { email, name, passwordHash, role: 'ADMIN' } });
+    await db.insert(schema.user).values({ email, name, passwordHash, role: 'ADMIN' });
 
     revalidatePath('/admin/users');
     redirect('/admin/users');
@@ -281,14 +274,14 @@ export async function updateUserAction(
         return { error: 'Email is required.' };
     }
 
-    const existing = await prisma.user.findUnique({ where: { email } });
+    const existing = await db.query.user.findFirst({ where: eq(schema.user.email, email) });
     if (existing && existing.id !== id) {
         return { error: `A user with email "${email}" already exists.` };
     }
 
     // Role is intentionally never accepted from this form — it's not part of
     // UserFormValues, so there's nothing here for an admin to elevate/change.
-    await prisma.user.update({ where: { id }, data: { email, name } });
+    await db.update(schema.user).set({ email, name }).where(eq(schema.user.id, id));
 
     revalidatePath('/admin/users');
     redirect('/admin/users');
@@ -312,7 +305,7 @@ export async function updateUserPasswordAction(
 
     const passwordHash = await bcrypt.hash(password, 10);
 
-    await prisma.user.update({ where: { id }, data: { passwordHash } });
+    await db.update(schema.user).set({ passwordHash }).where(eq(schema.user.id, id));
 
     return { success: true };
 }
@@ -322,7 +315,7 @@ export async function deleteUserAction(formData: FormData) {
     if (!id) return;
 
     const [user, currentEmail] = await Promise.all([
-        prisma.user.findUnique({ where: { id } }),
+        db.query.user.findFirst({ where: eq(schema.user.id, id) }),
         getCurrentAdminEmail(),
     ]);
 
@@ -335,13 +328,13 @@ export async function deleteUserAction(formData: FormData) {
     // Only the "last remaining admin" lockout applies to admins — deleting the
     // last customer is always fine, it just means there are no customers left.
     if (user.role === 'ADMIN') {
-        const totalAdmins = await prisma.user.count({ where: { role: 'ADMIN' } });
+        const totalAdmins = await db.$count(schema.user, eq(schema.user.role, 'ADMIN'));
         if (totalAdmins <= 1) {
             redirect('/admin/users?error=' + encodeURIComponent('Cannot delete the last remaining admin user.'));
         }
     }
 
-    await prisma.user.delete({ where: { id } });
+    await db.delete(schema.user).where(eq(schema.user.id, id));
 
     revalidatePath('/admin/users');
 }
@@ -385,6 +378,9 @@ function readPlanFields(formData: FormData) {
         paddlePriceId: String(formData.get('paddlePriceId') ?? '').trim() || null,
         currencyId: String(formData.get('currencyId') ?? '').trim() || null,
         userLimit: parseOptionalInt(formData.get('userLimit')),
+        vcpu: parseOptionalFloat(formData.get('vcpu')),
+        ramMb: parseOptionalInt(formData.get('ramMb')),
+        storageGb: parseOptionalInt(formData.get('storageGb')),
         features: parseFeatureLines(formData.get('features')),
         isActive: formData.get('isActive') === 'on',
         sortOrder: parseOptionalInt(formData.get('sortOrder')) ?? 0,
@@ -400,13 +396,12 @@ export async function createPlanAction(_prevState: PlanFormState | undefined, fo
 
     const slug = slugify(fields.slugInput || fields.name);
 
-    const existing = await prisma.plan.findUnique({ where: { productId_slug: { productId: fields.product, slug } } });
+    const existing = await db.query.plan.findFirst({ where: and(eq(schema.plan.productId, fields.product), eq(schema.plan.slug, slug)) });
     if (existing) {
         return { error: `A plan with slug "${slug}" already exists for this product.` };
     }
 
-    await prisma.plan.create({
-        data: {
+    await db.insert(schema.plan).values({
             productId: fields.product,
             name: fields.name,
             slug,
@@ -417,11 +412,13 @@ export async function createPlanAction(_prevState: PlanFormState | undefined, fo
             currencyId: fields.currencyId,
             transactionFeePercent: fields.transactionFeePercent,
             userLimit: fields.userLimit,
+            vcpu: fields.vcpu,
+            ramMb: fields.ramMb,
+            storageGb: fields.storageGb,
             features: fields.features,
             isActive: fields.isActive,
             sortOrder: fields.sortOrder,
-        },
-    });
+        });
 
     revalidatePath('/admin/plans');
     revalidatePath('/dashboard/subscription');
@@ -441,14 +438,12 @@ export async function updatePlanAction(
 
     const slug = slugify(fields.slugInput || fields.name);
 
-    const existing = await prisma.plan.findUnique({ where: { productId_slug: { productId: fields.product, slug } } });
+    const existing = await db.query.plan.findFirst({ where: and(eq(schema.plan.productId, fields.product), eq(schema.plan.slug, slug)) });
     if (existing && existing.id !== id) {
         return { error: `A plan with slug "${slug}" already exists for this product.` };
     }
 
-    await prisma.plan.update({
-        where: { id },
-        data: {
+    await db.update(schema.plan).set({
             productId: fields.product,
             name: fields.name,
             slug,
@@ -459,11 +454,13 @@ export async function updatePlanAction(
             currencyId: fields.currencyId,
             transactionFeePercent: fields.transactionFeePercent,
             userLimit: fields.userLimit,
+            vcpu: fields.vcpu,
+            ramMb: fields.ramMb,
+            storageGb: fields.storageGb,
             features: fields.features,
             isActive: fields.isActive,
             sortOrder: fields.sortOrder,
-        },
-    });
+        }).where(eq(schema.plan.id, id));
 
     revalidatePath('/admin/plans');
     revalidatePath('/dashboard/subscription');
@@ -474,12 +471,12 @@ export async function deletePlanAction(formData: FormData) {
     const id = String(formData.get('id') ?? '');
     if (!id) return;
 
-    const subscriberCount = await prisma.subscription.count({ where: { planId: id } });
+    const subscriberCount = await db.$count(schema.subscription, eq(schema.subscription.planId, id));
     if (subscriberCount > 0) {
         redirect('/admin/plans?error=' + encodeURIComponent('This plan still has active subscriptions and cannot be deleted. Disable it instead.'));
     }
 
-    await prisma.plan.delete({ where: { id } });
+    await db.delete(schema.plan).where(eq(schema.plan.id, id));
 
     revalidatePath('/admin/plans');
 }
@@ -488,10 +485,10 @@ export async function togglePlanActiveAction(formData: FormData) {
     const id = String(formData.get('id') ?? '');
     if (!id) return;
 
-    const plan = await prisma.plan.findUnique({ where: { id } });
+    const plan = await db.query.plan.findFirst({ where: eq(schema.plan.id, id) });
     if (!plan) return;
 
-    await prisma.plan.update({ where: { id }, data: { isActive: !plan.isActive } });
+    await db.update(schema.plan).set({ isActive: !plan.isActive }).where(eq(schema.plan.id, id));
 
     revalidatePath('/admin/plans');
     revalidatePath('/dashboard/subscription');
@@ -523,13 +520,12 @@ export async function createAddOnAction(_prevState: AddOnFormState | undefined, 
 
     const slug = slugify(fields.slugInput || fields.name);
 
-    const existing = await prisma.addOn.findUnique({ where: { productId_slug: { productId: fields.product, slug } } });
+    const existing = await db.query.addOn.findFirst({ where: and(eq(schema.addOn.productId, fields.product), eq(schema.addOn.slug, slug)) });
     if (existing) {
         return { error: `An add-on with slug "${slug}" already exists for this product.` };
     }
 
-    await prisma.addOn.create({
-        data: {
+    await db.insert(schema.addOn).values({
             productId: fields.product,
             name: fields.name,
             slug,
@@ -538,8 +534,7 @@ export async function createAddOnAction(_prevState: AddOnFormState | undefined, 
             priceAmount: fields.priceAmount,
             isActive: fields.isActive,
             sortOrder: fields.sortOrder,
-        },
-    });
+        });
 
     revalidatePath('/admin/addons');
     revalidatePath('/dashboard/subscription');
@@ -559,14 +554,12 @@ export async function updateAddOnAction(
 
     const slug = slugify(fields.slugInput || fields.name);
 
-    const existing = await prisma.addOn.findUnique({ where: { productId_slug: { productId: fields.product, slug } } });
+    const existing = await db.query.addOn.findFirst({ where: and(eq(schema.addOn.productId, fields.product), eq(schema.addOn.slug, slug)) });
     if (existing && existing.id !== id) {
         return { error: `An add-on with slug "${slug}" already exists for this product.` };
     }
 
-    await prisma.addOn.update({
-        where: { id },
-        data: {
+    await db.update(schema.addOn).set({
             productId: fields.product,
             name: fields.name,
             slug,
@@ -575,8 +568,7 @@ export async function updateAddOnAction(
             priceAmount: fields.priceAmount,
             isActive: fields.isActive,
             sortOrder: fields.sortOrder,
-        },
-    });
+        }).where(eq(schema.addOn.id, id));
 
     revalidatePath('/admin/addons');
     revalidatePath('/dashboard/subscription');
@@ -587,12 +579,12 @@ export async function deleteAddOnAction(formData: FormData) {
     const id = String(formData.get('id') ?? '');
     if (!id) return;
 
-    const attachedCount = await prisma.subscriptionAddOn.count({ where: { addOnId: id } });
+    const attachedCount = await db.$count(schema.subscriptionAddOn, eq(schema.subscriptionAddOn.addOnId, id));
     if (attachedCount > 0) {
         redirect('/admin/addons?error=' + encodeURIComponent('This add-on is attached to active subscriptions and cannot be deleted. Disable it instead.'));
     }
 
-    await prisma.addOn.delete({ where: { id } });
+    await db.delete(schema.addOn).where(eq(schema.addOn.id, id));
 
     revalidatePath('/admin/addons');
 }
@@ -601,10 +593,10 @@ export async function toggleAddOnActiveAction(formData: FormData) {
     const id = String(formData.get('id') ?? '');
     if (!id) return;
 
-    const addOn = await prisma.addOn.findUnique({ where: { id } });
+    const addOn = await db.query.addOn.findFirst({ where: eq(schema.addOn.id, id) });
     if (!addOn) return;
 
-    await prisma.addOn.update({ where: { id }, data: { isActive: !addOn.isActive } });
+    await db.update(schema.addOn).set({ isActive: !addOn.isActive }).where(eq(schema.addOn.id, id));
 
     revalidatePath('/admin/addons');
     revalidatePath('/dashboard/subscription');
@@ -618,10 +610,7 @@ export async function updateTicketStatusAction(formData: FormData) {
     const status = String(formData.get('status') ?? '');
     if (!id || !TICKET_STATUSES.includes(status as (typeof TICKET_STATUSES)[number])) return;
 
-    await prisma.supportTicket.update({
-        where: { id },
-        data: { status: status as (typeof TICKET_STATUSES)[number] },
-    });
+    await db.update(schema.supportTicket).set({ status: status as (typeof TICKET_STATUSES)[number] }).where(eq(schema.supportTicket.id, id));
 
     revalidatePath('/admin/tickets');
     revalidatePath(`/admin/tickets/${id}`);
@@ -633,7 +622,7 @@ export async function addAdminTicketCommentAction(formData: FormData) {
     const body = String(formData.get('body') ?? '').trim();
     if (!ticketId || !body) return;
 
-    const ticket = await prisma.supportTicket.findUnique({ where: { id: ticketId } });
+    const ticket = await db.query.supportTicket.findFirst({ where: eq(schema.supportTicket.id, ticketId) });
     if (!ticket) return;
 
     await createComment(CommentEntityType.SUPPORT_TICKET, ticketId, admin.id, body);
@@ -654,9 +643,9 @@ export async function syncPlanWithPaddleAction(formData: FormData) {
     const id = String(formData.get('id') ?? '');
     if (!id) return;
 
-    const plan = await prisma.plan.findUnique({
-        where: { id },
-        include: { product: true, currency: true },
+    const plan = await db.query.plan.findFirst({
+        where: eq(schema.plan.id, id),
+        with: { product: true, currency: true },
     });
     if (!plan) return;
 
@@ -679,7 +668,7 @@ export async function syncPlanWithPaddleAction(formData: FormData) {
             existingPriceId: plan.paddlePriceId,
         });
         if (created) {
-            await prisma.plan.update({ where: { id }, data: { paddlePriceId: priceId } });
+            await db.update(schema.plan).set({ paddlePriceId: priceId }).where(eq(schema.plan.id, id));
         }
     } catch (error) {
         fail(error instanceof Error ? error.message : 'Paddle rejected the sync.');

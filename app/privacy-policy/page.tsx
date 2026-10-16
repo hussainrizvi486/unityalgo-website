@@ -25,16 +25,16 @@ const Page = () => {
 
       <div className="flex-1 pt-32 pb-20">
 
-        <div className="absolute inset-0 bg-grid-pattern mask-[linear-gradient(to_bottom,transparent,black_10%,black_90%,transparent)] opacity-20 pointer-events-none -z-10" />
+        <div className="absolute inset-0 bg-grid-pattern mask-[linear-gradient(to_bottom,transparent,var(--scrim)_10%,var(--scrim)_90%,transparent)] opacity-20 pointer-events-none -z-10" />
 
-        <div className="site-container site-container-detail site-gutters space-y-8">
-          <div className="space-y-4 border-b border-ink-100 pb-8">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-ink-100 border border-ink-200 mb-2">
-              <span className="w-2 h-2 rounded-full bg-brand"></span>
-              <span className="text-xs font-semibold text-ink-600 tracking-wide uppercase">Legal</span>
+        <div className="site-container site-container-detail site-gutters space-y-gap-xl">
+          <div className="space-y-gap border-b border-border/60 pb-8">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-secondary border border-border mb-2">
+              <span className="w-2 h-2 rounded-full bg-primary"></span>
+              <span className="text-xs font-semibold text-foreground/70 tracking-wide uppercase">Legal</span>
             </div>
-            <h1 className="text-4xl md:text-5xl font-bold tracking-tight ">Privacy Policy</h1>
-            <p className="text-lg text-ink-600 leading-relaxed">
+            <h1 className="text-4xl md:text-5xl tracking-tight ">Privacy Policy</h1>
+            <p className="text-lg text-foreground/70 leading-relaxed">
               At UnityAlgo, we respect your privacy and are committed to protecting your personal information.
               This Privacy Policy explains what data we collect, how we use it, and the rights you have regarding
               your personal information. Our goal is to provide full transparency and a safe, secure experience
@@ -43,17 +43,17 @@ const Page = () => {
           </div>
 
           {/* Information Collection */}
-          <section className="space-y-4 py-4">
-            <h2 className="text-2xl font-bold text-ink-900">Information We Collect</h2>
+          <section className="space-y-gap py-4">
+            <h2 className="text-2xl text-foreground">Information We Collect</h2>
 
-            <div className="bg-ink-50/50 p-6 rounded-xl border border-ink-100">
-              <h3 className="text-xl font-semibold text-ink-800 mb-3">Personal Information</h3>
-              <p className="text-ink-600 mb-4">
+            <div className="bg-muted/50 p-card rounded-xl border border-border/60">
+              <h3 className="text-xl text-foreground mb-3">Personal Information</h3>
+              <p className="text-foreground/70 mb-4">
                 We may collect certain personal details when you interact with our website or submit information
                 through forms. This includes, but is not limited to:
               </p>
 
-              <ul className="list-disc pl-5 space-y-2 text-ink-600">
+              <ul className="list-disc pl-5 space-y-2 text-foreground/70">
                 <li>Full name</li>
                 <li>Email address</li>
                 <li>Phone number</li>
@@ -64,9 +64,9 @@ const Page = () => {
           </section>
 
           {/* Usage Data */}
-          <section className="space-y-4 py-4">
-            <h3 className="text-xl font-semibold text-ink-800">Usage Data</h3>
-            <div className="text-ink-600 space-y-4">
+          <section className="space-y-gap py-4">
+            <h3 className="text-xl text-foreground">Usage Data</h3>
+            <div className="text-foreground/70 space-y-gap">
               <p>We automatically collect Usage Data when you browse or interact with our website.</p>
               <p>
                 This may include your IP address, browser type, browser version, the pages you visit, time spent
@@ -85,9 +85,9 @@ const Page = () => {
           </section>
 
           {/* Retention */}
-          <section className="space-y-4 py-4">
-            <h2 className="text-2xl font-bold text-ink-900">Retention of Your Data</h2>
-            <div className="text-ink-600 space-y-4">
+          <section className="space-y-gap py-4">
+            <h2 className="text-2xl text-foreground">Retention of Your Data</h2>
+            <div className="text-foreground/70 space-y-gap">
               <p>
                 We retain your Personal Data only for as long as necessary to fulfill the purposes outlined in
                 this Privacy Policy. This includes meeting legal obligations, resolving disputes, and enforcing
@@ -101,9 +101,9 @@ const Page = () => {
           </section>
 
           {/* Data Transfer */}
-          <section className="space-y-4 py-4">
-            <h3 className="text-xl font-semibold text-ink-800">Transfer of Your Personal Data</h3>
-            <div className="text-ink-600 space-y-4">
+          <section className="space-y-gap py-4">
+            <h3 className="text-xl text-foreground">Transfer of Your Personal Data</h3>
+            <div className="text-foreground/70 space-y-gap">
               <p>
                 Your data may be processed on servers located outside your region or country, where data
                 protection laws may differ. By using our website, you consent to this transfer.
@@ -120,21 +120,21 @@ const Page = () => {
           </section>
 
           {/* Disclosure */}
-          <section className="space-y-4 py-4">
-            <h2 className="text-2xl font-bold text-ink-900">Disclosure of Your Personal Data</h2>
+          <section className="space-y-gap py-4">
+            <h2 className="text-2xl text-foreground">Disclosure of Your Personal Data</h2>
 
-            <div className="grid md:grid-cols-2 gap-6 mt-4">
-              <div className="bg-white p-6 rounded-lg border border-ink-100 shadow-sm">
-                <h3 className="text-lg font-semibold text-ink-800 mb-2">Business Transactions</h3>
-                <p className="text-ink-600 text-sm">
+            <div className="grid md:grid-cols-2 gap-gap-lg mt-4">
+              <div className="bg-card p-card rounded-lg border border-border/60 shadow-sm">
+                <h3 className="text-lg text-foreground mb-2">Business Transactions</h3>
+                <p className="text-foreground/70 text-sm">
                   In the event of a merger, acquisition, or sale of assets, your Personal Data may be transferred.
                   You will be notified before your data becomes subject to a different privacy policy.
                 </p>
               </div>
 
-              <div className="bg-white p-6 rounded-lg border border-ink-100 shadow-sm">
-                <h3 className="text-lg font-semibold text-ink-800 mb-2">Legal Requirements</h3>
-                <ul className="list-disc pl-5 space-y-1 text-ink-600 text-sm">
+              <div className="bg-card p-card rounded-lg border border-border/60 shadow-sm">
+                <h3 className="text-lg text-foreground mb-2">Legal Requirements</h3>
+                <ul className="list-disc pl-5 space-y-1 text-foreground/70 text-sm">
                   <li>Comply with legal obligations</li>
                   <li>Protect the rights or property of UnityAlgo</li>
                   <li>Investigate potential misuse of our services</li>
@@ -146,9 +146,9 @@ const Page = () => {
           </section>
 
           {/* Cookies */}
-          <section className="space-y-4 py-4">
-            <h2 className="text-2xl font-bold text-ink-900">Cookies & Tracking Technologies</h2>
-            <p className="text-ink-600">
+          <section className="space-y-gap py-4">
+            <h2 className="text-2xl text-foreground">Cookies & Tracking Technologies</h2>
+            <p className="text-foreground/70">
               We use cookies and similar technologies to enhance user experience, remember preferences, analyze
               website performance, and deliver a more personalized browsing experience. You may disable cookies in
               your browser, but some features may not function properly.
@@ -156,9 +156,9 @@ const Page = () => {
           </section>
 
           {/* Links */}
-          <section className="space-y-4 py-4">
-            <h2 className="text-2xl font-bold text-ink-900">Links to Other Websites</h2>
-            <p className="text-ink-600">
+          <section className="space-y-gap py-4">
+            <h2 className="text-2xl text-foreground">Links to Other Websites</h2>
+            <p className="text-foreground/70">
               Our website may contain links to external websites. UnityAlgo is not responsible for the content or
               privacy practices of third-party websites. We strongly encourage reviewing their privacy policies
               before interacting with them.
@@ -166,9 +166,9 @@ const Page = () => {
           </section>
 
           {/* Security */}
-          <section className="space-y-4 py-4">
-            <h2 className="text-2xl font-bold text-ink-900">Security of Your Personal Data</h2>
-            <p className="text-ink-600">
+          <section className="space-y-gap py-4">
+            <h2 className="text-2xl text-foreground">Security of Your Personal Data</h2>
+            <p className="text-foreground/70">
               We use industry-standard security measures to protect your data. However, no online transmission is
               completely secure. While we strive to protect your information, we cannot guarantee absolute
               security.
@@ -176,9 +176,9 @@ const Page = () => {
           </section>
 
           {/* Children's Privacy */}
-          <section className="space-y-4 py-4">
-            <h2 className="text-2xl font-bold text-ink-900">Children’s Privacy</h2>
-            <p className="text-ink-600">
+          <section className="space-y-gap py-4">
+            <h2 className="text-2xl text-foreground">Children’s Privacy</h2>
+            <p className="text-foreground/70">
               Our services are not intended for individuals under the age of 13, and we do not knowingly collect
               information from children. If you believe a child has provided us with personal data, please contact
               us immediately.
@@ -186,19 +186,19 @@ const Page = () => {
           </section>
 
           {/* Contact */}
-          <section className="space-y-6 py-8 border-t border-ink-100">
-            <h2 className="text-2xl font-bold text-ink-900">Contact Us</h2>
-            <p className="text-ink-600">
+          <section className="space-y-gap-lg py-8 border-t border-border/60">
+            <h2 className="text-2xl text-foreground">Contact Us</h2>
+            <p className="text-foreground/70">
               If you have any questions or concerns about this Privacy Policy, feel free to contact us:
             </p>
-            <div className="flex flex-col md:flex-row gap-6">
-              <div className="flex items-center gap-3 text-ink-600">
+            <div className="flex flex-col md:flex-row gap-gap-lg">
+              <div className="flex items-center gap-3 text-foreground/70">
                 <span className="font-semibold ">Email:</span>
-                <a href="mailto:info@unityalgo.com" className="text-link hover:text-link/80 underline decoration-ink-300 underline-offset-4">info@unityalgo.com</a>
+                <a href="mailto:info@unityalgo.com" className="text-primary hover:text-primary/80 underline decoration-input underline-offset-4">info@unityalgo.com</a>
               </div>
-              <div className="flex items-center gap-3 text-ink-600">
+              <div className="flex items-center gap-3 text-foreground/70">
                 <span className="font-semibold ">Website:</span>
-                <Link href="/" className="text-link hover:text-link/80 underline decoration-ink-300 underline-offset-4">unityalgo.com</Link>
+                <Link href="/" className="text-primary hover:text-primary/80 underline decoration-input underline-offset-4">unityalgo.com</Link>
               </div>
             </div>
           </section>

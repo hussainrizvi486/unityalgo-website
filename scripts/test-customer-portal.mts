@@ -1,13 +1,11 @@
 import nextEnv from '@next/env';
-import { PrismaClient } from '@prisma/client';
-import { PrismaPg } from '@prisma/adapter-pg';
+import { eq, inArray } from 'drizzle-orm';
 import { SignJWT } from 'jose';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 nextEnv.loadEnvConfig(process.cwd());
-const prisma = new PrismaClient({
-    adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }),
-});
+// Imported after the environment is loaded: the database module reads DATABASE_URL when it is first imported.
+const { db, schema, closeDb } = await import('../lib/db');
 const base = 'http://localhost:3000';
 const ids: string[] = [];
 async function token(userId: string, email: string, sessionId?: string) {
@@ -18,33 +16,37 @@ async function token(userId: string, email: string, sessionId?: string) {
         .sign(new TextEncoder().encode(process.env.SESSION_SECRET));
 }
 try {
-    const apps = await prisma.appCatalog.findMany();
+    const apps = await db.query.appCatalog.findMany();
     for (const slug of ['lending', 'fbr-integration', 'point-of-sale'])
         assert.ok(apps.some((app) => app.slug === slug));
     const users = await Promise.all(
         [0, 1].map(async (index) => {
-            const user = await prisma.user.create({
-                data: {
+            const [user] = await db
+                .insert(schema.user)
+                .values({
                     email: `portal-check-${randomUUID()}@example.test`,
                     passwordHash: 'test-only',
                     role: 'CUSTOMER',
                     firstName: `Test${index}`,
                     lastName: 'Customer',
-                },
-            });
+                })
+                .returning();
             ids.push(user.id);
             return user;
         }),
     );
     const sessions = await Promise.all(
-        users.map((user) =>
-            prisma.loginSession.create({
-                data: {
-                    userId: user.id,
-                    userAgent: 'Portal integration test',
-                    expiresAt: new Date(Date.now() + 3600_000),
-                },
-            }),
+        users.map(async (user) =>
+            (
+                await db
+                    .insert(schema.loginSession)
+                    .values({
+                        userId: user.id,
+                        userAgent: 'Portal integration test',
+                        expiresAt: new Date(Date.now() + 3600_000),
+                    })
+                    .returning()
+            )[0],
         ),
     );
     const cookies = await Promise.all(
@@ -53,22 +55,14 @@ try {
                 `unityalgo_customer_session=${await token(user.id, user.email, sessions[index].id)}`,
         ),
     );
-    const foreignNotice = await prisma.notification.create({
-        data: {
-            userId: users[1].id,
-            eventKey: 'private',
-            title: 'Private notification',
-            body: 'Must not leak',
-        },
-    });
-    const ownNotice = await prisma.notification.create({
-        data: {
-            userId: users[0].id,
-            eventKey: 'owned',
-            title: 'Own notification',
-            body: 'Owned by this customer',
-        },
-    });
+    const [foreignNotice] = await db
+        .insert(schema.notification)
+        .values({ userId: users[1].id, eventKey: 'private', title: 'Private notification', body: 'Must not leak' })
+        .returning();
+    const [ownNotice] = await db
+        .insert(schema.notification)
+        .values({ userId: users[0].id, eventKey: 'owned', title: 'Own notification', body: 'Owned by this customer' })
+        .returning();
     const notifications = await fetch(`${base}/api/customer/notifications`, {
         headers: { cookie: cookies[0] },
     });
@@ -88,10 +82,10 @@ try {
     assert.equal(markForeign.status, 200);
     assert.equal(
         (
-            await prisma.notification.findUniqueOrThrow({
-                where: { id: foreignNotice.id },
+            await db.query.notification.findFirst({
+                where: eq(schema.notification.id, foreignNotice.id),
             })
-        ).readAt,
+        )?.readAt,
         null,
     );
     const markOwn = await fetch(`${base}/api/customer/notifications`, {
@@ -143,21 +137,15 @@ try {
         },
     });
     assert.equal(legacy.status, 401);
-    await prisma.loginSession.update({
-        where: { id: sessions[0].id },
-        data: { revokedAt: new Date() },
-    });
+    await db.update(schema.loginSession).set({ revokedAt: new Date() }).where(eq(schema.loginSession.id, sessions[0].id));
     const revoked = await fetch(`${base}/api/customer/notifications`, {
         headers: { cookie: cookies[0] },
     });
     assert.equal(revoked.status, 401);
-    const expired = await prisma.loginSession.create({
-        data: {
-            userId: users[0].id,
-            userAgent: 'Expired test',
-            expiresAt: new Date(Date.now() - 1000),
-        },
-    });
+    const [expired] = await db
+        .insert(schema.loginSession)
+        .values({ userId: users[0].id, userAgent: 'Expired test', expiresAt: new Date(Date.now() - 1000) })
+        .returning();
     const expiredResponse = await fetch(`${base}/api/customer/notifications`, {
         headers: {
             cookie: `unityalgo_customer_session=${await token(users[0].id, users[0].email, expired.id)}`,
@@ -168,6 +156,6 @@ try {
         'Portal checks passed: catalogue, page rendering, notification ownership and read status, CSRF, revoked/expired/legacy sessions.',
     );
 } finally {
-    await prisma.user.deleteMany({ where: { id: { in: ids } } });
-    await prisma.$disconnect();
+    if (ids.length) await db.delete(schema.user).where(inArray(schema.user.id, ids));
+    await closeDb();
 }

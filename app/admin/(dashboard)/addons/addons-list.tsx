@@ -121,7 +121,7 @@ export function AddOnsList({
                     />
                 ) : null
             }
-            emptyIcon={<PackagePlus className="h-10 w-10 text-ink-300" />}
+            emptyIcon={<PackagePlus className="h-10 w-10 text-muted-foreground/50" />}
             emptyTitle="No add-ons yet"
             emptyMessage="Add-ons are optional extras customers attach to a subscription."
             emptyAction={{ label: 'New add-on', href: '/admin/addons/new' }}

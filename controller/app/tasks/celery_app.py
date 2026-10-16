@@ -21,6 +21,7 @@ celery_app = Celery(
         "app.tasks.health_tasks",
         "app.tasks.backup_tasks",
         "app.tasks.site_tasks",
+        "app.tasks.app_tasks",
     ],
 )
 
@@ -37,6 +38,18 @@ def _beat_schedule():
             "task": "app.tasks.health_tasks.health_check_sweep",
             "schedule": settings.health_check_interval_seconds,
         },
+    }
+    schedule["site-scheduled-backups"] = {
+        "task": "site.scheduled_backups",
+        "schedule": settings.site_backup_sweep_seconds,
+    }
+    schedule["site-limit-audit"] = {
+        "task": "site.audit_limits",
+        "schedule": settings.site_audit_interval_seconds,
+    }
+    schedule["app-version-scan"] = {
+        "task": "apps.scan",
+        "schedule": settings.app_scan_interval_seconds,
     }
     if settings.backup_schedule_enabled:
         schedule["scheduled-backup-sweep"] = {

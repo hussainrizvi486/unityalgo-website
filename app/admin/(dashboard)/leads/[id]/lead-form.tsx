@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { DeleteButton } from '@/components/admin/delete-button';
 import { LEAD_STATUSES, LEAD_STATUS_LABEL } from '@/lib/leads';
 import { updateLeadAction, deleteLeadAction } from '@/app/admin/lead-actions';
-import type { LeadStatus } from '@prisma/client';
+import type { LeadStatus } from '@/db/types';
 
 function SaveButton() {
     const { pending } = useFormStatus();
@@ -51,7 +51,7 @@ export function LeadForm({ id, status, notes }: { id: string; status: LeadStatus
                 <Textarea id="notes" name="notes" rows={6} defaultValue={notes} placeholder="Called on 2 Sep — asked for a quote." />
             </FormField>
 
-            <div className="flex items-center gap-3 border-t border-ink-200 pt-5">
+            <div className="flex items-center gap-3 border-t border-border pt-5">
                 <SaveButton />
                 <Button asChild type="button" variant="outline"><Link href="/admin/leads">Back</Link></Button>
                 <div className="ml-auto">

@@ -14,6 +14,7 @@ from app.services.caddy_admin_client import CaddyAdminClient
 from sqlalchemy import select, text
 from sqlalchemy.orm import joinedload
 from app.models.site import Site
+from app.models.site_extras import SiteDomain
 
 
 class ProxyConfigurationService:
@@ -46,9 +47,11 @@ class ProxyConfigurationService:
                     ],
                 }
             )
-        for site in session.scalars(select(Site).options(joinedload(Site.server)).where(Site.status.in_(['routing', 'ready']))):
+        for site in session.scalars(select(Site).options(joinedload(Site.server)).where(Site.status.in_(['routing', 'ready', 'stopping', 'stopped', 'restarting', 'restoring', 'updating']))):
+            # The site's own address plus every custom domain the customer has proven they control.
+            hosts = [site.domain, *session.scalars(select(SiteDomain.domain).where(SiteDomain.site_id == site.id, SiteDomain.status == 'active').order_by(SiteDomain.domain))]
             routes.append({
-                '@id': f'site-{site.id}', 'match': [{'host': [site.domain]}],
+                '@id': f'site-{site.id}', 'match': [{'host': hosts}],
                 'handle': [{'handler': 'reverse_proxy', 'upstreams': [{'dial': f'{site.server.dial_host}:{site.port}'}]}],
             })
         # Caddy's automatic HTTPS: listening on :443 with hostname-matched

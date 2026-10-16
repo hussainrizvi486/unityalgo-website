@@ -19,6 +19,8 @@ from app.models.platform import (
 )
 from app.models.server import ServerNode, Tenant
 from app.models.site import Site
+from app.models.site_extras import SiteBackup, SiteDomain
+from app.models.app_rollout import AppRollout, AppRolloutSite, GithubAccount, SiteApp
 
 __all__ = [
     "Base",
@@ -36,4 +38,11 @@ __all__ = [
     "TenantMigration",
     "Operation",
     "ActivityLog",
+    "Site",
+    "SiteBackup",
+    "SiteDomain",
+    "SiteApp",
+    "AppRollout",
+    "AppRolloutSite",
+    "GithubAccount",
 ]

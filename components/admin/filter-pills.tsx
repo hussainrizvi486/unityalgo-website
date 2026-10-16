@@ -30,7 +30,7 @@ export function FilterPills<T extends string>({
     label: string;
 }) {
     return (
-        <div role="radiogroup" aria-label={label} className="flex flex-wrap items-center gap-1 rounded-lg bg-ink-50 p-1">
+        <div role="radiogroup" aria-label={label} className="flex flex-wrap items-center gap-1 rounded-lg bg-muted p-1">
             {options.map((option) => {
                 const active = option.value === value;
                 return (
@@ -43,13 +43,13 @@ export function FilterPills<T extends string>({
                         className={cn(
                             'portal-filter-button font-medium transition-colors',
                             active
-                                ? 'bg-white text-ink-900 shadow-sm'
-                                : 'text-ink-500 hover:bg-ink-100 hover:text-ink-700',
+                                ? 'bg-card text-foreground shadow-sm'
+                                : 'text-muted-foreground hover:bg-secondary hover:text-foreground/80',
                         )}
                     >
                         {option.label}
                         {option.count != null && (
-                            <span className={cn('ml-1.5 portal-text-caption', active ? 'text-ink-400' : 'text-ink-400')}>
+                            <span className={cn('ml-1.5 portal-text-caption', active ? 'text-muted-foreground' : 'text-muted-foreground')}>
                                 {option.count}
                             </span>
                         )}

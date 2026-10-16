@@ -111,7 +111,7 @@ export function BlogsList({
                     ]}
                 />
             }
-            emptyIcon={<FileText className="h-10 w-10 text-ink-300" />}
+            emptyIcon={<FileText className="h-10 w-10 text-muted-foreground/50" />}
             emptyTitle="No blog posts yet"
             emptyMessage="Posts you publish appear on the public blog."
             emptyAction={{ label: 'Write a post', href: '/admin/blogs/new' }}

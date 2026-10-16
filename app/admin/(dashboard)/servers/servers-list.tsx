@@ -93,7 +93,7 @@ export function ServersList({ rows }: { rows: ServerRow[] }) {
             columns={columns}
             getRowId={(row) => row.id}
             searchPlaceholder="Search nodes by name or address…"
-            emptyIcon={<Server className="h-10 w-10 text-ink-300" />}
+            emptyIcon={<Server className="h-10 w-10 text-muted-foreground/50" />}
             emptyTitle="No nodes registered"
             emptyMessage="Register a worker or proxy VPS to start provisioning tenants onto it."
             emptyAction={{ label: 'Register a node', href: '/admin/servers/new' }}

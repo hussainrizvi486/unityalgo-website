@@ -24,7 +24,7 @@ export function AdminPageHeader({ title, subtitle, action, children }: AdminPage
         <div className="portal-page-header">
             <div>
                 <h1 className="portal-page-title">{title}</h1>
-                {subtitle != null && <p className="mt-1 portal-text-body text-ink-500">{subtitle}</p>}
+                {subtitle != null && <p className="mt-1 portal-text-body text-muted-foreground">{subtitle}</p>}
             </div>
             <div className="portal-actions">
                 {children}

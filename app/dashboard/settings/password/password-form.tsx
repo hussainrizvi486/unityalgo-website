@@ -51,18 +51,18 @@ export function PasswordForm({ embedded = false }: { embedded?: boolean }) {
                 <>
                     <Link
                         href="/dashboard/settings?tab=security"
-                        className="mb-6 inline-flex items-center gap-2 portal-text-body font-medium text-ink-500 hover:text-ink-900"
+                        className="mb-6 inline-flex items-center gap-2 portal-text-body font-medium text-muted-foreground hover:text-foreground"
                     >
                         <ArrowLeft className="size-4" />
                         Back to settings
                     </Link>
-                    <p className="portal-text-caption font-semibold uppercase tracking-wider text-ink-500">
+                    <p className="portal-text-caption font-semibold uppercase tracking-wider text-muted-foreground">
                         Account security
                     </p>
                     <h1 className="portal-page-title mt-2">
                         Change password
                     </h1>
-                    <p className="mt-3 portal-text-body text-ink-600">
+                    <p className="mt-3 portal-text-body text-foreground/70">
                         Keep your account protected with a password only you
                         know.
                     </p>
@@ -74,36 +74,36 @@ export function PasswordForm({ embedded = false }: { embedded?: boolean }) {
                 aria-labelledby="password-heading"
             >
                 <div className="grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
-                    <div className="border-b border-ink-200 p-5 sm:p-7 lg:border-r lg:border-b-0">
-                        <span className="mb-5 inline-flex size-10 items-center justify-center rounded-lg border border-ink-200 bg-ink-50">
+                    <div className="border-b border-border p-5 sm:p-7 lg:border-r lg:border-b-0">
+                        <span className="mb-5 inline-flex size-10 items-center justify-center rounded-lg border border-border bg-muted">
                             <KeyRound
-                                className="size-5 text-ink-700"
+                                className="size-5 text-foreground/80"
                                 aria-hidden="true"
                             />
                         </span>
                         <h2
                             id="password-heading"
-                            className="text-xl font-semibold tracking-tight text-ink-950"
+                            className="text-xl tracking-tight text-foreground"
                         >
                             Change your password
                         </h2>
-                        <p className="mt-3 max-w-sm portal-text-body leading-6 text-ink-600">
+                        <p className="mt-3 max-w-sm portal-text-body leading-6 text-foreground/70">
                             Enter your current password, then choose a new one
                             for your UnityAlgo account.
                         </p>
-                        <div className="mt-7 rounded-lg bg-ink-50 p-4">
-                            <h3 className="portal-text-body font-semibold text-ink-900">
+                        <div className="mt-7 rounded-lg bg-muted p-4">
+                            <h3 className="portal-text-body text-foreground">
                                 Choose a memorable passphrase
                             </h3>
-                            <p className="mt-2 portal-text-body leading-6 text-ink-600">
+                            <p className="mt-2 portal-text-body leading-6 text-foreground/70">
                                 Use at least 8 characters. A longer phrase with
                                 several unrelated words is easier to remember.
                                 Avoid reusing a password from another account.
                             </p>
                         </div>
-                        <div className="mt-6 flex items-start gap-3 portal-text-body leading-6 text-ink-600">
+                        <div className="mt-6 flex items-start gap-3 portal-text-body leading-6 text-foreground/70">
                             <ShieldCheck
-                                className="mt-1 size-4 shrink-0 text-ink-500"
+                                className="mt-1 size-4 shrink-0 text-muted-foreground"
                                 aria-hidden="true"
                             />
                             <p>
@@ -135,7 +135,7 @@ export function PasswordForm({ embedded = false }: { embedded?: boolean }) {
                             <div>
                                 <Label
                                     htmlFor="currentPassword"
-                                    className="text-ink-700"
+                                    className="text-foreground/80"
                                 >
                                     Current password
                                 </Label>
@@ -155,7 +155,7 @@ export function PasswordForm({ embedded = false }: { embedded?: boolean }) {
                             <div>
                                 <Label
                                     htmlFor="newPassword"
-                                    className="text-ink-700"
+                                    className="text-foreground/80"
                                 >
                                     New password
                                 </Label>
@@ -175,7 +175,7 @@ export function PasswordForm({ embedded = false }: { embedded?: boolean }) {
                                 />
                                 <p
                                     id="password-requirement"
-                                    className={`mt-2 flex items-center gap-1.5 portal-text-caption ${newPassword.length >= 8 ? 'text-success-700' : 'text-ink-500'}`}
+                                    className={`mt-2 flex items-center gap-1.5 portal-text-caption ${newPassword.length >= 8 ? 'text-success' : 'text-muted-foreground'}`}
                                 >
                                     {newPassword.length >= 8 && (
                                         <Check
@@ -189,7 +189,7 @@ export function PasswordForm({ embedded = false }: { embedded?: boolean }) {
                             <div>
                                 <Label
                                     htmlFor="confirmNewPassword"
-                                    className="text-ink-700"
+                                    className="text-foreground/80"
                                 >
                                     Confirm new password
                                 </Label>
@@ -212,7 +212,7 @@ export function PasswordForm({ embedded = false }: { embedded?: boolean }) {
                                 <p
                                     id="password-confirmation"
                                     aria-live="polite"
-                                    className={`mt-2 flex min-h-4 items-center gap-1.5 portal-text-caption ${mismatch ? 'text-error-700' : matches ? 'text-success-700' : 'text-ink-500'}`}
+                                    className={`mt-2 flex min-h-4 items-center gap-1.5 portal-text-caption ${mismatch ? 'text-destructive' : matches ? 'text-success' : 'text-muted-foreground'}`}
                                 >
                                     {matches && (
                                         <Check
@@ -236,7 +236,7 @@ export function PasswordForm({ embedded = false }: { embedded?: boolean }) {
                             {!edited && state?.success && (
                                 <Notice tone="success">{state.success}</Notice>
                             )}
-                            <div className="border-t border-ink-200 pt-4">
+                            <div className="border-t border-border pt-4">
                                 <Button
                                     type="submit"
                                     disabled={pending}

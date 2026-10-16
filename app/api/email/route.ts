@@ -1,5 +1,6 @@
 import nodemailer from 'nodemailer';
-import { prisma } from '@/lib/db';
+import { eq } from 'drizzle-orm';
+import { db, schema } from '@/lib/db';
 
 export async function POST(req: Request) {
     const { first_name, last_name, email, phone, message } = await req.json();
@@ -11,21 +12,19 @@ export async function POST(req: Request) {
     try {
         // Linked to an account when one already exists on this address, so the
         // admin can see at a glance that the enquiry is from a customer.
-        const account = await prisma.user.findUnique({
-            where: { email: String(email).toLowerCase() },
-            select: { id: true },
+        const account = await db.query.user.findFirst({
+            where: eq(schema.user.email, String(email).toLowerCase()),
+            columns: { id: true },
         });
 
-        await prisma.lead.create({
-            data: {
-                firstName: first_name,
-                lastName: last_name,
-                email,
-                phone,
-                message,
-                source: 'CONTACT_FORM',
-                userId: account?.id ?? null,
-            },
+        await db.insert(schema.lead).values({
+            firstName: first_name,
+            lastName: last_name,
+            email,
+            phone,
+            message,
+            source: 'CONTACT_FORM',
+            userId: account?.id ?? null,
         });
     } catch (error) {
         console.error('Failed to save lead:', error);

@@ -1,5 +1,6 @@
 'use client';
 
+import { mixRgb, rgbHex, tokenRgb } from '@/lib/css-token';
 import * as React from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Environment, Lightformer, ContactShadows, AdaptiveDpr } from '@react-three/drei';
@@ -429,6 +430,9 @@ function Rig({ children }: { children: React.ReactNode }) {
  * crimson — a tinted light would wash the porcelain boards pink and pull the
  * brand colour off the parts that are meant to carry it.
  */
+/** Studio light colours: the page background, shaded toward the muted tone by `shade`. */
+const lightColor = (shade: number) => rgbHex(mixRgb(tokenRgb('--background'), tokenRgb('--muted'), shade));
+
 function SweepLight({ reduced }: { reduced: boolean }) {
     const light = React.useRef<THREE.PointLight>(null);
     useFrame((state) => {
@@ -439,7 +443,7 @@ function SweepLight({ reduced }: { reduced: boolean }) {
         light.current.intensity = 1.9 * Math.sin(t * Math.PI);
     });
     if (reduced) return null;
-    return <pointLight ref={light} color="#ffffff" distance={4.6} decay={2} position={[0.4, -1.3, 0.9]} />;
+    return <pointLight ref={light} color={lightColor(0)} distance={4.6} decay={2} position={[0.4, -1.3, 0.9]} />;
 }
 
 function Scene({ reduced, pointer }: {
@@ -452,10 +456,10 @@ function Scene({ reduced, pointer }: {
                 from a CDN at runtime — a network dependency this page should
                 not carry, and one that fails behind a strict CSP. */}
             <Environment resolution={256}>
-                <Lightformer intensity={3.2} position={[2, 5, 3]} scale={[7, 3, 1]} color="#ffffff" />
-                <Lightformer intensity={1.3} position={[-5, 1, 2]} scale={[3, 7, 1]} color="#eef1f5" />
-                <Lightformer intensity={0.9} position={[4, -2, 1]} scale={[4, 4, 1]} color="#e3e7ed" />
-                <Lightformer intensity={0.6} position={[0, -4, -3]} scale={[8, 3, 1]} color="#ffffff" />
+                <Lightformer intensity={3.2} position={[2, 5, 3]} scale={[7, 3, 1]} color={lightColor(0)} />
+                <Lightformer intensity={1.3} position={[-5, 1, 2]} scale={[3, 7, 1]} color={lightColor(0.15)} />
+                <Lightformer intensity={0.9} position={[4, -2, 1]} scale={[4, 4, 1]} color={lightColor(0.3)} />
+                <Lightformer intensity={0.6} position={[0, -4, -3]} scale={[8, 3, 1]} color={lightColor(0)} />
             </Environment>
 
             <directionalLight
@@ -473,8 +477,8 @@ function Scene({ reduced, pointer }: {
             />
             <ambientLight intensity={0.55} />
             <pointLight
-                color="#8C181B"
-                intensity={1.15}
+                color={rgbHex(tokenRgb('--logo-primary'))}
+                intensity={1.6}
                 distance={5.4}
                 decay={2}
                 position={[2.4, 0.4, 2.8]}
@@ -490,7 +494,7 @@ function Scene({ reduced, pointer }: {
                 blur={2.5}
                 far={5}
                 resolution={256}
-                color="#1F1F1F"
+                color={rgbHex(tokenRgb('--foreground'))}
                 frames={100}
             />
         </>
@@ -540,7 +544,7 @@ export function ConnectedSystemsCanvas({ className }: { className?: string }) {
                         shadows
                         gl={{ antialias: true, alpha: true, powerPreference: 'low-power' }}
                         frameloop={reduced ? 'demand' : 'always'}
-                        style={{ background: 'transparent' }}
+                        className="bg-transparent"
                     >
                         <Rig>
                             <Scene reduced={reduced} pointer={pointer} />

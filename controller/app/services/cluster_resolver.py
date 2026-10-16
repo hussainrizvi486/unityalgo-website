@@ -55,7 +55,11 @@ def default_cluster(session):
     """The cluster new tenants are provisioned onto, or None for the legacy one."""
     return (
         session.query(DatabaseConnection)
-        .filter(DatabaseConnection.role == "cluster", DatabaseConnection.is_default.is_(True))
+        .filter(
+            DatabaseConnection.engine == "postgres",
+            DatabaseConnection.role == "cluster",
+            DatabaseConnection.is_default.is_(True),
+        )
         .one_or_none()
     )
 

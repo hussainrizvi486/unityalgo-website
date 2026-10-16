@@ -21,16 +21,16 @@ export async function PlansSection() {
     if (products.length === 0) return null;
 
     return (
-        <section id="plans" className="scroll-mt-24 bg-white site-section-spacing">
+        <section id="plans" className="scroll-mt-24 bg-card site-section-spacing">
             <div className="site-container site-gutters">
                 <div className="max-w-2xl">
-                    <p className="text-xs font-semibold uppercase tracking-wider text-ink-400">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                         Our products
                     </p>
-                    <h2 className="mt-3 text-3xl font-bold tracking-tight text-ink-900 md:text-4xl">
+                    <h2 className="mt-3 text-3xl tracking-tight text-foreground md:text-4xl">
                         Software we build, own and sell
                     </h2>
-                    <p className="mt-4 leading-relaxed text-ink-500">
+                    <p className="mt-4 leading-relaxed text-muted-foreground">
                         We don&apos;t only build for clients — we run our own products. Every plan
                         below is one we operate and support ourselves.
                     </p>
@@ -38,16 +38,16 @@ export async function PlansSection() {
 
                 {products.map((product) => (
                     <div key={product.id} className="mt-14 first:mt-12">
-                        <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2 border-b border-ink-100 pb-4">
+                        <div className="flex flex-wrap items-baseline justify-between gap-x-gap gap-y-2 border-b border-border/60 pb-4">
                             <div>
-                                <h3 className="text-xl font-bold text-ink-900">{product.label}</h3>
+                                <h3 className="text-xl text-foreground">{product.label}</h3>
                                 {product.tagline && (
-                                    <p className="mt-1 text-sm text-ink-500">{product.tagline}</p>
+                                    <p className="mt-1 text-sm text-muted-foreground">{product.tagline}</p>
                                 )}
                             </div>
                             <Link
                                 href={`/products/${product.slug}`}
-                                className="text-sm font-semibold text-link hover:underline"
+                                className="text-sm font-semibold text-primary hover:underline"
                             >
                                 Explore {product.label} →
                             </Link>
@@ -63,37 +63,37 @@ export async function PlansSection() {
                                     <div
                                         key={plan.id}
                                         className={cn(
-                                            'flex flex-col rounded-xl border p-6 transition-shadow',
+                                            'flex flex-col rounded-xl border p-card transition-shadow',
                                             featured
-                                                ? 'border-ink-900 bg-ink-950 text-white shadow-lg'
-                                                : 'border-ink-200 bg-white hover:shadow-md',
+                                                ? 'border-foreground bg-primary text-primary-foreground shadow-lg'
+                                                : 'border-border bg-card hover:shadow-md',
                                         )}
                                     >
                                         <div className="flex items-baseline justify-between gap-2">
-                                            <h4 className={cn('font-bold', featured ? 'text-white' : 'text-ink-900')}>
+                                            <h4 className={cn('font-bold', featured ? 'text-primary-foreground' : 'text-foreground')}>
                                                 {plan.name}
                                             </h4>
                                             {featured && (
-                                                <span className="rounded-full bg-white/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide">
+                                                <span className="rounded-full bg-primary-foreground/15 px-2 py-0.5 text-micro font-semibold uppercase tracking-wide">
                                                     Popular
                                                 </span>
                                             )}
                                         </div>
                                         {plan.tagline && (
-                                            <p className={cn('mt-1 text-xs', featured ? 'text-white/60' : 'text-ink-400')}>
+                                            <p className={cn('mt-1 text-xs', featured ? 'text-primary-foreground/60' : 'text-muted-foreground')}>
                                                 {plan.tagline}
                                             </p>
                                         )}
 
-                                        <p className={cn('mt-5 text-2xl font-bold', featured ? 'text-white' : 'text-ink-900')}>
+                                        <p className={cn('mt-5 text-2xl font-bold', featured ? 'text-primary-foreground' : 'text-foreground')}>
                                             {formatPlanPrice(plan)}
                                         </p>
                                         {fee && (
-                                            <p className={cn('mt-1 text-xs', featured ? 'text-white/60' : 'text-ink-500')}>
+                                            <p className={cn('mt-1 text-xs', featured ? 'text-primary-foreground/60' : 'text-muted-foreground')}>
                                                 {fee}
                                             </p>
                                         )}
-                                        <p className={cn('mt-1 text-xs', featured ? 'text-white/60' : 'text-ink-500')}>
+                                        <p className={cn('mt-1 text-xs', featured ? 'text-primary-foreground/60' : 'text-muted-foreground')}>
                                             {plan.userLimit == null ? 'Unlimited seats' : `Up to ${plan.userLimit} seats`}
                                         </p>
 
@@ -104,11 +104,11 @@ export async function PlansSection() {
                                                         <Check
                                                             className={cn(
                                                                 'mt-0.5 size-3.5 shrink-0',
-                                                                featured ? 'text-white/70' : 'text-brand',
+                                                                featured ? 'text-primary-foreground/70' : 'text-primary',
                                                             )}
                                                             aria-hidden="true"
                                                         />
-                                                        <span className={featured ? 'text-white/80' : 'text-ink-600'}>
+                                                        <span className={featured ? 'text-primary-foreground/80' : 'text-foreground/70'}>
                                                             {feature}
                                                         </span>
                                                     </li>
@@ -121,8 +121,8 @@ export async function PlansSection() {
                                                     className={cn(
                                                         'w-full',
                                                         featured
-                                                            ? 'bg-white text-ink-900 hover:bg-ink-100'
-                                                            : 'bg-ink-900 text-white hover:bg-ink-800',
+                                                            ? 'bg-card text-foreground hover:bg-secondary'
+                                                            : 'bg-primary text-primary-foreground hover:bg-primary/90',
                                                     )}
                                                 ><Link href="/register" className="block">
                                                     {plan.priceAmount == null ? 'Talk to us' : `Start with ${plan.name}`}

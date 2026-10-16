@@ -1,4 +1,4 @@
-"""Connects to and queries an arbitrary, admin-registered PostgreSQL database.
+"""Connects to and queries an arbitrary, admin-registered database: PostgreSQL or MariaDB.
 
 Distinct from PostgresService (app/services/postgres_service.py), which only
 ever talks to the control-plane database this app already owns, using fixed,
@@ -10,42 +10,18 @@ credentials, not restricting what SQL can run.
 """
 
 import time
-import uuid
-from datetime import date, datetime, time as time_type
-from decimal import Decimal
 
 import psycopg2
 
-from app.errors import DatabaseUnreachableError, QueryExecutionError
+from app.errors import DatabaseUnreachableError, QueryExecutionError, ValidationError
+from app.services.mariadb_service import MariaDBService
+from app.services.query_values import jsonable
 
 
-def _jsonable(value):
-    """Coerce one query-result cell into something the JSON encoder handles.
+class PostgresDatabase:
+    """The PostgreSQL implementation of the database-connection interface (connect, test, introspect, execute_query)."""
 
-    psycopg2 hands back native Python types straight from the wire (Decimal
-    for NUMERIC, memoryview for bytea, UUID, date/time, ...) -- several of
-    which aren't JSON-serializable by default and would otherwise crash the
-    query endpoint with an opaque 500 on the first NUMERIC or bytea column.
-    """
-    if value is None or isinstance(value, (str, int, float, bool)):
-        return value
-    if isinstance(value, Decimal):
-        return float(value)
-    if isinstance(value, (datetime, date, time_type)):
-        return value.isoformat()
-    if isinstance(value, uuid.UUID):
-        return str(value)
-    if isinstance(value, (bytes, memoryview)):
-        return bytes(value).hex()
-    if isinstance(value, (list, tuple)):
-        return [_jsonable(item) for item in value]
-    if isinstance(value, dict):
-        return {key: _jsonable(item) for key, item in value.items()}
-    return str(value)
-
-
-class DatabaseConnectionService:
-    def _connect(self, host, port, database_name, username, password, sslmode, connect_timeout=10):
+    def connect(self, host, port, database_name, username, password, sslmode, connect_timeout=10):
         """A single connection attempt -- no retry/backoff.
 
         Unlike PostgresService._connection() (which retries transient errors
@@ -71,7 +47,7 @@ class DatabaseConnectionService:
     def test(self, host, port, database_name, username, password, sslmode):
         """Connects and confirms the server actually answers a query.
         Returns the server's version string on success."""
-        conn = self._connect(host, port, database_name, username, password, sslmode)
+        conn = self.connect(host, port, database_name, username, password, sslmode)
         try:
             with conn.cursor() as cur:
                 cur.execute("SELECT version()")
@@ -97,7 +73,7 @@ class DatabaseConnectionService:
         Runs READ ONLY -- introspection has no business writing, and saying so
         to the engine costs nothing.
         """
-        conn = self._connect(host, port, database_name, username, password, sslmode)
+        conn = self.connect(host, port, database_name, username, password, sslmode)
         conn.autocommit = False
         try:
             with conn.cursor() as cur:
@@ -243,7 +219,7 @@ class DatabaseConnectionService:
         whether the cursor produced a result set (cur.description is None
         for the latter).
         """
-        conn = self._connect(host, port, database_name, username, password, sslmode)
+        conn = self.connect(host, port, database_name, username, password, sslmode)
         # A read-only run needs a real transaction to mark READ ONLY; a
         # writable one autocommits, matching a raw psql session.
         conn.autocommit = bool(allow_writes)
@@ -273,7 +249,7 @@ class DatabaseConnectionService:
                 return {
                     "kind": "rows",
                     "columns": columns,
-                    "rows": [[_jsonable(cell) for cell in row] for row in rows],
+                    "rows": [[jsonable(cell) for cell in row] for row in rows],
                     "row_count": len(rows),
                     "truncated": truncated,
                     "duration_ms": duration_ms,
@@ -287,3 +263,44 @@ class DatabaseConnectionService:
                 except psycopg2.Error:
                     pass
             conn.close()
+
+
+class DatabaseConnectionService:
+    """One interface over every supported engine.
+
+    Every call names the engine of the connection it concerns and is handed to the driver for that engine, so
+    callers (the test button, the schema browser, the SQL console) never branch on the database type
+    themselves. A driver offers the same four operations with the same arguments; adding an engine means adding
+    a driver here.
+    """
+
+    def __init__(self):
+        self._drivers = {"postgres": PostgresDatabase(), "mariadb": MariaDBService()}
+
+    def driver(self, engine):
+        try:
+            return self._drivers[engine]
+        except KeyError:
+            raise ValidationError(f"Unsupported database engine: {engine!r}") from None
+
+    def connect(self, engine, host, port, database_name, username, password, sslmode, connect_timeout=10):
+        """An open connection, using the right driver for the engine. The caller closes it."""
+        driver = self.driver(engine)
+        if engine == "mariadb":
+            conn = driver.connect(host, port, username, password, sslmode, connect_timeout=connect_timeout)
+            driver.use_database(conn, database_name)
+            return conn
+        return driver.connect(host, port, database_name, username, password, sslmode, connect_timeout)
+
+    def test(self, engine, host, port, database_name, username, password, sslmode):
+        """Connect and confirm the server answers. Returns its version (with a warning when a MariaDB account
+        lacks the privileges Frappe needs)."""
+        return self.driver(engine).test(host, port, database_name, username, password, sslmode)
+
+    def introspect(self, engine, host, port, database_name, username, password, sslmode, timeout_seconds=30):
+        return self.driver(engine).introspect(
+            host, port, database_name, username, password, sslmode, timeout_seconds=timeout_seconds,
+        )
+
+    def execute_query(self, engine, host, port, database_name, username, password, sslmode, sql, **limits):
+        return self.driver(engine).execute_query(host, port, database_name, username, password, sslmode, sql, **limits)

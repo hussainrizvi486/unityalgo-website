@@ -70,8 +70,8 @@ function LitCells() {
                             // the server and sets it as a shorthand on the
                             // client, which hydrates as a mismatch.
                             backgroundColor: brand
-                                ? 'color-mix(in srgb, var(--color-brand) 20%, transparent)'
-                                : 'color-mix(in srgb, var(--color-ink-900) 11%, transparent)',
+                                ? 'color-mix(in srgb, var(--logo-primary) 20%, transparent)'
+                                : 'color-mix(in srgb, var(--foreground) 11%, transparent)',
                             // Rounded: the browser truncates a style attribute
                             // to six significant digits when it parses it, so a
                             // full-precision float on the server never matches
@@ -150,10 +150,10 @@ function PointerCell() {
                 width: CELL,
                 height: CELL,
                 opacity: 0,
-                backgroundColor: 'color-mix(in srgb, var(--color-brand) 9%, transparent)',
+                backgroundColor: 'color-mix(in srgb, var(--logo-primary) 9%, transparent)',
                 boxShadow:
-                    'inset 0 0 0 1px color-mix(in srgb, var(--color-brand) 20%, transparent),' +
-                    ' 0 0 22px 3px color-mix(in srgb, var(--color-brand) 9%, transparent)',
+                    'inset 0 0 0 1px color-mix(in srgb, var(--logo-primary) 20%, transparent),' +
+                    ' 0 0 22px 3px color-mix(in srgb, var(--logo-primary) 9%, transparent)',
                 transition: 'transform 130ms ease-out, opacity 260ms ease-out',
                 willChange: 'transform',
             }}
@@ -171,9 +171,9 @@ export function HeroBackdrop() {
                 style={{
                     background:
                         'linear-gradient(180deg,' +
-                        ' var(--color-background) 0%,' +
-                        ' color-mix(in srgb, var(--color-ink-100) 62%, var(--color-background)) 50%,' +
-                        ' color-mix(in srgb, var(--color-ink-200) 70%, var(--color-background)) 100%)',
+                        ' var(--background) 0%,' +
+                        ' color-mix(in srgb, var(--secondary) 62%, var(--background)) 50%,' +
+                        ' color-mix(in srgb, var(--border) 70%, var(--background)) 100%)',
                 }}
             />
 
@@ -185,9 +185,9 @@ export function HeroBackdrop() {
                 className="absolute inset-0"
                 style={{
                     maskImage:
-                        'radial-gradient(98% 86% at 73% 46%, #000 0%, rgba(0,0,0,0.55) 42%, transparent 78%)',
+                        'radial-gradient(98% 86% at 73% 46%, var(--scrim) 0%, color-mix(in srgb, var(--scrim) 55%, transparent) 42%, transparent 78%)',
                     WebkitMaskImage:
-                        'radial-gradient(98% 86% at 73% 46%, #000 0%, rgba(0,0,0,0.55) 42%, transparent 78%)',
+                        'radial-gradient(98% 86% at 73% 46%, var(--scrim) 0%, color-mix(in srgb, var(--scrim) 55%, transparent) 42%, transparent 78%)',
                 }}
             >
                 <LitCells />
@@ -196,8 +196,8 @@ export function HeroBackdrop() {
                     className="absolute inset-0"
                     style={{
                         backgroundImage:
-                            'linear-gradient(to right, color-mix(in srgb, var(--color-ink-900) 8%, transparent) 1px, transparent 1px),' +
-                            ' linear-gradient(to bottom, color-mix(in srgb, var(--color-ink-900) 8%, transparent) 1px, transparent 1px)',
+                            'linear-gradient(to right, color-mix(in srgb, var(--foreground) 8%, transparent) 1px, transparent 1px),' +
+                            ' linear-gradient(to bottom, color-mix(in srgb, var(--foreground) 8%, transparent) 1px, transparent 1px)',
                         backgroundSize: `${CELL}px ${CELL}px`,
                     }}
                 />
@@ -210,7 +210,7 @@ export function HeroBackdrop() {
                 style={{
                     background:
                         'radial-gradient(closest-side,' +
-                        ' color-mix(in srgb, var(--color-ink-900) 7%, transparent),' +
+                        ' color-mix(in srgb, var(--foreground) 7%, transparent),' +
                         ' transparent 74%)',
                 }}
             />
@@ -223,8 +223,8 @@ export function HeroBackdrop() {
                 style={{
                     background:
                         'radial-gradient(closest-side,' +
-                        ' color-mix(in srgb, var(--color-brand) 19%, transparent) 0%,' +
-                        ' color-mix(in srgb, var(--color-brand) 7%, transparent) 48%,' +
+                        ' color-mix(in srgb, var(--logo-primary) 19%, transparent) 0%,' +
+                        ' color-mix(in srgb, var(--logo-primary) 7%, transparent) 48%,' +
                         ' transparent 76%)',
                     willChange: 'transform',
                 }}
@@ -234,7 +234,7 @@ export function HeroBackdrop() {
             <div
                 className="absolute inset-x-0 bottom-0 h-40"
                 style={{
-                    background: 'linear-gradient(to top, var(--color-background), transparent)',
+                    background: 'linear-gradient(to top, var(--background), transparent)',
                 }}
             />
         </div>

@@ -27,6 +27,7 @@ from app.models.base import Base
 
 SSL_MODES = ("disable", "allow", "prefer", "require", "verify-ca", "verify-full")
 ROLES = ("cluster", "external")
+ENGINES = ("postgres", "mariadb")
 
 
 class DatabaseConnection(Base):
@@ -34,10 +35,13 @@ class DatabaseConnection(Base):
 
     SSL_MODES = SSL_MODES
     ROLES = ROLES
+    ENGINES = ENGINES
 
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
+    # 'postgres' hosts UnityCommerce tenants; 'mariadb' hosts Frappe sites.
+    engine: Mapped[str] = mapped_column(String(20), default="postgres", server_default="postgres")
     name: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
     host: Mapped[str] = mapped_column(String(255), nullable=False)
     port: Mapped[int] = mapped_column(Integer, default=5432)

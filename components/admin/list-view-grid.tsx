@@ -142,7 +142,7 @@ export function ListViewGrid<Row>({
                 // across them should not start a range selection.
                 cellSelection={false}
                 animateRows={false}
-                overlayNoRowsTemplate={`<span class="portal-text-body text-ink-500">No matches for that search.</span>`}
+                overlayNoRowsTemplate={`<span class="portal-text-body text-muted-foreground">No matches for that search.</span>`}
             />
         </div>
     );

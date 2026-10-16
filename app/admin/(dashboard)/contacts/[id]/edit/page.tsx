@@ -1,11 +1,12 @@
 import { notFound } from 'next/navigation';
-import { prisma } from '@/lib/db';
+import { eq } from 'drizzle-orm';
+import { db, schema } from '@/lib/db';
 import { updateContactAction } from '@/app/admin/actions';
 import { ContactForm } from '../../contact-form';
 
 export default async function EditContactPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
-    const submission = await prisma.contactSubmission.findUnique({ where: { id } });
+    const submission = await db.query.contactSubmission.findFirst({ where: eq(schema.contactSubmission.id, id) });
 
     if (!submission) {
         notFound();

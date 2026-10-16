@@ -64,12 +64,12 @@ function extrude(side: string) {
     });
     // One soft cast underneath, so the letters sit on the page rather than
     // floating in front of it.
-    layers.push('0.08em 0.1em 0.14em rgb(var(--shadow-color) / 0.09)');
+    layers.push('0.08em 0.1em 0.14em color-mix(in srgb, var(--foreground) 9%, transparent)');
     return layers.join(', ');
 }
 
-const INK_EXTRUDE = extrude('var(--color-ink-300)');
-const BRAND_EXTRUDE = extrude('color-mix(in srgb, var(--color-brand) 38%, white)');
+const INK_EXTRUDE = extrude('var(--input)');
+const BRAND_EXTRUDE = extrude('color-mix(in srgb, var(--logo-primary) 38%, var(--background))');
 
 function MagneticButton({ children, className, ...props }: React.ComponentProps<typeof Button>) {
     const ref = useRef<HTMLButtonElement>(null);
@@ -122,7 +122,7 @@ export function HeroSection() {
     };
 
     return (
-        <section className="relative flex min-h-[720px] items-center overflow-hidden bg-background px-4 pb-16 pt-28 sm:px-6 lg:min-h-screen lg:pb-20 lg:pt-32">
+        <section className="relative flex min-h-180 items-center overflow-hidden bg-background px-page pb-section pt-hero lg:min-h-screen lg:pb-section lg:pt-hero">
             {/* One background, not three. The node field replaced the CSS
                 orbital sphere and its wave canvas, which were competing with it
                 and with the headline. */}
@@ -130,14 +130,14 @@ export function HeroSection() {
             {showScene ? <ConnectedSystemsCanvas className="z-0 pointer-events-none" /> : null}
             
             <div
-                className="absolute inset-0 z-0 pointer-events-none opacity-[0.035] mix-blend-multiply"
+                className="absolute inset-0 z-0 pointer-events-none opacity-4 mix-blend-multiply"
                 style={{ backgroundImage: `url("${GRAIN_URL}")` }}
             />
 
             {showScene ? (
                 <div
                     aria-hidden="true"
-                    className="pointer-events-none absolute inset-y-0 right-5 z-[5] hidden w-36 xl:block 2xl:right-10"
+                    className="pointer-events-none absolute inset-y-0 right-5 z-5 hidden w-36 xl:block 2xl:right-10"
                 >
                     {[
                         { label: 'AI core', top: '24%' },
@@ -151,8 +151,8 @@ export function HeroSection() {
                             className="absolute right-0 flex items-center gap-3"
                             style={{ top: item.top }}
                         >
-                            <span className="h-px w-7 bg-brand/45" />
-                            <span className="whitespace-nowrap text-[11px] font-semibold uppercase tracking-[0.16em] text-ink-500">
+                            <span className="h-px w-7 bg-logo-primary/45" />
+                            <span className="whitespace-nowrap text-small font-semibold uppercase tracking-caps text-muted-foreground">
                                 {item.label}
                             </span>
                         </div>
@@ -161,34 +161,34 @@ export function HeroSection() {
             ) : null}
 
             <div className="site-container relative z-10 w-full">
-                <div className="max-w-[690px] text-left">
+                <div className="max-w-173 text-left">
                     <motion.div
                         initial={{ opacity: 0, y: 12 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.5, delay: 0.05, ease: 'easeOut' }}
-                        className="mb-5 inline-flex items-center gap-2.5 rounded-full border border-brand/20 bg-white/70 px-3 py-1.5 shadow-sm backdrop-blur-sm"
+                        className="mb-5 inline-flex items-center gap-2.5 rounded-full border border-logo-primary/20 bg-card/70 px-3 py-1.5 shadow-sm backdrop-blur-sm"
                     >
                         <span className="relative flex size-2">
-                            <span className="absolute inline-flex size-full animate-ping rounded-full bg-brand opacity-40 motion-reduce:animate-none" />
-                            <span className="relative inline-flex size-2 rounded-full bg-brand" />
+                            <span className="absolute inline-flex size-full animate-ping rounded-full bg-logo-primary opacity-40 motion-reduce:animate-none" />
+                            <span className="relative inline-flex size-2 rounded-full bg-logo-primary" />
                         </span>
-                        <span className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-700">
+                        <span className="text-xs font-semibold uppercase tracking-caps text-foreground/80">
                             AI-native product engineering
                         </span>
                     </motion.div>
 
-                    <h1 className="mb-7 font-display text-[clamp(3rem,5.2vw,4.85rem)] font-extrabold leading-[0.98] tracking-[-0.045em] [word-spacing:0.08em]">
+                    <h1 className="mb-7 font-display text-display leading-none tracking-tighter [word-spacing:0.08em]">
                         {headlineLines.map((line, i) => (
                             // The wrapper clips for the reveal, which would cut
                             // the extrusion off at the baseline; the padding
                             // gives it room and the negative margin keeps the
                             // line spacing where it was.
-                            <span key={line.text} className="-mb-[0.13em] block overflow-hidden pb-[0.13em]">
+                            <span key={line.text} className="-mb-(--descender) block overflow-hidden pb-(--descender)">
                                 <motion.span
                                     initial={{ y: '110%' }}
                                     animate={{ y: '0%' }}
                                     transition={{ duration: 0.7, delay: 0.15 + i * 0.12, ease: [0.16, 1, 0.3, 1] }}
-                                    className={line.accent ? 'block text-brand' : 'block text-ink-900'}
+                                    className={line.accent ? 'block text-logo-primary' : 'block text-foreground'}
                                     style={{ textShadow: line.accent ? BRAND_EXTRUDE : INK_EXTRUDE }}
                                 >
                                     {line.text}
@@ -201,7 +201,7 @@ export function HeroSection() {
                         initial={{ opacity: 0, y: 16 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.6, delay: 0.6, ease: 'easeOut' }}
-                        className="mb-8 max-w-xl text-balance text-base leading-7 text-ink-600 sm:text-lg sm:leading-8"
+                        className="mb-8 max-w-xl text-balance text-base leading-7 text-foreground/70 sm:text-lg sm:leading-8"
                     >
                         We design and build the AI, automation, and software that make your
                         business systems work as one — guided by senior engineers from first
@@ -217,7 +217,7 @@ export function HeroSection() {
                         <MagneticButton
                             size="lg"
                             onClick={() => scrollToSection('contact')}
-                            className="h-12 rounded-lg bg-ink-900 px-7 text-white shadow-lg shadow-ink-900/15 hover:bg-ink-800"
+                            className="h-12 rounded-lg bg-primary px-7 text-primary-foreground shadow-lg shadow-foreground/15 hover:bg-primary/90"
                         >
                             Start a project <ArrowRight className="ml-1 size-4" />
                         </MagneticButton>
@@ -226,7 +226,7 @@ export function HeroSection() {
                             variant="outline"
                             size="lg"
                             onClick={() => scrollToSection('services')}
-                            className="h-12 rounded-lg border-ink-300 bg-white/60 px-7 backdrop-blur-sm transition-all hover:border-ink-400 hover:bg-white"
+                            className="h-12 rounded-lg border-input bg-card/60 px-7 backdrop-blur-sm transition-all hover:border-input hover:bg-card"
                         >
                             Explore our work
                         </Button>
@@ -236,11 +236,11 @@ export function HeroSection() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         transition={{ duration: 0.6, delay: 0.95 }}
-                        className="mt-7 flex flex-wrap gap-x-5 gap-y-2 text-sm font-medium text-ink-600"
+                        className="mt-7 flex flex-wrap gap-x-5 gap-y-2 text-sm font-medium text-foreground/70"
                     >
                         {['Senior-led', 'AI accelerated', 'Production ready'].map((item) => (
                             <span key={item} className="inline-flex items-center gap-1.5">
-                                <span className="grid size-4 place-items-center rounded-full bg-brand-subdued text-brand">
+                                <span className="grid size-4 place-items-center rounded-full bg-logo-primary/10 text-logo-primary">
                                     <Check className="size-2.5" strokeWidth={3} />
                                 </span>
                                 {item}
@@ -257,10 +257,10 @@ export function HeroSection() {
                         aria-label="Scroll to services"
                         className="group mt-12 hidden items-center gap-3 text-left md:inline-flex lg:mt-16"
                     >
-                        <span className="relative block h-10 w-px overflow-hidden bg-ink-300">
-                            <span className="absolute inset-x-0 top-0 h-4 animate-scroll-cue bg-ink-800 motion-reduce:animate-none" />
+                        <span className="relative block h-10 w-px overflow-hidden bg-muted-foreground/40">
+                            <span className="absolute inset-x-0 top-0 h-4 animate-scroll-cue bg-logo-primary motion-reduce:animate-none" />
                         </span>
-                        <span className="text-xs font-semibold uppercase tracking-[.18em] text-ink-400 transition-colors group-hover:text-ink-700">
+                        <span className="text-xs font-semibold uppercase tracking-eyebrow text-muted-foreground transition-colors group-hover:text-foreground/80">
                             What we do
                         </span>
                     </motion.button>

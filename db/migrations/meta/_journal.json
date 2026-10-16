@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1792129062478,
+      "tag": "0000_tough_moondragon",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1792140284173,
+      "tag": "0001_website_nonnull_arrays",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792144800980,
+      "tag": "0002_app_store_github",
+      "breakpoints": true
+    }
+  ]
+}

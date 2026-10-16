@@ -12,6 +12,7 @@ from app.services.database_connection_service import DatabaseConnectionService
 from sqlalchemy import func, select
 from app.errors import ConflictError, ValidationError
 from app.models.server import Tenant
+from app.models.site import Site
 
 class DatabaseConnectionController(BaseController):
     model = DatabaseConnection
@@ -19,6 +20,7 @@ class DatabaseConnectionController(BaseController):
     SSL_MODES = DatabaseConnection.SSL_MODES
 
     writable_fields = (
+        "engine",
         "name",
         "host",
         "port",
@@ -43,6 +45,8 @@ class DatabaseConnectionController(BaseController):
         v = self.validator
         values = {}
 
+        if "engine" in data:
+            values["engine"] = v.choice(data["engine"], "engine", DatabaseConnection.ENGINES)
         if "name" in data:
             values["name"] = v.string(data["name"], "name", max_length=255)
         if "host" in data:
@@ -83,9 +87,11 @@ class DatabaseConnectionController(BaseController):
             )
         return values
 
-    def apply_defaults(self, values):
-        values.setdefault("port", 5432)
-        values.setdefault("sslmode", "prefer")
+    @staticmethod
+    def _engine_defaults(values):
+        mariadb = values.get("engine") == "mariadb"
+        values.setdefault("port", 3306 if mariadb else 5432)
+        values.setdefault("sslmode", "disable" if mariadb else "prefer")
         return values
 
     def conflict_message(self, values):
@@ -121,7 +127,7 @@ class DatabaseConnectionController(BaseController):
         password = crypto.decrypt(connection.password_encrypted, self.settings)
         try:
             version = self.service.test(
-                connection.host, connection.port, connection.database_name,
+                connection.engine, connection.host, connection.port, connection.database_name,
                 connection.username, password, connection.sslmode,
             )
         except DatabaseUnreachableError as exc:
@@ -133,13 +139,14 @@ class DatabaseConnectionController(BaseController):
     def test_adhoc(self, data):
         """Test connection params before the row even exists yet."""
         v = self.validator
+        engine = v.choice(data.get("engine", "postgres"), "engine", DatabaseConnection.ENGINES)
         host = v.string(data.get("host"), "host", max_length=255)
-        port = v.integer(data.get("port", 5432), "port", minimum=1, maximum=65535)
+        port = v.integer(data.get("port", 3306 if engine == "mariadb" else 5432), "port", minimum=1, maximum=65535)
         database_name = v.string(data.get("database_name"), "database_name", max_length=255)
         username = v.string(data.get("username"), "username", max_length=255)
         password = v.string(data.get("password"), "password", max_length=255)
-        sslmode = v.choice(data.get("sslmode", "prefer"), "sslmode", self.SSL_MODES)
-        return self.service.test(host, port, database_name, username, password, sslmode)
+        sslmode = v.choice(data.get("sslmode", "disable" if engine == "mariadb" else "prefer"), "sslmode", self.SSL_MODES)
+        return self.service.test(engine, host, port, database_name, username, password, sslmode)
 
     def execute_query(self, connection_id, sql):
         """Run one statement, honouring the connection's write setting.
@@ -161,6 +168,7 @@ class DatabaseConnectionController(BaseController):
             details={
                 "connection_id": str(connection.id),
                 "connection": connection.name,
+                "engine": connection.engine,
                 "allow_writes": connection.allow_writes,
                 # Truncated: the log is for who-ran-what, not a copy of every
                 # payload ever pasted into the console.
@@ -169,7 +177,7 @@ class DatabaseConnectionController(BaseController):
         )
 
         return self.service.execute_query(
-            connection.host, connection.port, connection.database_name,
+            connection.engine, connection.host, connection.port, connection.database_name,
             connection.username, password, connection.sslmode, sql,
             timeout_seconds=self.settings.query_console_timeout_seconds,
             max_rows=self.settings.query_console_max_rows,
@@ -185,22 +193,27 @@ class DatabaseConnectionController(BaseController):
         """
         connection = self.get(connection_id)
         password = crypto.decrypt(connection.password_encrypted, self.settings)
-        return self.service.introspect(
-            connection.host, connection.port, connection.database_name,
+        schema = self.service.introspect(
+            connection.engine, connection.host, connection.port, connection.database_name,
             connection.username, password, connection.sslmode,
             timeout_seconds=self.settings.query_console_timeout_seconds,
         )
+        return {**schema, "engine": connection.engine}
 
     # ------------------------------------------------------------------
     def apply_defaults(self, values):
         # BaseController.create() calls apply_defaults(), not before_create() --
         # there is no before_create hook, so the guard has to live here to run
         # on creation as well as update.
-        values = super().apply_defaults(values)
+        values = self._engine_defaults(super().apply_defaults(values))
         self._guard_default(values)
         return values
 
     def before_update(self, connection, values):
+        # The engine decides which driver, default and placement rules apply to everything
+        # already living on this connection, so it is fixed at registration.
+        if "engine" in values and values["engine"] != connection.engine:
+            raise ValidationError("A connection's engine cannot be changed. Register a new connection instead.")
         self._guard_default(values, current=connection)
 
     def _guard_default(self, values, current=None):
@@ -216,10 +229,13 @@ class DatabaseConnectionController(BaseController):
         role = values.get("role") or (current.role if current else "external")
         if role != "cluster":
             raise ValidationError(
-                "Only a connection with role 'cluster' can be the default for new tenants."
+                "Only a connection with role 'cluster' can be the default for new tenants and sites."
             )
 
-        stmt = select(DatabaseConnection).where(DatabaseConnection.is_default.is_(True))
+        engine = values.get("engine") or (current.engine if current else "postgres")
+        stmt = select(DatabaseConnection).where(
+            DatabaseConnection.is_default.is_(True), DatabaseConnection.engine == engine
+        )
         if current is not None:
             stmt = stmt.where(DatabaseConnection.id != current.id)
         for previous in self.session.scalars(stmt).all():
@@ -233,6 +249,13 @@ class DatabaseConnectionController(BaseController):
                 Tenant.database_connection_id == connection.id
             )
         )
+        sites = self.session.scalar(
+            select(func.count()).select_from(Site).where(Site.db_server_id == connection.id)
+        )
+        if sites:
+            raise ConflictError(
+                f"{sites} Frappe site(s) still have their database on '{connection.name}'."
+            )
         if count:
             raise ConflictError(
                 f"{count} tenant(s) still have their database on '{connection.name}'. "

@@ -1,7 +1,8 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import type { User } from '@prisma/client';
-import { prisma } from '@/lib/db';
+import { and, eq, gt, isNull } from 'drizzle-orm';
+import type { User } from '@/db/types';
+import { db, schema } from '@/lib/db';
 import {
     verifyCustomerSessionToken,
     CUSTOMER_SESSION_COOKIE,
@@ -17,7 +18,7 @@ import {
  *
  * These live in their own module rather than in lib/customer-auth.ts because
  * that module is imported by proxy.ts (this project's middleware), which runs
- * on the edge runtime and must not pull in Prisma.
+ * on the edge runtime and must not pull in the database client.
  */
 
 /** Revocation is checked in the database on every authenticated request. */
@@ -27,21 +28,28 @@ export async function getCustomerSession() {
     if (!token) return null;
     const payload = await verifyCustomerSessionToken(token);
     if (!payload?.sessionId || typeof payload.userId !== 'string') return null;
-    const session = await prisma.loginSession.findFirst({
-        where: {
-            id: payload.sessionId,
-            userId: payload.userId,
-            revokedAt: null,
-            expiresAt: { gt: new Date() },
-            user: { role: 'CUSTOMER' },
-        },
-    });
+    // Valid, unrevoked, unexpired, and still owned by a CUSTOMER account.
+    const [row] = await db
+        .select({ session: schema.loginSession })
+        .from(schema.loginSession)
+        .innerJoin(schema.user, eq(schema.user.id, schema.loginSession.userId))
+        .where(
+            and(
+                eq(schema.loginSession.id, payload.sessionId),
+                eq(schema.loginSession.userId, payload.userId),
+                isNull(schema.loginSession.revokedAt),
+                gt(schema.loginSession.expiresAt, new Date()),
+                eq(schema.user.role, 'CUSTOMER'),
+            ),
+        )
+        .limit(1);
+    const session = row?.session;
     if (!session) return null;
     if (Date.now() - session.lastSeenAt.getTime() > 5 * 60 * 1000) {
-        await prisma.loginSession.updateMany({
-            where: { id: session.id, revokedAt: null },
-            data: { lastSeenAt: new Date() },
-        });
+        await db
+            .update(schema.loginSession)
+            .set({ lastSeenAt: new Date() })
+            .where(and(eq(schema.loginSession.id, session.id), isNull(schema.loginSession.revokedAt)));
     }
     return { ...payload, sessionId: session.id };
 }
@@ -59,8 +67,8 @@ export async function requireCustomer(): Promise<User> {
     const session = await getCustomerSession();
     if (!session) redirect('/login');
 
-    const user = await prisma.user.findUnique({
-        where: { id: session.userId },
+    const user = await db.query.user.findFirst({
+        where: eq(schema.user.id, session.userId),
     });
     if (!user || user.role !== 'CUSTOMER') redirect('/login');
 

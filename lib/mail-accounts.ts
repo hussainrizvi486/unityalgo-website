@@ -1,7 +1,8 @@
 import 'server-only';
 import nodemailer from 'nodemailer';
-import type { EmailAccount, EmailPurpose } from '@prisma/client';
-import { prisma } from '@/lib/db';
+import { and, asc, desc, eq } from 'drizzle-orm';
+import type { EmailAccount, EmailPurpose } from '@/db/types';
+import { db, schema } from '@/lib/db';
 import { decryptSecret } from '@/lib/secret-box';
 
 /**
@@ -125,11 +126,11 @@ function environmentSender(): ResolvedSender {
  * verification codes going out.
  */
 export async function resolveSender(purpose: EmailPurpose): Promise<ResolvedSender> {
-    const account = await prisma.emailAccount.findFirst({
-        where: { isActive: true, purpose },
-        orderBy: [{ isDefault: 'desc' }, { createdAt: 'asc' }],
-    }) ?? await prisma.emailAccount.findFirst({
-        where: { isActive: true, isDefault: true },
+    const account = await db.query.emailAccount.findFirst({
+        where: and(eq(schema.emailAccount.isActive, true), eq(schema.emailAccount.purpose, purpose)),
+        orderBy: [desc(schema.emailAccount.isDefault), asc(schema.emailAccount.createdAt)],
+    }) ?? await db.query.emailAccount.findFirst({
+        where: and(eq(schema.emailAccount.isActive, true), eq(schema.emailAccount.isDefault, true)),
     });
 
     if (!account) return environmentSender();

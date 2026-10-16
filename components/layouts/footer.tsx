@@ -13,15 +13,15 @@ export function Footer() {
   };
 
   return (
-    <footer className="bg-ink-950 text-white py-12">
+    <footer className="bg-primary text-primary-foreground py-12">
       <div className="site-container site-gutters">
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-8 mb-5">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-gap-xl mb-5">
           {/* Company Info */}
           <div className="md:col-span-2">
-            <div className="mb-4 text-white">
+            <div className="mb-4 text-primary-foreground">
               <Logo className="h-10" />
             </div>
-            <p className="footer-description text-ink-300 max-w-md">
+            <p className="footer-description text-primary-foreground/80 max-w-md">
               Empowering businesses with cutting-edge web and enterprise solutions.
               Building the future, one line of code at a time.
             </p>
@@ -37,7 +37,7 @@ export function Footer() {
                 <Link
                   href='/'
                   onClick={() => scrollToSection('#Hero')}
-                  className="text-ink-300 hover:text-white transition-colors cursor-pointer"
+                  className="text-primary-foreground/80 hover:text-primary-foreground transition-colors cursor-pointer"
                 >
                   Home
                 </Link>
@@ -45,7 +45,7 @@ export function Footer() {
               <li>
                 <button
                   onClick={() => scrollToSection('#services')}
-                  className="text-ink-300 hover:text-white transition-colors cursor-pointer"
+                  className="text-primary-foreground/80 hover:text-primary-foreground transition-colors cursor-pointer"
                 >
                   Services
                 </button>
@@ -53,7 +53,7 @@ export function Footer() {
               <li>
                 <Link
                   href='/about-us'
-                  className="text-ink-300 hover:text-white transition-colors cursor-pointer"
+                  className="text-primary-foreground/80 hover:text-primary-foreground transition-colors cursor-pointer"
                 >
                   About Us
                 </Link>
@@ -61,13 +61,13 @@ export function Footer() {
               <li>
                 <button
                   onClick={() => scrollToSection('#contact')}
-                  className="text-ink-300 hover:text-white transition-colors cursor-pointer"
+                  className="text-primary-foreground/80 hover:text-primary-foreground transition-colors cursor-pointer"
                 >
                   Contact
                 </button>
               </li>
               <li>
-                <Link href="/privacy-policy" className="text-ink-300 hover:text-white transition-colors cursor-pointer">
+                <Link href="/privacy-policy" className="text-primary-foreground/80 hover:text-primary-foreground transition-colors cursor-pointer">
                   Privacy Policy
                 </Link>
               </li>
@@ -79,7 +79,7 @@ export function Footer() {
             </h4>
             <ul className="space-y-2 ">
               <li>
-                <Link href="/products/algosuite" className="text-ink-300 hover:text-white transition-colors cursor-pointer">
+                <Link href="/products/algosuite" className="text-primary-foreground/80 hover:text-primary-foreground transition-colors cursor-pointer">
                   AlgoSuite
                 </Link>
               </li>
@@ -93,7 +93,7 @@ export function Footer() {
             <div className="flex gap-3">
               <Link
                 href="https://www.facebook.com/profile.php?id=61583797718151"
-                className="w-10 h-10 rounded-full bg-white/10 hover:brightness-90 flex items-center justify-center transition-colors"
+                className="w-10 h-10 rounded-full bg-primary-foreground/10 hover:brightness-90 flex items-center justify-center transition-colors"
                 aria-label="Facebook"
                 target='_blank'
               >
@@ -101,7 +101,7 @@ export function Footer() {
               </Link>
               <Link
                 href="https://www.linkedin.com/company/unityalgo/posts/?feedView=all"
-                className="w-10 h-10 rounded-full bg-white/10 hover:brightness-90 flex items-center justify-center transition-colors"
+                className="w-10 h-10 rounded-full bg-primary-foreground/10 hover:brightness-90 flex items-center justify-center transition-colors"
                 aria-label="LinkedIn"
                 target='_blank'
               >
@@ -109,7 +109,7 @@ export function Footer() {
               </Link>
               {/* <Link
                 href="https://github.com/orgs/UnityAlgo/dashboard"
-                className="w-10 h-10 rounded-full bg-white/10 hover:brightness-90 flex items-center justify-center transition-colors"
+                className="w-10 h-10 rounded-full bg-primary-foreground/10 hover:brightness-90 flex items-center justify-center transition-colors"
                 aria-label="GitHub"
               >
                 <Github className="w-5 h-5" />
@@ -120,11 +120,11 @@ export function Footer() {
 
 
         <div className="pt-8">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-gap">
             <p className="text-center md:text-left">
               &copy; 2026 UnityAlgo. All rights reserved.
             </p>
-            {/* <div className="flex gap-6">
+            {/* <div className="flex gap-gap-lg">
               <Link href="/privacy-policy">
                 Privacy Policy
               </Link>

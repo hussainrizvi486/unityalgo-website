@@ -1,4 +1,5 @@
-import { prisma } from '@/lib/db';
+import { asc, desc } from 'drizzle-orm';
+import { db, schema } from '@/lib/db';
 import { requireAdmin } from '@/lib/admin-session';
 import { encryptionIsConfigured } from '@/lib/secret-box';
 import { getEmailDeliveryWarning } from '@/lib/email-delivery';
@@ -15,15 +16,15 @@ import { EmailAccountsList, type EmailAccountRow } from './email-accounts-list';
 export default async function AdminEmailAccountsPage() {
     await requireAdmin();
 
-    const accounts = await prisma.emailAccount.findMany({
-        select: {
+    const accounts = await db.query.emailAccount.findMany({
+        columns: {
             id: true, label: true, address: true, purpose: true, createdAt: true,
             smtpHost: true, smtpPort: true, smtpSecure: true,
             imapHost: true, imapPort: true,
             isDefault: true, isActive: true,
             lastTestedAt: true, lastTestOk: true, lastTestError: true,
         },
-        orderBy: [{ isDefault: 'desc' }, { label: 'asc' }],
+        orderBy: [desc(schema.emailAccount.isDefault), asc(schema.emailAccount.label)],
     });
 
     const rows: EmailAccountRow[] = accounts.map((a) => ({

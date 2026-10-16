@@ -1,4 +1,4 @@
-import type { TicketStatus } from '@prisma/client';
+import type { TicketStatus } from '@/db/types';
 
 export const TICKET_STATUS_LABEL: Record<TicketStatus, string> = {
     OPEN: 'Open',

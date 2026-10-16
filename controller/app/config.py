@@ -178,7 +178,29 @@ class Settings:
         self.frappe_available_apps = [app.strip() for app in self._str("FRAPPE_AVAILABLE_APPS", "erpnext").split(",") if app.strip()]
         self.frappe_port_start = self._int("FRAPPE_PORT_START", 30000)
         self.frappe_port_end = self._int("FRAPPE_PORT_END", 31999)
-        self.frappe_customer_site_limit = self._int("FRAPPE_CUSTOMER_SITE_LIMIT", 3)
+        # What a site gets when its plan does not say. Plans carry their own vCPU/RAM/storage.
+        self.frappe_default_vcpu = float(self._str("FRAPPE_DEFAULT_VCPU", "2"))
+        self.frappe_default_ram_mb = self._int("FRAPPE_DEFAULT_RAM_MB", 4096)
+        self.frappe_default_storage_gb = self._int("FRAPPE_DEFAULT_STORAGE_GB", 10)
+        # Refuse to place a site on a worker that cannot hold the plan's RAM, CPU and disk. Turn off only
+        # on a development VM that is smaller than a plan.
+        self.frappe_enforce_capacity = self._bool("FRAPPE_ENFORCE_CAPACITY", True)
+        # CPU is shared: reserved vCPUs may exceed physical cores by this factor.
+        self.frappe_cpu_overcommit = float(self._str("FRAPPE_CPU_OVERCOMMIT", "2"))
+        # How often seats and storage are measured against each site's plan.
+        self.site_audit_interval_seconds = self._int("SITE_AUDIT_INTERVAL_SECONDS", 900)
+        # How often the scheduler looks for sites whose backup is due.
+        self.site_backup_sweep_seconds = self._int("SITE_BACKUP_SWEEP_SECONDS", 1800)
+        self.frappe_domains_per_site = self._int("FRAPPE_DOMAINS_PER_SITE", 5)
+        # GitHub apps (App Store). A token only raises the API rate limit; it is never used to clone.
+        # How often each running site is asked which app versions it really runs.
+        self.app_scan_interval_seconds = self._int("APP_SCAN_INTERVAL_SECONDS", 21600)
+        self.github_token = self._str("GITHUB_TOKEN", "") or None
+        # Frappe major versions an app must support to be installed. Defaults to the major of FRAPPE_IMAGE.
+        import re as _re
+        tag = _re.search(r':v?(\d+)\.', self.frappe_image)
+        configured = [int(part) for part in self._str("FRAPPE_COMPATIBLE_MAJORS", "").replace(" ", "").split(",") if part.isdigit()]
+        self.frappe_compatible_majors = configured or ([int(tag.group(1))] if tag else [])
         if not (1 <= self.frappe_port_start <= self.frappe_port_end < 32768):
             raise ConfigError('Frappe ports must be below the Linux ephemeral range (32768).')
         if self.frappe_site_domain:

@@ -1,11 +1,10 @@
 'use client';
 import Link from 'next/link';
-import { PortalPanel } from '@/components/customer/portal-panel';
-import { useState } from 'react';
-import { AppWindow, ArrowUpRight, Search } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { FilterPills } from '@/components/admin/filter-pills';
 
 type App = {
     id: string;
@@ -13,105 +12,81 @@ type App = {
     slug: string;
     description: string;
     category: string;
+    publisher: string | null;
     available: boolean;
 };
+
+const ALL = 'All';
+
+/** Two-letter mark for an app, taken from its name. */
+const initials = (name: string) => name.replace(/[^A-Za-z0-9]/g, '').slice(0, 2).toUpperCase() || '?';
+
 export function AppStoreClient({ apps }: { apps: App[] }) {
     const [search, setSearch] = useState('');
-    const [category, setCategory] = useState('All');
-    const categories = ['All', ...new Set(apps.map((app) => app.category))];
+    const [category, setCategory] = useState(ALL);
+    const categories = useMemo(() => [ALL, ...new Set(apps.map((app) => app.category))], [apps]);
     const visible = apps.filter(
         (app) =>
-            (category === 'All' || app.category === category) &&
-            `${app.name} ${app.description}`
-                .toLowerCase()
-                .includes(search.toLowerCase()),
+            (category === ALL || app.category === category) &&
+            `${app.name} ${app.description} ${app.publisher ?? ''}`.toLowerCase().includes(search.trim().toLowerCase()),
     );
+
     return (
-        <div className="mx-auto portal-page">
-            <p className="portal-text-caption font-semibold uppercase tracking-wider text-brand">
-                Extend your workspace
-            </p>
-            <h1 className="portal-page-title mt-2">
-                App Store
-            </h1>
-            <p className="mt-3 portal-form portal-text-body leading-7 text-ink-600">
-                Explore applications for your business. Choose available
-                applications when creating a Frappe site; packages requiring
-                setup will become installable when your administrator configures
-                them.
-            </p>
-            <div className="mt-8 flex flex-col justify-between gap-4 sm:flex-row">
-                <div className="relative max-w-md flex-1">
-                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-ink-500" />
+        <div className="portal-page">
+            <div className="flex flex-col justify-between gap-gap lg:flex-row lg:items-center">
+                <FilterPills
+                    label="Application categories"
+                    value={category}
+                    onChange={setCategory}
+                    options={categories.map((value) => ({ value, label: value }))}
+                />
+                <div className="relative w-full lg:max-w-xs">
+                    <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
-                        aria-label="Search applications"
-                        placeholder="Search applications…"
+                        aria-label="Search apps"
+                        placeholder="Search apps…"
                         value={search}
                         onChange={(event) => setSearch(event.target.value)}
-                        className="pl-8"
+                        className="pl-9"
                     />
                 </div>
-                <div
-                    className="flex flex-wrap gap-2"
-                    aria-label="Application categories"
-                >
-                    {categories.map((value) => (
-                        <Button
-                            key={value}
-                            size="sm"
-                            variant={category === value ? 'default' : 'outline'}
-                            aria-pressed={category === value}
-                            onClick={() => setCategory(value)}
-                        >
-                            {value}
-                        </Button>
-                    ))}
-                </div>
             </div>
-            <div className="mt-8 grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+
+            <div className="mt-gap grid gap-gap md:grid-cols-2 xl:grid-cols-3">
                 {visible.map((app) => (
-                    <PortalPanel key={app.id} className="flex flex-col">
-                        <div className="flex items-start justify-between gap-2">
-                            <span className="flex size-12 items-center justify-center rounded-lg bg-accent">
-                                <AppWindow className="size-6 text-brand" />
-                            </span>
-                            <Badge
-                                variant={app.available ? 'success' : 'neutral'}
-                            >
-                                {app.available ? 'Available' : 'Requires setup'}
-                            </Badge>
+                    <article key={app.id} className="flex flex-col overflow-hidden rounded-2xl border bg-card shadow-xs">
+                        <div className="flex-1 p-card">
+                            <div className="flex items-start justify-between gap-gap-sm">
+                                <span className="flex size-11 items-center justify-center rounded-xl bg-muted text-sm font-semibold text-muted-foreground">
+                                    {initials(app.name)}
+                                </span>
+                                <span className="rounded-full border bg-card px-2.5 py-0.5 text-xs font-medium text-foreground">
+                                    {app.category}
+                                </span>
+                            </div>
+                            <h2 className="mt-4 text-base">{app.name}</h2>
+                            <p className="text-sm text-muted-foreground">by {app.publisher || 'UnityAlgo'}</p>
+                            <p className="mt-3 line-clamp-3 text-sm leading-relaxed text-muted-foreground">{app.description}</p>
                         </div>
-                        <p className="mt-6 portal-text-caption font-medium uppercase tracking-wider text-ink-500">
-                            {app.category}
-                        </p>
-                        <h2 className="mt-2 text-xl font-semibold">
-                            {app.name}
-                        </h2>
-                        <p className="mt-2 flex-1 portal-text-body leading-7 text-ink-600">
-                            {app.description}
-                        </p>
-                        {app.available ? (
-                            <Button asChild className="mt-4">
-                                <Link
-                                    href={`/dashboard/sites/new?app=${encodeURIComponent(app.id)}`}
-                                >
-                                    Create a site with this app{' '}
-                                    <ArrowUpRight className="size-4" />
-                                </Link>
-                            </Button>
-                        ) : (
-                            <Link
-                                href="/dashboard/support/new"
-                                className="mt-6 portal-text-body font-medium text-brand hover:underline"
-                            >
-                                Ask about installation
-                            </Link>
-                        )}
-                    </PortalPanel>
+                        <div className="flex items-center justify-between gap-gap border-t bg-muted/50 px-card py-3">
+                            <span className="text-sm font-semibold text-foreground">
+                                {app.available ? 'Included' : <span className="font-medium text-muted-foreground">Needs setup</span>}
+                            </span>
+                            {app.available ? (
+                                <Button asChild size="sm">
+                                    <Link href={`/dashboard/sites/new?app=${encodeURIComponent(app.id)}`}>Install</Link>
+                                </Button>
+                            ) : (
+                                <Button asChild size="sm" variant="outline">
+                                    <Link href="/dashboard/support/new">Request</Link>
+                                </Button>
+                            )}
+                        </div>
+                    </article>
                 ))}
             </div>
             {!visible.length && (
-                <p className="mt-12 rounded-xl border border-dashed border-ink-300 p-10 text-center portal-text-body text-ink-500">
+                <p className="mt-12 rounded-xl border border-dashed border-input p-10 text-center text-sm text-muted-foreground">
                     No applications match your search.
                 </p>
             )}

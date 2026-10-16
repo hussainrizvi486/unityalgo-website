@@ -101,18 +101,18 @@ export function ProfileForm({
                 <>
                     <Link
                         href="/dashboard/settings"
-                        className="mb-6 inline-flex items-center gap-2 portal-text-body font-semibold text-ink-500 hover:text-ink-700"
+                        className="mb-6 inline-flex items-center gap-2 portal-text-body font-semibold text-muted-foreground hover:text-foreground/80"
                     >
                         <ArrowLeft className="h-4 w-4" />
                         Back to settings
                     </Link>
-                    <p className="portal-text-caption font-bold uppercase tracking-[.18em] text-brand">
+                    <p className="portal-text-caption font-bold uppercase tracking-eyebrow text-primary">
                         Settings
                     </p>
                     <h1 className="portal-page-title mt-2">
                         Edit profile
                     </h1>
-                    <p className="mt-2 portal-text-body text-ink-500">
+                    <p className="mt-2 portal-text-body text-muted-foreground">
                         Update your name and profile picture.
                     </p>
                 </>
@@ -120,11 +120,11 @@ export function ProfileForm({
 
             <PortalPanel className="mt-8">
                 <div className="mb-6 flex items-center gap-3">
-                    <UserRound className="h-5 w-5 text-brand" />
-                    <h2 className="font-bold text-ink-900">Profile details</h2>
+                    <UserRound className="h-5 w-5 text-primary" />
+                    <h2 className=" text-foreground">Profile details</h2>
                 </div>
 
-                <div className="mb-7 flex flex-col gap-4 sm:flex-row sm:items-center">
+                <div className="mb-7 flex flex-col gap-gap sm:flex-row sm:items-center">
                     <div className="relative w-fit">
                         {avatar ? (
                             <Image
@@ -136,7 +136,7 @@ export function ProfileForm({
                                 className="h-20 w-20 rounded-xl object-cover"
                             />
                         ) : (
-                            <span className="flex h-20 w-20 items-center justify-center rounded-xl bg-ink-950 text-xl font-bold text-white">
+                            <span className="flex h-20 w-20 items-center justify-center rounded-xl bg-primary text-xl font-bold text-primary-foreground">
                                 {firstName.charAt(0)}
                                 {lastName.charAt(0)}
                             </span>
@@ -144,7 +144,7 @@ export function ProfileForm({
                         <label
                             htmlFor="avatar"
                             aria-label="Change profile photo"
-                            className="absolute -bottom-2 -right-2 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border-2 border-white bg-brand text-white"
+                            className="absolute -bottom-2 -right-2 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border-2 border-background bg-primary text-primary-foreground"
                         >
                             <Camera className="h-3.5 w-3.5" />
                         </label>
@@ -157,22 +157,22 @@ export function ProfileForm({
                         />
                     </div>
                     <div>
-                        <p className="portal-text-body font-semibold text-ink-800">
+                        <p className="portal-text-body font-semibold text-foreground">
                             Profile picture
                         </p>
-                        <p className="mt-1 portal-text-caption text-ink-400">
+                        <p className="mt-1 portal-text-caption text-muted-foreground">
                             PNG, JPG or WebP, up to 5 MB
                         </p>
                         <label
                             htmlFor="avatar"
-                            className="mt-2 inline-block cursor-pointer portal-text-caption font-semibold text-brand"
+                            className="mt-2 inline-block cursor-pointer portal-text-caption font-semibold text-primary"
                         >
                             Upload new photo
                         </label>
                         {imageError ? (
                             <p
                                 role="alert"
-                                className="mt-2 portal-text-caption text-error-700"
+                                className="mt-2 portal-text-caption text-destructive"
                             >
                                 {imageError}
                             </p>
@@ -180,10 +180,10 @@ export function ProfileForm({
                     </div>
                 </div>
 
-                <form action={formAction} className="space-y-4">
+                <form action={formAction} className="space-y-gap">
                     <div className="grid gap-5 sm:grid-cols-2">
                         <div>
-                            <Label htmlFor="firstName" className="text-ink-700">
+                            <Label htmlFor="firstName" className="text-foreground/80">
                                 First name
                             </Label>
                             <Input
@@ -194,7 +194,7 @@ export function ProfileForm({
                             />
                         </div>
                         <div>
-                            <Label htmlFor="lastName" className="text-ink-700">
+                            <Label htmlFor="lastName" className="text-foreground/80">
                                 Last name
                             </Label>
                             <Input
@@ -206,9 +206,9 @@ export function ProfileForm({
                         </div>
                     </div>
                     <div>
-                        <Label htmlFor="username" className="text-ink-700">
+                        <Label htmlFor="username" className="text-foreground/80">
                             Username{' '}
-                            <span className="text-ink-400 font-normal">
+                            <span className="text-muted-foreground font-normal">
                                 (optional)
                             </span>
                         </Label>
@@ -220,7 +220,7 @@ export function ProfileForm({
                         />
                     </div>
                     <div>
-                        <Label htmlFor="phone" className="text-ink-700">
+                        <Label htmlFor="phone" className="text-foreground/80">
                             Mobile number
                         </Label>
                         <Input
@@ -232,19 +232,19 @@ export function ProfileForm({
                         />
                     </div>
 
-                    <div className="border-t border-ink-100 pt-5">
-                        <div className="mb-4 flex items-center gap-2 portal-text-body font-semibold text-ink-800">
-                            <Building2 className="h-4 w-4 text-brand" />
+                    <div className="border-t border-border/60 pt-5">
+                        <div className="mb-4 flex items-center gap-2 portal-text-body font-semibold text-foreground">
+                            <Building2 className="h-4 w-4 text-primary" />
                             Company
                         </div>
                         <div className="grid gap-5 sm:grid-cols-2">
                             <div>
                                 <Label
                                     htmlFor="company"
-                                    className="text-ink-700"
+                                    className="text-foreground/80"
                                 >
                                     Company name{' '}
-                                    <span className="text-ink-400 font-normal">
+                                    <span className="text-muted-foreground font-normal">
                                         (optional)
                                     </span>
                                 </Label>
@@ -257,10 +257,10 @@ export function ProfileForm({
                             <div>
                                 <Label
                                     htmlFor="companyEmail"
-                                    className="text-ink-700"
+                                    className="text-foreground/80"
                                 >
                                     Company email{' '}
-                                    <span className="text-ink-400 font-normal">
+                                    <span className="text-muted-foreground font-normal">
                                         (optional)
                                     </span>
                                 </Label>

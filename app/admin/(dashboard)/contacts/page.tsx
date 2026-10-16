@@ -1,4 +1,5 @@
-import { prisma } from '@/lib/db';
+import { desc } from 'drizzle-orm';
+import { db, schema } from '@/lib/db';
 import { ADMIN_LIST_LIMIT } from '@/lib/pagination';
 import { formatDateTime } from '@/lib/admin-format';
 import { AdminPageHeader } from '@/components/admin/page-header';
@@ -7,11 +8,11 @@ import { ContactsList, type ContactRow } from './contacts-list';
 
 export default async function AdminContactsPage() {
     const [submissions, totalCount] = await Promise.all([
-        prisma.contactSubmission.findMany({
-            orderBy: { createdAt: 'desc' },
-            take: ADMIN_LIST_LIMIT,
+        db.query.contactSubmission.findMany({
+            orderBy: desc(schema.contactSubmission.createdAt),
+            limit: ADMIN_LIST_LIMIT,
         }),
-        prisma.contactSubmission.count(),
+        db.$count(schema.contactSubmission),
     ]);
 
     const rows: ContactRow[] = submissions.map((submission) => ({

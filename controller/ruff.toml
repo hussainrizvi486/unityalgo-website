@@ -1,0 +1,10 @@
+# Pyflakes-level checks: syntax errors, undefined names and unused code.
+target-version = "py311"
+extend-exclude = ["env", "alembic/versions"]
+
+[lint]
+select = ["E9", "F"]
+
+[lint.per-file-ignores]
+# Relationship type hints name classes as strings; app/models/__init__.py imports them all so SQLAlchemy can resolve them.
+"app/models/*.py" = ["F821"]

@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion } from 'motion/react';
@@ -8,7 +7,6 @@ import {
     ArrowRight,
     Check,
     CheckCircle2,
-    CreditCard,
     Headphones,
     ImageIcon,
     LayoutTemplate,
@@ -18,7 +16,6 @@ import {
     Sparkles,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
 import { cn } from '@/utils';
 
 /**
@@ -109,19 +106,19 @@ function ImagePlaceholder({
         <div
             className={cn(
                 'flex h-full w-full flex-col items-center justify-center gap-2 border border-dashed',
-                light ? 'border-ink-300 bg-ink-50' : 'border-white/15 bg-white/[0.03]',
+                light ? 'border-input bg-muted' : 'border-primary-foreground/15 bg-card/[0.03]',
                 // A faint diagonal hatch, so it cannot be mistaken for a real
                 // flat-colour panel at a glance.
                 light
-                    ? '[background-image:repeating-linear-gradient(45deg,rgba(0,0,0,0.035)_0_10px,transparent_10px_20px)]'
-                    : '[background-image:repeating-linear-gradient(45deg,rgba(255,255,255,0.03)_0_10px,transparent_10px_20px)]',
+                    ? '[background-image:repeating-linear-gradient(45deg,color-mix(in_srgb,var(--scrim)_3.5%,transparent)_0_10px,transparent_10px_20px)]'
+                    : '[background-image:repeating-linear-gradient(45deg,color-mix(in_srgb,var(--on-scrim)_3%,transparent)_0_10px,transparent_10px_20px)]',
                 className,
             )}
         >
-            <ImageIcon className={cn('size-6', light ? 'text-ink-300' : 'text-white/25')} />
+            <ImageIcon className={cn('size-6', light ? 'text-muted-foreground/50' : 'text-primary-foreground/25')} />
             <span className={cn(
-                'px-4 text-center text-[11px] font-medium uppercase tracking-wider',
-                light ? 'text-ink-400' : 'text-white/35',
+                'px-4 text-center text-small font-medium uppercase tracking-wider',
+                light ? 'text-muted-foreground' : 'text-primary-foreground/35',
             )}>
                 {label}
             </span>
@@ -130,14 +127,12 @@ function ImagePlaceholder({
 }
 
 export const MainContent = ({ plans }: { plans: UnityCommercePlan[] }) => {
-    const [isAnnual, setIsAnnual] = useState(false);
-
     return (
-        <main className="relative bg-white text-ink-950">
+        <main className="relative bg-card text-foreground">
             {/* ── HERO ────────────────────────────────────────────────── */}
-            <section className="relative isolate overflow-hidden px-4 pb-20 pt-28 sm:pb-28 sm:pt-36">
-                <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_70%_15%,rgba(0,0,0,0.07),transparent_45%),radial-gradient(circle_at_15%_85%,rgba(0,0,0,0.04),transparent_40%)]" />
-                <div className="pointer-events-none absolute inset-0 bg-grid-pattern opacity-40 [mask-image:linear-gradient(to_bottom,black_35%,transparent_90%)]" />
+            <section className="relative isolate overflow-hidden px-page pb-section pt-hero sm:pb-section">
+                <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_70%_15%,color-mix(in_srgb,var(--scrim)_7%,transparent),transparent_45%),radial-gradient(circle_at_15%_85%,color-mix(in_srgb,var(--scrim)_4%,transparent),transparent_40%)]" />
+                <div className="pointer-events-none absolute inset-0 bg-grid-pattern opacity-40 [mask-image:linear-gradient(to_bottom,var(--scrim)_35%,transparent_90%)]" />
 
                 <div className="site-container relative">
                     <div className="flex flex-col items-center text-center">
@@ -145,9 +140,9 @@ export const MainContent = ({ plans }: { plans: UnityCommercePlan[] }) => {
                             initial={{ opacity: 0, y: 16 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.5 }}
-                            className="inline-flex items-center gap-2 rounded-full border border-ink-200 bg-white px-4 py-2 text-xs font-bold tracking-wide text-ink-700 shadow-sm backdrop-blur-md"
+                            className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2 text-xs font-bold tracking-wide text-foreground/80 shadow-sm backdrop-blur-md"
                         >
-                            <span className="flex size-5 items-center justify-center rounded-full bg-ink-950 text-white">
+                            <span className="flex size-5 items-center justify-center rounded-full bg-primary text-primary-foreground">
                                 <Sparkles className="size-3" />
                             </span>
                             <span>The Next-Gen Store Builder for Modern Brands</span>
@@ -157,10 +152,10 @@ export const MainContent = ({ plans }: { plans: UnityCommercePlan[] }) => {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.6, delay: 0.1 }}
-                            className="mt-6 max-w-4xl text-balance text-4xl font-extrabold leading-[1.05] tracking-[-0.05em] sm:text-6xl lg:text-7xl"
+                            className="mt-6 max-w-detail text-balance text-4xl font-extrabold leading-none tracking-tighter sm:text-6xl lg:text-7xl"
                         >
                             Build the brand you&rsquo;ve{' '}
-                            <span className="bg-gradient-to-r from-ink-400 via-ink-950 to-ink-400 bg-clip-text text-transparent">
+                            <span className="bg-gradient-to-r from-muted-foreground via-primary to-muted-foreground bg-clip-text text-transparent">
                                 always dreamed of.
                             </span>
                         </motion.h1>
@@ -169,7 +164,7 @@ export const MainContent = ({ plans }: { plans: UnityCommercePlan[] }) => {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.6, delay: 0.2 }}
-                            className="mt-6 max-w-2xl text-balance text-base leading-relaxed text-ink-600 sm:text-xl"
+                            className="mt-6 max-w-2xl text-balance text-base leading-relaxed text-foreground/70 sm:text-xl"
                         >
                             Launch a high-converting storefront, deliver 2-minute checkout experiences, and manage orders,
                             inventory and WhatsApp sales with zero platform transaction fees.
@@ -181,11 +176,11 @@ export const MainContent = ({ plans }: { plans: UnityCommercePlan[] }) => {
                             transition={{ duration: 0.6, delay: 0.3 }}
                             className="mt-8 flex flex-col items-center justify-center gap-3.5 sm:flex-row"
                         >
-                            <Button asChild size="lg" className="group h-13 w-full bg-ink-950 px-8 text-base font-semibold text-white shadow-lg shadow-ink-950/20 transition-all hover:bg-ink-800 hover:shadow-xl sm:w-auto"><Link href="/register?next=/customer/onboarding&plan=Growth" className="w-full sm:w-auto">
+                            <Button asChild size="lg" className="group h-13 w-full bg-primary px-8 text-base font-semibold text-primary-foreground shadow-lg shadow-foreground/20 transition-all hover:bg-primary/90 hover:shadow-xl sm:w-auto"><Link href="/register?next=/customer/onboarding&plan=Growth" className="w-full sm:w-auto">
                                     Start Building Your Store
                                     <ArrowRight className="ml-2 size-4 transition-transform group-hover:translate-x-1" />
                                 </Link></Button>
-                            <Button asChild variant="outline" size="lg" className="h-13 w-full border-ink-300 bg-white px-8 text-base font-semibold text-ink-800 shadow-sm hover:bg-ink-50 hover:text-ink-900 sm:w-auto"><Link href="#pricing" className="w-full sm:w-auto">
+                            <Button asChild variant="outline" size="lg" className="h-13 w-full border-input bg-card px-8 text-base font-semibold text-foreground shadow-sm hover:bg-muted hover:text-foreground sm:w-auto"><Link href="#pricing" className="w-full sm:w-auto">
                                     View Pricing &amp; Plans
                                 </Link></Button>
                         </motion.div>
@@ -194,11 +189,11 @@ export const MainContent = ({ plans }: { plans: UnityCommercePlan[] }) => {
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             transition={{ duration: 0.6, delay: 0.4 }}
-                            className="mt-8 flex flex-wrap items-center justify-center gap-6 text-xs font-semibold text-ink-600 sm:text-sm"
+                            className="mt-8 flex flex-wrap items-center justify-center gap-gap-lg text-xs font-semibold text-foreground/70 sm:text-sm"
                         >
                             {['0% Transaction Fees', '10 Free Premium Themes', 'Mobile & COD Ready', 'Free SSL & Domain Support'].map((claim) => (
                                 <span key={claim} className="flex items-center gap-2">
-                                    <CheckCircle2 className="size-4 text-ink-800" />
+                                    <CheckCircle2 className="size-4 text-foreground" />
                                     {claim}
                                 </span>
                             ))}
@@ -210,23 +205,23 @@ export const MainContent = ({ plans }: { plans: UnityCommercePlan[] }) => {
                         initial={{ opacity: 0, y: 40 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.8, delay: 0.4 }}
-                        className="relative mx-auto mt-14 max-w-6xl"
+                        className="relative mx-auto mt-14 max-w-wide"
                     >
-                        <div className="absolute -inset-4 rounded-[3.5rem] bg-gradient-to-r from-ink-950/10 via-ink-950/[0.02] to-ink-950/10 blur-3xl" />
+                        <div className="absolute -inset-4 rounded-[calc(var(--radius)*7)] bg-gradient-to-r from-primary/10 via-primary/[0.02] to-primary/10 blur-3xl" />
 
-                        <div className="relative rounded-xl border border-ink-200 bg-white p-2.5 shadow-[0_32px_90px_rgba(21,21,21,0.14)] sm:p-4 md:rounded-2xl">
-                            <div className="mb-3 flex items-center justify-between border-b border-ink-100 px-2 pb-3">
+                        <div className="relative rounded-xl border border-border bg-card p-2.5 shadow-xl sm:p-4 md:rounded-2xl">
+                            <div className="mb-3 flex items-center justify-between border-b border-border/60 px-2 pb-3">
                                 <div className="flex items-center gap-2">
-                                    <span className="size-3 rounded-full bg-ink-200" />
-                                    <span className="size-3 rounded-full bg-ink-200" />
-                                    <span className="size-3 rounded-full bg-ink-200" />
+                                    <span className="size-3 rounded-full bg-border" />
+                                    <span className="size-3 rounded-full bg-border" />
+                                    <span className="size-3 rounded-full bg-border" />
                                 </div>
-                                <div className="flex w-full max-w-sm items-center justify-center gap-2 rounded-md border border-ink-200 bg-ink-50 px-4 py-1.5 text-xs font-medium text-ink-500">
-                                    <LockKeyhole className="size-3 text-ink-500" />
+                                <div className="flex w-full max-w-sm items-center justify-center gap-2 rounded-md border border-border bg-muted px-4 py-1.5 text-xs font-medium text-muted-foreground">
+                                    <LockKeyhole className="size-3 text-muted-foreground" />
                                     <span>https://your-store.com</span>
                                 </div>
                                 <div className="hidden items-center gap-2 sm:flex">
-                                    <span className="rounded-full bg-ink-100 px-2.5 py-1 text-[10px] font-bold text-ink-600">Preview</span>
+                                    <span className="rounded-full bg-secondary px-2.5 py-1 text-micro font-bold text-foreground/70">Preview</span>
                                 </div>
                             </div>
 
@@ -234,7 +229,7 @@ export const MainContent = ({ plans }: { plans: UnityCommercePlan[] }) => {
                                 <ImagePlaceholder label="Storefront mockup — 1600 × 950" tone="light" />
 
                                 {/* Portrait phone, overlapping the desktop frame. */}
-                                <div className="absolute -bottom-4 right-4 w-36 overflow-hidden rounded-[1.8rem] border-4 border-ink-950 bg-ink-950 shadow-2xl sm:right-8 sm:w-56 sm:rounded-[2.2rem] sm:border-[6px] md:w-64">
+                                <div className="absolute -bottom-4 right-4 w-36 overflow-hidden rounded-3xl border-4 border-foreground bg-primary shadow-2xl sm:right-8 sm:w-56 sm:rounded-3xl sm:border-6 md:w-64">
                                     <div className="relative aspect-[9/18.5] w-full">
                                         <ImagePlaceholder label="Mobile" />
                                     </div>
@@ -243,15 +238,15 @@ export const MainContent = ({ plans }: { plans: UnityCommercePlan[] }) => {
                         </div>
                     </motion.div>
 
-                    <div className="mt-16 grid gap-4 border-t border-ink-200 pt-8 sm:grid-cols-2 lg:grid-cols-4">
+                    <div className="mt-16 grid gap-gap border-t border-border pt-8 sm:grid-cols-2 lg:grid-cols-4">
                         {commerceHighlights.map((highlight) => (
-                            <div key={highlight.title} className="flex items-center gap-3.5 rounded-xl border border-ink-200 bg-white p-4 shadow-sm">
-                                <span className="flex size-11 shrink-0 items-center justify-center rounded-lg border border-ink-200 bg-ink-50 text-ink-800">
+                            <div key={highlight.title} className="flex items-center gap-3.5 rounded-xl border border-border bg-card p-4 shadow-sm">
+                                <span className="flex size-11 shrink-0 items-center justify-center rounded-lg border border-border bg-muted text-foreground">
                                     <highlight.icon className="size-5" />
                                 </span>
                                 <div>
-                                    <p className="text-sm font-bold text-ink-900">{highlight.title}</p>
-                                    <p className="mt-0.5 text-xs text-ink-500">{highlight.text}</p>
+                                    <p className="text-sm font-bold text-foreground">{highlight.title}</p>
+                                    <p className="mt-0.5 text-xs text-muted-foreground">{highlight.text}</p>
                                 </div>
                             </div>
                         ))}
@@ -260,14 +255,14 @@ export const MainContent = ({ plans }: { plans: UnityCommercePlan[] }) => {
             </section>
 
             {/* ── THEMES PREVIEW ──────────────────────────────────────── */}
-            <section id="themes" className="scroll-mt-20 bg-ink-950 px-4 text-white site-section-spacing">
+            <section id="themes" className="scroll-mt-20 bg-primary px-page text-primary-foreground site-section-spacing">
                 <div className="site-container">
                     <div className="mb-14 max-w-3xl">
-                        <span className="text-xs font-extrabold uppercase tracking-[0.18em] text-white/50">Included with every plan</span>
-                        <h2 className="mt-2 text-3xl font-extrabold tracking-tight sm:text-5xl">
+                        <span className="text-xs font-extrabold uppercase tracking-eyebrow text-primary-foreground/50">Included with every plan</span>
+                        <h2 className="mt-2 text-3xl tracking-tight sm:text-5xl">
                             Featured Free Premium Themes
                         </h2>
-                        <p className="mt-3 text-sm leading-relaxed text-white/60 sm:text-base">
+                        <p className="mt-3 text-sm leading-relaxed text-primary-foreground/60 sm:text-base">
                             Every theme is mobile-responsive and editable in the visual editor — change colours, fonts,
                             banners and sections without touching code. No premium theme fees, ever.
                         </p>
@@ -287,59 +282,44 @@ export const MainContent = ({ plans }: { plans: UnityCommercePlan[] }) => {
                                 whileInView={{ opacity: 1, y: 0 }}
                                 viewport={{ once: true, margin: '-80px' }}
                                 transition={{ delay: (index % 4) * 0.06 }}
-                                className="group overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] transition-colors hover:border-white/30"
+                                className="group overflow-hidden rounded-2xl border border-primary-foreground/10 bg-card/[0.03] transition-colors hover:border-primary-foreground/30"
                             >
-                                <div className="relative aspect-[3/4] overflow-hidden">
+                                <div className="relative aspect-3/4 overflow-hidden">
                                     <ImagePlaceholder label={`${theme.name} preview`} className="border-0" />
                                 </div>
                                 <div className="flex items-center justify-between gap-3 px-4 py-3.5">
                                     <div className="min-w-0">
-                                        <p className="truncate text-sm font-bold text-white">{theme.name}</p>
-                                        <p className="truncate text-xs text-white/45">{theme.tag}</p>
+                                        <p className="truncate text-sm font-bold text-primary-foreground">{theme.name}</p>
+                                        <p className="truncate text-xs text-primary-foreground/45">{theme.tag}</p>
                                     </div>
-                                    <ArrowRight className="size-4 shrink-0 text-white/25 transition-all group-hover:translate-x-0.5 group-hover:text-white" />
+                                    <ArrowRight className="size-4 shrink-0 text-primary-foreground/25 transition-all group-hover:translate-x-0.5 group-hover:text-primary-foreground" />
                                 </div>
                             </motion.div>
                         ))}
                     </div>
 
-                    <div className="mt-10 flex flex-wrap items-center gap-4">
-                        {/* <Button asChild size="lg" className="h-12 bg-white px-7 font-bold text-ink-950 hover:bg-white/85"><Link href="/register?next=/customer/onboarding&plan=Growth">
+                    <div className="mt-10 flex flex-wrap items-center gap-gap">
+                        {/* <Button asChild size="lg" className="h-12 bg-card px-7 font-bold text-foreground hover:bg-card/85"><Link href="/register?next=/customer/onboarding&plan=Growth">
                                 Browse all themes
                                 <ArrowRight className="ml-2 size-4" />
                             </Link></Button> */}
-                        <p className="text-xs text-white/45">Switch themes at any time — your products and orders stay put.</p>
+                        <p className="text-xs text-primary-foreground/45">Switch themes at any time — your products and orders stay put.</p>
                     </div>
                 </div>
             </section>
 
             {/* ── PRICING (structure unchanged; recoloured for the dark page) ── */}
-            <section id="pricing" className="scroll-mt-20 border-t border-ink-100 site-section-spacing">
+            <section id="pricing" className="scroll-mt-20 border-t border-border/60 site-section-spacing">
                 <div className="site-container px-4">
                     <div className="mb-12 text-center">
-                        <span className="text-xs font-extrabold uppercase tracking-[0.18em] text-ink-500">Transparent Pricing</span>
-                        <h2 className="mt-2 text-3xl font-extrabold sm:text-5xl">Simple, predictable pricing plans.</h2>
-                        <p className="mx-auto mt-3 max-w-2xl text-sm text-ink-600 sm:text-base">
+                        <span className="text-xs font-extrabold uppercase tracking-eyebrow text-muted-foreground">Transparent Pricing</span>
+                        <h2 className="mt-2 text-3xl sm:text-5xl">Simple, predictable pricing plans.</h2>
+                        <p className="mx-auto mt-3 max-w-2xl text-sm text-foreground/70 sm:text-base">
                             Choose the right subscription for your business scale. No transaction fees ever.
                         </p>
-
-                        {/* <div className="mt-8 flex items-center justify-center gap-3">
-                            <span className={cn('text-xs font-bold sm:text-sm', !isAnnual ? 'text-ink-950' : 'text-ink-500')}>
-                                Monthly Billing
-                            </span>
-                            <Switch
-                                checked={isAnnual}
-                                onCheckedChange={setIsAnnual}
-                                aria-label={isAnnual ? 'Switch to monthly billing' : 'Switch to annual billing'}
-                            />
-                            <span className={cn('flex items-center gap-1.5 text-xs font-bold sm:text-sm', isAnnual ? 'text-ink-950' : 'text-ink-500')}>
-                                Annual Billing
-                                <span className="rounded-full bg-ink-100 px-2 py-0.5 text-[10px] font-extrabold uppercase text-ink-600">Save ~20%</span>
-                            </span>
-                        </div> */}
                     </div>
 
-                    <div className={cn("grid items-stretch justify-center gap-6 md:grid-cols-2", "xl:grid-cols-" + plans.length)}>
+                    <div className={cn("grid items-stretch justify-center gap-gap-lg md:grid-cols-2", "xl:grid-cols-" + plans.length)}>
                         {plans.map((plan, idx) => {
                             return (
                                 <PlanCard key={idx} index={idx} plan={plan} />
@@ -353,19 +333,19 @@ export const MainContent = ({ plans }: { plans: UnityCommercePlan[] }) => {
             </section>
 
             {/* ── BUILD FAST ──────────────────────────────────────────── */}
-            <section className="relative overflow-hidden bg-ink-950 px-4 text-white site-section-spacing">
-                <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(255,255,255,0.07),transparent_55%)]" />
+            <section className="relative overflow-hidden bg-primary px-page text-primary-foreground site-section-spacing">
+                <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,color-mix(in_srgb,var(--on-scrim)_7%,transparent),transparent_55%)]" />
 
                 <div className="site-container relative">
                     <div className="mb-14 max-w-3xl">
-                        <span className="text-xs font-extrabold uppercase tracking-[0.18em] text-white/50">Three steps</span>
-                        <h2 className="mt-2 text-3xl font-extrabold tracking-tight sm:text-5xl">Build fast on UnityCommerce</h2>
-                        <p className="mt-3 text-sm leading-relaxed text-white/60 sm:text-base">
+                        <span className="text-xs font-extrabold uppercase tracking-eyebrow text-primary-foreground/50">Three steps</span>
+                        <h2 className="mt-2 text-3xl tracking-tight sm:text-5xl">Build fast on UnityCommerce</h2>
+                        <p className="mt-3 text-sm leading-relaxed text-primary-foreground/60 sm:text-base">
                             From an empty dashboard to your first paid order — without a developer, a designer, or a plugin bill.
                         </p>
                     </div>
 
-                    <div className="grid gap-6 md:grid-cols-3">
+                    <div className="grid gap-gap-lg md:grid-cols-3">
                         {launchSteps.map((step, index) => (
                             <motion.div
                                 key={step.step}
@@ -373,7 +353,7 @@ export const MainContent = ({ plans }: { plans: UnityCommercePlan[] }) => {
                                 whileInView={{ opacity: 1, y: 0 }}
                                 viewport={{ once: true, margin: '-80px' }}
                                 transition={{ delay: index * 0.1 }}
-                                className="group relative aspect-[3/4] overflow-hidden rounded-2xl border border-white/10 bg-ink-900 transition-colors hover:border-white/30"
+                                className="group relative aspect-3/4 overflow-hidden rounded-2xl border border-primary-foreground/10 bg-primary transition-colors hover:border-primary-foreground/30"
                             >
                                 {/* Portrait artwork: a 3:4 frame, so nothing is cropped
                                     to a letterbox the source images were never shot for. */}
@@ -388,40 +368,40 @@ export const MainContent = ({ plans }: { plans: UnityCommercePlan[] }) => {
                                 {/*
                                     The caption sits on the photograph, so the image has
                                     to carry it. Four stops rather than a plain
-                                    from-black/70: a linear fade leaves the middle of the
+                                    from-scrim/70: a linear fade leaves the middle of the
                                     text band too light over a bright photo, and going
                                     dark enough to fix that turns the bottom third into a
                                     black bar. This holds ~0.9 behind the text, releases
                                     quickly, and is gone by 70% so most of the picture is
                                     untouched.
                                 */}
-                                <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_top,rgba(0,0,0,0.92)_0%,rgba(0,0,0,0.72)_22%,rgba(0,0,0,0.28)_45%,rgba(0,0,0,0)_70%)]" />
+                                <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_top,color-mix(in_srgb,var(--scrim)_92%,transparent)_0%,color-mix(in_srgb,var(--scrim)_72%,transparent)_22%,color-mix(in_srgb,var(--scrim)_28%,transparent)_45%,color-mix(in_srgb,var(--scrim)_0%,transparent)_70%)]" />
 
-                                <span className="absolute left-4 top-4 rounded-full bg-black/50 px-3 py-1 font-mono text-xs font-bold text-white backdrop-blur-sm">
+                                <span className="absolute left-4 top-4 rounded-full bg-scrim/50 px-3 py-1 font-mono text-xs font-bold text-primary-foreground backdrop-blur-sm">
                                     {step.step}
                                 </span>
 
                                 <div className="absolute inset-x-0 bottom-0 p-6">
-                                    <h3 className="text-lg font-bold text-white drop-shadow-sm">{step.title}</h3>
-                                    <p className="mt-2 text-sm leading-relaxed text-white/85">{step.text}</p>
+                                    <h3 className="text-lg text-primary-foreground drop-shadow-sm">{step.title}</h3>
+                                    <p className="mt-2 text-sm leading-relaxed text-primary-foreground/85">{step.text}</p>
                                 </div>
                             </motion.div>
                         ))}
                     </div>
 
-                    <div className="mt-14 flex flex-col items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.03] p-8 text-center sm:flex-row sm:justify-between sm:text-left">
+                    <div className="mt-14 flex flex-col items-center gap-gap rounded-2xl border border-primary-foreground/10 bg-card/[0.03] p-8 text-center sm:flex-row sm:justify-between sm:text-left">
                         <div>
-                            <h3 className="text-xl font-bold text-white sm:text-2xl">Ready to launch your online store?</h3>
-                            <p className="mt-1.5 text-sm text-white/55">
+                            <h3 className="text-xl text-primary-foreground sm:text-2xl">Ready to launch your online store?</h3>
+                            <p className="mt-1.5 text-sm text-primary-foreground/55">
                                 Join modern merchants building high-converting stores with zero platform transaction fees.
                             </p>
                         </div>
                         <div className="flex shrink-0 flex-col gap-3 sm:flex-row">
-                            <Button asChild size="lg" className="h-13 w-full bg-white px-8 text-base font-semibold text-ink-950 shadow-lg shadow-black/40 hover:bg-white/85 sm:w-auto"><Link href="/register?next=/customer/onboarding&plan=Growth">
+                            <Button asChild size="lg" className="h-13 w-full bg-card px-8 text-base font-semibold text-foreground shadow-lg shadow-scrim/40 hover:bg-card/85 sm:w-auto"><Link href="/register?next=/customer/onboarding&plan=Growth">
                                     Get Started
                                     <ArrowRight className="ml-2 size-4" />
                                 </Link></Button>
-                            <Button asChild variant="outline" size="lg" className="h-13 w-full border-white/20 bg-white/5 px-8 text-base font-semibold text-white hover:bg-white/10 hover:text-white sm:w-auto"><Link href="/#contact">
+                            <Button asChild variant="outline" size="lg" className="h-13 w-full border-primary-foreground/20 bg-primary-foreground/5 px-8 text-base font-semibold text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground sm:w-auto"><Link href="/#contact">
                                     Talk to Sales
                                 </Link></Button>
                         </div>
@@ -443,40 +423,40 @@ const PlanCard = ({ plan, index }: { index: number, plan: UnityCommercePlan }) =
             viewport={{ once: true }}
             transition={{ delay: index * 0.08 }}
             className={cn(
-                'flex flex-col justify-between rounded-md border p-6 transition-all duration-300',
+                'flex flex-col justify-between rounded-md border p-card transition-all duration-300',
                 plan.highlighted
-                    ? 'relative z-10 border-ink-950 bg-ink-950 text-white shadow-2xl shadow-ink-950/25 xl:-mt-3'
-                    : 'border-ink-200 bg-white hover:border-ink-400 hover:shadow-xl',
+                    ? 'relative z-10 border-foreground bg-primary text-primary-foreground shadow-2xl shadow-foreground/25 xl:-mt-3'
+                    : 'border-border bg-card hover:border-input hover:shadow-xl',
             )}
         >
             <div>
                 {plan.highlighted && (
-                    <span className="mb-4 inline-block rounded-full bg-white/20 px-3 py-1 text-[10px] font-extrabold uppercase tracking-widest text-white">
+                    <span className="mb-4 inline-block rounded-full bg-primary-foreground/20 px-3 py-1 text-micro font-extrabold uppercase tracking-widest text-primary-foreground">
                         Most Popular Choice
                     </span>
                 )}
-                <h3 className={cn('mb-1 text-2xl font-bold', plan.highlighted ? 'text-white' : 'text-ink-950')}>{plan.name}</h3>
-                <p className={cn('mb-6 text-xs', plan.highlighted ? 'text-white/80' : 'text-ink-500')}>
+                <h3 className={cn('mb-1 text-2xl font-bold', plan.highlighted ? 'text-primary-foreground' : 'text-foreground')}>{plan.name}</h3>
+                <p className={cn('mb-6 text-xs', plan.highlighted ? 'text-primary-foreground/80' : 'text-muted-foreground')}>
                     {plan.audience}
                 </p>
-                <div className={cn('mb-7 border-b pb-6', plan.highlighted ? 'border-white/20' : 'border-ink-200')}>
+                <div className={cn('mb-7 border-b pb-6', plan.highlighted ? 'border-primary-foreground/20' : 'border-border')}>
                     {price ? (
                         <>
                             <span className="text-4xl font-extrabold tracking-tight">{price}</span>
-                            <span className={cn('ml-1 text-xs font-medium', plan.highlighted ? 'text-white/70' : 'text-ink-500')}>/month</span>
+                            <span className={cn('ml-1 text-xs font-medium', plan.highlighted ? 'text-primary-foreground/70' : 'text-muted-foreground')}>/month</span>
                         </>
                     ) : (
                         <>
                             <span className="text-3xl font-extrabold tracking-tight">Custom</span>
-                            <p className={cn('mt-1 text-xs', plan.highlighted ? 'text-white/70' : 'text-ink-500')}>Priced to your requirements</p>
+                            <p className={cn('mt-1 text-xs', plan.highlighted ? 'text-primary-foreground/70' : 'text-muted-foreground')}>Priced to your requirements</p>
                         </>
                     )}
                 </div>
                 <ul className="mb-8 space-y-3">
                     {plan.features.map((feature) => (
                         <li key={feature} className="flex items-start gap-1 text-xs sm:text-sm">
-                            <Check className={cn('mt-0.5 size-4 p-0.5 shrink-0 bg-success-500 rounded-full text-white')} />
-                            <span className={plan.highlighted ? 'font-medium text-white/90' : 'text-ink-700'}>{feature}</span>
+                            <Check className={cn('mt-0.5 size-4 p-0.5 shrink-0 bg-success rounded-full text-primary-foreground')} />
+                            <span className={plan.highlighted ? 'font-medium text-primary-foreground/90' : 'text-foreground/80'}>{feature}</span>
                         </li>
                     ))}
                 </ul>
@@ -487,8 +467,8 @@ const PlanCard = ({ plan, index }: { index: number, plan: UnityCommercePlan }) =
                     className={cn(
                         'h-12 w-full cursor-pointer text-xs font-bold sm:text-sm',
                         plan.highlighted
-                            ? 'bg-white text-ink-950 shadow-md hover:bg-ink-100'
-                            : 'bg-ink-950 text-white shadow-md hover:bg-ink-800',
+                            ? 'bg-card text-foreground shadow-md hover:bg-secondary'
+                            : 'bg-primary text-primary-foreground shadow-md hover:bg-primary/90',
                     )}
                 ><Link href={price
                 ? `/register?next=/customer/onboarding&plan=${encodeURIComponent(plan.name)}`

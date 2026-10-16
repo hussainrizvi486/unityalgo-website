@@ -28,9 +28,9 @@ export function StepIndicator({ labels, step }: { labels: string[]; step: number
                                 // and blue: white on success-500 is 3.3:1 and on
                                 // info-500 is 3.1:1, both short of 4.5:1 at this
                                 // size. These clear 5:1.
-                                done && 'bg-success-600 text-white',
-                                active && 'bg-link text-white',
-                                !done && !active && 'bg-ink-100 text-ink-400',
+                                done && 'bg-success text-primary-foreground',
+                                active && 'bg-primary text-primary-foreground',
+                                !done && !active && 'bg-secondary text-muted-foreground',
                             )}
                         >
                             {stepNumber}
@@ -38,9 +38,9 @@ export function StepIndicator({ labels, step }: { labels: string[]; step: number
                         <span
                             className={cn(
                                 'text-xs font-semibold',
-                                active && 'text-ink-900',
-                                done && 'text-ink-600',
-                                !done && !active && 'text-ink-400',
+                                active && 'text-foreground',
+                                done && 'text-foreground/70',
+                                !done && !active && 'text-muted-foreground',
                             )}
                         >
                             {label}
@@ -48,7 +48,7 @@ export function StepIndicator({ labels, step }: { labels: string[]; step: number
                         {/* The connector carries the progress too, so the line
                             behind you reads as covered ground. */}
                         {stepNumber < labels.length && (
-                            <span className={cn('mx-1 h-px w-6', done ? 'bg-success-600/40' : 'bg-ink-200')} />
+                            <span className={cn('mx-1 h-px w-6', done ? 'bg-success/40' : 'bg-border')} />
                         )}
                     </div>
                 );

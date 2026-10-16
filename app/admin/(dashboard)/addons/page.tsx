@@ -1,4 +1,5 @@
-import { prisma } from '@/lib/db';
+import { asc, eq } from 'drizzle-orm';
+import { db, schema } from '@/lib/db';
 import { ADMIN_LIST_LIMIT } from '@/lib/pagination';
 import { formatAddOnPrice } from '@/lib/pricing';
 import { AdminPageHeader, AdminPageError } from '@/components/admin/page-header';
@@ -13,12 +14,14 @@ export default async function AdminAddOnsPage({ searchParams }: AddOnsPageProps)
     const params = await searchParams;
 
     const [addOns, totalCount] = await Promise.all([
-        prisma.addOn.findMany({
-            orderBy: [{ product: { sortOrder: 'asc' } }, { sortOrder: 'asc' }],
-            include: { product: true },
-            take: ADMIN_LIST_LIMIT,
-        }),
-        prisma.addOn.count(),
+        db
+            .select({ row: schema.addOn, product: schema.product })
+            .from(schema.addOn)
+            .innerJoin(schema.product, eq(schema.product.id, schema.addOn.productId))
+            .orderBy(asc(schema.product.sortOrder), asc(schema.addOn.sortOrder))
+            .limit(ADMIN_LIST_LIMIT)
+            .then((rows) => rows.map(({ row, product }) => ({ ...row, product }))),
+        db.$count(schema.addOn),
     ]);
 
     const rows: AddOnRow[] = addOns.map((addOn) => ({

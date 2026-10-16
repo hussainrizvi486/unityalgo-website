@@ -113,7 +113,7 @@ export function UsersList({
                     ]}
                 />
             }
-            emptyIcon={<UserRound className="h-10 w-10 text-ink-300" />}
+            emptyIcon={<UserRound className="h-10 w-10 text-muted-foreground/50" />}
             emptyTitle="No users found"
             emptyMessage="Admins are created here; customers arrive by registering on the site."
         />

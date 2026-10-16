@@ -38,6 +38,7 @@ class ServerController(BaseController):
         "ssh_auth_method",
         "max_memory_mb",
         "max_containers",
+        "max_sites",
         "is_active",
         "frappe_enabled",
     )
@@ -111,6 +112,11 @@ class ServerController(BaseController):
         if "max_containers" in data:
             values["max_containers"] = v.integer(
                 data["max_containers"], "max_containers", minimum=0
+            )
+        if "max_sites" in data:
+            # Blank clears the limit; otherwise a whole number, where 0 means "no new sites".
+            values["max_sites"] = None if data["max_sites"] in (None, "") else v.integer(
+                data["max_sites"], "max_sites", minimum=0
             )
         if "is_active" in data:
             values["is_active"] = v.boolean(data["is_active"], "is_active")

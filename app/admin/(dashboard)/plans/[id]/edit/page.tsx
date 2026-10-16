@@ -1,14 +1,15 @@
 import { listProducts } from '@/lib/products';
 import { listCurrencies } from '@/lib/currencies';
 import { notFound } from 'next/navigation';
-import { prisma } from '@/lib/db';
+import { eq } from 'drizzle-orm';
+import { db, schema } from '@/lib/db';
 import { updatePlanAction } from '@/app/admin/actions';
 import { PlanForm } from '../../plan-form';
 
 export default async function EditPlanPage({ params }: { params: Promise<{ id: string }> }) {
     const [products, currencies] = await Promise.all([listProducts(), listCurrencies()]);
     const { id } = await params;
-    const plan = await prisma.plan.findUnique({ where: { id } });
+    const plan = await db.query.plan.findFirst({ where: eq(schema.plan.id, id) });
 
     if (!plan) {
         notFound();
@@ -35,6 +36,9 @@ export default async function EditPlanPage({ params }: { params: Promise<{ id: s
                     currencyId: plan.currencyId ?? '',
                     transactionFeePercent: plan.transactionFeePercent != null ? String(plan.transactionFeePercent) : '',
                     userLimit: plan.userLimit != null ? String(plan.userLimit) : '',
+                    vcpu: plan.vcpu != null ? String(plan.vcpu) : '',
+                    ramMb: plan.ramMb != null ? String(plan.ramMb) : '',
+                    storageGb: plan.storageGb != null ? String(plan.storageGb) : '',
                     features: plan.features.join('\n'),
                     isActive: plan.isActive,
                     sortOrder: String(plan.sortOrder),

@@ -74,15 +74,15 @@ export function CoverImageField({ name, defaultValue }: CoverImageFieldProps) {
                             className="hidden"
                             onChange={handleFileChange}
                         />
-                        {value && <span className="portal-text-caption text-ink-500 truncate max-w-50">{value}</span>}
+                        {value && <span className="portal-text-caption text-muted-foreground truncate max-w-50">{value}</span>}
                     </div>
                 </TabsContent>
             </Tabs>
 
-            {error && <p className="portal-text-caption text-error-600 mt-1.5">{error}</p>}
+            {error && <p className="portal-text-caption text-destructive mt-1.5">{error}</p>}
 
             {value && (
-                <div className="mt-3 w-40 aspect-video rounded-md overflow-hidden border border-ink-100 bg-ink-50">
+                <div className="mt-3 w-40 aspect-video rounded-md overflow-hidden border border-border/60 bg-muted">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={value} alt="Cover preview" className="w-full h-full object-cover" />
                 </div>

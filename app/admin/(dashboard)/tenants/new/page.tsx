@@ -20,7 +20,7 @@ export default async function NewTenantPage() {
     return (
         <div>
             <h1 className="portal-page-title mb-2">New Tenant</h1>
-            <p className="portal-text-body text-ink-500 mb-8 portal-form">
+            <p className="portal-text-body text-muted-foreground mb-8 portal-form">
                 This reserves the tenant&apos;s slug, database credentials and platform subdomain. It does not deploy
                 anything yet — use <strong>Provision</strong> on the tenant page to create the database and launch the
                 container.

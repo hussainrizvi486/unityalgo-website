@@ -6,7 +6,8 @@ import { notFound } from 'next/navigation';
 import { Metadata } from 'next';
 import { Header, Footer } from '@/components/layouts';
 import { BlogCard } from '@/components/website/blog-card';
-import { prisma } from '@/lib/db';
+import { and, arrayOverlaps, desc, eq, ne } from 'drizzle-orm';
+import { db, schema } from '@/lib/db';
 import { generateBreadcrumbJsonLd } from '@/lib/metadata';
 
 export const revalidate = 60;
@@ -17,7 +18,7 @@ function formatDate(date: Date | null) {
 }
 
 async function getPost(slug: string) {
-    return prisma.post.findUnique({ where: { slug, published: true } });
+    return db.query.post.findFirst({ where: and(eq(schema.post.slug, slug), eq(schema.post.published, true)) });
 }
 
 export async function generateMetadata({
@@ -69,14 +70,16 @@ export default async function BlogDetailsPage({
         notFound();
     }
 
-    const relatedPosts = await prisma.post.findMany({
-        where: {
-            published: true,
-            slug: { not: post.slug },
-            tags: post.tags.length > 0 ? { hasSome: post.tags } : undefined,
-        },
-        orderBy: { publishedAt: 'desc' },
-        take: 3,
+    const tags = post.tags ?? [];
+    const relatedPosts = await db.query.post.findMany({
+        where: and(
+            eq(schema.post.published, true),
+            ne(schema.post.slug, post.slug),
+            // Sharing at least one tag; with no tags of its own, any other post will do.
+            tags.length > 0 ? arrayOverlaps(schema.post.tags, tags) : undefined,
+        ),
+        orderBy: desc(schema.post.publishedAt),
+        limit: 3,
     });
 
     const breadcrumbs = generateBreadcrumbJsonLd([
@@ -114,12 +117,12 @@ export default async function BlogDetailsPage({
             <Header />
 
             <main>
-                <article className="pt-32 pb-20 px-4" style={articleStyle}>
+                <article className="pt-hero pb-section px-page" style={articleStyle}>
                     <div className="site-container site-container-reading">
             
 
                         <h1
-                            className="text-lg md:text-3xl font-bold tracking-tight mb-6 text-balance"
+                            className="text-lg md:text-3xl tracking-tight mb-6 text-balance"
                             style={post.textColor ? { color: post.textColor } : undefined}
                         >
                             {post.title}
@@ -127,12 +130,12 @@ export default async function BlogDetailsPage({
 
                         {post.publishedAt && (
                             <p
-                                className="text-sm text-ink-400 mb-10"                            >
+                                className="text-sm text-muted-foreground mb-10"                            >
                                 {formatDate(post.publishedAt)}
                             </p>
                         )}
 
-                        <div className="relative aspect-[16/9] bg-ink-100 rounded-xl overflow-hidden mb-12">
+                        <div className="relative aspect-16/9 bg-secondary rounded-xl overflow-hidden mb-12">
                             {/* The post's LCP element — priority so it is not
                                 queued behind the rest of the page's requests. */}
                             {post.coverImage ? (
@@ -148,7 +151,7 @@ export default async function BlogDetailsPage({
                         </div>
 
                         <div
-                            className="prose prose-lg max-w-none text-ink-700 leading-relaxed [&_h2]: [&_h2]:font-bold [&_h2]:text-2xl [&_h2]:mt-10 [&_h2]:mb-4 [&_p]:mb-4 [&_a]:text-brand"
+                            className="prose prose-lg max-w-none text-foreground/80 leading-relaxed [&_h2]: [&_h2]:font-bold [&_h2]:text-2xl [&_h2]:mt-10 [&_h2]:mb-4 [&_p]:mb-4 [&_a]:text-primary"
                             style={proseStyle}
                             dangerouslySetInnerHTML={{ __html: post.content }}
                         />
@@ -156,10 +159,10 @@ export default async function BlogDetailsPage({
                 </article>
 
                 {relatedPosts.length > 0 && (
-                    <section className="bg-ink-50 border-t border-ink-100 px-4 site-section-spacing">
+                    <section className="bg-muted border-t border-border/60 px-page site-section-spacing">
                         <div className="site-container site-container-wide">
-                            <h2 className="text-3xl font-bold mb-12">Related Blogs</h2>
-                            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                            <h2 className="text-3xl mb-12">Related Blogs</h2>
+                            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-gap-xl">
                                 {relatedPosts.map((related) => (
                                     <BlogCard key={related.id} post={related} />
                                 ))}
@@ -168,8 +171,8 @@ export default async function BlogDetailsPage({
                     </section>
                 )}
 
-                <section className="py-16 px-4 text-center">
-                    <Link href="/blog" className="text-link font-semibold hover:underline">
+                <section className="py-section px-page text-center">
+                    <Link href="/blog" className="text-primary font-semibold hover:underline">
                         &larr; Back to all posts
                     </Link>
                 </section>

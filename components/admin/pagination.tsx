@@ -32,7 +32,7 @@ export function AdminPagination({ basePath, currentPage, totalPages, searchParam
                 aria-disabled={currentPage === 1}
                 className={cn(
                     'portal-pagination-link font-medium transition-colors',
-                    currentPage === 1 ? 'text-ink-300 pointer-events-none' : 'text-ink-600 hover:bg-ink-100'
+                    currentPage === 1 ? 'text-muted-foreground/50 pointer-events-none' : 'text-foreground/70 hover:bg-secondary'
                 )}
             >
                 Prev
@@ -40,10 +40,10 @@ export function AdminPagination({ basePath, currentPage, totalPages, searchParam
 
             {windowStart > 1 && (
                 <>
-                    <Link href={buildHref(basePath, 1, searchParams)} className="portal-pagination-link text-ink-600 hover:bg-ink-100">
+                    <Link href={buildHref(basePath, 1, searchParams)} className="portal-pagination-link text-foreground/70 hover:bg-secondary">
                         1
                     </Link>
-                    {windowStart > 2 && <span className="text-ink-400 px-1">…</span>}
+                    {windowStart > 2 && <span className="text-muted-foreground px-1">…</span>}
                 </>
             )}
 
@@ -53,7 +53,7 @@ export function AdminPagination({ basePath, currentPage, totalPages, searchParam
                     href={buildHref(basePath, page, searchParams)}
                     className={cn(
                         'portal-pagination-link font-medium transition-colors',
-                        page === currentPage ? 'bg-ink-900 text-white' : 'text-ink-600 hover:bg-ink-100'
+                        page === currentPage ? 'bg-primary text-primary-foreground' : 'text-foreground/70 hover:bg-secondary'
                     )}
                 >
                     {page}
@@ -62,8 +62,8 @@ export function AdminPagination({ basePath, currentPage, totalPages, searchParam
 
             {windowEnd < totalPages && (
                 <>
-                    {windowEnd < totalPages - 1 && <span className="text-ink-400 px-1">…</span>}
-                    <Link href={buildHref(basePath, totalPages, searchParams)} className="portal-pagination-link text-ink-600 hover:bg-ink-100">
+                    {windowEnd < totalPages - 1 && <span className="text-muted-foreground px-1">…</span>}
+                    <Link href={buildHref(basePath, totalPages, searchParams)} className="portal-pagination-link text-foreground/70 hover:bg-secondary">
                         {totalPages}
                     </Link>
                 </>
@@ -74,7 +74,7 @@ export function AdminPagination({ basePath, currentPage, totalPages, searchParam
                 aria-disabled={currentPage === totalPages}
                 className={cn(
                     'portal-pagination-link font-medium transition-colors',
-                    currentPage === totalPages ? 'text-ink-300 pointer-events-none' : 'text-ink-600 hover:bg-ink-100'
+                    currentPage === totalPages ? 'text-muted-foreground/50 pointer-events-none' : 'text-foreground/70 hover:bg-secondary'
                 )}
             >
                 Next

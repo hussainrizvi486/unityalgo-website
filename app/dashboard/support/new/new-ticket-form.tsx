@@ -26,11 +26,11 @@ export function NewTicketForm() {
   return (
     <form action={formAction} className="portal-fields">
       <div>
-        <Label htmlFor="subject" className="mb-1.5 portal-text-body text-ink-700">Subject</Label>
+        <Label htmlFor="subject" className="mb-1.5 portal-text-body text-foreground/80">Subject</Label>
         <Input id="subject" name="subject" required placeholder="What do you need help with?" />
       </div>
       <div>
-        <Label htmlFor="description" className="mb-1.5 portal-text-body text-ink-700">Message</Label>
+        <Label htmlFor="description" className="mb-1.5 portal-text-body text-foreground/80">Message</Label>
         <Textarea id="description" name="description" required className="min-h-40 rounded-lg" placeholder="Tell us what happened and how we can help." />
       </div>
       {state?.error ? <Notice tone="error">{state.error}</Notice> : null}

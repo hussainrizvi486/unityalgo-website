@@ -61,6 +61,8 @@ class ServerNode(Base):
     active_containers: Mapped[int] = mapped_column(Integer, default=0)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     frappe_enabled: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
+    # Most customer sites this server may host. None = no limit; 0 = take no new sites.
+    max_sites: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
 
     # Hardware/OS specs, collected over SSH when the node is connected
     # (see ServerController.connect / SSHService.collect_specs).

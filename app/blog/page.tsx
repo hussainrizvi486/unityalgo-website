@@ -2,7 +2,8 @@ import Link from 'next/link';
 import { Metadata } from 'next';
 import { Header, Footer } from '@/components/layouts';
 import { BlogCard } from '@/components/website/blog-card';
-import { prisma } from '@/lib/db';
+import { desc, eq } from 'drizzle-orm';
+import { db, schema } from '@/lib/db';
 import { generatePageMetadata } from '@/lib/metadata';
 import { cn } from '@/utils';
 
@@ -27,13 +28,13 @@ export default async function BlogListingPage({
     const currentPage = Math.max(1, Number(params.page) || 1);
 
     const [posts, totalCount] = await Promise.all([
-        prisma.post.findMany({
-            where: { published: true },
-            orderBy: { publishedAt: 'desc' },
-            skip: (currentPage - 1) * PAGE_SIZE,
-            take: PAGE_SIZE,
+        db.query.post.findMany({
+            where: eq(schema.post.published, true),
+            orderBy: desc(schema.post.publishedAt),
+            offset: (currentPage - 1) * PAGE_SIZE,
+            limit: PAGE_SIZE,
         }),
-        prisma.post.count({ where: { published: true } }),
+        db.$count(schema.post, eq(schema.post.published, true)),
     ]);
 
     const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
@@ -42,26 +43,26 @@ export default async function BlogListingPage({
         <div className="bg-background text-foreground min-h-screen overflow-hidden">
             <Header />
 
-            <main className="max-w-5xl mx-auto">
-                <section className="pt-28 pb-16 md:pb-20 px-4">
+            <main className="max-w-wide mx-auto">
+                <section className="pt-hero pb-section md:pb-section px-page">
                     <div className="site-container site-container-wide text-center flex items-center flex-col mb-6">
-                        <h1 className="text-xl md:text-3xl font-bold">
+                        <h1 className="text-xl md:text-3xl ">
                             Browse our thoughts
                         </h1>
-                        <div className='h-1 w-36 bg-brand'></div>
+                        <div className='h-1 w-36 bg-primary'></div>
 
                     </div>
                 </section>
 
-                <section className="pb-24 px-4">
+                <section className="pb-section px-page">
                     <div className="site-container site-container-wide">
                         {posts.length === 0 ? (
-                            <p className="text-center text-ink-500 py-24">
+                            <p className="text-center text-muted-foreground py-24">
                                 No blog posts published yet. Check back soon.
                             </p>
                         ) : (
                             <>
-                                <div className="grid sm:grid-cols-2 gap-4">
+                                <div className="grid sm:grid-cols-2 gap-gap">
                                     {posts.map((post) => (
                                         <BlogCard key={post.id} post={post} />
                                     ))}
@@ -76,8 +77,8 @@ export default async function BlogListingPage({
                                                 className={cn(
                                                     'w-10 h-10 flex items-center justify-center rounded-full text-sm font-bold transition-colors ',
                                                     page === currentPage
-                                                        ? 'bg-ink-900 text-white'
-                                                        : 'text-ink-600 hover:bg-ink-100'
+                                                        ? 'bg-primary text-primary-foreground'
+                                                        : 'text-foreground/70 hover:bg-secondary'
                                                 )}
                                             >
                                                 {page}

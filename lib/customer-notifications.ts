@@ -1,5 +1,6 @@
 import 'server-only';
-import { prisma } from '@/lib/db';
+import { and, desc, eq, isNull } from 'drizzle-orm';
+import { db, schema } from '@/lib/db';
 import type { CustomerSite } from '@/lib/controller-client';
 
 export async function recordSiteNotification(
@@ -7,11 +8,12 @@ export async function recordSiteNotification(
     site: CustomerSite,
 ) {
     if (!['ready', 'failed', 'cleanup_required'].includes(site.status)) return;
-    const eventKey = `site:${site.id}:${site.status}:${site.updated_at}`;
-    await prisma.notification.upsert({
-        where: { userId_eventKey: { userId, eventKey } },
-        update: {},
-        create: {
+    // Keyed by attempt, not by update time: stopping, backing up or restarting a site changes
+    // updated_at and would otherwise raise a fresh "ready" notification each time.
+    const eventKey = `site:${site.id}:${site.attempt}:${site.status}`;
+    await db
+        .insert(schema.notification)
+        .values({
             userId,
             eventKey,
             title:
@@ -20,18 +22,18 @@ export async function recordSiteNotification(
                     : `${site.name} needs attention`,
             body: site.message,
             href: `/dashboard/sites/${site.id}`,
-        },
-    });
+        })
+        .onConflictDoNothing({ target: [schema.notification.userId, schema.notification.eventKey] });
 }
 
 export async function listNotifications(userId: string) {
     const [items, unread] = await Promise.all([
-        prisma.notification.findMany({
-            where: { userId },
-            orderBy: { createdAt: 'desc' },
-            take: 20,
+        db.query.notification.findMany({
+            where: eq(schema.notification.userId, userId),
+            orderBy: desc(schema.notification.createdAt),
+            limit: 20,
         }),
-        prisma.notification.count({ where: { userId, readAt: null } }),
+        db.$count(schema.notification, and(eq(schema.notification.userId, userId), isNull(schema.notification.readAt))),
     ]);
     return {
         unread,

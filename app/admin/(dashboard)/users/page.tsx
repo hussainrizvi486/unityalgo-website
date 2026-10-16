@@ -1,5 +1,6 @@
 import { cookies } from 'next/headers';
-import { prisma } from '@/lib/db';
+import { asc } from 'drizzle-orm';
+import { db, schema } from '@/lib/db';
 import { ADMIN_LIST_LIMIT } from '@/lib/pagination';
 import { formatDate } from '@/lib/admin-format';
 import { AdminPageHeader, AdminPageError } from '@/components/admin/page-header';
@@ -19,8 +20,8 @@ export default async function AdminUsersPage({ searchParams }: UsersPageProps) {
     const session = token ? await verifySessionToken(token) : null;
 
     const [users, totalCount] = await Promise.all([
-        prisma.user.findMany({ orderBy: { createdAt: 'asc' }, take: ADMIN_LIST_LIMIT }),
-        prisma.user.count(),
+        db.query.user.findMany({ orderBy: asc(schema.user.createdAt), limit: ADMIN_LIST_LIMIT }),
+        db.$count(schema.user),
     ]);
 
     const rows: UserRow[] = users.map((user) => ({

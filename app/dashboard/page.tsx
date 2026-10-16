@@ -2,14 +2,15 @@ import { getSubscriptions } from '@/app/customer/actions';
 import { requireCustomer } from '@/lib/customer-session';
 import { OverviewClient } from './overview-client';
 import { controller } from '@/lib/controller-client';
-import { prisma } from '@/lib/db';
+import { eq } from 'drizzle-orm';
+import { db, schema } from '@/lib/db';
 
 export const metadata = { title: 'Dashboard' };
 
 export default async function CustomerOverviewPage() {
     const user = await requireCustomer();
     const subscriptions = await getSubscriptions(user.id);
-    const apps = await prisma.appCatalog.count({ where: { isActive: true } });
+    const apps = await db.$count(schema.appCatalog, eq(schema.appCatalog.isActive, true));
     let siteStats = null;
     try {
         const sites = (await controller.sites.list(user.id)).results;

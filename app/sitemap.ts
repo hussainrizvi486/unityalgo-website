@@ -1,5 +1,6 @@
 import { MetadataRoute } from "next";
-import { prisma } from "@/lib/db";
+import { eq } from 'drizzle-orm';
+import { db, schema } from '@/lib/db';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = "https://www.unityalgo.com";
@@ -75,10 +76,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   let blogRoutes: MetadataRoute.Sitemap = [];
   try {
-    const posts = await prisma.post.findMany({
-      where: { published: true },
-      select: { slug: true, updatedAt: true },
-    });
+    const posts = await db
+      .select({ slug: schema.post.slug, updatedAt: schema.post.updatedAt })
+      .from(schema.post)
+      .where(eq(schema.post.published, true));
     blogRoutes = posts.map((post) => ({
       url: `${baseUrl}/blog/${post.slug}`,
       lastModified: post.updatedAt,

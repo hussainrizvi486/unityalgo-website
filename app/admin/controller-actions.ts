@@ -66,6 +66,8 @@ export async function createServerAction(
         ssh_user: String(formData.get('ssh_user') ?? '').trim() || undefined,
         max_memory_mb: Number(formData.get('max_memory_mb') ?? 0) || undefined,
         max_containers: Number(formData.get('max_containers') ?? 0) || undefined,
+        // Blank means no limit; 0 is a real limit (take no new sites), so it must not be dropped like the others.
+        ...(String(formData.get('max_sites') ?? '').trim() !== '' ? { max_sites: Number(formData.get('max_sites')) } : {}),
     };
     // Only send credentials that were actually filled in, so the controller
     // falls back to its configured defaults rather than storing empty strings.
@@ -93,6 +95,8 @@ export async function updateServerAction(
         ssh_port: Number(formData.get('ssh_port') ?? 22),
         max_memory_mb: Number(formData.get('max_memory_mb') ?? 0) || undefined,
         max_containers: Number(formData.get('max_containers') ?? 0) || undefined,
+        // On an edit, blank clears the limit (null), while 0 stays a limit of zero.
+        max_sites: String(formData.get('max_sites') ?? '').trim() === '' ? null : Number(formData.get('max_sites')),
         is_active: formData.get('is_active') === 'on',
         frappe_enabled: formData.get('frappe_enabled') === 'on',
     };
@@ -373,13 +377,15 @@ function refreshDatabases(id?: string) {
 }
 
 function readDatabaseFields(formData: FormData) {
+    const engine = String(formData.get('engine') ?? 'postgres') === 'mariadb' ? 'mariadb' : 'postgres';
     const body: Record<string, unknown> = {
+        engine,
         name: String(formData.get('name') ?? '').trim(),
         host: String(formData.get('host') ?? '').trim(),
-        port: Number(formData.get('port') ?? 5432),
+        port: Number(formData.get('port') ?? (engine === 'mariadb' ? 3306 : 5432)),
         database_name: String(formData.get('database_name') ?? '').trim(),
         username: String(formData.get('username') ?? '').trim(),
-        sslmode: String(formData.get('sslmode') ?? 'prefer'),
+        sslmode: String(formData.get('sslmode') ?? (engine === 'mariadb' ? 'disable' : 'prefer')),
         role: String(formData.get('role') ?? 'external'),
         host_from_worker: String(formData.get('host_from_worker') ?? '').trim() || null,
         is_default: formData.get('is_default') === 'on',
@@ -628,4 +634,39 @@ export async function runDatabaseQueryAction(connectionId: string, sql: string):
         if (error instanceof ControllerError) return { error: error.message };
         throw error;
     }
+}
+
+export async function forceDeleteSiteAction(formData: FormData) {
+    await requireAdmin();
+    const id = String(formData.get('id') ?? '');
+    if (!id) return;
+    try {
+        await controller.sites.adminForceDelete(id);
+    } catch (error) {
+        if (error instanceof ControllerError) {
+            redirect(`/admin/sites?error=${encodeURIComponent(error.message)}`);
+        }
+        throw error;
+    }
+    revalidatePath('/admin/sites');
+    redirect('/admin/sites');
+}
+
+const ADMIN_SITE_ACTIONS = ['stop', 'start', 'restart', 'backup', 'deactivate', 'reactivate'] as const;
+
+export async function adminSiteActionAction(formData: FormData) {
+    await requireAdmin();
+    const id = String(formData.get('id') ?? '');
+    const action = String(formData.get('action') ?? '') as (typeof ADMIN_SITE_ACTIONS)[number];
+    if (!id || !ADMIN_SITE_ACTIONS.includes(action)) return;
+    let notice = `${action} started`;
+    try {
+        await controller.sites.adminAction(id, action);
+    } catch (error) {
+        if (!(error instanceof ControllerError)) throw error;
+        notice = error.message;
+        redirect(`/admin/sites/${id}?error=${encodeURIComponent(notice)}`);
+    }
+    revalidatePath(`/admin/sites/${id}`);
+    redirect(`/admin/sites/${id}?done=${encodeURIComponent(notice)}`);
 }

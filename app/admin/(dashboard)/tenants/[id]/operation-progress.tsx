@@ -52,7 +52,7 @@ export function OperationProgress({ operationId }: { operationId: string }) {
 
     if (!snapshot) {
         return (
-            <div className="mt-6 flex items-center gap-2 rounded-md bg-info-50 px-3.5 py-2.5 portal-text-body text-info-600">
+            <div className="mt-6 flex items-center gap-2 rounded-md bg-primary/10 px-3.5 py-2.5 portal-text-body text-primary">
                 <Loader2 className="h-4 w-4 animate-spin" />Starting…
             </div>
         );
@@ -64,7 +64,7 @@ export function OperationProgress({ operationId }: { operationId: string }) {
     return (
         <div
             className={`mt-6 rounded-md px-3.5 py-3 portal-text-body ${
-                failed ? 'bg-error-50 text-error-700' : done ? 'bg-success-50 text-success-700' : 'bg-info-50 text-info-600'
+                failed ? 'bg-destructive/10 text-destructive' : done ? 'bg-success/10 text-success' : 'bg-primary/10 text-primary'
             }`}
         >
             <p className="flex items-center gap-2 font-semibold">

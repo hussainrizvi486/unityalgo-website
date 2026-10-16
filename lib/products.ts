@@ -1,5 +1,6 @@
 import 'server-only';
-import { prisma } from '@/lib/db';
+import { and, asc, eq } from 'drizzle-orm';
+import { db, schema } from '@/lib/db';
 
 /**
  * The products UnityAlgo sells, read from the `Product` table.
@@ -20,11 +21,16 @@ export interface ProductOption {
 
 /** Every active product, in display order. */
 export async function listProducts(): Promise<ProductOption[]> {
-    return prisma.product.findMany({
-        where: { isActive: true },
-        orderBy: [{ sortOrder: 'asc' }, { label: 'asc' }],
-        select: { id: true, label: true, slug: true, tagline: true },
-    });
+    return db
+        .select({
+            id: schema.product.id,
+            label: schema.product.label,
+            slug: schema.product.slug,
+            tagline: schema.product.tagline,
+        })
+        .from(schema.product)
+        .where(eq(schema.product.isActive, true))
+        .orderBy(asc(schema.product.sortOrder), asc(schema.product.label));
 }
 
 /**
@@ -41,15 +47,35 @@ export async function listProducts(): Promise<ProductOption[]> {
  * the home page.
  */
 export async function listProductsWithPlans() {
-    const products = await prisma.product.findMany({
-        where: { isActive: true, showOnLanding: true },
-        orderBy: [{ sortOrder: 'asc' }, { label: 'asc' }],
-        include: {
+    const products = await db.query.product.findMany({
+        where: and(eq(schema.product.isActive, true), eq(schema.product.showOnLanding, true)),
+        orderBy: [asc(schema.product.sortOrder), asc(schema.product.label)],
+        with: {
             plans: {
-                where: { isActive: true },
-                orderBy: [{ sortOrder: 'asc' }, { priceAmount: 'asc' }],
+                where: eq(schema.plan.isActive, true),
+                orderBy: [asc(schema.plan.sortOrder), asc(schema.plan.priceAmount)],
             },
         },
     });
     return products.filter((product) => product.plans.length > 0);
+}
+
+
+/**
+ * The active plans a customer can put an AlgoSuite (Frappe) site on, in display order.
+ * Used by the site wizard, the site page's plan picker and the actions that validate a chosen plan.
+ */
+export async function listAlgoSuitePlans() {
+    const rows = await db
+        .select({ plan: schema.plan })
+        .from(schema.plan)
+        .innerJoin(schema.product, eq(schema.product.id, schema.plan.productId))
+        .where(and(eq(schema.plan.isActive, true), eq(schema.product.slug, 'algosuite')))
+        .orderBy(asc(schema.plan.sortOrder));
+    return rows.map((row) => row.plan);
+}
+
+/** One active AlgoSuite plan by id, or null: the server-side check that a submitted plan is really on offer. */
+export async function findAlgoSuitePlan(id: string) {
+    return (await listAlgoSuitePlans()).find((plan) => plan.id === id) ?? null;
 }

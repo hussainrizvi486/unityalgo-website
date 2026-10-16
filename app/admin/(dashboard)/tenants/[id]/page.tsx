@@ -93,17 +93,17 @@ export default async function TenantDetailPage({ params, searchParams }: PagePro
 
     return (
         <div className="portal-detail">
-            <Link href="/admin/tenants" className="mb-6 inline-flex items-center gap-2 portal-text-body font-semibold text-ink-500 hover:text-ink-700">
+            <Link href="/admin/tenants" className="mb-6 inline-flex items-center gap-2 portal-text-body font-semibold text-muted-foreground hover:text-foreground/80">
                 <ArrowLeft className="h-4 w-4" />Back to tenants
             </Link>
 
-            <div className="flex items-start justify-between gap-4">
+            <div className="flex items-start justify-between gap-gap">
                 <div>
                     <div className="flex items-center gap-3">
                         <h1 className="portal-page-title">{tenant.tenant_slug}</h1>
                         <Badge variant={TENANT_STATUS_BADGE[tenant.status]}>{TENANT_STATUS_LABEL[tenant.status]}</Badge>
                     </div>
-                    <p className="mt-1 portal-text-body text-ink-500">
+                    <p className="mt-1 portal-text-body text-muted-foreground">
                         {tenant.customer?.email ?? tenant.customer_email} ·{' '}
                         {tenant.subscription?.plan?.name ?? tenant.plan_tier} ·{' '}
                         {tenant.memory_limit_mb} MB · {tenant.cpu_limit_cores} CPU
@@ -111,9 +111,9 @@ export default async function TenantDetailPage({ params, searchParams }: PagePro
                 </div>
             </div>
 
-            {error && <div className="mt-6 rounded-md bg-error-50 px-3.5 py-2.5 portal-text-body text-error-700">{error}</div>}
+            {error && <div className="mt-6 rounded-md bg-destructive/10 px-3.5 py-2.5 portal-text-body text-destructive">{error}</div>}
             {done && (
-                <div className="mt-6 flex items-center gap-2 rounded-md bg-success-50 px-3.5 py-2.5 portal-text-body text-success-700">
+                <div className="mt-6 flex items-center gap-2 rounded-md bg-success/10 px-3.5 py-2.5 portal-text-body text-success">
                     <CheckCircle2 className="h-4 w-4" />{DONE_LABELS[done] ?? 'Done.'}
                 </div>
             )}
@@ -124,8 +124,8 @@ export default async function TenantDetailPage({ params, searchParams }: PagePro
 
             {/* --- account --- */}
             <section className="mt-8 p-5 sm:p-6 portal-surface">
-                <h2 className="font-bold text-ink-900">Account</h2>
-                <p className="mt-1 portal-text-caption text-ink-400">
+                <h2 className=" text-foreground">Account</h2>
+                <p className="mt-1 portal-text-caption text-muted-foreground">
                     Who this store belongs to and what they are paying for. Both come from the linked
                     subscription.
                 </p>
@@ -133,27 +133,27 @@ export default async function TenantDetailPage({ params, searchParams }: PagePro
                 {tenant.customer ? (
                     <dl className="mt-5 grid gap-5 sm:grid-cols-2">
                         <div>
-                            <dt className="portal-text-caption font-semibold uppercase tracking-wide text-ink-400">Customer</dt>
+                            <dt className="portal-text-caption font-semibold uppercase tracking-wide text-muted-foreground">Customer</dt>
                             <dd className="mt-1">
                                 <Link
                                     href={`/admin/users/${tenant.customer.id}`}
-                                    className="font-medium text-ink-900 hover:text-link hover:underline"
+                                    className="font-medium text-foreground hover:text-primary hover:underline"
                                 >
                                     {tenant.customer.name}
                                 </Link>
-                                <div className="portal-text-body text-ink-500">{tenant.customer.email}</div>
+                                <div className="portal-text-body text-muted-foreground">{tenant.customer.email}</div>
                                 {tenant.customer.company && (
-                                    <div className="portal-text-body text-ink-500">{tenant.customer.company}</div>
+                                    <div className="portal-text-body text-muted-foreground">{tenant.customer.company}</div>
                                 )}
                             </dd>
                         </div>
                         <div>
-                            <dt className="portal-text-caption font-semibold uppercase tracking-wide text-ink-400">Plan</dt>
+                            <dt className="portal-text-caption font-semibold uppercase tracking-wide text-muted-foreground">Plan</dt>
                             <dd className="mt-1">
                                 {tenant.subscription?.plan ? (
                                     <>
-                                        <div className="font-medium text-ink-900">{tenant.subscription.plan.name}</div>
-                                        <div className="portal-text-body text-ink-500">
+                                        <div className="font-medium text-foreground">{tenant.subscription.plan.name}</div>
+                                        <div className="portal-text-body text-muted-foreground">
                                             {tenant.subscription.plan.price_amount === null
                                                 ? 'Custom pricing'
                                                 : `$${tenant.subscription.plan.price_amount}`}
@@ -162,7 +162,7 @@ export default async function TenantDetailPage({ params, searchParams }: PagePro
                                         </div>
                                     </>
                                 ) : (
-                                    <span className="portal-text-body text-ink-500">
+                                    <span className="portal-text-body text-muted-foreground">
                                         No subscription — running as &ldquo;{tenant.plan_tier}&rdquo;
                                     </span>
                                 )}
@@ -170,15 +170,15 @@ export default async function TenantDetailPage({ params, searchParams }: PagePro
                         </div>
                     </dl>
                 ) : (
-                    <div className="mt-5 rounded-lg border border-dashed border-ink-300 p-4">
-                        <p className="portal-text-body text-ink-600">
+                    <div className="mt-5 rounded-lg border border-dashed border-input p-4">
+                        <p className="portal-text-body text-foreground/70">
                             Not linked to a customer account — only the email{' '}
-                            <span className="font-medium text-ink-900">{tenant.customer_email}</span> is on record,
+                            <span className="font-medium text-foreground">{tenant.customer_email}</span> is on record,
                             so this store has no plan and no billing behind it.
                         </p>
                         <Link
                             href={`/admin/users?email=${encodeURIComponent(tenant.customer_email)}`}
-                            className="mt-2 inline-block portal-text-body font-semibold text-link hover:underline"
+                            className="mt-2 inline-block portal-text-body font-semibold text-primary hover:underline"
                         >
                             Find this customer →
                         </Link>
@@ -188,8 +188,8 @@ export default async function TenantDetailPage({ params, searchParams }: PagePro
 
             {/* --- lifecycle --- */}
             <section className="mt-8 p-5 sm:p-6 portal-surface">
-                <h2 className="font-bold text-ink-900">Lifecycle</h2>
-                <p className="mt-1 portal-text-caption text-ink-400">
+                <h2 className=" text-foreground">Lifecycle</h2>
+                <p className="mt-1 portal-text-caption text-muted-foreground">
                     Provision, redeploy and migrate are queued and run in the background.
                 </p>
                 <div className="mt-5 flex flex-wrap gap-2">
@@ -241,25 +241,25 @@ export default async function TenantDetailPage({ params, searchParams }: PagePro
 
             {/* --- domains --- */}
             <section className="mt-8 overflow-hidden portal-surface">
-                <div className="flex items-center gap-3 border-b border-ink-100 p-5 sm:p-6">
-                    <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent text-brand">
+                <div className="flex items-center gap-3 border-b border-border/60 p-5 sm:p-6">
+                    <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent text-primary">
                         <Globe className="h-4 w-4" />
                     </span>
                     <div>
-                        <h2 className="font-bold text-ink-900">Domains</h2>
-                        <p className="portal-text-caption text-ink-400">Custom domains need a DNS record pointing at the proxy before they verify.</p>
+                        <h2 className=" text-foreground">Domains</h2>
+                        <p className="portal-text-caption text-muted-foreground">Custom domains need a DNS record pointing at the proxy before they verify.</p>
                     </div>
                 </div>
 
                 {domains.length === 0 ? (
-                    <p className="flex min-h-20 items-center justify-center p-6 portal-text-body text-ink-400">No domains yet.</p>
+                    <p className="flex min-h-20 items-center justify-center p-6 portal-text-body text-muted-foreground">No domains yet.</p>
                 ) : (
                     <div>
                         {domains.map((domain) => (
-                            <div key={domain.id} className="flex flex-wrap items-center justify-between gap-3 border-b border-ink-100 px-6 py-4 last:border-0">
+                            <div key={domain.id} className="flex flex-wrap items-center justify-between gap-3 border-b border-border/60 px-6 py-4 last:border-0">
                                 <div className="min-w-0">
-                                    <p className="truncate font-mono portal-text-body text-ink-900">{domain.domain}</p>
-                                    <p className="mt-0.5 portal-text-caption text-ink-400">
+                                    <p className="truncate font-mono portal-text-body text-foreground">{domain.domain}</p>
+                                    <p className="mt-0.5 portal-text-caption text-muted-foreground">
                                         {domain.domain_type}
                                         {domain.ssl_status ? ` · SSL ${domain.ssl_status}` : ''}
                                     </p>
@@ -288,7 +288,7 @@ export default async function TenantDetailPage({ params, searchParams }: PagePro
                                         <input type="hidden" name="domain_id" value={domain.id} />
                                         <input type="hidden" name="tenant_id" value={tenant.id} />
                                         <input type="hidden" name="action" value="remove" />
-                                        <Button type="submit" size="sm" variant="outline" className="text-ink-500 hover:bg-error-50 hover:text-error-700">
+                                        <Button type="submit" size="sm" variant="outline" className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive">
                                             Remove
                                         </Button>
                                     </form>
@@ -298,28 +298,28 @@ export default async function TenantDetailPage({ params, searchParams }: PagePro
                     </div>
                 )}
 
-                <div className="border-t border-ink-100 bg-ink-50/50 p-5 sm:p-6">
+                <div className="border-t border-border/60 bg-muted/50 p-5 sm:p-6">
                     <TenantDomainForm tenantId={tenant.id} />
                 </div>
             </section>
 
             {/* --- backups --- */}
             <section className="mt-8 overflow-hidden portal-surface">
-                <div className="border-b border-ink-100 p-5 sm:p-6">
-                    <h2 className="font-bold text-ink-900">Backups</h2>
-                    <p className="portal-text-caption text-ink-400">pg_dump snapshots of the tenant database.</p>
+                <div className="border-b border-border/60 p-5 sm:p-6">
+                    <h2 className=" text-foreground">Backups</h2>
+                    <p className="portal-text-caption text-muted-foreground">pg_dump snapshots of the tenant database.</p>
                 </div>
                 {backups.length === 0 ? (
-                    <p className="flex min-h-20 items-center justify-center p-6 portal-text-body text-ink-400">No backups yet.</p>
+                    <p className="flex min-h-20 items-center justify-center p-6 portal-text-body text-muted-foreground">No backups yet.</p>
                 ) : (
                     <div>
                         {backups.slice(0, 10).map((backup) => (
-                            <div key={backup.id} className="flex items-center justify-between gap-4 border-b border-ink-100 px-6 py-4 last:border-0">
+                            <div key={backup.id} className="flex items-center justify-between gap-gap border-b border-border/60 px-6 py-4 last:border-0">
                                 <div className="min-w-0">
-                                    <p className="portal-text-body text-ink-800">
+                                    <p className="portal-text-body text-foreground">
                                         {new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(backup.created_at))}
                                     </p>
-                                    <p className="mt-0.5 portal-text-caption text-ink-400">
+                                    <p className="mt-0.5 portal-text-caption text-muted-foreground">
                                         {backup.reason ?? 'manual'}
                                         {backup.size_bytes ? ` · ${(backup.size_bytes / 1024 / 1024).toFixed(1)} MB` : ''}
                                         {backup.error_message ? ` · ${backup.error_message}` : ''}
@@ -344,9 +344,9 @@ export default async function TenantDetailPage({ params, searchParams }: PagePro
             </section>
 
             {/* --- resize / migrate --- */}
-            <div className="mt-8 grid gap-6 md:grid-cols-2">
+            <div className="mt-8 grid gap-gap-lg md:grid-cols-2">
                 <section className="p-5 sm:p-6 portal-surface">
-                    <h2 className="mb-4 font-bold text-ink-900">Resize</h2>
+                    <h2 className="mb-4 text-foreground">Resize</h2>
                     <TenantResizeForm
                         tenantId={tenant.id}
                         memory={String(tenant.memory_limit_mb)}
@@ -355,8 +355,8 @@ export default async function TenantDetailPage({ params, searchParams }: PagePro
                 </section>
 
                 <section className="p-5 sm:p-6 portal-surface">
-                    <h2 className="mb-1 font-bold text-ink-900">Move to another database cluster</h2>
-                    <p className="mb-4 portal-text-caption text-ink-400">
+                    <h2 className="mb-1 text-foreground">Move to another database cluster</h2>
+                    <p className="mb-4 portal-text-caption text-muted-foreground">
                         Currently on <strong>{tenant.database_cluster ?? 'the default cluster'}</strong>. This dumps and
                         restores the whole database, then redeploys — the source is only dropped once the move succeeds.
                     </p>
@@ -368,8 +368,8 @@ export default async function TenantDetailPage({ params, searchParams }: PagePro
                 </section>
 
                 <section className="p-5 sm:p-6 portal-surface">
-                    <h2 className="mb-1 font-bold text-ink-900">Migrate to another node</h2>
-                    <p className="mb-4 portal-text-caption text-ink-400">
+                    <h2 className="mb-1 text-foreground">Migrate to another node</h2>
+                    <p className="mb-4 portal-text-caption text-muted-foreground">
                         Blue/green: the new container is deployed and health-checked before the old one is torn down.
                     </p>
                     <TenantMigrateForm
@@ -381,9 +381,9 @@ export default async function TenantDetailPage({ params, searchParams }: PagePro
                 </section>
             </div>
 
-            <section className="mt-8 rounded-xl border border-error-500/20 bg-error-50/40 p-5 sm:p-6">
-                <h2 className="font-bold text-ink-900">Danger zone</h2>
-                <p className="mt-1 mb-4 portal-text-body text-ink-600">
+            <section className="mt-8 rounded-xl border border-destructive/20 bg-destructive/20 p-card sm:p-6">
+                <h2 className=" text-foreground">Danger zone</h2>
+                <p className="mt-1 mb-4 portal-text-body text-foreground/70">
                     Deleting a tenant tears down its container and removes its record. The API refuses while a
                     container is still live unless it is stopped first.
                 </p>

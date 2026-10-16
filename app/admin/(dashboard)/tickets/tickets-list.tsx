@@ -105,7 +105,7 @@ export function TicketsList({ rows }: { rows: TicketRow[] }) {
                     />
                 ) : null
             }
-            emptyIcon={<MessageSquareText className="h-10 w-10 text-ink-300" />}
+            emptyIcon={<MessageSquareText className="h-10 w-10 text-muted-foreground/50" />}
             emptyTitle="No support tickets"
             emptyMessage="Tickets raised by customers from their portal appear here."
         />

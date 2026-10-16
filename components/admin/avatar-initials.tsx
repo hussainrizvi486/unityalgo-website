@@ -1,11 +1,11 @@
 import { cn } from '@/utils';
 
 const PALETTE = [
-    'bg-info-50 text-info-600',
-    'bg-success-50 text-success-600',
-    'bg-warning-50 text-warning-700',
-    'bg-error-50 text-error-700',
-    'bg-accent text-brand',
+    'bg-primary/10 text-primary',
+    'bg-success/10 text-success',
+    'bg-warning/10 text-warning',
+    'bg-destructive/10 text-destructive',
+    'bg-accent text-primary',
 ];
 
 function colorFor(seed: string) {

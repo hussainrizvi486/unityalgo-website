@@ -1,4 +1,4 @@
-import type { AddOn, AddOnPricingType, Plan, PriceUnit } from '@prisma/client';
+import type { AddOn, AddOnPricingType, Plan, PriceUnit } from '@/db/types';
 
 const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
 

@@ -34,28 +34,28 @@ const features: FeatureType[] = [
         icon: Zap,
         title: 'Product-Oriented Approach',
         desc: 'We think like product owners, not just vendors. We research your users, challenge assumptions, and help you prioritize features that move the metrics that matter.',
-        color: 'bg-brand',
+        color: 'bg-primary',
         rotate: '-rotate-3',
     },
     {
         icon: PersonStanding,
         title: 'AI-First by Default',
         desc: 'Every project runs on our Production-Ready AI Engineering practice — senior engineers paired with AI agents, shipping faster without lowering the bar. AI is the engine, not the marketing.',
-        color: 'bg-ink-900',
+        color: 'bg-primary',
         rotate: 'rotate-2',
     },
     {
         icon: MessageSquare,
         title: 'Clear Communication',
         desc: 'We build relationships on integrity and trust, with transparent processes and proactive communication at every stage of the work.',
-        color: 'bg-brand-deep',
+        color: 'bg-primary/90',
         rotate: '-rotate-2',
     },
     {
         icon: PersonStanding,
         title: 'Customer-Centric Approach',
         desc: 'We start from your business goals, not our tech stack, and deliver tailored solutions that drive measurable impact for your team and customers.',
-        color: 'bg-ink-950',
+        color: 'bg-primary',
         rotate: 'rotate-3',
     },
 ];
@@ -99,18 +99,18 @@ const data: Array<ServiceType> = [
 
 export const Services = () => {
     return (
-        <section className="relative min-h-screen bg-ink-50 text-foreground overflow-hidden site-section-spacing" id="services">
+        <section className="relative min-h-screen bg-muted text-foreground overflow-hidden site-section-spacing" id="services">
 
 
-            <div className="absolute inset-0 bg-grid-pattern mask-[linear-gradient(to_bottom,transparent,black_10%,black_90%,transparent)] opacity-30 pointer-events-none" />
+            <div className="absolute inset-0 bg-grid-pattern mask-[linear-gradient(to_bottom,transparent,var(--scrim)_10%,var(--scrim)_90%,transparent)] opacity-30 pointer-events-none" />
 
             <div className="site-container relative z-10 site-gutters">
                 <div className="mb-20 text-center max-w-3xl mx-auto">
      
-                    <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-6">
+                    <h2 className="text-4xl md:text-5xl tracking-tight mb-6">
                         What We Provide
                     </h2>
-                    <p className="text-lg text-ink-600 leading-relaxed text-balance">
+                    <p className="text-lg text-foreground/70 leading-relaxed text-balance">
                         Comprehensive solutions tailored to your business needs.</p>
                 </div>
 
@@ -123,7 +123,7 @@ export const Services = () => {
                 {/* Industries Pills */}
                 <div className="mb-32 text-center">
                     <p className="text-base font-bold uppercase tracking-widest mb-8">Industries We Serve</p>
-                    <div className="flex flex-wrap justify-center gap-3 md:gap-4 max-w-5xl mx-auto">
+                    <div className="flex flex-wrap justify-center gap-3 md:gap-gap max-w-wide mx-auto">
                         {[
                             { name: "Retail & E-commerce", icon: ShoppingCart },
                             { name: "Manufacturing", icon: Factory },
@@ -153,12 +153,12 @@ export const Services = () => {
 
                 <div className="relative">
                     <div className="text-center mb-16">
-                        <h3 className="text-3xl font-bold ">
+                        <h3 className="text-3xl ">
                             How UnityAlgo Drives Your Success
                         </h3>
                     </div>
 
-                    <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 py-6">
+                    <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-gap-lg py-6">
                         {features.map((feature, index) => (
                             <FeatureCard key={feature.title} {...feature} delay={index * 0.1} />
                         ))}
@@ -178,31 +178,31 @@ const ServiceCard = (props: ServiceType & { index: number }) => {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: props.index * 0.1 }}
-            className="group relative p-8 rounded-xl bg-white hover:shadow-sm hover:cursor-pointer transition-all duration-300"
+            className="group relative p-8 rounded-xl bg-card hover:shadow-sm hover:cursor-pointer transition-all duration-300"
         >
-            <div className="flex flex-col-reverse md:flex-row md:items-start gap-6">
+            <div className="flex flex-col-reverse md:flex-row md:items-start gap-gap-lg">
                 <div className="flex-1 z-10">
-                    <h3 className="text-2xl font-bold text-ink-900 mb-3 transition-colors">
+                    <h3 className="text-2xl text-foreground mb-3 transition-colors">
                         {props.title}
                     </h3>
-                    <p className="text-sm text-ink-600 leading-relaxed mb-6">
+                    <p className="text-sm text-foreground/70 leading-relaxed mb-6">
                         {props.description}
                     </p>
 
                     <div className="flex gap-2 flex-wrap mb-8">
                         {props.languages.map((val, index) => (
-                            <span key={index} className="px-2.5 py-0.5 text-[0.65rem] font-bold bg-ink-50 rounded-full">
+                            <span key={index} className="px-2.5 py-0.5 text-micro font-bold bg-muted rounded-full">
                                 {val}
                             </span>
                         ))}
                     </div>
 
                     <div className="flex items-center gap-3">
-                        <Button className="py-1.5 h-auto text-xs rounded font-bold text-white bg-ink-900 hover:bg-ink-800">
+                        <Button className="py-1.5 h-auto text-xs rounded font-bold text-primary-foreground bg-primary hover:bg-primary/90">
                             Let&apos;s Chat
                         </Button>
                         {props.link && (
-                            <Button asChild variant="ghost" className="py-1.5 h-auto text-xs rounded font-bold text-ink-600 hover:bg-secondary"><Link href={props.link}>
+                            <Button asChild variant="ghost" className="py-1.5 h-auto text-xs rounded font-bold text-foreground/70 hover:bg-secondary"><Link href={props.link}>
                                     Learn more <ArrowUpRight className="ml-1 w-4 h-4" />
                                 </Link></Button>
                         )}
@@ -242,13 +242,13 @@ const FeatureCard = ({ icon: Icon, title, desc, color, rotate, delay }: FeatureT
         )}
     >
         <div className="relative w-12 h-12 mb-8">
-            <Icon className="w-12 h-12 text-white" strokeWidth={1.5} />
-            <span className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-white flex items-center justify-center">
-                <Check className="w-3 h-3 text-ink-900" strokeWidth={3} />
+            <Icon className="w-12 h-12 text-primary-foreground" strokeWidth={1.5} />
+            <span className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-card flex items-center justify-center">
+                <Check className="w-3 h-3 text-foreground" strokeWidth={3} />
             </span>
         </div>
-        <h4 className="text-xl font-bold text-white mb-3">{title}</h4>
-        <p className="text-sm text-white/80 leading-relaxed">
+        <h4 className="text-xl text-primary-foreground mb-3">{title}</h4>
+        <p className="text-sm text-primary-foreground/80 leading-relaxed">
             {desc}
         </p>
     </motion.div>

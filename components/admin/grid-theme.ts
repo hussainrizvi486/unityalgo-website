@@ -10,15 +10,15 @@ import { themeQuartz, iconSetQuartzLight, colorSchemeLight } from 'ag-grid-commu
  * globals.css and the grid follows.
  */
 
-const INK_50 = 'var(--color-ink-50)';
-const INK_100 = 'var(--color-ink-100)';
-const INK_200 = 'var(--color-ink-200)';
-const INK_400 = 'var(--color-ink-400)';
-const INK_500 = 'var(--color-ink-500)';
-const INK_900 = 'var(--color-ink-900)';
-const BRAND = 'var(--color-brand)';
-const BRAND_SUBDUED = 'var(--color-brand-subdued)';
-const SURFACE = 'var(--color-background)';
+const INK_50 = 'var(--muted)';
+const INK_100 = 'var(--secondary)';
+const INK_200 = 'var(--border)';
+const INK_400 = 'var(--muted-foreground)';
+const INK_500 = 'var(--muted-foreground)';
+const INK_900 = 'var(--foreground)';
+const BRAND = 'var(--primary)';
+const BRAND_SUBDUED = 'var(--accent)';
+const SURFACE = 'var(--background)';
 
 export const adminGridTheme = themeQuartz
     .withPart(iconSetQuartzLight)
@@ -47,7 +47,7 @@ export const adminGridTheme = themeQuartz
         headerHeight: 'var(--portal-grid-header-height, 44px)',
         cellHorizontalPadding: 'var(--portal-grid-cell-padding, 20px)',
         oddRowBackgroundColor: SURFACE,
-        rowHoverColor: 'color-mix(in srgb, var(--color-ink-50) 75%, transparent)',
+        rowHoverColor: 'color-mix(in srgb, var(--muted) 75%, transparent)',
 
         // Selection and focus use the brand tint, as elsewhere in the panel.
         selectedRowBackgroundColor: BRAND_SUBDUED,
@@ -58,10 +58,10 @@ export const adminGridTheme = themeQuartz
 
         // Controls
         inputBorder: { color: INK_200, width: 1 },
-        inputFocusBorder: { color: 'var(--color-ring)', width: 1 },
+        inputFocusBorder: { color: 'var(--ring)', width: 1 },
         borderRadius: 'var(--radius-lg)',
         menuBorder: { color: INK_200, width: 1 },
         menuBackgroundColor: SURFACE,
-        menuShadow: { radius: 16, spread: 0, offsetY: 4, color: 'rgb(var(--shadow-color) / 0.10)' },
+        menuShadow: { radius: 16, spread: 0, offsetY: 4, color: 'color-mix(in srgb, var(--foreground) 10%, transparent)' },
         tooltipBackgroundColor: INK_900,
     });

@@ -31,14 +31,14 @@ export function TenantResizeForm({ tenantId, memory, cpu }: { tenantId: string; 
     const [state, formAction] = useActionState(resizeTenantAction.bind(null, tenantId), undefined);
 
     return (
-        <form action={formAction} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+        <form action={formAction} className="space-y-gap">
+            <div className="grid grid-cols-2 gap-gap">
                 <div>
-                    <Label htmlFor="memory_limit_mb" className="mb-1.5 portal-text-body text-ink-700">Memory (MB)</Label>
+                    <Label htmlFor="memory_limit_mb" className="mb-1.5 portal-text-body text-foreground/80">Memory (MB)</Label>
                     <SmartInput id="memory_limit_mb" name="memory_limit_mb" kind="integer" min={64} defaultValue={memory} />
                 </div>
                 <div>
-                    <Label htmlFor="cpu_limit_cores" className="mb-1.5 portal-text-body text-ink-700">CPU cores</Label>
+                    <Label htmlFor="cpu_limit_cores" className="mb-1.5 portal-text-body text-foreground/80">CPU cores</Label>
                     <Input id="cpu_limit_cores" name="cpu_limit_cores" defaultValue={cpu} />
                 </div>
             </div>
@@ -58,13 +58,13 @@ export function TenantMigrateForm({
     const [state, formAction] = useActionState(migrateTenantAction.bind(null, tenantId), undefined);
 
     if (servers.length === 0) {
-        return <p className="portal-text-body text-ink-400">No other active worker nodes available to migrate to.</p>;
+        return <p className="portal-text-body text-muted-foreground">No other active worker nodes available to migrate to.</p>;
     }
 
     return (
-        <form action={formAction} className="space-y-4">
+        <form action={formAction} className="space-y-gap">
             <div>
-                <Label htmlFor="target_server_id" className="mb-1.5 portal-text-body text-ink-700">Destination node</Label>
+                <Label htmlFor="target_server_id" className="mb-1.5 portal-text-body text-foreground/80">Destination node</Label>
                 <Select name="target_server_id">
                     <SelectTrigger id="target_server_id" className="w-full">
                         <SelectValue placeholder="Choose a node" />
@@ -88,11 +88,11 @@ export function TenantDomainForm({ tenantId }: { tenantId: string }) {
     return (
         <form action={formAction} className="flex flex-wrap items-end gap-3">
             <div className="min-w-56 flex-1">
-                <Label htmlFor="domain" className="mb-1.5 portal-text-body text-ink-700">Add a domain</Label>
+                <Label htmlFor="domain" className="mb-1.5 portal-text-body text-foreground/80">Add a domain</Label>
                 <Input id="domain" name="domain" required placeholder="shop.example.com" />
             </div>
             <div>
-                <Label htmlFor="domain_type" className="mb-1.5 portal-text-body text-ink-700">Type</Label>
+                <Label htmlFor="domain_type" className="mb-1.5 portal-text-body text-foreground/80">Type</Label>
                 <Select name="domain_type" defaultValue="custom">
                     <SelectTrigger id="domain_type" className="w-36"><SelectValue /></SelectTrigger>
                     <SelectContent>
@@ -127,16 +127,16 @@ export function TenantDatabaseMigrateForm({
 
     if (options.length === 0) {
         return (
-            <p className="portal-text-body text-ink-400">
+            <p className="portal-text-body text-muted-foreground">
                 No other clusters are registered. Add one under Databases to move this tenant.
             </p>
         );
     }
 
     return (
-        <form action={formAction} className="space-y-4">
+        <form action={formAction} className="space-y-gap">
             <div>
-                <Label htmlFor="target_connection_id" className="mb-1.5 portal-text-body text-ink-700">
+                <Label htmlFor="target_connection_id" className="mb-1.5 portal-text-body text-foreground/80">
                     Destination cluster
                 </Label>
                 <Select name="target_connection_id">

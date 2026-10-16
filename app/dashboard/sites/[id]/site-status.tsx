@@ -1,23 +1,19 @@
 'use client';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useActionState, useEffect, useState } from 'react';
 import { useFormStatus } from 'react-dom';
-import { ArrowUpRight, Check, Globe, LoaderCircle } from 'lucide-react';
+import { ArrowUpRight, Check, CircleAlert, Globe, LoaderCircle, X } from 'lucide-react';
 import type { CustomerSite } from '@/lib/controller-client';
 import { retrySiteAction } from '../../actions';
 import { Button } from '@/components/ui/button';
 import { Notice } from '@/components/ui/notice';
-const steps = [
-    ['queued', 'Queued'],
-    ['assigned', 'Server assigned'],
-    ['pulling', 'Downloading images'],
-    ['configuring', 'Configuring services'],
-    ['installing', 'Installing Frappe & apps'],
-    ['starting', 'Checking application health'],
-    ['routing', 'Connecting site address'],
-    ['ready', 'Ready'],
-];
-const terminal = ['ready', 'failed', 'cleanup_required'];
+import { SiteOverview, type PlanChoice } from './site-overview';
+import { DeleteSite } from './delete-site';
+const terminal = ['ready', 'stopped', 'deactivated', 'failed', 'cleanup_required'];
+// Once installed, the site gets the full management page instead of the progress view.
+const installed = ['ready', 'stopping', 'stopped', 'restarting', 'restoring', 'updating', 'deactivated'];
+const settled = (value: CustomerSite) => terminal.includes(value.status) && !value.activity;
 function RetryButton() {
     const { pending } = useFormStatus();
     return (
@@ -29,9 +25,11 @@ function RetryButton() {
 export function SiteStatus({
     initial,
     applicationNames,
+    plans,
 }: {
     initial: CustomerSite;
     applicationNames: Record<string, string>;
+    plans: PlanChoice[];
 }) {
     const [site, setSite] = useState(initial);
     const [seenInitial, setSeenInitial] = useState(initial);
@@ -40,8 +38,10 @@ export function SiteStatus({
         setSite(initial);
     }
     const [error, setError] = useState('');
+    const router = useRouter();
     const [retry, action] = useActionState(retrySiteAction, undefined);
     const [attempt, setAttempt] = useState(0);
+    const initialSettled = terminal.includes(initial.status) && !initial.activity;
     useEffect(() => {
         let disposed = false;
         const controller = new AbortController();
@@ -57,13 +57,18 @@ export function SiteStatus({
                     `/api/customer/sites/${initial.id}`,
                     { signal: controller.signal },
                 );
+                if (response.status === 404) {
+                    // The site is gone (deleted): leave a page that no longer exists.
+                    router.replace('/dashboard/sites');
+                    return;
+                }
                 if (!response.ok) throw new Error();
                 const value: CustomerSite = await response.json();
                 if (disposed) return;
                 setSite(value);
                 setError('');
                 failures = 0;
-                if (terminal.includes(value.status)) return;
+                if (settled(value)) return;
             } catch {
                 if (disposed) return;
                 failures++;
@@ -76,29 +81,61 @@ export function SiteStatus({
                 Math.min(30_000, 5000 * Math.max(failures, 1)),
             );
         }
-        if (!terminal.includes(initial.status) || retry?.success || attempt > 0)
+        if (!initialSettled || retry?.success || attempt > 0)
             void refresh();
         return () => {
             disposed = true;
             controller.abort();
             clearTimeout(timer);
         };
-    }, [initial.id, initial.status, retry, attempt]);
-    const index = steps.findIndex(([status]) => status === site.status);
+    }, [initial.id, initialSettled, retry, attempt, router]);
+    if (site.status === 'deleting')
+        return (
+            <div className="mx-auto portal-detail">
+                <Link href="/dashboard/sites" className="portal-text-body text-muted-foreground hover:underline">Back to sites</Link>
+                <h1 className="portal-page-title mt-6">{site.name}</h1>
+                <Notice tone="info" className="mt-6">
+                    <span className="inline-flex items-center gap-2">
+                        <LoaderCircle className="size-4 motion-safe:animate-spin" />
+                        {site.message}
+                    </span>
+                </Notice>
+            </div>
+        );
+    if (installed.includes(site.status))
+        return (
+            <SiteOverview
+                site={site}
+                applicationNames={applicationNames}
+                plans={plans}
+                onChange={() => setAttempt((value) => value + 1)}
+            />
+        );
+    const phase =
+        site.status === 'ready'
+            ? 'success'
+            : site.status === 'failed' || site.status === 'cleanup_required'
+              ? 'failed'
+              : 'creating';
+    const phaseLabel = {
+        creating: 'Creating Site',
+        success: 'Success',
+        failed: 'Failed',
+    }[phase];
     return (
         <div className="mx-auto portal-detail">
             <Link
                 href="/dashboard/sites"
-                className="portal-text-body text-ink-500 hover:underline"
+                className="portal-text-body text-muted-foreground hover:underline"
             >
                 Back to sites
             </Link>
-            <div className="mt-6 flex flex-wrap items-start justify-between gap-6">
+            <div className="mt-6 flex flex-wrap items-start justify-between gap-gap-lg">
                 <div>
                     <h1 className="portal-page-title">
                         {site.name}
                     </h1>
-                    <p className="mt-3 break-all portal-text-body text-ink-600">
+                    <p className="mt-3 break-all portal-text-body text-foreground/70">
                         {site.domain}
                     </p>
                 </div>
@@ -114,11 +151,36 @@ export function SiteStatus({
                     </Button>
                 )}
             </div>
-            <section className="mt-8 rounded-xl border border-ink-200 p-6">
+            <div
+                role="status"
+                className="mt-6 flex items-center gap-3 rounded-xl border border-border p-4"
+            >
+                {phase === 'creating' && (
+                    <LoaderCircle className="size-5 motion-safe:animate-spin" />
+                )}
+                {phase === 'success' && <Check className="size-5 text-success" />}
+                {phase === 'failed' && <CircleAlert className="size-5 text-destructive" />}
+                <div>
+                    <p className="font-semibold">{phaseLabel}</p>
+                    <p className="portal-text-caption text-muted-foreground">
+                        {phase === 'creating' &&
+                            'The site is being provisioned and configured.'}
+                        {phase === 'success' &&
+                            'Deployment completed. Your site is ready to use.'}
+                        {phase === 'failed' && 'Deployment encountered an error.'}
+                    </p>
+                </div>
+            </div>
+            {phase === 'failed' && (
+                <Notice tone="error" className="mt-4">
+                    {site.error || site.message}
+                </Notice>
+            )}
+            <section className="mt-6 rounded-xl border border-border p-card">
                 <div className="flex items-center gap-3">
-                    <Globe className="size-5 text-brand" />
-                    <h2 className="font-semibold">Installation progress</h2>
-                    <span className="ml-auto portal-text-body text-ink-500">
+                    <Globe className="size-5 text-primary" />
+                    <h2 className="">Installation progress</h2>
+                    <span className="ml-auto portal-text-body text-muted-foreground">
                         {site.progress}%
                     </span>
                 </div>
@@ -128,37 +190,39 @@ export function SiteStatus({
                     aria-valuenow={site.progress}
                     aria-valuemin={0}
                     aria-valuemax={100}
-                    className="mt-5 h-2 overflow-hidden rounded-full bg-ink-100"
+                    className="mt-5 h-2 overflow-hidden rounded-full bg-secondary"
                 >
                     <div
-                        className="h-full bg-ink-900 transition-[width] motion-reduce:transition-none"
+                        className="h-full bg-primary transition-[width] motion-reduce:transition-none"
                         style={{ width: `${site.progress}%` }}
                     />
                 </div>
-                <p className="mt-5 portal-text-body leading-7 text-ink-600">
+                <p className="mt-5 portal-text-body leading-7 text-foreground/70">
                     {site.message}
                 </p>
-                <p className="mt-3 portal-text-caption text-ink-500">
+                <p className="mt-3 portal-text-caption text-muted-foreground">
                     Assigned server: {site.server_name}
                 </p>
-                <ol className="mt-8 grid gap-4 sm:grid-cols-2">
-                    {steps.map(([status, label], step) => (
+                <ol className="mt-8 grid gap-gap sm:grid-cols-2">
+                    {site.steps.map((item, number) => (
                         <li
-                            key={status}
-                            className={`flex items-center gap-3 portal-text-body ${step <= index ? 'text-ink-900' : 'text-ink-500'}`}
+                            key={item.key}
+                            className={`flex items-center gap-3 portal-text-body ${item.state === 'pending' ? 'text-muted-foreground' : 'text-foreground'}`}
                         >
                             <span
-                                className={`flex size-6 shrink-0 items-center justify-center rounded-full ${step < index || site.status === 'ready' ? 'bg-ink-900 text-white' : 'border border-ink-300'}`}
+                                className={`flex size-6 shrink-0 items-center justify-center rounded-full ${item.state === 'done' ? 'bg-primary text-destructive-foreground' : item.state === 'failed' ? 'bg-destructive text-destructive-foreground' : 'border border-input'}`}
                             >
-                                {step < index || site.status === 'ready' ? (
+                                {item.state === 'done' ? (
                                     <Check className="size-3.5" />
-                                ) : step === index ? (
+                                ) : item.state === 'failed' ? (
+                                    <X className="size-3.5" />
+                                ) : item.state === 'active' ? (
                                     <LoaderCircle className="size-3.5 motion-safe:animate-spin" />
                                 ) : (
-                                    step + 1
+                                    number + 1
                                 )}
                             </span>
-                            {label}
+                            {item.label}
                         </li>
                     ))}
                 </ol>
@@ -176,16 +240,17 @@ export function SiteStatus({
                     Refresh status
                 </Button>
             </section>
-            <section className="mt-6 rounded-xl border border-ink-200 p-6">
-                <h2 className="font-semibold">Selected applications</h2>
-                <p className="mt-3 portal-text-body text-ink-600">
+            <section className="mt-6 rounded-xl border border-border p-card">
+                <h2 className="">Selected applications</h2>
+                <p className="mt-3 portal-text-body text-foreground/70">
                     {site.apps
                         .map((app) => applicationNames[app] || app)
                         .join(', ')}
                 </p>
-                <p className="mt-3 portal-text-caption text-ink-500">
-                    Your Frappe account uses Administrator and the password you
-                    chose during site creation.
+                <p className="mt-3 portal-text-caption text-muted-foreground">
+                    {site.plan_name ? `Plan: ${site.plan_name}. ` : ''}
+                    Sign in with {site.owner_email || 'the email'} and the
+                    password you chose during site creation.
                 </p>
             </section>
             {site.status === 'failed' && (
@@ -203,6 +268,11 @@ export function SiteStatus({
                     )}
                     <RetryButton />
                 </form>
+            )}
+            {site.status === 'failed' && (
+                <div className="mt-6">
+                    <DeleteSite site={site} onDone={() => setAttempt((value) => value + 1)} />
+                </div>
             )}
             {site.status === 'cleanup_required' && (
                 <Notice tone="warning" className="mt-6">

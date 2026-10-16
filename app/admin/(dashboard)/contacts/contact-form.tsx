@@ -37,15 +37,15 @@ export function ContactForm({ action, defaultValues, submitLabel }: ContactFormP
 
     return (
         <form action={formAction} className="portal-stack portal-form">
-            <div className="grid md:grid-cols-2 gap-6">
+            <div className="grid md:grid-cols-2 gap-gap-lg">
                 <div>
-                    <Label htmlFor="firstName" className="portal-text-body text-ink-700 mb-1.5">
+                    <Label htmlFor="firstName" className="portal-text-body text-foreground/80 mb-1.5">
                         First Name
                     </Label>
                     <Input id="firstName" name="firstName" required defaultValue={defaultValues?.firstName} />
                 </div>
                 <div>
-                    <Label htmlFor="lastName" className="portal-text-body text-ink-700 mb-1.5">
+                    <Label htmlFor="lastName" className="portal-text-body text-foreground/80 mb-1.5">
                         Last Name
                     </Label>
                     <Input id="lastName" name="lastName" required defaultValue={defaultValues?.lastName} />
@@ -53,27 +53,27 @@ export function ContactForm({ action, defaultValues, submitLabel }: ContactFormP
             </div>
 
             <div>
-                <Label htmlFor="email" className="portal-text-body text-ink-700 mb-1.5">
+                <Label htmlFor="email" className="portal-text-body text-foreground/80 mb-1.5">
                     Email
                 </Label>
                 <Input id="email" name="email" type="email" required defaultValue={defaultValues?.email} />
             </div>
 
             <div>
-                <Label htmlFor="phone" className="portal-text-body text-ink-700 mb-1.5">
+                <Label htmlFor="phone" className="portal-text-body text-foreground/80 mb-1.5">
                     Phone
                 </Label>
                 <Input id="phone" name="phone" required defaultValue={defaultValues?.phone} />
             </div>
 
             <div>
-                <Label htmlFor="message" className="portal-text-body text-ink-700 mb-1.5">
+                <Label htmlFor="message" className="portal-text-body text-foreground/80 mb-1.5">
                     Message
                 </Label>
                 <Textarea id="message" name="message" required rows={5} defaultValue={defaultValues?.message} />
             </div>
 
-            {state?.error && <p className="portal-text-body text-error-600">{state.error}</p>}
+            {state?.error && <p className="portal-text-body text-destructive">{state.error}</p>}
 
             <div className="flex items-center gap-3">
                 <SubmitButton label={submitLabel} />

@@ -179,20 +179,20 @@ function Example({
     children: ReactNode;
 }) {
     return (
-        <div className="min-w-0 rounded-lg border border-ink-200 bg-white">
-            <div className="border-b border-ink-200 px-4 py-4">
+        <div className="min-w-0 rounded-lg border border-border bg-card">
+            <div className="border-b border-border px-4 py-4">
                 <h3 className="portal-text-body font-semibold">{title}</h3>
-                <p className="mt-1 portal-text-caption leading-5 text-ink-600">
+                <p className="mt-1 portal-text-caption leading-5 text-foreground/70">
                     {description}
                 </p>
             </div>
             <div className="p-4">{children}</div>
-            <details className="border-t border-ink-200 portal-text-caption">
-                <summary className="cursor-pointer px-4 py-3 font-medium text-ink-600">
+            <details className="border-t border-border portal-text-caption">
+                <summary className="cursor-pointer px-4 py-3 font-medium text-foreground/70">
                     Source & usage
                 </summary>
-                <p className="break-all px-4 pb-3 text-ink-500">{source}</p>
-                <pre className="overflow-x-auto border-t border-ink-200 bg-ink-50 p-4 leading-6">
+                <p className="break-all px-4 pb-3 text-muted-foreground">{source}</p>
+                <pre className="overflow-x-auto border-t border-border bg-muted p-4 leading-6">
                     <code>{code}</code>
                 </pre>
             </details>
@@ -205,7 +205,7 @@ function Section({ id, children }: { id: string; children: ReactNode }) {
     return (
         <section id={id} className="scroll-mt-24 portal-fields">
             <div>
-                <p className="portal-text-caption font-medium text-ink-500">
+                <p className="portal-text-caption font-medium text-muted-foreground">
                     {String(sections.indexOf(section) + 1).padStart(2, '0')}
                 </p>
                 <h2 className="mt-1 text-xl font-semibold tracking-tight">
@@ -221,8 +221,7 @@ export function ComponentLibrary() {
     const [query, setQuery] = useState('');
     const [notice, setNotice] = useState('');
     const [switchOn, setSwitchOn] = useState(true);
-    const [density, setDensity] = useState('1');
-    const [height, setHeight] = useState('32');
+    const [height, setHeight] = useState('1');
     const [rowsQuery, setRowsQuery] = useState('');
     const visible = sections.filter((section) =>
         `${section.title} ${section.search}`
@@ -272,13 +271,13 @@ export function ComponentLibrary() {
             </Breadcrumb>
             <div className="mt-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
                 <div>
-                    <p className="portal-text-caption font-medium uppercase tracking-wider text-ink-500">
+                    <p className="portal-text-caption font-medium uppercase tracking-wider text-muted-foreground">
                         Customer portal / Design system
                     </p>
                     <h1 className="portal-page-title mt-2">
                         One library. Every screen.
                     </h1>
-                    <p className="mt-3 portal-form portal-text-body leading-6 text-ink-600">
+                    <p className="mt-3 portal-form portal-text-body leading-6 text-foreground/70">
                         Explore the components used in your portal. Change the
                         shared component or its theme token once, and every
                         screen using it follows.
@@ -294,11 +293,11 @@ export function ComponentLibrary() {
                         <h2 className="portal-text-body font-semibold">
                             01 / Theme values
                         </h2>
-                        <p className="mt-2 portal-text-caption leading-6 text-ink-600">
+                        <p className="mt-2 portal-text-caption leading-6 text-foreground/70">
                             Colors, control sizing, label sizes and panel
                             spacing.
                         </p>
-                        <code className="mt-2 block break-all portal-text-caption text-link">
+                        <code className="mt-2 block break-all portal-text-caption text-primary">
                             app/dashboard/portal.css
                         </code>
                     </div>
@@ -306,10 +305,10 @@ export function ComponentLibrary() {
                         <h2 className="portal-text-body font-semibold">
                             02 / Shared components
                         </h2>
-                        <p className="mt-2 portal-text-caption leading-6 text-ink-600">
+                        <p className="mt-2 portal-text-caption leading-6 text-foreground/70">
                             Markup, variants, interaction and accessibility.
                         </p>
-                        <code className="mt-2 block portal-text-caption text-link">
+                        <code className="mt-2 block portal-text-caption text-primary">
                             components/ui/*
                         </code>
                     </div>
@@ -317,17 +316,17 @@ export function ComponentLibrary() {
                         <h2 className="portal-text-body font-semibold">
                             03 / Shared surfaces
                         </h2>
-                        <p className="mt-2 portal-text-caption leading-6 text-ink-600">
+                        <p className="mt-2 portal-text-caption leading-6 text-foreground/70">
                             One panel style for Profile, Security, Sessions and
                             App Store cards.
                         </p>
-                        <code className="mt-2 block break-all portal-text-caption text-link">
+                        <code className="mt-2 block break-all portal-text-caption text-primary">
                             components/customer/portal-panel.tsx
                         </code>
                     </div>
                 </div>
             </PortalPanel>
-            <div className="mt-8 grid items-start gap-8 xl:grid-cols-[200px_minmax(0,1fr)]">
+            <div className="mt-8 grid items-start gap-8 xl:grid-cols-[calc(var(--spacing)*50)_minmax(0,1fr)]">
                 <aside className="xl:sticky xl:top-20">
                     <Label htmlFor="component-search">Find a component</Label>
                     <Input
@@ -345,13 +344,13 @@ export function ComponentLibrary() {
                             <a
                                 key={section.id}
                                 href={`#${section.id}`}
-                                className="rounded-md px-3 py-2 portal-text-caption font-medium text-ink-600 hover:bg-ink-100 hover:text-ink-900"
+                                className="rounded-md px-3 py-2 portal-text-caption font-medium text-foreground/70 hover:bg-secondary hover:text-foreground"
                             >
                                 {section.title}
                             </a>
                         ))}
                     </nav>
-                    <p className="mt-4 portal-text-caption leading-5 text-ink-500">
+                    <p className="mt-4 portal-text-caption leading-5 text-muted-foreground">
                         Examples use sample data. Actions on this page do not
                         create sites or change your account.
                     </p>
@@ -367,56 +366,51 @@ export function ComponentLibrary() {
                         <Section id="foundations">
                             <Example
                                 title="Palette & typography"
-                                description="Portal colors inherit from the scoped theme. Inter is used for controls; Inter Tight for headings."
-                                source="app/dashboard/portal.css · app/dashboard/layout.tsx"
+                                description="Portal colors come from the .dashboard token scope (and .dashboard.dark). Geist is used everywhere through --font-sans."
+                                source="app/globals.css"
                                 code={
-                                    '--primary: #141416;\n--border: #E7E7EA;\n--radius: 10px;\n--control-height: 32px;\n--control-font-size: 12px;'
+                                    '.dashboard {\n  --primary: …;\n  --border: …;\n}\n:root {\n  --radius: …;\n  --btn-h: …;\n}'
                                 }
                             >
                                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                                     {[
                                         'primary',
-                                        'surface',
+                                        'card',
                                         'border',
                                         'muted',
-                                        'positive',
-                                        'caution',
-                                        'critical',
-                                        'neutral-accent',
+                                        'success',
+                                        'warning',
+                                        'destructive',
+                                        'ring',
                                     ].map((token) => (
                                         <div key={token}>
                                             <div
-                                                className="h-12 rounded-md border border-ink-200"
+                                                className="h-12 rounded-md border border-border"
                                                 style={{
                                                     backgroundColor: `var(--${token})`,
                                                 }}
                                             />
-                                            <p className="mt-2 portal-text-caption text-ink-600">
+                                            <p className="mt-2 portal-text-caption text-foreground/70">
                                                 --{token}
                                             </p>
                                         </div>
                                     ))}
                                 </div>
                                 <Separator className="my-6" />
-                                <p
-                                    className="text-2xl font-semibold"
-                                    style={{
-                                        fontFamily: 'var(--font-display)',
-                                    }}
-                                >
+                                <p className="text-2xl font-semibold">
                                     Clear hierarchy, familiar controls.
                                 </p>
-                                <p className="mt-2 portal-text-body leading-6 text-ink-600">
-                                    Body text · 14px / 24px. Labels, fields and
-                                    buttons · shared 12px control token.
+                                <p className="mt-2 portal-text-body leading-6 text-foreground/70">
+                                    Body, labels, fields and buttons all follow
+                                    --text-scale and --btn-h.
                                 </p>
                             </Example>
                             <Example
                                 title="Sizing playground"
-                                description="These controls demonstrate token changes in this example only. Edit portal.css to apply the values across the customer panel."
-                                source="app/dashboard/portal.css"
+                                description="These controls demonstrate token changes in this example only. Edit --btn-h in globals.css to apply the value across the portal."
+                                source="app/globals.css"
                                 code={
-                                    '/* Change once; used by Input, PasswordInput, Select and Button. */\n--control-height: 32px;\n--control-font-size: 12px;\n--control-radius: 6px;\n--dens: 1;'
+                                    '/* Change once; used by Input, PasswordInput, Select and Button. */\n:root { --btn-h: …; --radius: …; }'
                                 }
                             >
                                 <div className="grid gap-4 sm:grid-cols-2">
@@ -426,39 +420,15 @@ export function ComponentLibrary() {
                                         </Label>
                                         <select
                                             id="preview-height"
-                                            className="h-8 w-full rounded-md border border-input bg-white px-3 portal-text-caption"
+                                            className="h-8 w-full rounded-md border border-input bg-card px-3 portal-text-caption"
                                             value={height}
                                             onChange={(event) =>
                                                 setHeight(event.target.value)
                                             }
                                         >
-                                            <option value="32">
-                                                32px · Compact
-                                            </option>
-                                            <option value="36">
-                                                36px · Comfortable
-                                            </option>
-                                            <option value="40">
-                                                40px · Spacious
-                                            </option>
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <Label htmlFor="preview-density">
-                                            Density
-                                        </Label>
-                                        <select
-                                            id="preview-density"
-                                            className="h-8 w-full rounded-md border border-input bg-white px-3 portal-text-caption"
-                                            value={density}
-                                            onChange={(event) =>
-                                                setDensity(event.target.value)
-                                            }
-                                        >
+                                            <option value="0.9">Compact</option>
                                             <option value="1">Default</option>
-                                            <option value="1.15">
-                                                Relaxed
-                                            </option>
+                                            <option value="1.15">Spacious</option>
                                         </select>
                                     </div>
                                 </div>
@@ -466,8 +436,7 @@ export function ComponentLibrary() {
                                     className="mt-5 flex flex-wrap items-end gap-3"
                                     style={
                                         {
-                                            '--control-height': `${height}px`,
-                                            '--dens': density,
+                                            '--control-height': `calc(var(--btn-h) * ${height})`,
                                         } as React.CSSProperties
                                     }
                                 >
@@ -798,7 +767,7 @@ export function ComponentLibrary() {
                                                 onCheckedChange={setSwitchOn}
                                             />
                                         </div>
-                                        <p className="portal-text-caption text-ink-500">
+                                        <p className="portal-text-caption text-muted-foreground">
                                             Preview is{' '}
                                             {switchOn ? 'enabled' : 'disabled'}.
                                         </p>
@@ -839,11 +808,11 @@ export function ComponentLibrary() {
                             >
                                 <div className="grid gap-4 sm:grid-cols-2">
                                     <PortalPanel>
-                                        <Globe className="size-5 text-ink-500" />
+                                        <Globe className="size-5 text-muted-foreground" />
                                         <h3 className="mt-4 font-semibold">
                                             Main workspace
                                         </h3>
-                                        <p className="mt-2 portal-text-caption leading-5 text-ink-500">
+                                        <p className="mt-2 portal-text-caption leading-5 text-muted-foreground">
                                             Sample site card using the shared
                                             surface.
                                         </p>
@@ -954,13 +923,13 @@ export function ComponentLibrary() {
                                     </TabsList>
                                     <TabsContent
                                         value="overview"
-                                        className="py-4 portal-text-body text-ink-600"
+                                        className="py-4 portal-text-body text-foreground/70"
                                     >
                                         Your workspace overview appears here.
                                     </TabsContent>
                                     <TabsContent
                                         value="activity"
-                                        className="py-4 portal-text-body text-ink-600"
+                                        className="py-4 portal-text-body text-foreground/70"
                                     >
                                         No new activity in this sample
                                         workspace.
@@ -1071,7 +1040,7 @@ export function ComponentLibrary() {
                                                 <TableRow>
                                                     <TableCell
                                                         colSpan={4}
-                                                        className="py-8 text-center text-ink-500"
+                                                        className="py-8 text-center text-muted-foreground"
                                                     >
                                                         No matching workspaces.
                                                     </TableCell>
@@ -1081,7 +1050,7 @@ export function ComponentLibrary() {
                                     </Table>
                                 </div>
                                 <div className="mt-4 flex items-center justify-between gap-3">
-                                    <p className="portal-text-caption text-ink-500">
+                                    <p className="portal-text-caption text-muted-foreground">
                                         {rows.length} example workspaces · Page
                                         1 of 1
                                     </p>
@@ -1229,7 +1198,7 @@ export function ComponentLibrary() {
                                             <h3 className="portal-text-body font-semibold">
                                                 Quick details
                                             </h3>
-                                            <p className="mt-2 portal-text-caption leading-5 text-ink-600">
+                                            <p className="mt-2 portal-text-caption leading-5 text-foreground/70">
                                                 A compact surface for
                                                 information related to the
                                                 current action.
@@ -1332,11 +1301,11 @@ export function ComponentLibrary() {
                                     }
                                 >
                                     <div className="py-5 text-center">
-                                        <Globe className="mx-auto size-8 text-ink-400" />
+                                        <Globe className="mx-auto size-8 text-muted-foreground" />
                                         <h3 className="mt-4 portal-text-body font-semibold">
                                             No workspaces yet
                                         </h3>
-                                        <p className="mt-2 portal-text-caption leading-5 text-ink-500">
+                                        <p className="mt-2 portal-text-caption leading-5 text-muted-foreground">
                                             Create your first workspace to get
                                             started.
                                         </p>
@@ -1360,10 +1329,10 @@ export function ComponentLibrary() {
             </div>
             {notice && (
                 <div
-                    className="fixed right-4 bottom-4 z-40 flex max-w-[calc(100vw-2rem)] items-center gap-3 rounded-lg border border-ink-200 bg-white p-4 shadow-lg"
+                    className="fixed right-4 bottom-4 z-40 flex max-w-[calc(100vw-2*var(--gap))] items-center gap-3 rounded-lg border border-border bg-card p-4 shadow-lg"
                     role="status"
                 >
-                    <Check className="size-4 shrink-0 text-success-700" />
+                    <Check className="size-4 shrink-0 text-success" />
                     <p className="portal-text-caption">{notice}</p>
                     <Button
                         size="icon"

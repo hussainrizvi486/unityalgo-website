@@ -1,3 +1,5 @@
+"use client"
+
 import * as PopoverPrimitive from "@radix-ui/react-popover";
 import { cn } from "@/utils/index";
 import React from "react";
@@ -20,7 +22,7 @@ const PopoverContent = React.forwardRef<
         align={align}
         sideOffset={sideOffset}
         className={cn(
-          "z-50 w-auto rounded border border-ink-200 bg-popover p-2 text-foreground shadow-md outline-none",
+          "z-50 w-auto rounded border border-border bg-popover p-2 text-foreground shadow-md outline-none",
           // zoom-*, not scale-*: tailwindcss-animate only ships zoom-in/zoom-out,
           // so the previous scale-in-95/scale-out-95 were inert class names and
           // the popover appeared with no animation at all.

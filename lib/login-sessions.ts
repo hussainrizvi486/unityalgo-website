@@ -1,6 +1,6 @@
 import 'server-only';
 import { headers } from 'next/headers';
-import { prisma } from '@/lib/db';
+import { db, schema } from '@/lib/db';
 import {
     createCustomerSessionToken,
     CUSTOMER_SESSION_DURATION_SECONDS,
@@ -11,8 +11,9 @@ export async function createTrackedCustomerSession(user: {
     email: string;
 }) {
     const requestHeaders = await headers();
-    const session = await prisma.loginSession.create({
-        data: {
+    const [session] = await db
+        .insert(schema.loginSession)
+        .values({
             userId: user.id,
             userAgent: (
                 requestHeaders.get('user-agent') || 'Unknown device'
@@ -20,8 +21,8 @@ export async function createTrackedCustomerSession(user: {
             expiresAt: new Date(
                 Date.now() + CUSTOMER_SESSION_DURATION_SECONDS * 1000,
             ),
-        },
-    });
+        })
+        .returning();
     return createCustomerSessionToken({
         userId: user.id,
         email: user.email,
