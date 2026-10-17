@@ -337,6 +337,17 @@ class FakeService:
     def apply_limits(self, limit):
         self.calls.append('limits')
 
+    def install_bundled_app(self, app):
+        self._step('bundled:' + app)
+        self.installed[app] = {'version': '1.0.0', 'commit': None, 'branch': None}
+
+    def restart(self):
+        self._step('restart')
+
+    def uninstall_app(self, app):
+        self._step('uninstall:' + app)
+        self.installed.pop(app, None)
+
     def discard_images(self, keep=None):
         self.discarded.append(keep)
 
@@ -645,6 +656,189 @@ class PrivateRepositoryTests(unittest.TestCase):
         self.assertEqual(recorder.files[secret]['mode'], 0o600)
         self.assertTrue([c for c in recorder.commands if secret in c and c.startswith('rm -f')])        # removed again, even before the build
         self.assertLess(next(i for i, c in enumerate(recorder.commands) if c.startswith('rm -f')), next(i for i, c in enumerate(recorder.commands) if c.startswith('docker build')))
+
+
+class CustomerInstallApiTests(RolloutTestCase):
+    """A customer installing an app from the catalogue onto one of their own sites."""
+
+    def setUp(self):
+        super().setUp()
+        config = SimpleNamespace(**vars(settings))
+        config.frappe_compatible_majors = [15]
+        config.frappe_available_apps = ['erpnext', 'lending']
+        flask = Flask(__name__)
+        flask.register_blueprint(AppRoutes.blueprint(db=database, config=config))
+        flask.register_error_handler(ApiError, lambda error: (error.to_dict(), error.status_code))
+        self.client = flask.test_client()
+        self.info = {'repo_url': 'https://github.com/o/shop', 'app_name': 'shop', 'branch': 'version-15', 'version': '15.1.0',
+                     'commit': {'sha': SHA_NEW}, 'compatibility': {'status': 'compatible', 'reason': ''}, 'private': False}
+        self.patches = [patch('app.routes.apps.GitHubClient.inspect', side_effect=lambda *a, **k: self.info),
+                        patch('app.tasks.app_tasks.rollout_site_task.apply_async')]
+        self.queue = [p.start() for p in self.patches][1]
+
+    def tearDown(self):
+        for p in self.patches:
+            p.stop()
+        super().tearDown()
+
+    def install(self, site_id, **body):
+        data = {'user_id': self.customer, 'app_name': 'lending', 'source': 'image'}
+        data.update(body)
+        return self.client.post(f'/api/v1/apps/sites/{site_id}', json=data)
+
+    def test_an_app_that_ships_in_the_image_is_queued_for_that_site_only(self):
+        mine, other = self.make_site('mine'), self.make_site('other')
+        response = self.install(mine)
+        self.assertEqual(response.status_code, 202, response.json)
+        self.assertEqual(self.queue.call_count, 1)
+        with database.session() as session:
+            rollout = session.get(AppRollout, uuid.UUID(response.json['rollout_id']))
+            self.assertEqual((rollout.source, rollout.action, rollout.created_by, [r.site_slug for r in rollout.sites]), ('image', 'install', f'customer:{self.customer}', ['mine']))
+            self.assertEqual(session.scalars(select(AppRolloutSite).where(AppRolloutSite.site_id == uuid.UUID(other))).all(), [])
+
+    def test_a_repository_app_is_inspected_and_pinned_to_the_commit_seen(self):
+        site_id = self.make_site('mine')
+        response = self.install(site_id, app_name='shop', source='github', repo_url='https://github.com/o/shop', branch='version-15')
+        self.assertEqual(response.status_code, 202, response.json)
+        with database.session() as session:
+            rollout = session.get(AppRollout, uuid.UUID(response.json['rollout_id']))
+            self.assertEqual((rollout.source, rollout.target_commit, rollout.repo_url), ('github', SHA_NEW, 'https://github.com/o/shop'))
+
+    def test_only_apps_that_work_with_this_platform_are_installable(self):
+        site_id = self.make_site('mine')
+        self.assertEqual(self.install(site_id, app_name='unlisted').status_code, 422)           # not in the image
+        self.assertEqual(self.install(site_id, app_name='frappe').status_code, 422)             # the framework itself
+        self.assertEqual(self.install(site_id, source='ftp').status_code, 422)
+        self.info['compatibility'] = {'status': 'unknown', 'reason': 'Not declared.'}
+        self.assertEqual(self.install(site_id, app_name='shop', source='github', repo_url='x').status_code, 422)   # customers do not get "install anyway"
+        self.info['compatibility'] = {'status': 'incompatible', 'reason': 'Needs Frappe 14.'}
+        self.assertEqual(self.install(site_id, app_name='shop', source='github', repo_url='x').json['error'], 'Needs Frappe 14.')
+        self.assertEqual(self.queue.call_count, 0)
+
+    def test_it_must_be_the_customers_own_idle_site_without_the_app(self):
+        busy = self.make_site('busy', activity='backup')
+        stopped = self.make_site('stopped', status='stopped')
+        has = self.make_site('has-it', installed={'version': '1.0.0', 'commit': None})
+        mine = self.make_site('mine')
+        self.assertEqual(self.install(mine, user_id='somebody-else').status_code, 404)
+        self.assertEqual(self.install(busy).status_code, 409)
+        self.assertEqual(self.install(stopped).status_code, 409)
+        self.assertEqual(self.install(has, app_name='shop', source='github', repo_url='x').status_code, 409)
+        self.assertEqual(self.install(mine).status_code, 202)
+        self.assertEqual(self.install(mine).status_code, 409)                                   # a second click while the first is queued
+
+    def test_an_unqueueable_install_is_refused_instead_of_left_waiting(self):
+        site_id = self.make_site('mine')
+        self.queue.side_effect = OSError('redis down')
+        response = self.install(site_id)
+        self.assertEqual(response.status_code, 409)
+        self.assertIn('queue is unavailable', response.json['error'])
+
+    def test_the_site_reports_what_it_runs_and_whether_it_can_take_an_install(self):
+        site_id = self.make_site('mine', installed={'version': '1.2.3', 'commit': SHA_OLD, 'branch': 'version-15'})
+        body = self.client.get(f'/api/v1/apps/sites/{site_id}?user_id={self.customer}').json
+        names = {a['app_name']: a for a in body['apps']}
+        self.assertEqual(names['shop']['version'], '1.2.3')
+        self.assertIn('erpnext', names)
+        self.assertTrue(body['can_install'])
+        self.assertEqual(self.client.get(f'/api/v1/apps/sites/{site_id}?user_id=somebody-else').status_code, 404)
+
+    def remove(self, site_id, app='shop', user=None):
+        return self.client.delete(f'/api/v1/apps/sites/{site_id}?user_id={user or self.customer}&app_name={app}')
+
+    def test_removing_an_installed_app_queues_a_removal_for_that_site(self):
+        site_id = self.make_site('mine', installed={'version': '1.0.0', 'commit': None})
+        response = self.remove(site_id)
+        self.assertEqual(response.status_code, 202, response.json)
+        with database.session() as session:
+            rollout = session.get(AppRollout, uuid.UUID(response.json['rollout_id']))
+            self.assertEqual((rollout.action, rollout.created_by), ('uninstall', f'customer:{self.customer}'))
+
+    def test_only_apps_that_are_installed_and_not_part_of_the_site_can_be_removed(self):
+        site_id = self.make_site('mine')
+        self.assertEqual(self.remove(site_id).status_code, 409)                         # not installed
+        self.assertEqual(self.remove(site_id, app='erpnext').status_code, 422)          # part of the site
+        self.assertEqual(self.remove(site_id, app='frappe').status_code, 422)
+        self.assertEqual(self.remove(site_id, user='somebody-else').status_code, 404)
+        busy = self.make_site('busy', activity='backup', installed={'version': '1.0.0', 'commit': None})
+        self.assertEqual(self.remove(busy).status_code, 409)
+        self.assertEqual(self.queue.call_count, 0)
+
+
+class CustomerInstallTaskTests(RolloutTaskTests):
+    """The worker side: an app that ships in the image is installed without building anything."""
+
+    def bundled(self, **kwargs):
+        site_id = self.prepare(installed=False, action='install', **kwargs)
+        with database.session() as session:
+            rollout = session.get(AppRollout, self.rollout_id)
+            rollout.source, rollout.created_by = 'image', f'customer:{self.customer}'
+        return site_id
+
+    def test_a_bundled_app_is_installed_and_the_site_restarted_without_a_build(self):
+        site_id = self.bundled()
+        with patch('app.tasks.app_tasks.notify') as notify:
+            self.run_task()
+        self.assertEqual(self.row().status, 'success')
+        self.assertIn('bundled:shop', self.service.calls)
+        self.assertIn('restart', self.service.calls)
+        self.assertFalse([c for c in self.service.calls if c in ('build',) or c.startswith('use_image')])
+        self.assertIn('shop', self.site(site_id).app_names)
+        notify.assert_called_with(site_id, 'app_installed', app='shop')
+
+    def test_a_failed_bundled_install_puts_the_data_back_and_tells_the_customer(self):
+        site_id = self.bundled(fail_at='bundled:shop')
+        with patch('app.tasks.app_tasks.notify') as notify, self.assertRaises(RuntimeError):
+            self.run_task()
+        row, site = self.row(), self.site(site_id)
+        self.assertEqual((row.status, row.rolled_back), ('failed', True))
+        self.assertIn('restore:20260101_000000', self.service.calls)
+        self.assertEqual(site.status, 'ready')
+        self.assertIn('could not be installed', site.error)
+        notify.assert_called_with(site_id, 'app_failed', app='shop')
+
+    def removal(self, **kwargs):
+        site_id = self.prepare(installed=True, action='uninstall', **kwargs)
+        with database.session() as session:
+            rollout = session.get(AppRollout, self.rollout_id)
+            rollout.source, rollout.created_by = 'image', f'customer:{self.customer}'
+            session.get(Site, uuid.UUID(site_id)).app_names = ['erpnext', 'shop']
+        return site_id
+
+    def test_removing_an_app_takes_a_backup_removes_it_and_forgets_it(self):
+        site_id = self.removal()
+        with patch('app.tasks.app_tasks.notify') as notify:
+            self.run_task()
+        self.assertEqual(self.row().status, 'success')
+        self.assertIn('uninstall:shop', self.service.calls)
+        self.assertEqual(self.site(site_id).app_names, ['erpnext'])
+        with database.session() as session:
+            self.assertIsNone(session.scalar(select(SiteApp).where(SiteApp.site_id == uuid.UUID(site_id), SiteApp.app_name == 'shop')))
+        notify.assert_called_with(site_id, 'app_removed', app='shop')
+
+    def test_a_failed_removal_restores_the_data_and_keeps_the_app(self):
+        site_id = self.removal(fail_at='uninstall:shop')
+        with patch('app.tasks.app_tasks.notify') as notify, self.assertRaises(RuntimeError):
+            self.run_task()
+        self.assertEqual(self.row().rolled_back, True)
+        self.assertIn('restore:20260101_000000', self.service.calls)
+        self.assertEqual(self.site(site_id).app_names, ['erpnext', 'shop'])
+        self.assertIn('could not be removed', self.site(site_id).error)
+        notify.assert_called_with(site_id, 'app_removal_failed', app='shop')
+
+    def test_removing_an_app_that_is_not_there_fails_without_touching_the_site(self):
+        self.prepare(installed=False, action='uninstall')
+        with patch('app.tasks.app_tasks.notify'), self.assertRaises(RuntimeError):
+            self.run_task()
+        self.assertNotIn('uninstall:shop', self.service.calls)
+        self.assertNotIn('backup', ' '.join(self.service.calls))
+
+    def test_an_admin_started_failure_is_not_phrased_for_a_customer(self):
+        site_id = self.prepare(installed=False, action='install', fail_at='build')
+        with patch('app.tasks.app_tasks.notify') as notify, self.assertRaises(RuntimeError):
+            self.run_task()
+        self.assertIsNone(self.site(site_id).error)
+        notify.assert_not_called()
 
 
 if __name__ == '__main__':

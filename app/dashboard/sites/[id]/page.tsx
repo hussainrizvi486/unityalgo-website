@@ -4,7 +4,8 @@ import { controller, ControllerError } from '@/lib/controller-client';
 import { recordSiteNotification } from '@/lib/customer-notifications';
 import { Notice } from '@/components/ui/notice';
 import { SiteStatus } from './site-status';
-import { inArray } from 'drizzle-orm';
+import { reconcilePurchases } from '@/lib/app-billing';
+import { and, asc, eq, inArray, isNotNull } from 'drizzle-orm';
 import { db, schema } from '@/lib/db';
 import { listAlgoSuitePlans } from '@/lib/products';
 import { formatPlanPrice } from '@/lib/pricing';
@@ -29,6 +30,7 @@ export default async function SiteDetailPage({
         );
     }
     await recordSiteNotification(user.id, site);
+    await reconcilePurchases(user.id, [site]).catch(() => undefined);
     const applications = site.apps.length
         ? await db
               .select({ name: schema.appCatalog.name, frappeAppName: schema.appCatalog.frappeAppName })
@@ -40,10 +42,49 @@ export default async function SiteDetailPage({
             .filter((app) => app.frappeAppName !== 'erpnext')
             .map((app) => [app.frappeAppName!, app.name]),
     );
+    // What can be added to this site from the App Store (free or paid).
+    const catalogue = await db
+        .select({
+            id: schema.appCatalog.id,
+            isInstallable: schema.appCatalog.isInstallable,
+            name: schema.appCatalog.name,
+            description: schema.appCatalog.description,
+            frappeAppName: schema.appCatalog.frappeAppName,
+            source: schema.appCatalog.source,
+            compatibility: schema.appCatalog.compatibility,
+            priceAmount: schema.appCatalog.priceAmount,
+            priceCurrency: schema.appCatalog.priceCurrency,
+        })
+        .from(schema.appCatalog)
+        .where(and(eq(schema.appCatalog.isActive, true), isNotNull(schema.appCatalog.frappeAppName)))
+        .orderBy(asc(schema.appCatalog.sortOrder), asc(schema.appCatalog.name));
+    let shipped: string[] = [];
+    try {
+        shipped = (await controller.sites.capabilities()).apps;
+    } catch {
+        /* the list of installable apps simply stays short */
+    }
+    // What is on the site, with what each costs, so a paid app can show its price and be removed to stop the charge.
+    const known = Object.fromEntries(
+        catalogue.map((app) => [app.frappeAppName!, { id: app.id, name: app.name, priceAmount: app.priceAmount, priceCurrency: app.priceCurrency }]),
+    );
+    const installable = catalogue
+        .filter((app) => app.isInstallable)
+        .filter((app) => (app.source === 'github' ? app.compatibility === 'compatible' : shipped.includes(app.frappeAppName!)))
+        .map((app) => ({
+            id: app.id,
+            name: app.name,
+            description: app.description,
+            frappeAppName: app.frappeAppName!,
+            priceAmount: app.priceAmount,
+            priceCurrency: app.priceCurrency,
+        }));
     const plans = await listAlgoSuitePlans();
     return (
         <SiteStatus
             initial={site}
+            installable={installable}
+            known={known}
             plans={plans.map((plan) => ({
                 id: plan.id,
                 name: plan.name,

@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import Link from 'next/link';
+import { trialDaysFor, trialEligibility } from '@/lib/site-trials';
 import { requireCustomer } from '@/lib/customer-session';
 import { asc, eq } from 'drizzle-orm';
 import { db, schema } from '@/lib/db';
@@ -14,7 +15,7 @@ export default async function CreateSitePage({
 }: {
     searchParams: Promise<{ app?: string }>;
 }) {
-    await requireCustomer();
+    const user = await requireCustomer();
     const { app } = await searchParams;
     const catalog = await db
         .select({
@@ -22,17 +23,20 @@ export default async function CreateSitePage({
             name: schema.appCatalog.name,
             isInstallable: schema.appCatalog.isInstallable,
             frappeAppName: schema.appCatalog.frappeAppName,
+            source: schema.appCatalog.source,
+            priceAmount: schema.appCatalog.priceAmount,
         })
         .from(schema.appCatalog)
         .where(eq(schema.appCatalog.isActive, true))
         .orderBy(asc(schema.appCatalog.sortOrder));
-    const [plans, currencies] = await Promise.all([
+    const [plans, currencies, eligibility] = await Promise.all([
         listAlgoSuitePlans(),
         db
             .select({ code: schema.currency.code, name: schema.currency.name })
             .from(schema.currency)
             .where(eq(schema.currency.isActive, true))
             .orderBy(asc(schema.currency.sortOrder), asc(schema.currency.code)),
+        trialEligibility(user.id),
     ]);
     let capabilities;
     try {
@@ -84,8 +88,11 @@ export default async function CreateSitePage({
                     vcpu: plan.vcpu,
                     ramMb: plan.ramMb,
                     storageGb: plan.storageGb,
+                    trialDays: trialDaysFor(plan, eligibility),
+                    trialUsed: Boolean(plan.trialDays) && eligibility.used.has(plan.id) && !eligibility.subscribed.has(plan.id),
                 }))}
-                apps={catalog.map((item) => ({
+                // A site starts with free apps that ship in the image; repository and paid apps are added from its page, once it exists.
+                apps={catalog.filter((item) => item.source === 'image' && !((item.priceAmount ?? 0) > 0)).map((item) => ({
                     id: item.id,
                     name: item.name,
                     available: Boolean(

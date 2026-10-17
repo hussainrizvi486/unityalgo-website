@@ -3,6 +3,7 @@ import json
 import re
 import secrets
 import uuid
+from datetime import timedelta
 from flask import Blueprint
 from sqlalchemy import select, text, func
 from sqlalchemy.orm import joinedload
@@ -18,6 +19,7 @@ from app.models.deployment import Deployment
 from app.controller.server import ServerController
 from app.services.site_runtime import build_service
 from app.services.crypto import encrypt
+from app.services.trials import describe as describe_trial, MAX_TRIAL_DAYS, begin as begin_trial, used_plan_ids, release_if_unused
 
 SLUG = re.compile(r'^[a-z][a-z0-9-]{2,47}$')
 EMAIL = re.compile(r'^[^@\s]{1,64}@[^@\s]+\.[^@\s]{2,}$')
@@ -109,7 +111,7 @@ def serialize(site):
             'resources': {'vcpu': site.cpu_limit, 'ram_mb': site.memory_limit_mb, 'storage_gb': site.storage_limit_gb, 'users': site.user_limit},
             'limits': {'state': site.limit_state, 'user_count': site.user_count, 'storage_used_mb': site.storage_used_mb, 'audited_at': site.audited_at.isoformat() if site.audited_at else None},
             'backup': {'schedule': site.backup_schedule, 'retention': site.backup_retention, 'last_at': site.last_backup_at.isoformat() if site.last_backup_at else None}, 'attempt': site.attempt, 'error': site.error, 'steps': build_steps(site),
-            'created_at': site.created_at.isoformat(),
+            'trial': describe_trial(site), 'created_at': site.created_at.isoformat(),
             'updated_at': site.updated_at.isoformat()}
 
 def owned_site(session, site_id, user_id):
@@ -204,6 +206,12 @@ class SitesView(BaseView):
         plan_id, plan_name = str(data.get('plan_id', '')).strip(), str(data.get('plan_name', '')).strip()
         if not plan_id or len(plan_id) > 64 or not plan_name or len(plan_name) > 100:
             raise ValidationError('Choose a plan.')
+        trial_days = data.get('trial_days')
+        if trial_days not in (None, ''):
+            if not isinstance(trial_days, int) or isinstance(trial_days, bool) or not 1 <= trial_days <= MAX_TRIAL_DAYS:
+                raise ValidationError(f'A trial lasts between 1 and {MAX_TRIAL_DAYS} days.')
+        else:
+            trial_days = None
         # The Administrator login is for operators; the owner signs in with their own account.
         password = secrets.token_urlsafe(24)
         apps = data.get('app_names', [])
@@ -252,6 +260,8 @@ class SitesView(BaseView):
                         db_password=secrets.token_urlsafe(32), status='queued', progress=0, message='Waiting for a provisioning worker.')
             session.add(site)
             session.flush()
+            if trial_days:
+                begin_trial(session, site, trial_days)
             ServerController(session, self.settings).refresh_capacity(server)
             identifier = str(site.id)
         # Commit the reservation before the worker can consume the job.
@@ -266,6 +276,7 @@ class SitesView(BaseView):
                 site = session.get(Site, uuid.UUID(identifier))
                 if site and site.status == 'queued':
                     server = session.get(ServerNode, site.server_id)
+                    release_if_unused(session, site)
                     session.delete(site)
                     session.flush()
                     ServerController(session, self.settings).refresh_capacity(server)
@@ -311,12 +322,24 @@ class SiteRetryView(BaseView):
             raise ConflictError('The provisioning queue is unavailable.')
         return self.ok({'queued': True}, 202)
 
+def has_room(session, site, settings):
+    """Whether the site's server could take the site back (it was deactivated, so its capacity was released)."""
+    server = session.get(ServerNode, site.server_id)
+    load = ServerController(session, settings).node_load()
+    row = session.execute(select(load.c.containers, load.c.used_mb).where(load.c.server_id == server.id)).first()
+    slots, used = row if row else (0, 0)
+    reserved = session.scalar(select(func.count()).select_from(Site).where(Site.server_id == server.id, Site.status.in_(Site.ACTIVE_STATUSES)))
+    return fits_site(server, slots, used, reserved, settings, site_need(site), used_cpu(session, server.id))
+
+
 class SiteActionView(BaseView):
     """POST /<id>/<action>: stop, start, restart or backup a running site (runs in the background)."""
     # status the site must be in, and the marker/status set while the action runs
     TRANSITIONS = {'stop': (('ready',), 'stopping', None), 'start': (('stopped',), 'restarting', None),
                    'restart': (('ready',), 'restarting', None), 'backup': (('ready',), None, 'backup'),
                    'deactivate': (('ready', 'stopped'), 'stopping', None), 'reactivate': (('deactivated',), 'restarting', None)}
+
+    enforce_trial = True       # a customer cannot switch on a site whose free trial has ended; an admin can
 
     def find(self, session, site_id, data):
         return owned_site(session, site_id, data.get('user_id'))
@@ -338,14 +361,10 @@ class SiteActionView(BaseView):
             if site.status not in allowed:
                 raise ConflictError(f'The site cannot be {action}ed while it is {site.status.replace("_", " ")}.')
             origin = site.status
-            if action == 'reactivate':
-                server = session.get(ServerNode, site.server_id)
-                load = ServerController(session, self.settings).node_load()
-                row = session.execute(select(load.c.containers, load.c.used_mb).where(load.c.server_id == server.id)).first()
-                slots, used = row if row else (0, 0)
-                reserved = session.scalar(select(func.count()).select_from(Site).where(Site.server_id == server.id, Site.status.in_(Site.ACTIVE_STATUSES)))
-                if not fits_site(server, slots, used, reserved, self.settings, site_need(site), used_cpu(session, server.id)):
-                    raise ConflictError('The server does not have room to reactivate this site right now. Please try again later or contact support.')
+            if action in ('start', 'reactivate') and self.enforce_trial and site.trial_ends_at and site.trial_expired_at:
+                raise ConflictError('Your free trial has ended. Subscribe to this plan to use your site again.')
+            if action == 'reactivate' and not has_room(session, site, self.settings):
+                raise ConflictError('The server does not have room to reactivate this site right now. Please try again later or contact support.')
             if transient:
                 site.status, site.message = transient, {'stopping': 'Stopping the site…' if action == 'stop' else 'Deactivating the site…', 'restarting': 'Restarting the site…' if action != 'reactivate' else 'Reactivating the site…'}[transient]
             if activity:
@@ -614,6 +633,95 @@ class SiteUsageView(BaseView):
         except Exception:
             raise ConflictError('Usage could not be read from the server right now.')
 
+class SiteMetricsView(BaseView):
+    """GET /<id>/metrics?user_id=&range=1h|6h|24h|7d|30d. Readings of the site over time, ready to chart."""
+    def find(self, session, site_id):
+        return owned_site(session, site_id, self.str_arg('user_id'))
+
+    def get(self, site_id):
+        from app.services.site_metrics import metrics_payload
+        with self.session() as session:
+            site = self.find(session, site_id)
+            payload = metrics_payload(session, site, self.str_arg('range', '24h'), self.settings.site_metrics_interval_seconds)
+            first_reading = payload['summary']['samples'] == 0 and site.status == 'ready'
+            identifier = str(site.id)
+        if first_reading:
+            # A site that has just become ready has no readings yet; ask for one now instead of making the page wait for the schedule.
+            try:
+                from app.tasks.metrics_tasks import collect_metrics_task
+                collect_metrics_task.apply_async(args=[[identifier]], retry=False)
+            except Exception:
+                pass
+        return self.ok(payload)
+
+class AdminSiteMetricsView(SiteMetricsView):
+    """GET /admin/<id>/metrics?range=. The same readings, for any site."""
+    def find(self, session, site_id):
+        return site_by_id(session, site_id)
+
+
+class SiteTrialsView(BaseView):
+    """GET /trials?user_id=  which plans' free trials this customer has already used (so the wizard can say so)."""
+    def get(self):
+        user_id = self.str_arg('user_id')
+        if not user_id:
+            raise ValidationError('user_id is required.')
+        with self.session() as session:
+            return self.ok({'used_plan_ids': used_plan_ids(session, user_id)})
+
+class SiteTrialConvertView(BaseView):
+    """POST /trials/convert. Body: user_id, plan_id. The customer has just subscribed: end their trial sites on that plan."""
+    def post(self):
+        data = self.json_body()
+        if not isinstance(data, dict) or not data.get('user_id'):
+            raise ValidationError('user_id is required.')
+        from app.tasks.trial_tasks import expire_trials_task
+        try:
+            expire_trials_task.apply_async(kwargs={'user_id': str(data['user_id']), 'plan_id': str(data['plan_id']) if data.get('plan_id') else None}, retry=False)
+        except Exception:
+            raise ConflictError('The background queue is unavailable. The trial will end at the next scheduled check.')
+        return self.ok({'queued': True}, 202)
+
+class AdminSiteTrialView(BaseView):
+    """POST /admin/<id>/trial. Body: days (extend the trial by that many, restarting an expired one) or end (true: end it now)."""
+    def post(self, site_id):
+        data = self.json_body()
+        if not isinstance(data, dict):
+            raise ValidationError('Request body must be an object.')
+        end = bool(data.get('end'))
+        days = data.get('days')
+        if not end and (not isinstance(days, int) or isinstance(days, bool) or not 1 <= days <= MAX_TRIAL_DAYS):
+            raise ValidationError(f'Extend a trial by between 1 and {MAX_TRIAL_DAYS} days.')
+        from app.services import trials
+        with self.session() as session:
+            site = site_by_id(session, site_id)
+            if site.trial_ends_at is None:
+                raise ConflictError('This site is not on a free trial.')
+            if end:
+                site.trial_ends_at = trials.now()
+            else:
+                site.trial_ends_at = max(trials.now(), site.trial_ends_at) + timedelta(days=days)
+                site.trial_warned = False
+                revive = site.trial_expired_at is not None
+                site.trial_expired_at = None
+        from app.tasks.trial_tasks import handle
+        if end:
+            handle(site_id)                              # switch it off now rather than at the next sweep
+        elif revive:
+            with self.session() as session:
+                site = site_by_id(session, site_id)
+                if site.status == 'deactivated' and not site.activity and has_room(session, site, self.settings):
+                    site.status, site.message, site.error = 'restarting', 'Your trial was extended. Reactivating your site…', None
+                    revived = True
+                else:
+                    revived = False
+            if revived:
+                from app.tasks.site_tasks import site_action_task
+                site_action_task.apply_async(args=[site_id, 'reactivate', 'deactivated'], retry=False)
+        with self.session() as session:
+            return self.ok(serialize(site_by_id(session, site_id)))
+
+
 class SiteBackupsView(BaseView):
     def get(self, site_id):
         with self.session() as session:
@@ -717,6 +825,8 @@ def site_by_id(session, site_id):
 
 class AdminSiteActionView(SiteActionView):
     """POST /admin/<id>/actions/<action>: the same actions, for an operator, on any customer's site."""
+    enforce_trial = False
+
     def find(self, session, site_id, data):
         return site_by_id(session, site_id)
 
@@ -803,6 +913,6 @@ class SiteRoutes:
     @classmethod
     def blueprint(cls, db=None, config=None):
         bp = Blueprint('sites', __name__, url_prefix='/api/v1/sites')
-        for path, view, name in [('', SitesView, 'collection'), ('/capabilities', SiteCapabilitiesView, 'capabilities'), ('/check-slug', SiteSlugCheckView, 'check_slug'), ('/<site_id>', SiteDetailView, 'detail'), ('/<site_id>/retry', SiteRetryView, 'retry'), ('/<site_id>/usage', SiteUsageView, 'usage'), ('/<site_id>/domains', SiteDomainsView, 'domains'), ('/<site_id>/domains/<domain_id>', SiteDomainDetailView, 'domain_detail'), ('/<site_id>/domains/<domain_id>/verify', SiteDomainDetailView, 'domain_verify'), ('/<site_id>/backups', SiteBackupsView, 'backups'), ('/<site_id>/backup-settings', SiteBackupSettingsView, 'backup_settings'), ('/<site_id>/restore', SiteRestoreView, 'restore'), ('/<site_id>/backups/<name>', SiteBackupDownloadView, 'backup_download'), ('/<site_id>/actions/<action>', SiteActionView, 'action'), ('/<site_id>/delete', SiteDeleteView, 'delete'), ('/<site_id>/change-plan', SiteChangePlanView, 'change_plan'), ('/<site_id>/reset-password', SiteResetPasswordView, 'reset_password'), ('/admin', AdminSitesView, 'admin_list'), ('/admin/queue', AdminQueueStatusView, 'admin_queue'), ('/admin/<site_id>/force-delete', AdminSiteForceDeleteView, 'admin_force_delete'), ('/admin/<site_id>', AdminSiteDetailView, 'admin_detail'), ('/admin/<site_id>/actions/<action>', AdminSiteActionView, 'admin_action'), ('/admin/<site_id>/usage', AdminSiteUsageView, 'admin_usage')]:
+        for path, view, name in [('', SitesView, 'collection'), ('/capabilities', SiteCapabilitiesView, 'capabilities'), ('/check-slug', SiteSlugCheckView, 'check_slug'), ('/<site_id>', SiteDetailView, 'detail'), ('/<site_id>/retry', SiteRetryView, 'retry'), ('/trials', SiteTrialsView, 'trials'), ('/trials/convert', SiteTrialConvertView, 'trial_convert'), ('/admin/<site_id>/trial', AdminSiteTrialView, 'admin_trial'), ('/<site_id>/usage', SiteUsageView, 'usage'), ('/<site_id>/metrics', SiteMetricsView, 'metrics'), ('/admin/<site_id>/metrics', AdminSiteMetricsView, 'admin_metrics'), ('/<site_id>/domains', SiteDomainsView, 'domains'), ('/<site_id>/domains/<domain_id>', SiteDomainDetailView, 'domain_detail'), ('/<site_id>/domains/<domain_id>/verify', SiteDomainDetailView, 'domain_verify'), ('/<site_id>/backups', SiteBackupsView, 'backups'), ('/<site_id>/backup-settings', SiteBackupSettingsView, 'backup_settings'), ('/<site_id>/restore', SiteRestoreView, 'restore'), ('/<site_id>/backups/<name>', SiteBackupDownloadView, 'backup_download'), ('/<site_id>/actions/<action>', SiteActionView, 'action'), ('/<site_id>/delete', SiteDeleteView, 'delete'), ('/<site_id>/change-plan', SiteChangePlanView, 'change_plan'), ('/<site_id>/reset-password', SiteResetPasswordView, 'reset_password'), ('/admin', AdminSitesView, 'admin_list'), ('/admin/queue', AdminQueueStatusView, 'admin_queue'), ('/admin/<site_id>/force-delete', AdminSiteForceDeleteView, 'admin_force_delete'), ('/admin/<site_id>', AdminSiteDetailView, 'admin_detail'), ('/admin/<site_id>/actions/<action>', AdminSiteActionView, 'admin_action'), ('/admin/<site_id>/usage', AdminSiteUsageView, 'admin_usage')]:
             bp.add_url_rule(path, view_func=view.as_view(name, db=db, config=config))
         return bp

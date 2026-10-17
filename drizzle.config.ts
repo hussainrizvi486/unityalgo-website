@@ -10,5 +10,5 @@ export default defineConfig({
     schema: './db/schema.ts',
     out: './db/migrations',
     dbCredentials: { url: process.env.DATABASE_URL! },
-    tablesFilter: ["User", "BillingRecord", "SupportTicket", "Comment", "Address", "EmailVerification", "Lead", "ContactSubmission", "Product", "Currency", "Plan", "AddOn", "Subscription", "PaddleEvent", "SubscriptionAddOn", "EmailAccount", "Post", "AppCatalog", "LoginSession", "Notification", "SiteEmailEvent", "leads", "contact_list"],
+    tablesFilter: ["User", "BillingRecord", "SupportTicket", "Comment", "Address", "EmailVerification", "Lead", "ContactSubmission", "Product", "Currency", "Plan", "AddOn", "Subscription", "PaddleEvent", "SubscriptionAddOn", "EmailAccount", "Post", "AppCatalog", "AppPurchase", "LoginSession", "Notification", "SiteEmailEvent", "leads", "contact_list"],
 });

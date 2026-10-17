@@ -26,7 +26,8 @@
     "db:baseline": "tsx scripts/db-baseline.mts",
     "db:pull": "drizzle-kit pull",
     "db:studio": "drizzle-kit studio",
-    "test:db": "NODE_OPTIONS=--conditions=react-server tsx scripts/test-db.mts"
+    "test:db": "NODE_OPTIONS=--conditions=react-server tsx scripts/test-db.mts",
+    "test:billing": "NODE_OPTIONS=--conditions=react-server tsx scripts/test-app-billing.mts"
   },
   "dependencies": {
     "@paddle/paddle-js": "^1.6.4",

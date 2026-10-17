@@ -68,7 +68,7 @@ def serialize_rollout(rollout, detail=False):
     rows = rollout.sites
     counts = {state: sum(1 for row in rows if row.status == state) for state in ('pending', 'running', 'success', 'failed', 'skipped')}
     data = {'id': str(rollout.id), 'app_name': rollout.app_name, 'repo_url': rollout.repo_url, 'branch': rollout.branch,
-            'target_commit': rollout.target_commit, 'target_version': rollout.target_version, 'action': rollout.action,
+            'target_commit': rollout.target_commit, 'target_version': rollout.target_version, 'action': rollout.action, 'source': rollout.source,
             'status': rollout.status, 'note': rollout.note, 'created_by': rollout.created_by, 'created_at': iso(rollout.created_at),
             'finished_at': iso(rollout.finished_at), 'site_count': len(rows), 'counts': counts}
     if detail:
@@ -294,12 +294,120 @@ def load_rollout(session, rollout_id):
     return rollout
 
 
+class SiteAppsView(BaseView):
+    """The apps on one of a customer's sites, and installing another from the catalogue.
+
+    GET  /sites/<id>?user_id=            what the site runs and whether it can take an install right now
+    POST /sites/<id> {user_id, app_name, source, repo_url?, branch?}   queue an install on that one site
+
+    The website decides who may install what (and charges for paid apps) before calling this; the controller still checks
+    the site belongs to the user, is idle, and that the app is installable and works with this platform's Frappe.
+    """
+    def installed(self, session, site):
+        rows = {row.app_name: row for row in session.scalars(select(SiteApp).where(SiteApp.site_id == site.id))}
+        names = set(rows) | set(site.app_names or [])
+        return rows, names
+
+    def busy(self, session, site):
+        return bool(session.scalar(select(AppRolloutSite.id).where(AppRolloutSite.site_id == site.id, AppRolloutSite.status.in_(REQUIRED_HOLD)).limit(1)))
+
+    def get(self, site_id):
+        from app.routes.site import owned_site
+        with self.session() as session:
+            site = owned_site(session, site_id, self.str_arg('user_id'))
+            rows, names = self.installed(session, site)
+            reason = site_state(site, None, self.busy(session, site))['reason']
+            return self.ok({
+                'apps': [{'app_name': name, 'version': rows[name].version if name in rows else None, 'branch': rows[name].branch if name in rows else None}
+                         for name in sorted(names)],
+                'can_install': reason is None, 'reason': reason,
+            })
+
+    def post(self, site_id):
+        from app.routes.site import owned_site
+        data = self.json_body()
+        if not isinstance(data, dict):
+            raise ValidationError('Request body must be an object.')
+        user_id = str(data.get('user_id') or '')
+        app = app_name_arg(data)
+        source = str(data.get('source') or '')
+        if source not in ('image', 'github'):
+            raise ValidationError('Choose where the app comes from.')
+        info = None
+        if source == 'image':
+            if app not in self.settings.frappe_available_apps:
+                raise ValidationError('That application is not available on this platform yet.')
+        else:
+            info = github(self).inspect(str(data.get('repo_url', '')), data.get('branch'))
+            if info['app_name'] != app:
+                raise ValidationError(f'This repository contains the app "{info["app_name"]}", not "{app}".')
+            compatibility = info['compatibility']
+            if compatibility['status'] != 'compatible':
+                raise ValidationError(compatibility['reason'] if compatibility['status'] == 'incompatible'
+                                      else 'This application has not been verified against your site\'s Frappe version yet.')
+        with self.session() as session:
+            site = owned_site(session, site_id, user_id)
+            reason = site_state(site, None, self.busy(session, site))['reason']
+            if reason:
+                raise ConflictError(reason)
+            _, names = self.installed(session, site)
+            if app in names:
+                raise ConflictError('This application is already installed on your site.')
+            rollout = AppRollout(
+                app_name=app, source=source, action='install', created_by=f'customer:{user_id}'[:100],
+                repo_url=info['repo_url'] if info else '', branch=info['branch'] if info else '',
+                target_commit=info['commit']['sha'] if info else '', target_version=info['version'] if info else None,
+                private=bool(info and info.get('private')),
+            )
+            session.add(rollout)
+            session.flush()
+            row = AppRolloutSite(rollout_id=rollout.id, site_id=site.id, site_slug=site.slug, status='pending', step='Waiting in the queue')
+            session.add(row)
+            session.flush()
+            row_id, rollout_id = str(row.id), str(rollout.id)
+        AppRolloutsView.enqueue(rollout_id, [row_id])
+        with self.session() as session:
+            if session.get(AppRolloutSite, uuid.UUID(row_id)).status == 'failed':
+                # Nothing is going to run it, and the customer should hear that now rather than watch a site that never changes.
+                raise ConflictError('The background queue is unavailable. Try again shortly.')
+        return self.ok({'rollout_id': rollout_id, 'queued': True}, 202)
+
+    PROTECTED_SITE_APPS = frozenset({'frappe', 'erpnext'})
+
+    def delete(self, site_id):
+        """DELETE /sites/<id>?user_id=&app_name=  remove an app from the site. Its data on this site is deleted; a backup is kept."""
+        from app.routes.site import owned_site
+        user_id = self.str_arg('user_id') or ''
+        app = app_name_arg({'app_name': self.str_arg('app_name') or ''})
+        if app in self.PROTECTED_SITE_APPS:
+            raise ValidationError('This application is part of the site itself and cannot be removed.')
+        with self.session() as session:
+            site = owned_site(session, site_id, user_id)
+            reason = site_state(site, None, self.busy(session, site))['reason']
+            if reason:
+                raise ConflictError(reason)
+            _, names = self.installed(session, site)
+            if app not in names:
+                raise ConflictError('This application is not installed on your site.')
+            rollout = AppRollout(app_name=app, source='image', action='uninstall', created_by=f'customer:{user_id}'[:100], repo_url='', branch='', target_commit='')
+            session.add(rollout)
+            session.flush()
+            row = AppRolloutSite(rollout_id=rollout.id, site_id=site.id, site_slug=site.slug, status='pending', step='Waiting in the queue')
+            session.add(row)
+            session.flush()
+            row_id, rollout_id = str(row.id), str(rollout.id)
+        AppRolloutsView.enqueue(rollout_id, [row_id])
+        with self.session() as session:
+            if session.get(AppRolloutSite, uuid.UUID(row_id)).status == 'failed':
+                raise ConflictError('The background queue is unavailable. Try again shortly.')
+        return self.ok({'rollout_id': rollout_id, 'queued': True}, 202)
+
 class AppRoutes:
     @classmethod
     def blueprint(cls, db=None, config=None):
         bp = Blueprint('apps', __name__, url_prefix='/api/v1/apps')
         for path, view, name in [('/inspect', AppInspectView, 'inspect'), ('/installations', AppInstallationsView, 'installations'),
-                                 ('/scan', AppScanView, 'scan'), ('/summary', AppSummaryView, 'summary'), ('/rollouts', AppRolloutsView, 'rollouts'),
+                                 ('/scan', AppScanView, 'scan'), ('/sites/<site_id>', SiteAppsView, 'site_apps'), ('/summary', AppSummaryView, 'summary'), ('/rollouts', AppRolloutsView, 'rollouts'),
                                  ('/rollouts/<rollout_id>', AppRolloutDetailView, 'rollout'), ('/rollouts/<rollout_id>/retry', AppRolloutRetryView, 'rollout_retry')]:
             bp.add_url_rule(path, view_func=view.as_view(name, db=db, config=config))
         return bp

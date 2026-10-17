@@ -33,6 +33,8 @@ export function AppCatalogForm({ app, github = false }: { app?: App; github?: bo
         <form action={action} className="portal-fields py-5">
             <input type="hidden" name="id" value={app?.id || ''} />
             {github && <input type="hidden" name="frappeAppName" value={app?.frappeAppName || ''} />}
+            {/* Availability for these apps is set under "Availability and pricing"; saving details must not change it. */}
+            {github && app?.isInstallable && <input type="hidden" name="isInstallable" value="on" />}
             <div className="grid gap-5 sm:grid-cols-2">
                 {[
                     ['name', 'Name'],

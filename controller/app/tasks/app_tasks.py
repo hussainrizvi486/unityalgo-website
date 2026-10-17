@@ -6,7 +6,7 @@ alone; no other site shares its code. The migration is per site too, and runs in
 import time
 import uuid
 from datetime import datetime, timezone
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from app.config import settings
 from app.db import database
 from app.models.app_rollout import AppRollout, AppRolloutSite, SiteApp
@@ -15,7 +15,7 @@ from app.services.github_account import current_token
 from app.services.activity_logger import ActivityLogger, redact
 from app.services.site_runtime import build_service
 from app.tasks.celery_app import celery_app
-from app.tasks.site_tasks import run_backup
+from app.tasks.site_tasks import notify, run_backup
 
 LOG_LIMIT = 24000
 
@@ -87,7 +87,8 @@ def rollout_site_task(self, row_id):
             return
         rollout = row.rollout
         spec = {'app': rollout.app_name, 'url': rollout.repo_url, 'branch': rollout.branch, 'commit': rollout.target_commit,
-                'version': rollout.target_version, 'action': rollout.action, 'private': rollout.private}
+                'version': rollout.target_version, 'action': rollout.action, 'private': rollout.private,
+                'bundled': rollout.source == 'image', 'customer': (rollout.created_by or '').startswith('customer:')}
         rollout_id = rollout.id
         site = session.scalar(select(Site).where(Site.id == row.site_id).with_for_update())
         if site is None or site.status != 'ready' or site.activity:
@@ -96,7 +97,8 @@ def rollout_site_task(self, row_id):
             skipped = True
         else:
             skipped = False
-            site.status, site.message, site.error = 'updating', 'Updating an application. The site may be briefly unavailable…', None
+            site.status, site.error = 'updating', None
+            site.message = {'install': f'Installing {rollout.app_name}.', 'uninstall': f'Removing {rollout.app_name}.'}.get(rollout.action, 'Updating an application.') + ' The site may be briefly unavailable…'
             row.status, row.started_at, row.step, row.progress = 'running', now(), 'Preparing', 5
             service = build_service(session, site)
             slug, user_limit, previous_image, site_id = site.slug, site.user_limit, site.image, str(site.id)
@@ -105,6 +107,9 @@ def rollout_site_task(self, row_id):
         return
 
     app, commit = spec['app'], spec['commit']
+    bundled = spec['bundled']
+    removing = spec['action'] == 'uninstall'
+    in_place = bundled or removing          # these change the site's data but not its image
     state = {'switched': False, 'touched': False, 'backup': None, 'image': None}
     def progress(percent, step, message=None):
         mark(row_id, message or step, step=step, progress=percent)
@@ -122,11 +127,13 @@ def rollout_site_task(self, row_id):
             progress(10, 'Reading what the site runs now')
             before = service.installed_apps().get(app)
             effective = 'update' if before else 'install'
-            if effective != spec['action']:
+            if removing and not before:
+                raise RuntimeError(f'{app} is not installed on this site, so there is nothing to remove.')
+            if not removing and effective != spec['action']:
                 raise RuntimeError(f'{app} is already installed on this site; use an update.' if before else f'{app} is not installed on this site, so there is nothing to update; install it first.')
             mark(row_id, from_version=(before or {}).get('version'), from_commit=(before or {}).get('commit'))
             op.ok('Current state', message=f'{app}: ' + (f"{before.get('version')} @ {(before.get('commit') or '')[:8]}" if before else 'not installed'))
-            if before and before.get('commit') == commit:
+            if not removing and before and before.get('commit') == commit:
                 with database.session() as session:
                     site = session.get(Site, uuid.UUID(site_id))
                     site.status, site.message = 'ready', 'Your site is ready.'
@@ -140,53 +147,94 @@ def rollout_site_task(self, row_id):
                 mark(row_id, backup_stamp=state['backup'])
                 op.ok('Safety backup taken', message=state['backup'] or 'none')
 
-                state['image'] = service.image_tag(now().strftime('%Y%m%d%H%M%S'))
-                progress(30, 'Building the new version (the site keeps running)', f'Building image {state["image"]} from {spec["url"]} @ {commit[:8]}')
-                token = None
-                if spec['private']:
+                if removing:
+                    progress(40, 'Removing the app')
+                    state['touched'] = True
+                    service.uninstall_app(app)
+                    op.ok('App removed')
+                    progress(80, 'Restarting the site')
+                    service.restart()
+                    wait_healthy()
+                    if app in service.installed_apps():
+                        raise RuntimeError(f'{app} is still installed on the site after the removal.')
                     with database.session() as session:
-                        token, _, _ = current_token(session, settings)
-                    if not token:
-                        raise RuntimeError('This repository is private and no GitHub account is connected. Connect one in the App Store.')
-                service.build_app_image(app, spec['url'], spec['branch'], commit, state['image'], token=token)
-                op.ok('Image built', message=state['image'])
+                        site = session.get(Site, uuid.UUID(site_id))
+                        site.status, site.message, site.error = 'ready', 'Your site is ready.', None
+                        site.app_names = [name for name in (site.app_names or []) if name != app]
+                        session.execute(delete(SiteApp).where(SiteApp.site_id == site.id, SiteApp.app_name == app))
+                    mark(row_id, f'{app} removed.', status='success', step='Done', progress=100, finished_at=now())
+                    op.ok('Removal completed')
+                elif bundled:
+                    # The app ships in the platform image: install it into the site, then restart so every process loads it.
+                    progress(40, 'Installing the app')
+                    state['touched'] = True
+                    service.install_bundled_app(app)
+                    op.ok('App installed')
+                    progress(80, 'Restarting the site')
+                    service.restart()
+                    wait_healthy()
+                    after = service.installed_apps().get(app)
+                    if not after:
+                        raise RuntimeError(f'{app} is not installed on the site after the install.')
+                    with database.session() as session:
+                        site = session.get(Site, uuid.UUID(site_id))
+                        site.status, site.message, site.error = 'ready', 'Your site is ready.', None
+                        site.app_names = list(dict.fromkeys([*(site.app_names or []), app]))
+                        record_app(session, site.id, app, {**after, 'branch': None})
+                    mark(row_id, f'{app} installed.', status='success', step='Done', progress=100,
+                         to_version=after.get('version'), to_commit=after.get('commit') or commit, finished_at=now())
+                    op.ok('Install completed')
+                else:
+                    state['image'] = service.image_tag(now().strftime('%Y%m%d%H%M%S'))
+                    progress(30, 'Building the new version (the site keeps running)', f'Building image {state["image"]} from {spec["url"]} @ {commit[:8]}')
+                    token = None
+                    if spec['private']:
+                        with database.session() as session:
+                            token, _, _ = current_token(session, settings)
+                        if not token:
+                            raise RuntimeError('This repository is private and no GitHub account is connected. Connect one in the App Store.')
+                    service.build_app_image(app, spec['url'], spec['branch'], commit, state['image'], token=token)
+                    op.ok('Image built', message=state['image'])
 
-                progress(60, 'Switching to the new version')
-                service.use_image(state['image'])
-                state['switched'] = True
-                service.run(['stop', *service.APP_SERVICES], timeout=300)
-                service.run(['up', '-d', '--wait', '--wait-timeout', '180', *service.infrastructure()], timeout=400)
+                    progress(60, 'Switching to the new version')
+                    service.use_image(state['image'])
+                    state['switched'] = True
+                    service.run(['stop', *service.APP_SERVICES], timeout=300)
+                    service.run(['up', '-d', '--wait', '--wait-timeout', '180', *service.infrastructure()], timeout=400)
 
-                progress(70, 'Installing the app' if effective == 'install' else 'Migrating the site')
-                state['touched'] = True
-                service.apply_app_change(app, effective)
-                op.ok('Site migrated')
+                    progress(70, 'Installing the app' if effective == 'install' else 'Migrating the site')
+                    state['touched'] = True
+                    service.apply_app_change(app, effective)
+                    op.ok('Site migrated')
 
-                progress(88, 'Starting the site')
-                service.start()
-                wait_healthy()
-                after = service.installed_apps().get(app)
-                if not after:
-                    raise RuntimeError(f'{app} is not installed on the site after the update.')
-                if after.get('commit') and after['commit'] != commit:
-                    raise RuntimeError(f'{app} is at {after["commit"][:8]}, not the requested {commit[:8]}.')
-                with database.session() as session:
-                    site = session.get(Site, uuid.UUID(site_id))
-                    site.image, site.status, site.message, site.error = state['image'], 'ready', 'Your site is ready.', None
-                    site.app_names = list(dict.fromkeys([*(site.app_names or []), app]))
-                    record_app(session, site.id, app, {**after, 'branch': spec['branch']})
-                mark(row_id, f'{app} {effective}ed at {commit[:8]}.', status='success', step='Done', progress=100,
-                     to_version=after.get('version') or spec['version'], to_commit=after.get('commit') or commit, finished_at=now())
-                op.ok('Update completed')
-                try:
-                    service.discard_images(keep=state['image'])
-                except Exception:
-                    pass
+                    progress(88, 'Starting the site')
+                    service.start()
+                    wait_healthy()
+                    after = service.installed_apps().get(app)
+                    if not after:
+                        raise RuntimeError(f'{app} is not installed on the site after the update.')
+                    if after.get('commit') and after['commit'] != commit:
+                        raise RuntimeError(f'{app} is at {after["commit"][:8]}, not the requested {commit[:8]}.')
+                    with database.session() as session:
+                        site = session.get(Site, uuid.UUID(site_id))
+                        site.image, site.status, site.message, site.error = state['image'], 'ready', 'Your site is ready.', None
+                        site.app_names = list(dict.fromkeys([*(site.app_names or []), app]))
+                        record_app(session, site.id, app, {**after, 'branch': spec['branch']})
+                    mark(row_id, f'{app} {effective}ed at {commit[:8]}.', status='success', step='Done', progress=100,
+                         to_version=after.get('version') or spec['version'], to_commit=after.get('commit') or commit, finished_at=now())
+                    op.ok('Update completed')
+                    try:
+                        service.discard_images(keep=state['image'])
+                    except Exception:
+                        pass
     except Exception as exc:
-        recovered = not state['switched']
-        if state['switched']:
+        # Something may have changed on the site: its image (a built app) or its data (the install itself).
+        changed = state['switched'] or (in_place and state['touched'])
+        recovered = not changed
+        if changed:
             try:
-                service.use_image(previous_image)
+                if state['switched']:
+                    service.use_image(previous_image)
                 if state['touched'] and state['backup']:
                     mark(row_id, 'Putting the previous data back from the safety backup.')
                     service.restore(state['backup'])
@@ -206,16 +254,21 @@ def rollout_site_task(self, row_id):
             site = session.get(Site, uuid.UUID(site_id))
             if recovered:
                 site.status, site.message = 'ready', 'Your site is ready.'
-                site.error = None
+                # A customer started this, so tell them in their own words; an admin reads the rollout page.
+                site.error = (f'{app} could not be {"removed" if removing else "installed"}. Your site was returned to how it was.' if spec['customer'] else None)
             else:
                 site.status, site.message = 'stopped', 'An application update failed and the site could not be restored.'
                 site.error = 'An application update failed. The site has been stopped; contact support. A safety backup is kept.'
             if site.image != previous_image:
                 site.image = previous_image
-        mark(row_id, 'Failed: ' + reason[:600], status='failed', error=reason, rolled_back=bool(state['switched'] and recovered),
-             step='Failed' + (' — rolled back' if state['switched'] and recovered else ''), finished_at=now())
+        mark(row_id, 'Failed: ' + reason[:600], status='failed', error=reason, rolled_back=bool(changed and recovered),
+             step='Failed' + (' — rolled back' if changed and recovered else ''), finished_at=now())
         settle_rollout(rollout_id)
+        if spec['customer']:
+            notify(site_id, 'app_removal_failed' if removing else 'app_failed', app=app)
         raise
+    if spec['customer']:
+        notify(site_id, 'app_removed' if removing else 'app_installed', app=app)
     settle_rollout(rollout_id)
 
 

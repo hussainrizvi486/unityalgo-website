@@ -6,6 +6,7 @@ import { eq } from 'drizzle-orm';
 import { db, one, schema } from '@/lib/db';
 import { requireAdmin } from '@/lib/admin-session';
 import { controller, ControllerError, type AppInspection } from '@/lib/controller-client';
+import { syncAppToPaddle } from '@/lib/paddle-catalog';
 
 /**
  * Server Actions for the App Store admin pages: adding GitHub apps, checking
@@ -260,4 +261,45 @@ export async function disconnectGithubAction() {
     }
     revalidatePath('/admin/apps', 'layout');
     redirect(`/admin/apps/github?done=${encodeURIComponent(notice)}`);
+}
+
+/** Set an application's monthly price per site. 0 or blank makes it free. Existing buyers keep paying what Paddle holds until it is synced. */
+export async function saveAppPricingAction(_previous: AppFormState | undefined, data: FormData): Promise<AppFormState> {
+    await requireAdmin();
+    const id = String(data.get('id') ?? '');
+    const raw = String(data.get('priceAmount') ?? '').trim();
+    const price = raw === '' ? 0 : Number(raw);
+    if (!Number.isFinite(price) || price < 0 || price > 10_000) return { error: 'Enter a price between 0 and 10,000, or leave it blank for a free app.' };
+    const amount = Math.round(price * 100) / 100;
+    const app = await db.query.appCatalog.findFirst({ where: eq(schema.appCatalog.id, id) });
+    if (!app) return { error: 'Application not found.' };
+    const installable = data.get('isInstallable') === 'on';
+    if (installable && !app.frappeAppName) return { error: 'An installable application needs a Frappe application name.' };
+    if (installable && app.source === 'github' && app.compatibility !== 'compatible')
+        return { error: 'Only an app verified as compatible with your Frappe version can be offered to customers. Check for updates or choose another branch.' };
+    await db.update(schema.appCatalog).set({ priceAmount: amount > 0 ? amount : null, isInstallable: installable }).where(eq(schema.appCatalog.id, id));
+    refreshPages(id);
+    const changed = app.paddlePriceId && (app.priceAmount ?? 0) !== amount;
+    return { success: changed ? 'Saved. Sync the price to Paddle for it to apply to billing.' : 'Saved.' };
+}
+
+/** Push the app's price to Paddle, creating its recurring price the first time. */
+export async function syncAppPricingAction(_previous: AppFormState | undefined, data: FormData): Promise<AppFormState> {
+    await requireAdmin();
+    const app = await db.query.appCatalog.findFirst({ where: eq(schema.appCatalog.id, String(data.get('id') ?? '')) });
+    if (!app) return { error: 'Application not found.' };
+    if (!app.priceAmount || app.priceAmount <= 0) return { error: 'Set a price first. A free app has nothing to sync.' };
+    try {
+        const { priceId, created } = await syncAppToPaddle({
+            appName: app.name,
+            amount: app.priceAmount,
+            currencyCode: app.priceCurrency,
+            existingPriceId: app.paddlePriceId,
+        });
+        if (created) await db.update(schema.appCatalog).set({ paddlePriceId: priceId }).where(eq(schema.appCatalog.id, app.id));
+        refreshPages(app.id);
+        return { success: created ? 'Created the recurring price in Paddle.' : 'Paddle price updated.' };
+    } catch (error) {
+        return { error: error instanceof Error ? error.message : 'Paddle rejected the sync.' };
+    }
 }

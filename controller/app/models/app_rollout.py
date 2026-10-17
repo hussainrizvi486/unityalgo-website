@@ -36,6 +36,8 @@ class AppRollout(Base):
     created_by: Mapped[str | None] = mapped_column(String(100), nullable=True)
     # A private repository is fetched with the connected GitHub account on the worker, never inside the image.
     private: Mapped[bool] = mapped_column(default=False, server_default='false')
+    # 'github' = built from a repository into the site's image; 'image' = the app already ships in the platform image.
+    source: Mapped[str] = mapped_column(String(10), default='github', server_default='github')
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     sites = relationship('AppRolloutSite', back_populates='rollout', cascade='all, delete-orphan', order_by='AppRolloutSite.site_slug')

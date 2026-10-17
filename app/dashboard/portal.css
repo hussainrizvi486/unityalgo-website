@@ -115,14 +115,9 @@
 
 .dashboard .portal-page {
     width: 100%;
-    max-width: var(--portal-page-width);
+    /* max-width: var(--portal-page-width); */
     margin-inline: auto;
-    min-width: 0;
-}
-
-.dashboard .portal-detail {
-    max-width: var(--portal-detail-width);
-    min-width: 0;
+    /* min-width: 0; */
 }
 
 .dashboard .portal-form {

@@ -6,7 +6,7 @@ from concurrent.futures import ThreadPoolExecutor
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 from flask import Flask
-from sqlalchemy import delete, text
+from sqlalchemy import delete, select, text
 from app.db import database
 from app.config import settings
 from app.models.site import Site
@@ -733,6 +733,40 @@ class SiteApiTests(unittest.TestCase):
         self.assertIn('sites_waiting',up)
         with patch('app.tasks.celery_app.celery_app.control.ping',side_effect=OSError('broker down')):
             self.assertEqual(self.client.get('/api/v1/sites/admin/queue').json['workers'],0)   # an unreachable broker counts as no worker
+
+    def test_a_trial_plan_starts_a_trial_once_per_customer(self):
+        from app.models.site_extras import SiteTrial
+        plan = 'trial-plan-' + uuid.uuid4().hex[:6]
+        small = {'plan_vcpu': 0.5, 'plan_ram_mb': 768, 'plan_storage_gb': 1}      # three sites must fit on the test worker
+        with database.session() as session:
+            session.execute(text('UPDATE server_nodes SET max_containers = 40 WHERE id = :id'), {'id': self.worker})
+        try:
+            first, _ = self.create(plan_id=plan, trial_days=14, **small)
+            self.assertEqual(first.status_code, 201, first.json)
+            self.assertEqual((first.json['trial']['days_left'], first.json['trial']['expired']), (14, False))
+            again, _ = self.create(plan_id=plan, trial_days=14, **small)
+            self.assertEqual(again.status_code, 409)
+            self.assertIn('already used the free trial', again.json['error'])
+            paid, _ = self.create(plan_id=plan, **small)                         # no trial requested: an ordinary site
+            self.assertEqual(paid.status_code, 201)
+            self.assertIsNone(paid.json['trial'])
+        finally:
+            with database.session() as session:
+                session.execute(delete(SiteTrial).where(SiteTrial.user_id == self.customer))
+
+    def test_trial_length_is_validated_and_a_failed_queue_gives_the_trial_back(self):
+        from app.models.site_extras import SiteTrial
+        for days in (0, -3, 5000, 'many', True):
+            self.assertEqual(self.create(plan_id='plan-v', trial_days=days)[0].status_code, 422, days)
+        self.queue_mock.side_effect = OSError('redis down')
+        failed, _ = self.create(plan_id='plan-q', trial_days=7, plan_vcpu=0.5, plan_ram_mb=768, plan_storage_gb=1)
+        self.assertEqual(failed.status_code, 409)
+        self.queue_mock.side_effect = None
+        with database.session() as session:
+            self.assertEqual(session.scalars(select(SiteTrial).where(SiteTrial.user_id == self.customer)).all(), [])
+        self.assertEqual(self.create(plan_id='plan-q', trial_days=7, plan_vcpu=0.5, plan_ram_mb=768, plan_storage_gb=1)[0].status_code, 201)       # and they can still use it
+        with database.session() as session:
+            session.execute(delete(SiteTrial).where(SiteTrial.user_id == self.customer))
 
     def test_slug_check(self):
         taken,_=self.create(slug='taken-'+uuid.uuid4().hex[:8])

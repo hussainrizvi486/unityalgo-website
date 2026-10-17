@@ -1000,6 +1000,41 @@ class FrappeService:
             timeout=1700,
         )
 
+    def install_bundled_app(self, app):
+        """Install an app that already ships in the site's image. Nothing is built; the site just gains the app."""
+        self.run(
+            [
+                "run",
+                "--rm",
+                "--no-deps",
+                "--entrypoint",
+                "bash",
+                "create-site",
+                "-c",
+                'set -e; bench --site "$SITE_NAME" install-app %s; bench --site "$SITE_NAME" clear-cache'
+                % shlex.quote(app),
+            ],
+            timeout=1700,
+        )
+
+    def uninstall_app(self, app):
+        """Remove an app from the site. Its data on this site goes with it; the caller has taken a backup first.
+        The app's code stays in the image, so it can be installed again later."""
+        self.run(
+            [
+                "run",
+                "--rm",
+                "--no-deps",
+                "--entrypoint",
+                "bash",
+                "create-site",
+                "-c",
+                'set -e; bench --site "$SITE_NAME" uninstall-app %s --yes --no-backup; bench --site "$SITE_NAME" clear-cache'
+                % shlex.quote(app),
+            ],
+            timeout=1700,
+        )
+
     def discard_images(self, keep=None):
         """Remove this site's app images except `keep`. Never touches the shared base image."""
         repository = shlex.quote("unityalgo-site-%s" % self.site.id)
@@ -1009,6 +1044,28 @@ class FrappeService:
             % (repository, keep_filter),
             timeout=120,
         )
+
+    def probe(self):
+        """(answered, milliseconds): one HTTP request to the site's own port, made on its worker.
+
+        This is what a visitor's request costs once it reaches the site. `healthy()` goes through `docker exec`
+        and is a good yes/no, but its time is mostly Docker's own overhead.
+        """
+        url = "http://%s:%d/api/method/ping" % (self.server.dial_host, int(self.site.port))
+        try:
+            result = self.ssh.run(
+                "curl -s -o /dev/null -m 10 -w '%%{http_code} %%{time_total}' %s" % shlex.quote(url),
+                timeout=20,
+            )
+        except Exception:
+            return False, None
+        code, _, seconds = (result.stdout or "").strip().partition(" ")
+        if code != "200":
+            return False, None
+        try:
+            return True, round(float(seconds) * 1000)
+        except ValueError:
+            return True, None
 
     def healthy(self):
         """Quiet probe: no provision.log writes and no log tailing on a failed poll."""

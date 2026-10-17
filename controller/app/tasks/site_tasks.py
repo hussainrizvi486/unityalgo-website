@@ -12,6 +12,7 @@ from app.services.activity_logger import ActivityLogger, format_exception
 from app.models.site import Site, STEP_FLOW
 from app.models.site_extras import SiteBackup
 from app.models.server import ServerNode
+from app.services import trials
 from app.services.site_runtime import build_service
 from app.services.mariadb_service import remove_site_database
 from app.services.frappe_service import SetupUnavailable
@@ -88,6 +89,8 @@ def provision_site_task(self, site_id, setup=None):
             with database.session() as session:
                 ProxyConfigurationService(settings).sync_all(session)
             update(site_id, 'ready', 100, 'Your site is ready. Sign in with the email and password you chose.', error=None, failed_step=None)
+            with database.session() as session:
+                trials.activated(session, uuid.UUID(site_id))
             succeeded = True
             try:
                 service.scrub_setup()
@@ -220,6 +223,7 @@ def delete_site_task(self, site_id, previous_status, force=False):
             with database.session() as session:
                 site = session.get(Site, uuid.UUID(site_id))
                 if site:
+                    trials.release_if_unused(session, site)
                     session.delete(site)
                     session.flush()
                     from app.controller.server import ServerController
@@ -453,20 +457,23 @@ def change_plan_task(self, site_id, plan, origin):
         raise
 
 
-def notify(site_id, event):
+def notify(site_id, event, **extra):
     """Queue a customer notification; delivery has its own retries and never fails provisioning."""
     try:
-        notify_site_task.delay(site_id, event)
+        if extra:
+            notify_site_task.delay(site_id, event, extra)
+        else:
+            notify_site_task.delay(site_id, event)
     except Exception:
         pass
 
 @celery_app.task(bind=True, name='site.notify', autoretry_for=(Exception,), retry_backoff=True, max_retries=5)
-def notify_site_task(self, site_id, event='status'):
+def notify_site_task(self, site_id, event='status', extra=None):
     with database.session() as session:
         site = session.get(Site, uuid.UUID(site_id))
         if not site:
             return
-        payload = json.dumps({'site_id':site_id,'user_id':site.user_id,'event':event}).encode()
+        payload = json.dumps({'site_id':site_id,'user_id':site.user_id,'event':event, **(extra or {})}).encode()
     req = urllib.request.Request(settings.platform_internal_url.rstrip('/') + '/api/internal/site-events', data=payload,
           headers={'Content-Type':'application/json', 'X-Controller-Key':settings.controller_internal_api_key}, method='POST')
     with urllib.request.urlopen(req, timeout=15) as response:

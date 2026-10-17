@@ -349,6 +349,38 @@ export interface AdminSite extends CustomerSite {
     user_id: string;
 }
 
+export type MetricsRange = '1h' | '6h' | '24h' | '7d' | '30d';
+export interface MetricPoint {
+    t: string;
+    cpu: number | null;
+    memory_mb: number | null;
+    storage_mb: number | null;
+    response_ms: number | null;
+    users: number | null;
+    /** Share of the readings in this point that answered a health check (1 = all). */
+    up: number;
+}
+export interface SiteMetrics {
+    range: MetricsRange;
+    interval_seconds: number;
+    points: MetricPoint[];
+    summary: {
+        samples: number;
+        uptime_percent: number | null;
+        cpu_avg: number | null;
+        cpu_peak: number | null;
+        memory_avg_mb: number | null;
+        memory_peak_mb: number | null;
+        response_avg_ms: number | null;
+        response_peak_ms: number | null;
+        storage_mb: number | null;
+        outages: number;
+    };
+    limits: { memory_mb: number; cpu_percent: number; storage_mb: number; users: number | null };
+    running: boolean;
+    last_sample_at: string | null;
+}
+
 export interface SiteUsage {
     cpu_percent: number;
     memory_mb: number;
@@ -402,6 +434,14 @@ export interface SiteBackups {
     last_at: string | null;
 }
 
+export interface SiteTrialInfo {
+    ends_at: string;
+    /** The trial has ended: the site is switched off until its owner subscribes to the plan. */
+    expired: boolean;
+    days_left: number;
+    plan_id: string | null;
+}
+
 export interface CustomerSite {
     /** Where to open the site: its domain, or the worker's address and port when running locally. */
     url: string;
@@ -429,6 +469,8 @@ export interface CustomerSite {
     /** The latest seat and storage audit against that plan. */
     limits: { state: 'ok' | 'users' | 'storage' | 'both' | null; user_count: number | null; storage_used_mb: number | null; audited_at: string | null };
     backup: { schedule: 'off' | 'daily' | 'weekly'; retention: number; last_at: string | null };
+    /** Set while the site runs on a free trial; null for a site that does not. */
+    trial: SiteTrialInfo | null;
     error: string | null;
     steps: { key: string; label: string; state: 'done' | 'active' | 'pending' | 'failed' }[];
     created_at: string;
@@ -530,7 +572,7 @@ export interface AppRollout {
     branch: string;
     target_commit: string;
     target_version: string | null;
-    action: 'install' | 'update';
+    action: 'install' | 'update' | 'uninstall';
     status: RolloutStatus;
     note: string | null;
     created_by: string | null;
@@ -571,6 +613,23 @@ export const controller = {
                 body,
                 timeoutMs: 20_000,
             }),
+        /** Plans whose free trial this customer has already used. */
+        trials: (userId: string) =>
+            request<{ used_plan_ids: string[] }>(`/api/v1/sites/trials?user_id=${encodeURIComponent(userId)}`, { timeoutMs: 20_000 }),
+        /** The customer has subscribed to a plan: end their trial sites on it and keep the sites. */
+        convertTrials: (userId: string, planId: string) =>
+            request<{ queued: boolean }>('/api/v1/sites/trials/convert', {
+                method: 'POST',
+                body: { user_id: userId, plan_id: planId },
+                timeoutMs: 20_000,
+            }),
+        /** Admin: add `days` to a trial (restarts an expired one), or end it now. */
+        adminTrial: (id: string, change: { days: number } | { end: true }) =>
+            request<CustomerSite>(`/api/v1/sites/admin/${encodeURIComponent(id)}/trial`, {
+                method: 'POST',
+                body: change,
+                timeoutMs: 20_000,
+            }),
         retry: (id: string, userId: string) =>
             request<{ queued: boolean }>(
                 `/api/v1/sites/${encodeURIComponent(id)}/retry`,
@@ -609,6 +668,13 @@ export const controller = {
                 `/api/v1/sites/admin/${encodeURIComponent(id)}/actions/${action}`,
                 { method: 'POST', body: {}, timeoutMs: 20_000 },
             ),
+        metrics: (id: string, userId: string, range: MetricsRange) =>
+            request<SiteMetrics>(
+                `/api/v1/sites/${encodeURIComponent(id)}/metrics?user_id=${encodeURIComponent(userId)}&range=${range}`,
+                { timeoutMs: 20_000 },
+            ),
+        adminMetrics: (id: string, range: MetricsRange) =>
+            request<SiteMetrics>(`/api/v1/sites/admin/${encodeURIComponent(id)}/metrics?range=${range}`, { timeoutMs: 20_000 }),
         adminUsage: (id: string) =>
             request<SiteUsage>(`/api/v1/sites/admin/${encodeURIComponent(id)}/usage`, { timeoutMs: 90_000 }),
         adminQueue: () =>
@@ -909,6 +975,25 @@ export const controller = {
                 body: { app_name: appName, repo_url: repoUrl ?? undefined, branch: branch ?? undefined },
                 timeoutMs: 60_000,
             }),
+        siteApps: (siteId: string, userId: string) =>
+            request<{ apps: { app_name: string; version: string | null; branch: string | null }[]; can_install: boolean; reason: string | null }>(
+                `/api/v1/apps/sites/${encodeURIComponent(siteId)}?user_id=${encodeURIComponent(userId)}`,
+                { timeoutMs: 20_000 },
+            ),
+        installOnSite: (
+            siteId: string,
+            body: { user_id: string; app_name: string; source: 'image' | 'github'; repo_url?: string | null; branch?: string | null },
+        ) =>
+            request<{ rollout_id: string; queued: boolean }>(`/api/v1/apps/sites/${encodeURIComponent(siteId)}`, {
+                method: 'POST',
+                body,
+                timeoutMs: 60_000,
+            }),
+        removeFromSite: (siteId: string, userId: string, appName: string) =>
+            request<{ rollout_id: string; queued: boolean }>(
+                `/api/v1/apps/sites/${encodeURIComponent(siteId)}?user_id=${encodeURIComponent(userId)}&app_name=${encodeURIComponent(appName)}`,
+                { method: 'DELETE', timeoutMs: 30_000 },
+            ),
         summary: () =>
             request<{ results: Record<string, { sites: number; commits: Record<string, number> }> }>('/api/v1/apps/summary', {
                 timeoutMs: 20_000,

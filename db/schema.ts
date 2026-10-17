@@ -403,6 +403,10 @@ export const appCatalog = pgTable("AppCatalog", {
 	compatibility: text(),
 	compatibilityNote: text(),
 	lastCheckedAt: timestamp({ precision: 3, mode: 'date' }),
+	// Monthly price per site in major units (5 = $5.00); null or 0 = free. Charged as an item on the customer's Paddle subscription.
+	priceAmount: doublePrecision(),
+	priceCurrency: text().default('USD').notNull(),
+	paddlePriceId: text(),
 	createdAt: timestamp({ precision: 3, mode: 'date' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
 	updatedAt: timestamp({ precision: 3, mode: 'date' }).notNull().$defaultFn(() => new Date()).$onUpdate(() => new Date()),
 }, (table) => [
@@ -475,6 +479,8 @@ export const plan = pgTable("Plan", {
 	vcpu: doublePrecision(),
 	ramMb: integer(),
 	storageGb: integer(),
+	// Days of free use a new customer gets on this plan; null or 0 = no trial.
+	trialDays: integer(),
 }, (table) => [
 	index("Plan_currencyId_idx").using("btree", table.currencyId.asc().nullsLast().op("text_ops")),
 	uniqueIndex("Plan_paddlePriceId_key").using("btree", table.paddlePriceId.asc().nullsLast().op("text_ops")),
@@ -490,4 +496,24 @@ export const plan = pgTable("Plan", {
 			foreignColumns: [currency.id],
 			name: "Plan_currencyId_fkey"
 		}).onUpdate("cascade").onDelete("set null"),
+]);
+
+
+/** A paid app installed on a customer's site. One active row per site and app; it is what the customer is billed for. */
+export const appPurchase = pgTable("AppPurchase", {
+	id: text().primaryKey().notNull().$defaultFn(() => createId()),
+	userId: text().notNull(),
+	appId: text().notNull(),
+	siteId: text().notNull(),
+	status: text().default('ACTIVE').notNull(),
+	priceAmount: doublePrecision().notNull(),
+	currency: text().notNull(),
+	// 'paddle' = charged on the subscription; 'test' = recorded only (development, APP_BILLING_MODE=test).
+	billingMode: text().notNull(),
+	paddleSubscriptionId: text(),
+	createdAt: timestamp({ precision: 3, mode: 'date' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
+	canceledAt: timestamp({ precision: 3, mode: 'date' }),
+}, (table) => [
+	index("AppPurchase_userId_status_idx").using("btree", table.userId.asc().nullsLast().op("text_ops"), table.status.asc().nullsLast().op("text_ops")),
+	uniqueIndex("AppPurchase_site_app_active_key").using("btree", table.siteId.asc().nullsLast().op("text_ops"), table.appId.asc().nullsLast().op("text_ops")).where(sql`status = 'ACTIVE'`),
 ]);

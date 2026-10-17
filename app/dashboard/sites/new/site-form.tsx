@@ -35,6 +35,10 @@ interface PlanOption {
     vcpu: number | null;
     ramMb: number | null;
     storageGb: number | null;
+    /** Days of free trial on offer to this customer, 0 for none. */
+    trialDays: number;
+    /** The plan has a trial but this customer has used it. */
+    trialUsed: boolean;
 }
 
 type Availability =
@@ -366,6 +370,16 @@ export function SiteForm({
                                 <span className="mt-1 block portal-text-body text-foreground/70">
                                     {plan.price}
                                 </span>
+                                {plan.trialDays > 0 && (
+                                    <span className="mt-2 inline-block rounded-full bg-success/10 px-2 py-0.5 portal-text-caption font-semibold text-success">
+                                        {plan.trialDays}-day free trial
+                                    </span>
+                                )}
+                                {plan.trialUsed && (
+                                    <span className="mt-2 block portal-text-caption text-muted-foreground">
+                                        Free trial already used. Subscribe to this plan first.
+                                    </span>
+                                )}
                                 {plan.tagline && (
                                     <span className="mt-2 block portal-text-caption text-muted-foreground">
                                         {plan.tagline}

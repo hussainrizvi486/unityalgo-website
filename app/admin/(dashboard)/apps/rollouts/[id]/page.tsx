@@ -43,7 +43,7 @@ export default async function RolloutPage({
     const sites = rollout.sites ?? [];
     const finished = rollout.counts.success + rollout.counts.failed + rollout.counts.skipped;
     const retryable = rollout.counts.failed + rollout.counts.skipped;
-    const verb = rollout.action === 'install' ? 'Install' : 'Update';
+    const verb = rollout.action === 'install' ? 'Install' : rollout.action === 'uninstall' ? 'Remove' : 'Update';
 
     return (
         <div className="portal-detail">

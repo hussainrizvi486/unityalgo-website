@@ -10,7 +10,10 @@ export type SiteEmailEvent =
     | 'started'
     | 'milestone'
     | 'ready'
-    | 'failed';
+    | 'failed'
+    | 'trial_ending'
+    | 'trial_ended'
+    | 'trial_converted';
 
 const PORTAL_URL = (
     process.env.PLATFORM_PUBLIC_URL || 'https://www.unityalgo.com'
@@ -67,6 +70,32 @@ function compose(event: SiteEmailEvent, site: CustomerSite) {
                 next: `${site.error ? site.error + ' ' : ''}Open your site page to retry. If it fails again, reply to this email or contact support.`,
                 cta: ['Review and retry', detailsUrl],
             };
+        case 'trial_ending': {
+            const days = site.trial?.days_left ?? 0;
+            return {
+                subject: `Your free trial of ${site.name} ends in ${days} day${days === 1 ? '' : 's'}`,
+                lead: `The free trial of ${site.name} (${site.domain}) is about to end.`,
+                status: `${days} day${days === 1 ? '' : 's'} left`,
+                next: `Subscribe to ${site.plan_name ?? 'the plan'} before it ends to keep using the site. If you do not, the site is switched off. Your data is kept.`,
+                cta: ['Choose a plan', `${PORTAL_URL}/dashboard/plans`],
+            };
+        }
+        case 'trial_ended':
+            return {
+                subject: `Your free trial of ${site.name} has ended`,
+                lead: `The free trial of ${site.name} (${site.domain}) has ended and the site has been switched off.`,
+                status: 'Trial ended',
+                next: `Your data is kept. Subscribe to ${site.plan_name ?? 'the plan'} to use the site again.`,
+                cta: ['Subscribe', `${PORTAL_URL}/dashboard/plans`],
+            };
+        case 'trial_converted':
+            return {
+                subject: `Thanks for subscribing: ${site.name} stays on`,
+                lead: `Your subscription is active, so the free trial of ${site.name} is over and the site carries on as normal.`,
+                status: 'Subscribed',
+                next: 'Nothing else is needed.',
+                cta: ['Open your site page', detailsUrl],
+            };
     }
 }
 
@@ -96,7 +125,12 @@ export async function sendSiteEmail(
 ) {
     // One email per event per provisioning attempt. The attempt number is stable, unlike the
     // update time, so a redelivered event never sends twice but a retry still gets its own emails.
-    const eventKey = event === 'initiated' ? event : `${event}:${site.attempt}`;
+    // A trial can be extended and end again, so its emails are keyed by when the trial ends instead.
+    const eventKey = event === 'initiated'
+        ? event
+        : event === 'trial_ending' || event === 'trial_ended'
+            ? `${event}:${site.trial?.ends_at ?? site.attempt}`
+            : `${event}:${site.attempt}`;
     const claim = { siteId: site.id, eventKey };
     // The unique (siteId, eventKey) row is the claim: when it already exists, another delivery got there first.
     const claimed = await db.insert(schema.siteEmailEvent).values(claim).onConflictDoNothing().returning({ id: schema.siteEmailEvent.id });

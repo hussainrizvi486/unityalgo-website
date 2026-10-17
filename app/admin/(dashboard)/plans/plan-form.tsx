@@ -27,6 +27,7 @@ export interface PlanFormValues {
     vcpu: string;
     ramMb: string;
     storageGb: string;
+    trialDays: string;
     features: string;
     isActive: boolean;
     sortOrder: string;
@@ -185,6 +186,21 @@ export function PlanForm({ action, defaultValues, submitLabel, products, currenc
                         <Label htmlFor="storageGb" className="portal-text-body text-foreground/80 mb-1.5">Storage (GB)</Label>
                         <SmartInput id="storageGb" name="storageGb" kind="integer" min={1} max={10000} defaultValue={defaultValues?.storageGb} placeholder="30" />
                     </div>
+                </div>
+            </fieldset>
+
+            <fieldset className="rounded-xl border border-border/60 bg-muted/50 p-card">
+                <legend className="px-2 portal-text-body font-semibold text-foreground">Free trial</legend>
+                <p className="portal-text-caption text-muted-foreground">
+                    Lets a customer create a site on this plan without paying. Each customer gets one trial per plan. When the
+                    trial ends the site is switched off and cannot be used until they subscribe to the plan; if they subscribe before
+                    then the site simply carries on. Trial sites cannot buy paid apps.
+                </p>
+                <div className="mt-4 max-w-xs">
+                    <Label htmlFor="trialDays" className="portal-text-body text-foreground/80 mb-1.5">
+                        Trial length (days) <span className="text-muted-foreground font-normal">(blank or 0 = no trial)</span>
+                    </Label>
+                    <SmartInput id="trialDays" name="trialDays" kind="integer" min={0} max={365} defaultValue={defaultValues?.trialDays} placeholder="14" />
                 </div>
             </fieldset>
 

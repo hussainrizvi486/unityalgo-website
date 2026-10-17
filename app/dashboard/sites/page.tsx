@@ -1,13 +1,11 @@
 import Link from 'next/link';
-import { Globe, Plus, ArrowUpRight } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { requireCustomer } from '@/lib/customer-session';
 import { controller } from '@/lib/controller-client';
 import { recordSiteNotification } from '@/lib/customer-notifications';
 import { Button } from '@/components/ui/button';
 import { Notice } from '@/components/ui/notice';
-import { Badge } from '@/components/ui/badge';
-import { PortalPanel } from '@/components/customer/portal-panel';
-import { RefreshSites } from './refresh-sites';
+import { SitesGrid } from './sites-grid';
 export const metadata = { title: 'Sites' };
 export default async function SitesPage() {
     const user = await requireCustomer();
@@ -36,20 +34,6 @@ export default async function SitesPage() {
                     </p>
                 </div>
                 <div className="flex gap-3">
-                    <RefreshSites
-                        pending={Boolean(
-                            sites?.some(
-                                (site) =>
-                                    ![
-                                        'ready',
-                                        'stopped',
-                                        'deactivated',
-                                        'failed',
-                                        'cleanup_required',
-                                    ].includes(site.status) || Boolean(site.activity),
-                            ),
-                        )}
-                    />
                     <Button asChild className="">
                         <Link href="/dashboard/sites/new">
                             <Plus className="size-4" />
@@ -63,64 +47,8 @@ export default async function SitesPage() {
                     Site hosting is temporarily unavailable. Your existing sites
                     have not been changed. Try refreshing or contact support.
                 </Notice>
-            ) : sites.length ? (
-                <div className="mt-8 grid gap-gap-lg md:grid-cols-2 xl:grid-cols-3">
-                    {sites.map((site) => (
-                        <PortalPanel key={site.id}>
-                            <div className="flex items-center justify-between gap-3">
-                                <Globe className="size-6 text-primary" />
-                                <Badge
-                                    variant={
-                                        site.status === 'ready'
-                                            ? 'success'
-                                            : [
-                                                    'failed',
-                                                    'cleanup_required',
-                                                ].includes(site.status)
-                                              ? 'error'
-                                              : 'neutral'
-                                    }
-                                >
-                                    {site.status.replaceAll('_', ' ')}
-                                </Badge>
-                            </div>
-                            <h2 className="mt-5 text-xl ">
-                                {site.name}
-                            </h2>
-                            <p className="mt-2 break-all portal-text-body text-muted-foreground">
-                                {site.domain}
-                            </p>
-                            <p className="mt-4 portal-text-caption text-muted-foreground">
-                                Server: {site.server_name}
-                            </p>
-                            <p className="mt-3 min-h-12 portal-text-body leading-6 text-foreground/70">
-                                {site.message}
-                            </p>
-                            <Link
-                                href={`/dashboard/sites/${site.id}`}
-                                className="mt-5 inline-flex items-center gap-2 portal-text-body font-semibold text-primary"
-                            >
-                                View site <ArrowUpRight className="size-4" />
-                            </Link>
-                        </PortalPanel>
-                    ))}
-                </div>
             ) : (
-                <div className="mt-10 rounded-xl border border-dashed border-input px-6 py-16 text-center">
-                    <Globe className="mx-auto size-10 text-muted-foreground" />
-                    <h2 className="mt-5 text-xl ">
-                        Your first site starts here.
-                    </h2>
-                    <p className="mx-auto mt-3 max-w-md portal-text-body leading-7 text-foreground/70">
-                        Choose a name and your applications. We will assign an
-                        available server and start the Frappe installation.
-                    </p>
-                    <Button asChild className="mt-6">
-                        <Link href="/dashboard/sites/new">
-                            Create your first site
-                        </Link>
-                    </Button>
-                </div>
+                <SitesGrid initial={sites} />
             )}
         </div>
     );

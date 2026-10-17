@@ -652,6 +652,24 @@ export async function forceDeleteSiteAction(formData: FormData) {
     redirect('/admin/sites');
 }
 
+/** Extend a site's free trial by a number of days, or end it now (which switches the site off). */
+export async function adminSiteTrialAction(formData: FormData) {
+    await requireAdmin();
+    const id = String(formData.get('id') ?? '');
+    const end = formData.get('end') === '1';
+    const days = Number(formData.get('days') ?? 0);
+    if (!id || (!end && !(Number.isInteger(days) && days >= 1 && days <= 365))) return;
+    const notice = end ? 'Trial ended. The site is being switched off.' : `Trial extended by ${days} day${days === 1 ? '' : 's'}.`;
+    try {
+        await controller.sites.adminTrial(id, end ? { end: true } : { days });
+    } catch (error) {
+        if (!(error instanceof ControllerError)) throw error;
+        redirect(`/admin/sites/${id}?error=${encodeURIComponent(error.message)}`);
+    }
+    revalidatePath(`/admin/sites/${id}`);
+    redirect(`/admin/sites/${id}?done=${encodeURIComponent(notice)}`);
+}
+
 const ADMIN_SITE_ACTIONS = ['stop', 'start', 'restart', 'backup', 'deactivate', 'reactivate'] as const;
 
 export async function adminSiteActionAction(formData: FormData) {

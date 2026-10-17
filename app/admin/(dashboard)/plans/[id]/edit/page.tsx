@@ -39,6 +39,7 @@ export default async function EditPlanPage({ params }: { params: Promise<{ id: s
                     vcpu: plan.vcpu != null ? String(plan.vcpu) : '',
                     ramMb: plan.ramMb != null ? String(plan.ramMb) : '',
                     storageGb: plan.storageGb != null ? String(plan.storageGb) : '',
+                    trialDays: plan.trialDays ? String(plan.trialDays) : '',
                     features: plan.features.join('\n'),
                     isActive: plan.isActive,
                     sortOrder: String(plan.sortOrder),

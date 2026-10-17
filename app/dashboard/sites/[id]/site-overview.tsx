@@ -10,6 +10,10 @@ import { siteActionAction } from '../../actions';
 import { DeleteSite } from './delete-site';
 import { ChangePlan, ResetPassword, type PlanChoice } from './site-dialogs';
 import { SiteBackupsPanel } from './site-backups';
+import { MonitoringPanel } from '@/components/ui/monitoring-panel';
+import { InstallAppDialog, type InstallableApp } from '@/components/customer/install-app-dialog';
+import { RemoveAppButton } from '@/components/customer/remove-app-button';
+import { formatPrice } from '@/lib/admin-format';
 import { SiteDomainsPanel } from './site-domains';
 
 export type { PlanChoice };
@@ -115,12 +119,17 @@ function Meter({ label, value, text }: { label: string; value: number; text: str
     );
 }
 
-export function SiteOverview({ site, applicationNames, plans, onChange }: {
-    site: CustomerSite; applicationNames: Record<string, string>; plans: PlanChoice[]; onChange: () => void;
+/** Catalogue details of the apps on a site, by Frappe app name. */
+export type KnownApps = Record<string, { id: string; name: string; priceAmount: number | null; priceCurrency: string }>;
+
+export function SiteOverview({ site, applicationNames, plans, installable, known, onChange }: {
+    site: CustomerSite; applicationNames: Record<string, string>; plans: PlanChoice[]; installable: InstallableApp[]; known: KnownApps; onChange: () => void;
 }) {
+    const [installing, setInstalling] = useState<InstallableApp | null>(null);
     const status = STATUS[site.status] ?? { label: site.status, variant: 'neutral' as const };
     const running = site.status === 'ready';
     const deactivated = site.status === 'deactivated';
+    const trialEnded = Boolean(site.trial?.expired);
     const limits = site.limits;
     const overLimit = limits.state && limits.state !== 'ok';
     const idle = !site.activity;
@@ -170,7 +179,9 @@ export function SiteOverview({ site, applicationNames, plans, onChange }: {
                             <ArrowUpRight className="size-4" />Access site
                         </a>
                     </Button>
-                    {deactivated ? (
+                    {trialEnded ? (
+                        <Button asChild size="sm"><Link href="/dashboard/plans">Subscribe to continue</Link></Button>
+                    ) : deactivated ? (
                         <ActionForm site={site} action="reactivate" label="Reactivate" icon={<Play className="size-4" />} variant="default" onDone={onChange} />
                     ) : site.status === 'stopped' ? (
                         <ActionForm site={site} action="start" label="Start" icon={<Play className="size-4" />} onDone={onChange} />
@@ -204,7 +215,20 @@ export function SiteOverview({ site, applicationNames, plans, onChange }: {
                         : ''}
                 </Notice>
             )}
-            {deactivated && (
+            {site.trial && !trialEnded && (
+                <Notice tone={site.trial.days_left <= 3 ? 'warning' : 'info'} className="mt-6">
+                    <span className="font-medium">Free trial: {site.trial.days_left} day{site.trial.days_left === 1 ? '' : 's'} left</span>
+                    {' '}(ends {new Date(site.trial.ends_at).toLocaleDateString()}). Subscribe to {site.plan_name ?? 'this plan'} before then to keep your site and its data.{' '}
+                    <Link href="/dashboard/plans" className="font-medium underline">See plans</Link>
+                </Notice>
+            )}
+            {trialEnded && (
+                <Notice tone="warning" className="mt-6">
+                    Your free trial has ended, so this site is switched off and cannot be used. Your data is kept: subscribe to {site.plan_name ?? 'this plan'} to use it again.{' '}
+                    <Link href="/dashboard/plans" className="font-medium underline">Subscribe</Link>
+                </Notice>
+            )}
+            {deactivated && !trialEnded && (
                 <Notice tone="info" className="mt-6">
                     This site is deactivated: it is offline and not using any server capacity, and your data is kept. Reactivate it to use it again.
                 </Notice>
@@ -232,6 +256,7 @@ export function SiteOverview({ site, applicationNames, plans, onChange }: {
                 <TabsList>
                     <TabsTrigger value="overview">Overview</TabsTrigger>
                     <TabsTrigger value="apps">Apps ({apps.length})</TabsTrigger>
+                    <TabsTrigger value="monitoring">Monitoring</TabsTrigger>
                     <TabsTrigger value="backups">Backups</TabsTrigger>
                     <TabsTrigger value="domains">Domains &amp; SSL</TabsTrigger>
                 </TabsList>
@@ -302,17 +327,86 @@ export function SiteOverview({ site, applicationNames, plans, onChange }: {
                     </div>
                 </TabsContent>
 
-                <TabsContent value="apps" className="mt-4">
+                <TabsContent value="apps" className="mt-4 space-y-gap">
                     <section className="rounded-xl border border-border p-card">
                         <h2 className="">Installed applications</h2>
                         <ul className="mt-4 divide-y divide-border/60">
-                            {apps.map((app) => (
-                                <li key={app} className="flex items-center justify-between py-3 portal-text-body">
-                                    {app}<Badge variant="success">Installed</Badge>
-                                </li>
-                            ))}
+                            {site.apps.map((frappeApp) => {
+                                const info = known[frappeApp];
+                                const part = ['frappe', 'erpnext'].includes(frappeApp);    // part of the site itself
+                                return (
+                                    <li key={frappeApp} className="flex flex-wrap items-center justify-between gap-gap py-3 portal-text-body">
+                                        <span>
+                                            {applicationNames[frappeApp] || info?.name || frappeApp}
+                                            {(info?.priceAmount ?? 0) > 0 && (
+                                                <span className="ml-2 portal-text-caption text-muted-foreground">{formatPrice(info!.priceAmount!, info!.priceCurrency)}/mo</span>
+                                            )}
+                                        </span>
+                                        <span className="flex items-center gap-gap">
+                                            <Badge variant="success">Installed</Badge>
+                                            {!part && info && (
+                                                <RemoveAppButton
+                                                    appId={info.id}
+                                                    siteId={site.id}
+                                                    name={info.name}
+                                                    priceAmount={info.priceAmount}
+                                                    priceCurrency={info.priceCurrency}
+                                                    disabled={!running || !idle}
+                                                />
+                                            )}
+                                        </span>
+                                    </li>
+                                );
+                            })}
                         </ul>
                     </section>
+                    {(() => {
+                        const more = installable.filter((app) => !site.apps.includes(app.frappeAppName));
+                        return (
+                            <section className="rounded-xl border border-border p-card">
+                                <h2 className="">Add an application</h2>
+                                <p className="mt-1 portal-text-caption text-muted-foreground">
+                                    From the App Store. The site is unavailable for a short time while an app installs.
+                                </p>
+                                {!running || !idle ? (
+                                    <Notice tone="info" className="mt-4">Apps can be installed while the site is running and idle.</Notice>
+                                ) : more.length === 0 ? (
+                                    <p className="mt-4 portal-text-body text-muted-foreground">Every available application is already installed.</p>
+                                ) : (
+                                    <ul className="mt-4 divide-y divide-border/60">
+                                        {more.map((app) => (
+                                            <li key={app.id} className="flex flex-wrap items-center justify-between gap-gap py-3">
+                                                <div className="min-w-0">
+                                                    <p className="font-medium text-foreground">{app.name}</p>
+                                                    <p className="line-clamp-1 portal-text-caption text-muted-foreground">{app.description}</p>
+                                                </div>
+                                                <div className="flex items-center gap-gap">
+                                                    <span className="portal-text-body font-semibold">
+                                                        {(app.priceAmount ?? 0) > 0 ? <>{formatPrice(app.priceAmount!, app.priceCurrency)}<span className="font-normal text-muted-foreground">/mo</span></> : 'Free'}
+                                                    </span>
+                                                    <Button size="sm" onClick={() => setInstalling(app)}>Install</Button>
+                                                </div>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                )}
+                            </section>
+                        );
+                    })()}
+                    {installing && (
+                        <InstallAppDialog
+                            key={installing.id}
+                            open
+                            onOpenChange={(open) => !open && setInstalling(null)}
+                            fixedSiteId={site.id}
+                            app={installing}
+                            sites={[{ id: site.id, name: site.name, domain: site.domain, apps: site.apps, unavailable: running && idle ? null : 'The site is busy or not running', trial: Boolean(site.trial) }]}
+                        />
+                    )}
+                </TabsContent>
+
+                <TabsContent value="monitoring" className="mt-4">
+                    <MonitoringPanel endpoint={`/api/customer/sites/${site.id}/metrics`} />
                 </TabsContent>
 
                 <TabsContent value="domains" className="mt-4">

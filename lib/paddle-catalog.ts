@@ -17,7 +17,7 @@ function apiBase() {
         : 'https://sandbox-api.paddle.com';
 }
 
-async function paddle(path: string, init?: RequestInit) {
+export async function paddleRequest(path: string, init?: RequestInit) {
     const key = process.env.PADDLE_API_KEY;
     if (!key) throw new Error('PADDLE_API_KEY is not set.');
 
@@ -54,7 +54,7 @@ export async function syncPlanToPaddle(input: SyncInput): Promise<{ priceId: str
     const amountMinor = String(Math.round(input.amount * 100));
 
     if (input.existingPriceId) {
-        const current = await paddle(`/prices/${input.existingPriceId}`) as {
+        const current = await paddleRequest(`/prices/${input.existingPriceId}`) as {
             unit_price?: { currency_code?: string };
         };
         const existingCurrency = current.unit_price?.currency_code;
@@ -64,7 +64,7 @@ export async function syncPlanToPaddle(input: SyncInput): Promise<{ priceId: str
                 + 'Paddle cannot change a price’s currency — clear the price ID to create a new one.',
             );
         }
-        await paddle(`/prices/${input.existingPriceId}`, {
+        await paddleRequest(`/prices/${input.existingPriceId}`, {
             method: 'PATCH',
             body: JSON.stringify({
                 description: `${input.productLabel} ${input.planName}`,
@@ -75,10 +75,10 @@ export async function syncPlanToPaddle(input: SyncInput): Promise<{ priceId: str
     }
 
     // No price yet: find or create the product, then the price under it.
-    const products = await paddle('/products?per_page=100&status=active') as Array<{ id: string; name: string }>;
+    const products = await paddleRequest('/products?per_page=100&status=active') as Array<{ id: string; name: string }>;
     let product = products.find((p) => p.name === input.productLabel);
     if (!product) {
-        product = await paddle('/products', {
+        product = await paddleRequest('/products', {
             method: 'POST',
             body: JSON.stringify({
                 name: input.productLabel,
@@ -88,7 +88,7 @@ export async function syncPlanToPaddle(input: SyncInput): Promise<{ priceId: str
         }) as { id: string; name: string };
     }
 
-    const price = await paddle('/prices', {
+    const price = await paddleRequest('/prices', {
         method: 'POST',
         body: JSON.stringify({
             product_id: product.id,
@@ -101,5 +101,57 @@ export async function syncPlanToPaddle(input: SyncInput): Promise<{ priceId: str
         }),
     }) as { id: string };
 
+    return { priceId: price.id, created: true };
+}
+
+
+interface AppSyncInput {
+    appName: string;
+    /** Major units: 5 means $5.00 a month. */
+    amount: number;
+    currencyCode: string;
+    existingPriceId: string | null;
+}
+
+/**
+ * Pushes a paid app's monthly price to Paddle, creating the product and price on first use.
+ *
+ * Apps share one Paddle product ("UnityAlgo apps") with one recurring price each. The price is billed per site
+ * (quantity = the number of the customer's sites running the app), so it is added to a subscription as an item.
+ */
+export async function syncAppToPaddle(input: AppSyncInput): Promise<{ priceId: string; created: boolean }> {
+    const amountMinor = String(Math.round(input.amount * 100));
+    if (input.existingPriceId) {
+        const current = (await paddleRequest(`/prices/${input.existingPriceId}`)) as { unit_price?: { currency_code?: string } };
+        const existing = current.unit_price?.currency_code;
+        if (existing && existing !== input.currencyCode) {
+            throw new Error(`That Paddle price is in ${existing} and this app is in ${input.currencyCode}. Clear the price ID to create a new one.`);
+        }
+        await paddleRequest(`/prices/${input.existingPriceId}`, {
+            method: 'PATCH',
+            body: JSON.stringify({ description: `App: ${input.appName}`, unit_price: { amount: amountMinor, currency_code: input.currencyCode } }),
+        });
+        return { priceId: input.existingPriceId, created: false };
+    }
+
+    const label = 'UnityAlgo apps';
+    const products = (await paddleRequest('/products?per_page=100&status=active')) as Array<{ id: string; name: string }>;
+    let product = products.find((p) => p.name === label);
+    if (!product) {
+        product = (await paddleRequest('/products', {
+            method: 'POST',
+            body: JSON.stringify({ name: label, tax_category: 'standard', description: 'Paid applications installed on customer sites' }),
+        })) as { id: string; name: string };
+    }
+    const price = (await paddleRequest('/prices', {
+        method: 'POST',
+        body: JSON.stringify({
+            product_id: product.id,
+            description: `App: ${input.appName}`,
+            unit_price: { amount: amountMinor, currency_code: input.currencyCode },
+            billing_cycle: { interval: 'month', frequency: 1 },
+            quantity: { minimum: 1, maximum: 1000 },
+        }),
+    })) as { id: string };
     return { priceId: price.id, created: true };
 }

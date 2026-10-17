@@ -1,7 +1,7 @@
 """Customer-owned Frappe sites; Alembic owns this infrastructure table."""
 import uuid
 from datetime import datetime
-from sqlalchemy import DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint, func
+from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint, func
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.models.base import Base
@@ -56,6 +56,10 @@ class Site(Base):
     # Background work on a running site, e.g. 'backup'. NULL when idle.
     activity: Mapped[str | None] = mapped_column(String(20), nullable=True)
     plan_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    # Free trial: the site is switched off at `trial_ends_at` unless its owner subscribes to its plan. NULL = not a trial.
+    trial_ends_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    trial_expired_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    trial_warned: Mapped[bool] = mapped_column(Boolean, default=False, server_default='false')
     plan_name: Mapped[str | None] = mapped_column(String(100), nullable=True)
     owner_email: Mapped[str | None] = mapped_column(String(254), nullable=True)
     error: Mapped[str | None] = mapped_column(Text, nullable=True)

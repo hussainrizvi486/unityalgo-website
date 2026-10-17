@@ -24,6 +24,14 @@ export async function getCurrentAdminEmail() {
     return session?.email ?? null;
 }
 
+/** Whether the request carries an admin session, for API routes that must answer 401 rather than redirect. */
+export async function isAdminSession() {
+    const email = await getCurrentAdminEmail();
+    if (!email) return false;
+    const admin = await db.query.user.findFirst({ where: eq(schema.user.email, email), columns: { role: true } });
+    return admin?.role === 'ADMIN';
+}
+
 /**
  * The signed-in admin, or a redirect to the login page.
  *

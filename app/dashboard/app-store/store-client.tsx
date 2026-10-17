@@ -5,6 +5,8 @@ import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { FilterPills } from '@/components/admin/filter-pills';
+import { InstallAppDialog, type InstallSite } from '@/components/customer/install-app-dialog';
+import { formatPrice } from '@/lib/admin-format';
 
 type App = {
     id: string;
@@ -13,6 +15,9 @@ type App = {
     description: string;
     category: string;
     publisher: string | null;
+    frappeAppName: string | null;
+    priceAmount: number | null;
+    priceCurrency: string;
     available: boolean;
 };
 
@@ -21,7 +26,8 @@ const ALL = 'All';
 /** Two-letter mark for an app, taken from its name. */
 const initials = (name: string) => name.replace(/[^A-Za-z0-9]/g, '').slice(0, 2).toUpperCase() || '?';
 
-export function AppStoreClient({ apps }: { apps: App[] }) {
+export function AppStoreClient({ apps, sites }: { apps: App[]; sites: InstallSite[] }) {
+    const [installing, setInstalling] = useState<App | null>(null);
     const [search, setSearch] = useState('');
     const [category, setCategory] = useState(ALL);
     const categories = useMemo(() => [ALL, ...new Set(apps.map((app) => app.category))], [apps]);
@@ -52,30 +58,44 @@ export function AppStoreClient({ apps }: { apps: App[] }) {
                 </div>
             </div>
 
-            <div className="mt-gap grid gap-gap md:grid-cols-2 xl:grid-cols-3">
+            <div className="mt-gap grid gap-2 md:grid-cols-3 xl:grid-cols-4">
                 {visible.map((app) => (
                     <article key={app.id} className="flex flex-col overflow-hidden rounded-2xl border bg-card shadow-xs">
                         <div className="flex-1 p-card">
-                            <div className="flex items-start justify-between gap-gap-sm">
-                                <span className="flex size-11 items-center justify-center rounded-xl bg-muted text-sm font-semibold text-muted-foreground">
-                                    {initials(app.name)}
-                                </span>
+
+                            <div className="flex items-center justify-between gap-gap-sm">
+                                <div className="flex items-center gap-2">
+                                    <span className="flex size-11 items-center justify-center rounded-xl bg-muted text-sm font-semibold text-muted-foreground">
+                                        {initials(app.name)}
+                                    </span>
+                                    <div>
+                                        <h2 className="text-base">{app.name}</h2>
+                                    </div>
+                                </div>
                                 <span className="rounded-full border bg-card px-2.5 py-0.5 text-xs font-medium text-foreground">
                                     {app.category}
                                 </span>
+
                             </div>
-                            <h2 className="mt-4 text-base">{app.name}</h2>
-                            <p className="text-sm text-muted-foreground">by {app.publisher || 'UnityAlgo'}</p>
-                            <p className="mt-3 line-clamp-3 text-sm leading-relaxed text-muted-foreground">{app.description}</p>
+
+                            <p className="mt-3 line-clamp-3 text-xs leading-relaxed text-muted-foreground">{app.description}</p>
                         </div>
                         <div className="flex items-center justify-between gap-gap border-t bg-muted/50 px-card py-3">
                             <span className="text-sm font-semibold text-foreground">
-                                {app.available ? 'Included' : <span className="font-medium text-muted-foreground">Needs setup</span>}
+                                {!app.available ? (
+                                    <span className="font-medium text-muted-foreground">Needs setup</span>
+                                ) : (app.priceAmount ?? 0) > 0 ? (
+                                    <>{formatPrice(app.priceAmount!, app.priceCurrency)}<span className="font-normal text-muted-foreground">/mo per site</span></>
+                                ) : (
+                                    'Free'
+                                )}
                             </span>
-                            {app.available ? (
-                                <Button asChild size="sm">
-                                    <Link href={`/dashboard/sites/new?app=${encodeURIComponent(app.id)}`}>Install</Link>
-                                </Button>
+                            {app.available && app.frappeAppName ? (
+                                sites.length > 0 && sites.every((site) => site.apps.includes(app.frappeAppName!)) ? (
+                                    <span className="text-sm font-medium text-success">Installed</span>
+                                ) : (
+                                    <Button size="sm" onClick={() => setInstalling(app)}>Install</Button>
+                                )
                             ) : (
                                 <Button asChild size="sm" variant="outline">
                                     <Link href="/dashboard/support/new">Request</Link>
@@ -85,6 +105,15 @@ export function AppStoreClient({ apps }: { apps: App[] }) {
                     </article>
                 ))}
             </div>
+            {installing?.frappeAppName && (
+                <InstallAppDialog
+                    key={installing.id}
+                    open
+                    onOpenChange={(open) => !open && setInstalling(null)}
+                    sites={sites}
+                    app={{ id: installing.id, name: installing.name, frappeAppName: installing.frappeAppName, priceAmount: installing.priceAmount, priceCurrency: installing.priceCurrency }}
+                />
+            )}
             {!visible.length && (
                 <p className="mt-12 rounded-xl border border-dashed border-input p-10 text-center text-sm text-muted-foreground">
                     No applications match your search.

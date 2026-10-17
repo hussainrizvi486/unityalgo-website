@@ -3,9 +3,12 @@ import { asc, eq } from 'drizzle-orm';
 import { db, schema } from '@/lib/db';
 import { controller } from '@/lib/controller-client';
 import { AppStoreClient } from './store-client';
+import { reconcilePurchases } from '@/lib/app-billing';
+import type { InstallSite } from '@/components/customer/install-app-dialog';
+
 export const metadata = { title: 'App Store' };
 export default async function AppStorePage() {
-    await requireCustomer();
+    const user = await requireCustomer();
     const apps = await db
         .select({
             id: schema.appCatalog.id,
@@ -15,25 +18,45 @@ export default async function AppStorePage() {
             category: schema.appCatalog.category,
             frappeAppName: schema.appCatalog.frappeAppName,
             publisher: schema.appCatalog.publisher,
+            source: schema.appCatalog.source,
+            compatibility: schema.appCatalog.compatibility,
+            priceAmount: schema.appCatalog.priceAmount,
+            priceCurrency: schema.appCatalog.priceCurrency,
             isInstallable: schema.appCatalog.isInstallable,
         })
         .from(schema.appCatalog)
         .where(eq(schema.appCatalog.isActive, true))
         .orderBy(asc(schema.appCatalog.sortOrder), asc(schema.appCatalog.name));
     let available: string[] = [];
+    let sites: InstallSite[] = [];
     try {
         available = (await controller.sites.capabilities()).apps;
+        const owned = (await controller.sites.list(user.id)).results;
+        sites = owned
+            .filter((site) => !['failed', 'cleanup_required', 'deleting'].includes(site.status))
+            .map((site) => ({
+                id: site.id,
+                name: site.name,
+                domain: site.domain,
+                apps: site.apps,
+                trial: Boolean(site.trial),
+                unavailable:
+                    site.status !== 'ready' ? `The site is ${site.status.replaceAll('_', ' ')}` : site.activity ? 'The site is busy' : null,
+            }));
+        await reconcilePurchases(user.id, owned, true);
     } catch {
         /* Browsing the catalogue works even when hosting is offline. */
     }
     return (
         <AppStoreClient
-            apps={apps.map((app) => ({
+            sites={sites}
+            apps={apps.map(({ source, compatibility, ...app }) => ({
                 ...app,
+                // Apps built from a repository are installed onto a site; the rest must ship in the platform's image.
                 available: Boolean(
                     app.isInstallable &&
                     app.frappeAppName &&
-                    available.includes(app.frappeAppName),
+                    (source === 'github' ? compatibility === 'compatible' : available.includes(app.frappeAppName)),
                 ),
             }))}
         />

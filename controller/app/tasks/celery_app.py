@@ -22,6 +22,8 @@ celery_app = Celery(
         "app.tasks.backup_tasks",
         "app.tasks.site_tasks",
         "app.tasks.app_tasks",
+        "app.tasks.metrics_tasks",
+        "app.tasks.trial_tasks",
     ],
 )
 
@@ -46,6 +48,14 @@ def _beat_schedule():
     schedule["site-limit-audit"] = {
         "task": "site.audit_limits",
         "schedule": settings.site_audit_interval_seconds,
+    }
+    schedule["site-metrics"] = {
+        "task": "site.collect_metrics",
+        "schedule": settings.site_metrics_interval_seconds,
+    }
+    schedule["site-trials"] = {
+        "task": "site.expire_trials",
+        "schedule": settings.site_trial_sweep_seconds,
     }
     schedule["app-version-scan"] = {
         "task": "apps.scan",

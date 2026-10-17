@@ -1,19 +1,19 @@
 'use client';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useActionState, useEffect, useState } from 'react';
+import { useActionState } from 'react';
 import { useFormStatus } from 'react-dom';
 import { ArrowUpRight, Check, CircleAlert, Globe, LoaderCircle, X } from 'lucide-react';
 import type { CustomerSite } from '@/lib/controller-client';
 import { retrySiteAction } from '../../actions';
 import { Button } from '@/components/ui/button';
 import { Notice } from '@/components/ui/notice';
-import { SiteOverview, type PlanChoice } from './site-overview';
+import { SiteOverview, type KnownApps, type PlanChoice } from './site-overview';
+import type { InstallableApp } from '@/components/customer/install-app-dialog';
 import { DeleteSite } from './delete-site';
-const terminal = ['ready', 'stopped', 'deactivated', 'failed', 'cleanup_required'];
+import { LiveBadge } from '@/components/customer/live-badge';
+import { useLiveSite } from '@/lib/use-live-site';
 // Once installed, the site gets the full management page instead of the progress view.
 const installed = ['ready', 'stopping', 'stopped', 'restarting', 'restoring', 'updating', 'deactivated'];
-const settled = (value: CustomerSite) => terminal.includes(value.status) && !value.activity;
 function RetryButton() {
     const { pending } = useFormStatus();
     return (
@@ -26,69 +26,19 @@ export function SiteStatus({
     initial,
     applicationNames,
     plans,
+    installable,
+    known,
 }: {
     initial: CustomerSite;
     applicationNames: Record<string, string>;
     plans: PlanChoice[];
+    installable: InstallableApp[];
+    known: KnownApps;
 }) {
-    const [site, setSite] = useState(initial);
-    const [seenInitial, setSeenInitial] = useState(initial);
-    if (initial !== seenInitial) {
-        setSeenInitial(initial);
-        setSite(initial);
-    }
-    const [error, setError] = useState('');
-    const router = useRouter();
+    // Pushed to the page as it changes: no refreshing, and it keeps following the site after it settles.
+    const { site, connection } = useLiveSite(initial);
     const [retry, action] = useActionState(retrySiteAction, undefined);
-    const [attempt, setAttempt] = useState(0);
-    const initialSettled = terminal.includes(initial.status) && !initial.activity;
-    useEffect(() => {
-        let disposed = false;
-        const controller = new AbortController();
-        let timer: ReturnType<typeof setTimeout>;
-        let failures = 0;
-        async function refresh() {
-            if (document.hidden) {
-                timer = setTimeout(refresh, 5000);
-                return;
-            }
-            try {
-                const response = await fetch(
-                    `/api/customer/sites/${initial.id}`,
-                    { signal: controller.signal },
-                );
-                if (response.status === 404) {
-                    // The site is gone (deleted): leave a page that no longer exists.
-                    router.replace('/dashboard/sites');
-                    return;
-                }
-                if (!response.ok) throw new Error();
-                const value: CustomerSite = await response.json();
-                if (disposed) return;
-                setSite(value);
-                setError('');
-                failures = 0;
-                if (settled(value)) return;
-            } catch {
-                if (disposed) return;
-                failures++;
-                setError(
-                    'Could not refresh the site status. Retrying shortly.',
-                );
-            }
-            timer = setTimeout(
-                refresh,
-                Math.min(30_000, 5000 * Math.max(failures, 1)),
-            );
-        }
-        if (!initialSettled || retry?.success || attempt > 0)
-            void refresh();
-        return () => {
-            disposed = true;
-            controller.abort();
-            clearTimeout(timer);
-        };
-    }, [initial.id, initialSettled, retry, attempt, router]);
+
     if (site.status === 'deleting')
         return (
             <div className="mx-auto portal-detail">
@@ -108,7 +58,9 @@ export function SiteStatus({
                 site={site}
                 applicationNames={applicationNames}
                 plans={plans}
-                onChange={() => setAttempt((value) => value + 1)}
+                installable={installable}
+                known={known}
+                onChange={() => {}}
             />
         );
     const phase =
@@ -210,7 +162,7 @@ export function SiteStatus({
                             className={`flex items-center gap-3 portal-text-body ${item.state === 'pending' ? 'text-muted-foreground' : 'text-foreground'}`}
                         >
                             <span
-                                className={`flex size-6 shrink-0 items-center justify-center rounded-full ${item.state === 'done' ? 'bg-primary text-destructive-foreground' : item.state === 'failed' ? 'bg-destructive text-destructive-foreground' : 'border border-input'}`}
+                                className={`flex size-6 shrink-0 items-center justify-center rounded-full ${item.state === 'done' ? 'bg-primary text-primary-foreground' : item.state === 'failed' ? 'bg-destructive text-destructive-foreground' : 'border border-input'}`}
                             >
                                 {item.state === 'done' ? (
                                     <Check className="size-3.5" />
@@ -226,19 +178,7 @@ export function SiteStatus({
                         </li>
                     ))}
                 </ol>
-                {error && (
-                    <Notice tone="warning" className="mt-6">
-                        {error}
-                    </Notice>
-                )}
-                <Button
-                    variant="outline"
-                    size="sm"
-                    className="mt-6"
-                    onClick={() => setAttempt((value) => value + 1)}
-                >
-                    Refresh status
-                </Button>
+                <LiveBadge connection={connection} className="mt-6" />
             </section>
             <section className="mt-6 rounded-xl border border-border p-card">
                 <h2 className="">Selected applications</h2>
@@ -271,7 +211,7 @@ export function SiteStatus({
             )}
             {site.status === 'failed' && (
                 <div className="mt-6">
-                    <DeleteSite site={site} onDone={() => setAttempt((value) => value + 1)} />
+                    <DeleteSite site={site} onDone={() => {}} />
                 </div>
             )}
             {site.status === 'cleanup_required' && (

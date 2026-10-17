@@ -16,6 +16,8 @@ import { ISOLATION_NOTE, compatibilityBadge, repoPath, rolloutBadge, shortSha } 
 import { AppCatalogForm } from '../app-form';
 import { BranchPicker } from './branch-picker';
 import { RolloutPanel } from './rollout-panel';
+import { PricingForm } from './pricing-form';
+import { appBillingMode } from '@/lib/app-billing';
 
 export const metadata = { title: 'Application' };
 
@@ -167,7 +169,7 @@ export default async function AppDetailPage({
                                     <Link key={rollout.id} href={`/admin/apps/rollouts/${rollout.id}`} className="flex flex-wrap items-center justify-between gap-3 p-4 hover:bg-muted">
                                         <div>
                                             <div className="font-medium">
-                                                {rollout.action === 'install' ? 'Install' : 'Update'} to {rollout.target_version ?? shortSha(rollout.target_commit)}
+                                                {rollout.action === 'uninstall' ? 'Removed by customer' : `${rollout.action === 'install' ? 'Install' : 'Update'} to ${rollout.target_version ?? shortSha(rollout.target_commit) ?? 'image'}`}
                                                 <span className="font-normal text-muted-foreground"> · {rollout.branch} @ {shortSha(rollout.target_commit)}</span>
                                             </div>
                                             <div className="portal-text-caption text-muted-foreground">
@@ -186,6 +188,21 @@ export default async function AppDetailPage({
                     )}
                 </section>
             )}
+
+            <section className="mt-8 rounded-xl border border-border p-card">
+                <h2 className="">Availability and pricing</h2>
+                <div className="mt-4">
+                    <PricingForm
+                        id={app.id}
+                        price={app.priceAmount}
+                        currency={app.priceCurrency}
+                        paddlePriceId={app.paddlePriceId}
+                        installable={app.isInstallable}
+                        github={github}
+                        billing={appBillingMode()}
+                    />
+                </div>
+            </section>
 
             <section className="mt-8 rounded-xl border border-border p-card">
                 <h2 className="">Details</h2>

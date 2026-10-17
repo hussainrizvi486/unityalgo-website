@@ -195,6 +195,12 @@ class Settings:
         self.site_audit_interval_seconds = self._int("SITE_AUDIT_INTERVAL_SECONDS", 900)
         # How often the scheduler looks for sites whose backup is due.
         self.site_backup_sweep_seconds = self._int("SITE_BACKUP_SWEEP_SECONDS", 1800)
+        # Monitoring: how often each running site is sampled, and how long samples are kept.
+        # How often trial sites are checked for expiry, and how many days before the end the customer is warned.
+        self.site_trial_sweep_seconds = self._int("SITE_TRIAL_SWEEP_SECONDS", 600)
+        self.site_trial_warning_days = self._int("SITE_TRIAL_WARNING_DAYS", 3)
+        self.site_metrics_interval_seconds = self._int("SITE_METRICS_INTERVAL_SECONDS", 300)
+        self.site_metrics_retention_days = self._int("SITE_METRICS_RETENTION_DAYS", 30)
         self.frappe_domains_per_site = self._int("FRAPPE_DOMAINS_PER_SITE", 5)
         # GitHub apps (App Store). A token only raises the API rate limit; it is never used to clone.
         # How often each running site is asked which app versions it really runs.

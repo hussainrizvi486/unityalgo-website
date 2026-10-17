@@ -3,10 +3,11 @@ import { notFound } from 'next/navigation';
 import { ArrowLeft, ArrowUpRight } from 'lucide-react';
 import { controller, ControllerError, type SiteUsage } from '@/lib/controller-client';
 import { requireAdmin } from '@/lib/admin-session';
-import { adminSiteActionAction, forceDeleteSiteAction } from '@/app/admin/controller-actions';
+import { adminSiteActionAction, adminSiteTrialAction, forceDeleteSiteAction } from '@/app/admin/controller-actions';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DeleteButton } from '@/components/admin/delete-button';
+import { MonitoringPanel } from '@/components/ui/monitoring-panel';
 import { ControllerOffline } from '@/components/admin/controller-offline';
 import { AdminPageError, AdminPageNotice } from '@/components/admin/page-header';
 import { OPERATION_STATUS_BADGE, humanizeStatus } from '@/lib/controller-status';
@@ -113,6 +114,14 @@ export default async function AdminSiteDetailPage({
                     <Row label="Plan">{site.plan_name ?? '—'}</Row>
                     <Row label="Created">{formatDateTime(site.created_at)}</Row>
                     <Row label="Attempt">{site.attempt}</Row>
+                    {site.trial && (
+                        <Row label="Free trial">
+                            <Badge variant={site.trial.expired ? 'error' : 'info'}>
+                                {site.trial.expired ? 'Ended' : `${site.trial.days_left} day${site.trial.days_left === 1 ? '' : 's'} left`}
+                            </Badge>
+                            <div className="portal-text-caption font-normal text-muted-foreground">{site.trial.expired ? 'ended' : 'ends'} {formatDateTime(site.trial.ends_at)}</div>
+                        </Row>
+                    )}
                 </Card>
                 <Card title="Hosting">
                     <Row label="Worker"><Link href={`/admin/servers/${server.id}`} className="text-primary hover:underline">{server.name}</Link></Row>
@@ -142,6 +151,22 @@ export default async function AdminSiteDetailPage({
                     <ActionButton id={id} action="restart" label="Restart" disabled={!running || !idle} />
                     <ActionButton id={id} action="backup" label="Back up now" disabled={!running || !idle} />
                     <ActionButton id={id} action="deactivate" label="Deactivate" disabled={!['ready', 'stopped'].includes(site.status) || !idle} />
+                    {site.trial && (
+                        <>
+                            <form action={adminSiteTrialAction}>
+                                <input type="hidden" name="id" value={id} />
+                                <input type="hidden" name="days" value="7" />
+                                <Button type="submit" variant="outline" size="sm">Extend trial 7 days</Button>
+                            </form>
+                            {!site.trial.expired && (
+                                <form action={adminSiteTrialAction}>
+                                    <input type="hidden" name="id" value={id} />
+                                    <input type="hidden" name="end" value="1" />
+                                    <Button type="submit" variant="outline" size="sm">End trial now</Button>
+                                </form>
+                            )}
+                        </>
+                    )}
                     <DeleteButton
                         action={forceDeleteSiteAction}
                         id={id}
@@ -188,7 +213,9 @@ export default async function AdminSiteDetailPage({
                 </section>
             </div>
 
-            <section className="mt-4 rounded-xl border border-border p-card">
+            <MonitoringPanel className="mt-8" endpoint={`/api/admin/sites/${id}/metrics`} />
+
+            <section className="mt-8 rounded-xl border border-border p-card">
                 <h2 className="">Operations</h2>
                 <p className="mt-1 portal-text-caption text-muted-foreground">Open one for the full error and traceback.</p>
                 {operations.length ? (

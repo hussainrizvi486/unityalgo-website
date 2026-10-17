@@ -35,7 +35,7 @@ export default async function PurchasePlansPage() {
   const subscriptionByProduct = new Map(subscriptions.map((subscription) => [subscription.productId, subscription]));
 
   return (
-    <div className="mx-auto max-w-wide">
+    <div className="">
       <p className="portal-text-caption font-bold uppercase tracking-eyebrow text-primary">Plans</p>
       <h1 className="portal-page-title mt-2">Choose a plan</h1>
       <p className="mt-2 portal-text-body text-muted-foreground">You can hold one plan per product — pick a plan for each product you want to subscribe to.</p>
@@ -61,6 +61,7 @@ export default async function PurchasePlansPage() {
                   <div className="mt-4">
                     <span className="text-2xl font-bold text-foreground">{formatPlanPrice(plan)}</span>
                   </div>
+                  {plan.trialDays && !isCurrent ? <p className="mt-1 portal-text-caption font-medium text-success">{plan.trialDays}-day free trial when you create a site on this plan</p> : null}
                   {transactionFee ? <p className="mt-1 portal-text-caption text-muted-foreground">+ {transactionFee}</p> : null}
                   <p className="mt-1 portal-text-caption text-muted-foreground">{plan.userLimit == null ? 'Unlimited seats' : `Up to ${plan.userLimit} seats`}</p>
 

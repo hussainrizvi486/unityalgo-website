@@ -2,7 +2,7 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
-import { and, eq, inArray, isNotNull, isNull } from 'drizzle-orm';
+import { and, eq, inArray, isNotNull, isNull, or } from 'drizzle-orm';
 import { db, schema } from '@/lib/db';
 import { findAlgoSuitePlan } from '@/lib/products';
 import {
@@ -11,6 +11,7 @@ import {
 } from '@/lib/customer-session';
 import { CUSTOMER_SESSION_COOKIE } from '@/lib/customer-auth';
 import { controller, ControllerError } from '@/lib/controller-client';
+import { trialDaysFor, trialEligibility } from '@/lib/site-trials';
 import { sendSiteEmail } from '@/lib/site-emails';
 import { validateSiteWizard, type SiteWizardValues } from '@/lib/site-wizard';
 
@@ -71,6 +72,8 @@ export async function createSiteAction(
                       inArray(schema.appCatalog.id, values.apps),
                       eq(schema.appCatalog.isActive, true),
                       eq(schema.appCatalog.isInstallable, true),
+                      eq(schema.appCatalog.source, 'image'),
+                      or(isNull(schema.appCatalog.priceAmount), eq(schema.appCatalog.priceAmount, 0)),
                       isNotNull(schema.appCatalog.frappeAppName),
                   ),
               })
@@ -80,9 +83,11 @@ export async function createSiteAction(
     if (!currency) return { error: 'The selected currency is not available.' };
     if (apps.length !== new Set(values.apps).size)
         return { error: 'One of the selected applications is unavailable.' };
+    const trialDays = trialDaysFor(plan, await trialEligibility(user.id));
     let site;
     try {
         site = await controller.sites.create({
+            ...(trialDays ? { trial_days: trialDays } : {}),
             user_id: user.id,
             name: values.slug,
             slug: values.slug,

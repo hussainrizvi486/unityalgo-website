@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
-import { and, eq, notInArray, sql } from 'drizzle-orm';
+import { and, eq, inArray, notInArray, sql } from 'drizzle-orm';
 import { db, schema } from '@/lib/db';
+import { controller } from '@/lib/controller-client';
 
 /** The handle a transaction callback receives, which carries the same query methods as `db`. */
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -89,15 +90,16 @@ async function resolveTarget(data: Record<string, unknown>): Promise<Target | nu
     // Renewals arrive without custom data. Recover the plan from the price and
     // the customer from the Paddle subscription we already recorded.
     const items = Array.isArray(data.items) ? data.items : [];
-    const priceId = items
+    // A subscription can carry app items next to the plan, so look for the item that is a plan rather than taking the first.
+    const priceIds = items
         .map((item) => asString(asRecord(asRecord(item).price).id))
-        .find(Boolean);
+        .filter((id): id is string => Boolean(id));
 
     const subscriptionId = asString(data.subscription_id) ?? asString(data.id);
     const [planByPrice, known] = await Promise.all([
-        priceId
+        priceIds.length
             ? db.query.plan.findFirst({
-                where: eq(schema.plan.paddlePriceId, priceId),
+                where: inArray(schema.plan.paddlePriceId, priceIds),
                 columns: { id: true, productId: true, name: true },
             })
             : null,
@@ -185,6 +187,20 @@ async function applySubscription(
         });
 }
 
+/** What a payment was for: the plan, plus any paid apps on the same invoice. */
+async function describeCharge(data: Record<string, unknown>, planName: string) {
+    const priceIds = (Array.isArray(data.items) ? data.items : [])
+        .map((item) => asString(asRecord(asRecord(item).price).id))
+        .filter((id): id is string => Boolean(id));
+    const apps = priceIds.length
+        ? await db.query.appCatalog.findMany({ where: inArray(schema.appCatalog.paddlePriceId, priceIds), columns: { name: true } })
+        : [];
+    const planCharged = priceIds.length === 0 || (await db.query.plan.findFirst({ where: inArray(schema.plan.paddlePriceId, priceIds), columns: { id: true } })) !== undefined;
+    const appText = apps.map((app) => app.name).join(', ');
+    if (!apps.length) return `${planName} plan`;
+    return planCharged ? `${planName} plan + apps: ${appText}` : `Apps: ${appText}`;
+}
+
 /** Records the payment behind a completed transaction. */
 async function recordBilling(
     tx: Tx,
@@ -213,7 +229,7 @@ async function recordBilling(
             userId: target.userId,
             subscriptionId: subscription?.id ?? null,
             invoiceNumber: transactionId,
-            description: `${target.plan.name} plan`,
+            description: await describeCharge(data, target.plan.name),
             amount,
             currency: asString(totals.currency_code)
                 ?? asString(details.currency_code)
@@ -269,7 +285,7 @@ async function recordFailedPayment(
             userId: target.userId,
             subscriptionId: subscription?.id ?? null,
             invoiceNumber: transactionId,
-            description: `${target.plan.name} plan`,
+            description: await describeCharge(data, target.plan.name),
             amount,
             currency: asString(totals.currency_code) ?? asString(details.currency_code) ?? 'USD',
             status: 'OVERDUE',
@@ -440,6 +456,16 @@ export async function POST(request: Request) {
             .update(schema.paddleEvent)
             .set({ status: 'PROCESSED', processedAt: new Date(), error: null })
             .where(eq(schema.paddleEvent.id, event.event_id));
+
+        // A customer who has just subscribed to a plan no longer needs the free trial of their site on it. Best effort:
+        // the controller's own sweep ends the trial anyway, this only does it straight away.
+        if (target) {
+            const held = await db.query.subscription.findFirst({
+                where: and(eq(schema.subscription.userId, target.userId), eq(schema.subscription.planId, target.plan.id), eq(schema.subscription.status, 'ACTIVE')),
+                columns: { id: true },
+            });
+            if (held) await controller.sites.convertTrials(target.userId, target.plan.id).catch(() => undefined);
+        }
     } catch (error) {
         // The row stays, carrying why. Paddle's retry finds it PENDING/FAILED
         // and is allowed to run the handler again; deleting it, as this used
