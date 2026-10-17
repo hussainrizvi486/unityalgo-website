@@ -37,7 +37,7 @@ function Pending({ children, enabled = true, variant = 'default' }: { children: 
             {pending && <LoaderCircle className="size-4 motion-safe:animate-spin" />}
             {children}
         </Button>
-    );
+    );  
 }
 
 function Schedule({ site, backups }: { site: CustomerSite; backups: SiteBackups | null }) {
@@ -61,6 +61,7 @@ function Schedule({ site, backups }: { site: CustomerSite; backups: SiteBackups 
                     </Select>
                 </FormField>
                 <FormField id="retention" label="Keep the latest" help="Older automatic backups are removed.">
+                {/* <FormField id="retention" label="Keep the latest" help=""> */}
                     <Input id="retention" name="retention" type="number" min={1} max={30} value={retention} onChange={(e) => setRetention(e.target.value)} disabled={schedule === 'off'} />
                 </FormField>
                 <div><Pending variant="outline">Save</Pending></div>

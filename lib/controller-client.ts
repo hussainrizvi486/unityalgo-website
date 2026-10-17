@@ -121,13 +121,15 @@ export interface ControllerServer {
     max_sites: number | null;
     active_containers: number;
     is_active: boolean;
-    cpu_cores: number | null;
-    disk_total_gb: number | null;
-    disk_used_gb: number | null;
-    os_name: string | null;
-    kernel_version: string | null;
-    architecture: string | null;
-    docker_version: string | null;
+    specs: {
+        cpu_cores: number | null;
+        disk_total_gb: number | null;
+        disk_used_gb: number | null;
+        os_name: string | null;
+        kernel_version: string | null;
+        architecture: string | null;
+        docker_version: string | null;
+    };
     last_checked_at: string | null;
     last_check_status: string | null;
     created_at: string;
@@ -739,7 +741,7 @@ export const controller = {
                 { timeoutMs: 10_000 },
             ),
         capabilities: () =>
-            request<{ apps: string[]; configured: boolean; domain_suffix: string; accepting: boolean }>(
+            request<{ apps: string[]; configured: boolean; domain_suffix: string; accepting: boolean; unavailable_reason?: string | null }>(
                 '/api/v1/sites/capabilities',
                 { timeoutMs: 20_000 },
             ),
