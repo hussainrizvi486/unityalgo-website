@@ -30,9 +30,6 @@ class ServerSerializer(BaseSerializer):
             "ssh_key_path": server.ssh_key_path,
             "ssh_auth_method": server.ssh_auth_method,
             "has_ssh_password": bool(server.ssh_password),
-            # Key content is never returned under any option, unlike
-            # ssh_password -- there is no legitimate API use for handing a
-            # private key back to a client.
             "has_ssh_key": bool(server.ssh_key_encrypted),
             "max_memory_mb": server.max_memory_mb,
             "used_memory_mb": server.used_memory_mb,
@@ -70,16 +67,10 @@ class TenantSerializer(BaseSerializer):
             "id": str(tenant.id),
             "tenant_slug": tenant.tenant_slug,
             "customer_email": tenant.customer_email,
-            # Identity moved to the platform's shared "User" table; the old
-            # customer_id column was dropped with the controller's own
-            # customers table.
             "user_id": tenant.user_id,
             "subscription_id": tenant.subscription_id,
             # A cache of the linked plan's slug (app/services/account_resolver.py).
             "plan_tier": tenant.plan_tier,
-            # The account this store belongs to, resolved through the
-            # subscription. Null when the tenant predates the link or was
-            # created without one -- the UI shows customer_email alone then.
             "customer": (
                 {
                     "id": tenant.user.id,
@@ -115,8 +106,6 @@ class TenantSerializer(BaseSerializer):
             "database_connection_id": (
                 str(tenant.database_connection_id) if tenant.database_connection_id else None
             ),
-            # Null name means the tenant is on the legacy default cluster,
-            # which has no database_connections row.
             "database_cluster": (
                 tenant.database_connection.name if tenant.database_connection else None
             ),
@@ -134,8 +123,6 @@ class TenantSerializer(BaseSerializer):
             "created_at": cls.iso(tenant.created_at),
             "updated_at": cls.iso(tenant.updated_at),
         }
-        # The live deployment is where the tenant actually runs; node_id and
-        # container_id above are a legacy mirror of it (dropped in Phase 4).
         deployment = tenant.live_deployment
         data["deployment"] = (
             DeploymentSerializer.dump(deployment) if deployment else None
@@ -143,8 +130,6 @@ class TenantSerializer(BaseSerializer):
         data["upstream"] = deployment.upstream if deployment else None
         data["domains"] = DomainMappingSerializer.dump_many(tenant.domains)
         data["primary_domain"] = tenant.primary_domain
-        # db_password stays out of API responses unless a caller explicitly asks
-        # for it (the provisioning pipeline needs it to build the container env).
         if include_secrets:
             data["db_password"] = tenant.db_password
             data["jwt_secret"] = tenant.jwt_secret
@@ -364,9 +349,6 @@ class CustomerSerializer(BaseSerializer):
 class DatabaseConnectionSerializer(BaseSerializer):
     @classmethod
     def dump(cls, connection, **options):
-        # password_encrypted (and any decrypted form of it) is never returned,
-        # under any option -- unlike ServerNode.ssh_password / Tenant.db_password,
-        # there is no legitimate API use for handing this back to a client.
         return {
             "id": str(connection.id),
             "engine": connection.engine,
@@ -393,8 +375,6 @@ class DatabaseConnectionSerializer(BaseSerializer):
 class UserSerializer(BaseSerializer):
     @classmethod
     def dump(cls, user, **options):
-        # password_hash is never returned, under any option -- there is no
-        # legitimate API use for it, unlike the write-only secrets elsewhere.
         return {
             "id": str(user.id),
             "username": user.username,

@@ -31,7 +31,6 @@ class SiteApiTests(unittest.TestCase):
         app.register_blueprint(SiteRoutes.blueprint(db=database,config=config))
         app.register_error_handler(ApiError,lambda error: (error.to_dict(),error.status_code))
         self.client = app.test_client()
-        # A real default MariaDB server registered in the dev database must not change what these tests create.
         with database.session() as session:
             self.defaults=[row[0] for row in session.execute(text("SELECT id FROM database_connections WHERE engine='mariadb' AND is_default")).all()]
             session.execute(text("UPDATE database_connections SET is_default=false WHERE engine='mariadb'"))
@@ -40,9 +39,13 @@ class SiteApiTests(unittest.TestCase):
             session.add(ServerNode(id=self.worker,name=self.customer,ip_address='127.0.0.1',role='worker',frappe_enabled=True,is_active=True,last_check_status='ok',max_memory_mb=8192,max_containers=10,disk_total_gb=80,disk_used_gb=10,cpu_cores=4))
         self.proxy = patch('app.routes.site.ServerController.proxy_node',return_value=SimpleNamespace(name='test-proxy'))
         self.proxy.start()
+        # No worker is reachable from the tests: nothing else is listening on any port.
+        self.ssh = patch('app.services.port_allocator.SSHService')
+        self.node = self.ssh.start().return_value
+        self.node.listening_ports.return_value = set()
+        self.node.port_in_use.return_value = False
         self.queue = patch('app.tasks.site_tasks.provision_site_task.apply_async')
         self.queue_mock = self.queue.start()
-        # Never let a test reach a real Celery worker: it would act on the fake test site and race the test.
         self.other_queues = [patch(f'app.tasks.site_tasks.{task}.apply_async') for task in
                              ('site_action_task', 'change_plan_task', 'delete_site_task', 'restore_site_task')]
         self.other_queue_mocks = {name: queue.start() for name, queue in zip(('action', 'plan', 'delete', 'restore'), self.other_queues)}
@@ -50,7 +53,7 @@ class SiteApiTests(unittest.TestCase):
         self.placement.start()
 
     def tearDown(self):
-        self.queue.stop(); self.proxy.stop()
+        self.queue.stop(); self.proxy.stop(); self.ssh.stop()
         for queue in self.other_queues:
             queue.stop()
         self.placement.stop()
@@ -425,7 +428,6 @@ class SiteApiTests(unittest.TestCase):
             proxy.return_value.sync_all.assert_called_once()              # its route disappears
         self.assertEqual(self.get(site)['status'],'deactivated')
         self.assertEqual(self.act(site,'stop').status_code,409)           # nothing to stop; reactivate first
-        # its memory, CPU and slots are free again: another full-size site now fits where it would not before
         self.assertEqual(self.create(plan_ram_mb=6000,plan_vcpu=2)[0].status_code,201)
         self.assertEqual(self.act(site,'reactivate').status_code,409)     # ... so there is no room to come back
         self.assertEqual(self.get(site)['status'],'deactivated')
@@ -784,6 +786,55 @@ class SiteApiTests(unittest.TestCase):
         with ThreadPoolExecutor(max_workers=2) as pool:
             self.assertEqual(sorted(pool.map(request_site, [0, 1])), [201, 409])
 
+    SMALL = {'plan_vcpu': 0.25, 'plan_ram_mb': 768, 'plan_storage_gb': 1}
+
+    def port_of(self, response):
+        self.assertEqual(response.status_code, 201, response.json)
+        with database.session() as session:
+            return session.scalar(select(Site.port).where(Site.id == uuid.UUID(response.json['id'])))
+
+    def test_ports_in_use_by_other_processes_are_skipped(self):
+        start = self.config.frappe_port_start
+        self.node.listening_ports.return_value = {start, start + 1}
+        response, _ = self.create(**self.SMALL)
+        self.assertEqual(self.port_of(response), start + 2)
+
+    def test_port_taken_after_the_listing_is_skipped(self):
+        start = self.config.frappe_port_start
+        self.node.port_in_use.side_effect = lambda port: port == start
+        response, _ = self.create(**self.SMALL)
+        self.assertEqual(self.port_of(response), start + 1)
+
+    def test_a_port_given_to_one_site_is_never_given_to_another(self):
+        self.roomy()
+        first, _ = self.create(**self.SMALL)
+        second, _ = self.create(**self.SMALL)
+        self.assertNotEqual(self.port_of(first), self.port_of(second))
+
+    def test_no_free_port_is_reported_clearly(self):
+        start = self.config.frappe_port_start
+        self.config.frappe_port_end = start
+        self.node.listening_ports.return_value = {start}
+        try:
+            response, _ = self.create(**self.SMALL)
+        finally:
+            self.config.frappe_port_end = settings.frappe_port_end
+        self.assertEqual(response.status_code, 409)
+        self.assertIn('No free port is available', response.json['error']['message'] if isinstance(response.json.get('error'), dict) else str(response.json))
+
+    def test_parallel_requests_get_different_ports(self):
+        self.roomy()
+        def request_site(_index):
+            with self.client.application.test_client() as client:
+                response = client.post('/api/v1/sites', json={'user_id': self.customer, 'name': 'Ports', 'slug': 'ports-' + uuid.uuid4().hex[:12], 'request_key': str(uuid.uuid4()), 'app_names': [], 'company_name': 'Acme Ltd', 'country': 'Pakistan', 'currency': 'PKR', 'coa_type': 'standard', 'owner_email': 'owner@example.test', 'owner_password': 'Owner-password-123', 'plan_id': 'plan-1', 'plan_name': 'Starter', **self.SMALL})
+                return response.status_code, (response.json or {}).get('id')
+        with ThreadPoolExecutor(max_workers=5) as pool:
+            results = list(pool.map(request_site, range(5)))
+        self.assertEqual([code for code, _ in results], [201] * 5)
+        with database.session() as session:
+            ports = [session.scalar(select(Site.port).where(Site.id == uuid.UUID(site_id))) for _, site_id in results]
+        self.assertEqual(len(set(ports)), 5)
+
     def test_queue_failure_releases_the_reservation(self):
         self.queue_mock.side_effect=RuntimeError('Queue unavailable')
         response,data=self.create()
@@ -844,7 +895,7 @@ class SiteApiTests(unittest.TestCase):
             notify.assert_any_call(site_id, 'started')
             notify.assert_any_call(site_id, 'milestone')
             notify.assert_called_with(site_id, 'ready')
-            self.assertEqual([step['state'] for step in result.json['steps']], ['done'] * 7)
+            self.assertEqual([step['state'] for step in result.json['steps']], ['done'] * 5)
             service.return_value.scrub_setup.assert_called_once()
             service.return_value.run.assert_any_call(['run','--rm','create-site'])
 
@@ -882,7 +933,7 @@ class SiteApiTests(unittest.TestCase):
             provision_site_task.run(site_id)
         result = self.client.get('/api/v1/sites/' + site_id + '?user_id=' + self.customer)
         self.assertEqual(result.json['status'], 'failed')
-        self.assertEqual(result.json['steps'][1]['state'], 'failed')
+        self.assertEqual(result.json['steps'][0]['state'], 'failed')
         retry = self.client.post('/api/v1/sites/' + site_id + '/retry', json={'user_id': self.customer})
         self.assertEqual(retry.status_code, 202)
 

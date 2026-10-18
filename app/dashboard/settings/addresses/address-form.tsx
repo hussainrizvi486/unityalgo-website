@@ -1,13 +1,15 @@
 'use client';
 
 import { Notice } from '@/components/ui/notice';
-import { useActionState } from 'react';
+import { useActionState, useEffect, useState } from 'react';
 import { useFormStatus } from 'react-dom';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import { CountrySelect } from '@/components/ui/country-select';
+import { findCountry, guessCountry } from '@/lib/countries';
 import type { AccountFormState } from '@/app/customer/actions';
 
 export interface AddressFormValues {
@@ -19,7 +21,6 @@ export interface AddressFormValues {
   postcode: string;
   isDefault: boolean;
 }
-
 
 function SubmitButton({ label }: { label: string }) {
   const { pending } = useFormStatus();
@@ -39,6 +40,16 @@ interface AddressFormProps {
 
 export function AddressForm({ action, defaultValues, submitLabel, lockDefault }: AddressFormProps) {
   const [state, formAction] = useActionState<AccountFormState | undefined, FormData>(action, undefined);
+  const saved = defaultValues?.country ?? '';
+  const [country, setCountry] = useState(findCountry(saved) ?? saved);
+
+  useEffect(() => {
+    if (saved) return;
+    const guess = guessCountry();
+    if (!guess) return;
+    const timer = setTimeout(() => setCountry((current) => current || guess), 0);
+    return () => clearTimeout(timer);
+  }, [saved]);
 
   return (
     <form action={formAction} className="portal-fields">
@@ -65,7 +76,7 @@ export function AddressForm({ action, defaultValues, submitLabel, lockDefault }:
       <div className="grid gap-5 sm:grid-cols-2">
         <div>
           <Label htmlFor="country" className="mb-1.5 portal-text-body text-foreground/80">Country</Label>
-          <Input id="country" name="country" required defaultValue={defaultValues?.country} />
+          <CountrySelect id="country" name="country" required value={country} onValueChange={setCountry} />
         </div>
         <div>
           <Label htmlFor="postcode" className="mb-1.5 portal-text-body text-foreground/80">Postcode</Label>

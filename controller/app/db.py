@@ -5,6 +5,8 @@ from contextlib import contextmanager
 
 from alembic import command
 from alembic.config import Config
+from alembic.runtime.migration import MigrationContext
+from alembic.script import ScriptDirectory
 from sqlalchemy import create_engine, event, text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import sessionmaker
@@ -14,12 +16,6 @@ from .config import settings
 # Waits between connection attempts; the length is the attempt count.
 CONNECT_BACKOFF_SECONDS = (0.5, 1, 2, 4, 8)
 
-# Connection failures worth retrying. Everything else (bad password, missing
-# database, permission denied) is a configuration error retrying cannot fix.
-#
-# DNS entries matter most in practice: a managed database is reached by name
-# over the internet, and on a laptop the resolver briefly stops answering every
-# time a VPN reconnects -- which would otherwise fail a request outright.
 TRANSIENT_CONNECT_ERRORS = (
     "could not translate host name",
     "temporary failure in name resolution",
@@ -37,17 +33,59 @@ TRANSIENT_CONNECT_ERRORS = (
 )
 
 
+CONNECTION_DIAGNOSES = (
+    (("password authentication failed",),
+     "The database rejected the username or password. Check the user and password in DATABASE_URL (or POSTGRES_USER / POSTGRES_PASSWORD)."),
+    (("no password supplied",),
+     "The database wants a password and none was given. Add it to DATABASE_URL (or POSTGRES_PASSWORD)."),
+    (("role", "does not exist"),
+     "The database user in DATABASE_URL does not exist on that server. Create the role or correct the username."),
+    (("database", "does not exist"),
+     "The server is reachable but has no database with that name. Create it (createdb) or correct the database name in DATABASE_URL."),
+    (("pg_hba.conf",),
+     "The server refused this machine or user (pg_hba.conf). Allow the controller's address on the database server, or connect with SSL if the server requires it."),
+    (("server does not support ssl",),
+     "The server does not support SSL but the connection asked for it. Set sslmode=disable (or prefer) in DATABASE_URL."),
+    (("ssl",),
+     "The SSL handshake failed. If the server requires SSL add sslmode=require to DATABASE_URL; if it has none, use sslmode=disable."),
+    (("could not translate host name",),
+     "The database host name could not be resolved. Check the host in DATABASE_URL, your DNS and any VPN."),
+    (("name or service not known",),
+     "The database host name could not be resolved. Check the host in DATABASE_URL, your DNS and any VPN."),
+    (("temporary failure in name resolution",),
+     "The database host name could not be resolved. Check the host in DATABASE_URL, your DNS and any VPN."),
+    (("connection refused",),
+     "Nothing is accepting connections at that host and port. Check PostgreSQL is running (for example `docker compose up -d db`) and that the host and port in DATABASE_URL are right."),
+    (("timeout expired",),
+     "The database host did not answer in time. Check the host and port, that PostgreSQL is running, and that a firewall is not blocking the port."),
+    (("connection timed out",),
+     "The database host did not answer in time. Check the host and port, that PostgreSQL is running, and that a firewall is not blocking the port."),
+    (("network is unreachable",),
+     "There is no network route to the database host. Check your network or VPN."),
+    (("no route to host",),
+     "There is no network route to the database host. Check your network or VPN."),
+    (("too many connections",),
+     "The server is out of connections. Lower DB_POOL_SIZE or raise max_connections on the database."),
+    (("starting up",),
+     "PostgreSQL is still starting or recovering. Wait a moment and start the controller again."),
+)
+
+
+def diagnose_connection_error(exc):
+    """One plain sentence on why a connection failed and how to fix it."""
+    message = str(exc).lower()
+    for needles, advice in CONNECTION_DIAGNOSES:
+        if all(needle in message for needle in needles):
+            return advice
+    return "The connection failed for a reason this check does not recognise. The database error is shown above."
+
+
 def is_transient_connection_error(exc):
     message = str(exc).lower()
     return any(signature in message for signature in TRANSIENT_CONNECT_ERRORS)
 
 
 class Database:
-    """Owns the engine and hands out sessions.
-
-    A single instance is created at import time (`database` below); tests can
-    build their own against a different `Settings`.
-    """
 
     def __init__(self, config=None):
         self.settings = config or settings
@@ -57,8 +95,6 @@ class Database:
             pool_pre_ping=True,
             pool_size=self.settings.db_pool_size,
             max_overflow=self.settings.db_max_overflow,
-            # Recycle before a managed provider's idle timeout closes them, and
-            # so a pooled connection is reused rather than re-resolved.
             pool_recycle=self.settings.db_pool_recycle,
             connect_args={"connect_timeout": self.settings.postgres_connect_timeout},
         )
@@ -66,13 +102,6 @@ class Database:
         self.session_factory = sessionmaker(bind=self.engine, expire_on_commit=False)
 
     def _install_connect_retry(self):
-        """Retry transient failures when opening a NEW pooled connection.
-
-        `pool_pre_ping` only validates connections that already exist; it does
-        nothing when creating one fails. Without this, a single DNS blip during
-        a VPN reconnect surfaces as a 500 on whatever request happened to need
-        a fresh connection.
-        """
 
         @event.listens_for(self.engine, "do_connect")
         def _connect_with_retry(dialect, conn_rec, cargs, cparams):
@@ -110,6 +139,31 @@ class Database:
             return True
         except SQLAlchemyError:
             return False
+
+    def startup_check(self):
+        target = self.settings.safe_database_url()
+        try:
+            with self.engine.connect() as connection:
+                connection.execute(text("SELECT 1"))
+                current = MigrationContext.configure(connection).get_current_revision()
+        except Exception as exc:  # any driver error: the point is to explain it
+            detail = str(getattr(exc, "orig", None) or exc).strip().splitlines()
+            return False, [
+                f"Database connection FAILED: {target}",
+                f"  error:     {detail[0] if detail else type(exc).__name__}",
+                f"  diagnosis: {diagnose_connection_error(exc)}",
+            ]
+        lines = [f"Database connection OK: {target}"]
+        try:
+            head = ScriptDirectory.from_config(self.alembic_config()).get_current_head()
+        except Exception:
+            head = None
+        if head and current != head:
+            lines.append(
+                f"  warning: the schema is at {current or 'no revision'} but the code expects {head}. "
+                "Run `python main.py migrate`."
+            )
+        return True, lines
 
     def alembic_config(self):
         config = Config(str(self.settings.base_dir / "alembic.ini"))

@@ -8,14 +8,6 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/utils';
 import { DASHBOARD_THEME_COOKIE } from '@/lib/dashboard-theme';
 
-/**
- * The `.dashboard` token scope shared by the customer portal and the admin panel.
- *
- * It applies the scope (and `.dark`) to the shell and passes the same class string to Radix portals through
- * ThemeScope, so dialogs and menus that render outside the shell use the same tokens. The choice is kept in
- * a cookie the server layout reads, so a reload paints the right theme the first time.
- */
-
 const DashboardThemeContext = React.createContext<{ dark: boolean; toggle: () => void }>({ dark: false, toggle: () => {} });
 export const useDashboardTheme = () => React.useContext(DashboardThemeContext);
 

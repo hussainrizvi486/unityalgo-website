@@ -5,17 +5,6 @@ import { formatPlanPrice, formatTransactionFee } from '@/lib/pricing';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/utils';
 
-/**
- * Plans, straight from the database.
- *
- * Products and plans are rows, so this renders whatever is currently active
- * and in what order — editing a price or adding a tier in /admin/plans changes
- * the landing page on the next request, with no redeploy. A product with no
- * active plans is skipped rather than shown as an empty column.
- *
- * Server component: it reads Prisma directly, so nothing about pricing ships
- * to the browser as JavaScript.
- */
 export async function PlansSection() {
     const products = await listProductsWithPlans();
     if (products.length === 0) return null;
@@ -55,8 +44,6 @@ export async function PlansSection() {
 
                         <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
                             {product.plans.map((plan, index) => {
-                                // The middle tier of three is the one most buyers
-                                // should land on, so it carries the emphasis.
                                 const featured = product.plans.length === 3 && index === 1;
                                 const fee = formatTransactionFee(plan.transactionFeePercent);
                                 return (

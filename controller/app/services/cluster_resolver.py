@@ -1,11 +1,3 @@
-"""Resolves which PostgreSQL instance a given tenant's data lives on.
-
-One place decides this, so every caller -- provisioning, backup, restore,
-teardown, the DSN handed to a container -- agrees. Getting it wrong means
-creating a database on one cluster and pointing the container at another, so
-it is worth centralising rather than repeating the `if tenant.cluster else
-default` check at each call site.
-"""
 
 from app.config import settings as default_settings
 from app.errors import ConfigurationError, NotFoundError
@@ -23,12 +15,6 @@ def target_for_connection(connection, config=None):
 
 
 def target_for_tenant(session, tenant, config=None):
-    """Which instance holds this tenant's database.
-
-    A tenant with no assigned cluster uses the controller's own database --
-    where every tenant lived before clusters existed -- so existing tenants
-    keep working without a backfill.
-    """
     config = config or default_settings
 
     if tenant.database_connection_id is None:
@@ -36,9 +22,6 @@ def target_for_tenant(session, tenant, config=None):
 
     connection = session.get(DatabaseConnection, tenant.database_connection_id)
     if connection is None:
-        # The FK is ONDELETE RESTRICT, so this should be unreachable; if it
-        # ever happens, failing loudly beats silently provisioning onto the
-        # wrong instance.
         raise NotFoundError(
             f"Tenant '{tenant.tenant_slug}' references database cluster "
             f"{tenant.database_connection_id}, which no longer exists."
@@ -65,11 +48,6 @@ def default_cluster(session):
 
 
 def tenant_dsn(session, tenant, config=None):
-    """The DATABASE_URL handed to the tenant's container.
-
-    Uses the cluster's worker-facing address: a container on a remote node
-    generally cannot reach the database by the same host the controller uses.
-    """
     config = config or default_settings
     target = target_for_tenant(session, tenant, config)
 

@@ -29,6 +29,20 @@
       "when": 1792191865388,
       "tag": "0003_paid_apps_and_trials",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1792262989549,
+      "tag": "0004_email_templates",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1792318643338,
+      "tag": "0005_rate_limits_and_otp_attempts",
+      "breakpoints": true
     }
   ]
 }

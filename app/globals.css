@@ -27,7 +27,6 @@
   --shadow: 0 1px 2px rgb(0 0 0 / 0.06);
 
   --primary: #0a0a0a;
-  /* The logo's red. A brand accent for the hero scene and decorative highlights; not a UI action colour. */
   --logo-primary: #8C181B;
   --primary-foreground: #fafafa;
   --ring: #0a0a0a;
@@ -99,12 +98,7 @@
   --sidebar-accent: #1f1f1f;
 }
 
-/*
- * Values the design parameters do not name but the UI still needs. They are derived from the tokens above
- * (or are fixed engineering constants such as stacking order), so they follow the active scope too.
- */
 :root {
-  /* Type scale for small text. Sizes from 2xl up derive from --display-size in @theme below. */
   --fs-micro: 0.625rem;
   --fs-small: 0.6875rem;
   --fs-xs: 0.75rem;
@@ -141,7 +135,6 @@
 }
 
 @theme inline {
-  /* Colour roles. Each reads the live token, so a scope's override reaches every utility. */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -203,10 +196,8 @@
   --container-reading: var(--content-reading);
   --container-wide: var(--content-wide);
 
-  /* One base unit drives every p-*, m-*, gap-*, w-*, h-*, size-* and inset-* class: 4px at the default --gap. */
   --spacing: calc(var(--gap) / 4);
 
-  /* Type scale: body sizes from the fs tokens, headline sizes as fractions of --display-size. */
   --text-micro: var(--fs-micro);
   --text-small: var(--fs-small);
   --text-xs: var(--fs-xs);
@@ -267,7 +258,6 @@ html {
 
 @layer base {
 
-  /* Tailwind's default border width is fixed at 1px; route it through --border-width. */
   *,
   ::after,
   ::before,
@@ -419,7 +409,6 @@ html {
   }
 }
 
-
 /* Shared public layout and primitive sizing; utility overrides stay available. */
 :root {
   --site-content-width: var(--max-w);
@@ -441,31 +430,6 @@ html {
 }
 
 @layer components {
-
-  /* Hero sphere, drawn from the tokens so it follows the theme. */
-  .orbital-glow {
-    background: radial-gradient(circle, color-mix(in srgb, var(--primary) 22%, transparent), transparent 70%);
-  }
-
-  .orbital-sphere {
-    background: radial-gradient(circle at 32% 26%,
-        var(--background) 0%,
-        color-mix(in srgb, var(--primary) 8%, var(--background)) 9%,
-        color-mix(in srgb, var(--primary) 35%, var(--background)) 21%,
-        color-mix(in srgb, var(--primary) 60%, var(--background)) 38%,
-        color-mix(in srgb, var(--primary) 80%, var(--background)) 54%,
-        var(--primary) 75%,
-        color-mix(in srgb, var(--primary) 75%, var(--scrim)) 100%);
-    box-shadow: var(--elevation-xl);
-  }
-
-  .orbital-grid {
-    mask-image: radial-gradient(circle at 40% 34%, var(--scrim) 30%, transparent 78%);
-  }
-
-  .orbital-highlight {
-    background: radial-gradient(circle at 30% 24%, color-mix(in srgb, var(--on-scrim) 38%, transparent), transparent 38%);
-  }
 
   .site-container {
     width: 100%;

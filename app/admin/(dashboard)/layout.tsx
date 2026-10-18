@@ -7,14 +7,6 @@ import { AdminSidebar } from '@/components/admin/admin-sidebar';
 import { AdminTopbar } from '@/components/admin/admin-topbar';
 import '@/app/dashboard/portal.css';
 
-/**
- * The admin shell: a floating nav card and a content card on a shared ground.
- *
- * `SidebarProvider` carries the open/collapsed state, persists it to a cookie
- * so a reload does not reset it, and owns the ⌘B shortcut and the mobile
- * drawer. The ground colour lives here rather than on the sidebar, because in
- * this layout both panels float on it.
- */
 export default async function AdminDashboardLayout({ children }: { children: React.ReactNode }) {
     const admin = await requireAdmin();
     const dark = (await cookies()).get(DASHBOARD_THEME_COOKIE)?.value === 'dark';

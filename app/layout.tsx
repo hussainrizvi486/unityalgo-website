@@ -12,7 +12,6 @@ const poppins = Poppins({
   weight: ['100', '200', '300', '400', '500', '600', '700', '800', '900']
 });
 
-
 const geist = Geist({
   subsets: ['latin'],
   display: 'swap',
@@ -88,7 +87,6 @@ const jsonLd = {
     "areaServed": "Global"
   }
 };
-
 
 export default function RootLayout({
   children,

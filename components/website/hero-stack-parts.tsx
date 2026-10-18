@@ -6,19 +6,6 @@ import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeom
 import * as THREE from 'three';
 import { mixRgb, rgbHex, tokenRgb, type Rgb } from '@/lib/css-token';
 
-/**
- * The prop vocabulary for the hero stack.
- *
- * Each layer of the stack is a populated board rather than a bare slab, so
- * these are the pieces that sit on it: panels with dark screen faces, a glass
- * block over a chip, database discs, node graphs, keycaps, gears. They are
- * parametric rather than modelled, which keeps the whole scene at a few KB of
- * code instead of a multi-megabyte GLB.
- *
- * Geometry and materials are created once by `useStackKit` and handed to every
- * prop, so 100+ meshes share a handful of GPU buffers.
- */
-
 export interface StackKit {
     box: THREE.BufferGeometry;
     plate: THREE.BufferGeometry;
@@ -35,12 +22,6 @@ export interface StackKit {
     brandLit: THREE.Material;
 }
 
-/**
- * A small tile of value noise, used as the frosted sheet's roughness map.
- *
- * Cheap enough to build at runtime — 64x64, generated once — and it saves
- * shipping a texture file for what is a handful of bytes of randomness.
- */
 function makeFrostTexture() {
     const size = 64;
     const canvas = document.createElement('canvas');
@@ -49,8 +30,6 @@ function makeFrostTexture() {
     if (!ctx) return null;
     const image = ctx.createImageData(size, size);
     for (let i = 0; i < size * size; i++) {
-        // Biased high: the sheet should be mostly rough, with a few polished
-        // patches, rather than an even 50/50 mottle.
         const v = 150 + Math.random() * 105;
         image.data[i * 4] = image.data[i * 4 + 1] = image.data[i * 4 + 2] = v;
         image.data[i * 4 + 3] = 255;
@@ -62,7 +41,6 @@ function makeFrostTexture() {
     return texture;
 }
 
-/** The scene's surfaces, taken from the design tokens so the 3D object follows the theme. */
 function stackPaint() {
     const background = tokenRgb('--background');
     const foreground = tokenRgb('--foreground');
@@ -76,8 +54,6 @@ function stackPaint() {
         glass: css(mixRgb(muted, logo, 0.1)),
         slab: css(mixRgb(mixRgb(tokenRgb('--border'), tokenRgb('--muted-foreground'), 0.25), logo, 0.12)),
         steel: css(mixRgb(tokenRgb('--muted-foreground'), background, 0.3)),
-        // The logo red on solid faces, and a lighter tint of it on the parts meant to look powered (status lights,
-        // data packets, the top board).
         brand: css(logo),
         lit: css(mixRgb(logo, tokenRgb('--primary-foreground'), 0.18)),
     };
@@ -108,30 +84,11 @@ export function useStackKit(): StackKit {
             color: paint.screen, roughness: 0.12, metalness: 0.3,
             clearcoat: 1, clearcoatRoughness: 0.06,
         }),
-        // Deliberately not `transmission`: real refraction makes three.js
-        // render the scene to a separate buffer for every transmissive mesh,
-        // every frame, which cost ~500ms/frame here. At this size a plain
-        // translucent surface with a strong clearcoat is visually equivalent.
         glass: new THREE.MeshPhysicalMaterial({
             color: paint.glass, roughness: 0.08, metalness: 0.05,
             clearcoat: 1, clearcoatRoughness: 0.04,
             transparent: true, opacity: 0.32,
         }),
-        // The base sheet the whole stack sits on: frosted, not clear.
-        //
-        // Frosted glass is a diffuse surface, so the look comes from high
-        // roughness plus a milky opacity — not from transparency. `transmission`
-        // would give real refractive blur, but it costs an extra full-scene
-        // render every frame, and behind this sheet there is only the page and
-        // the contact shadow: blurring a flat backdrop is indistinguishable
-        // from simply being milky.
-        //
-        // The frost is broken up by a noise roughnessMap, so the sheet catches
-        // the studio lights unevenly the way real etched glass does rather than
-        // as one flat sheen. depthWrite stays off so the contact shadow reads
-        // faintly through it — the one cue that there is anything behind it at
-        // all. Depth *testing* still applies, so props standing on the sheet
-        // are unaffected.
         glassSlab: new THREE.MeshPhysicalMaterial({
             color: paint.slab, roughness: 0.55, metalness: 0,
             roughnessMap: frost,
@@ -142,14 +99,6 @@ export function useStackKit(): StackKit {
         steel: new THREE.MeshPhysicalMaterial({
             color: paint.steel, roughness: 0.25, metalness: 0.6, clearcoat: 0.6,
         }),
-        // Brand crimson, in two weights.
-        //
-        // `brand` is the platform's --primary on solid faces: the core's
-        // chip, a keycap, a dial's index mark. `brandLit` is --primary-foreground
-        // carrying emissive, for the things that are meant to look *powered* —
-        // status lights, data packets, the pulse running a graph edge. There is
-        // no bloom pass in this scene, so emissive is what makes a 5cm sphere
-        // read as lit rather than merely painted.
         brand: new THREE.MeshPhysicalMaterial({
             color: paint.brand, roughness: 0.28, metalness: 0.08,
             clearcoat: 1, clearcoatRoughness: 0.12,
@@ -158,17 +107,12 @@ export function useStackKit(): StackKit {
         brandLit: new THREE.MeshPhysicalMaterial({
             color: paint.lit, roughness: 0.18, metalness: 0,
             clearcoat: 1, clearcoatRoughness: 0.06,
-            // Emitting the deep brand crimson rather than the lighter soft tint:
-            // a hot emissive washes the hue toward a generic bright red, which
-            // stops reading as the platform's colour at all.
             emissive: new THREE.Color(paint.lit), emissiveIntensity: 0.7,
         }),
     });
     }, []);
 
     React.useEffect(() => () => {
-        // Disposing a material does not dispose its textures, so the frost map
-        // is released explicitly.
         (kit.glassSlab as THREE.MeshPhysicalMaterial).roughnessMap?.dispose();
         Object.values(kit).forEach((v) => (v as { dispose?: () => void }).dispose?.());
     }, [kit]);
@@ -370,12 +314,6 @@ export function Dial({ kit, position }: PropProps) {
     );
 }
 
-/**
- * A packet running one trace.
- *
- * Split out so `useFrame` only exists for traces that actually carry one — a
- * board has a dozen traces and most are there as wiring, not as movement.
- */
 function TracePulse({ kit, from, to, delay }: {
     kit: StackKit; from: THREE.Vector2; to: THREE.Vector2; delay: number;
 }) {
@@ -394,14 +332,6 @@ function TracePulse({ kit, from, to, delay }: {
     return <mesh ref={dot} geometry={kit.sphere} material={kit.brandLit} scale={0.001} />;
 }
 
-/**
- * A thin surface trace between two points on a board.
- *
- * `pulse` sends a packet down it. Boards read as populated without it and as
- * *running* with it, which is the difference between a component diagram and a
- * machine — but every trace carrying one at once looks like a fairground, so it
- * is opt-in per trace.
- */
 export function Trace({ kit, from, to, pulse = false, reduced = false, delay = 0 }: {
     kit: StackKit; from: [number, number]; to: [number, number];
     pulse?: boolean; reduced?: boolean; delay?: number;
@@ -421,13 +351,6 @@ export function Trace({ kit, from, to, pulse = false, reduced = false, delay = 0
     );
 }
 
-/**
- * The furniture every board carries: a silkscreen border and corner standoffs.
- *
- * Cheap detail that does a lot of work — a bare slab reads as a placeholder,
- * while an inset border and four machined posts read as a manufactured part.
- * Sized from the board so it tracks the taper without per-board constants.
- */
 export function BoardFurniture({ kit, width, depth, slab, dark, glass = false }: {
     kit: StackKit; width: number; depth: number; slab: number; dark: boolean; glass?: boolean;
 }) {
@@ -435,8 +358,6 @@ export function BoardFurniture({ kit, width, depth, slab, dark, glass = false }:
     const w = width - inset * 2;
     const d = depth - inset * 2;
     const top = slab / 2;
-    // Graphite gives the contrast a porcelain deck needs, but on the frosted
-    // sheet it reads as a drawn outline rather than printed silkscreen.
     const line = dark || glass ? kit.steel : kit.graphite;
     return (
         <group position={[0, top, 0]}>
@@ -518,20 +439,12 @@ export function Ports({ kit, position, count = 4, rotation = 0 }: PropProps & { 
     );
 }
 
-/**
- * Status LEDs that pulse in sequence.
- *
- * Scale rather than colour is animated: every light shares one material, so a
- * colour change would affect all of them at once.
- */
 export function Leds({ kit, position, count = 4, reduced }: PropProps & { count?: number; reduced: boolean }) {
     const group = React.useRef<THREE.Group>(null);
     useFrame((state) => {
         if (!group.current || reduced) return;
         const t = state.clock.elapsedTime;
         group.current.children.forEach((child, i) => {
-            // A travelling wave along the row, so it reads as activity rather
-            // than a set of independently blinking dots.
             const phase = Math.sin(t * 2.4 - i * 0.7);
             child.scale.setScalar(0.05 + Math.max(0, phase) * 0.035);
         });
@@ -595,17 +508,8 @@ export function ProgressPanel({ kit, position, size, reduced }: PropProps & {
     );
 }
 
-/**
- * The AI core: a die carrying a brain glyph, under a glass canopy.
- *
- * The glyph is a dozen small spheres rather than a modelled brain — at this
- * size the silhouette is all that survives, and a sphere cluster reads as one
- * where a detailed mesh would just read as noise.
- */
 export function BrainCore({ kit, position, reduced }: PropProps & { reduced: boolean }) {
     const canopy = React.useRef<THREE.Group>(null);
-    // Two lobes of overlapping blobs at varied sizes. An even grid of spheres
-    // reads as a keypad; the irregularity is what makes it read as a brain.
     const lobes = React.useMemo<Array<[number, number, number]>>(() => {
         const half: Array<[number, number, number]> = [
             [0.034, -0.072, 0.050], [0.090, -0.050, 0.044], [0.126, -0.006, 0.038],
@@ -624,10 +528,7 @@ export function BrainCore({ kit, position, reduced }: PropProps & { reduced: boo
         <group position={position}>
             {/* Pedestal */}
             <mesh geometry={kit.box} material={kit.graphite} scale={[0.7, 0.17, 0.7]} />
-            {/* No crimson here on purpose: the canopy is transparent, so a lit
-                plate under it does not read as a seam — it reads as a solid red
-                block seen through glass. The core stays graphite, porcelain and
-                glass, and the crimson lives on the status lights around it. */}
+            {}
             <group ref={canopy} position={[0, 0.17, 0]}>
                 {/* Glass canopy */}
                 <mesh geometry={kit.box} material={kit.glass} scale={[0.6, 0.17, 0.6]} />
@@ -654,8 +555,7 @@ export function Cloud({ kit, position }: PropProps) {
     ];
     return (
         <group position={position}>
-            {/* Darker mass behind, pale mass in front — the reference's two-tone
-                cloud, done with depth rather than an outline. */}
+            {}
             {puffs.map((p, i) => (
                 <mesh key={`b${i}`} geometry={kit.sphere} material={kit.graphite}
                       position={[p[0] + 0.03, p[1] - 0.01, p[2] - 0.055]} scale={p[3] * 0.94} />
@@ -722,8 +622,6 @@ export function Appliance({ kit, position, rotation = 0 }: PropProps) {
 /** A standing glass pane with bar-chart columns that rise and settle. */
 export function ChartPane({ kit, position, rotation = 0, reduced }: PropProps & { reduced: boolean }) {
     const bars = React.useRef<THREE.Group>(null);
-    // Kept short: the pane stands on a deck with another board 0.72 above it,
-    // and a taller chart would spear straight through it.
     const heights = React.useMemo(() => [0.12, 0.23, 0.18, 0.3, 0.2], []);
     useFrame((state) => {
         if (!bars.current || reduced) return;

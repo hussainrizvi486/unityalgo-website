@@ -41,7 +41,6 @@ export function rolloutSiteBadge(status: RolloutSiteStatus): { label: string; va
     }[status];
 }
 
-/** The one-paragraph answer to "does updating an app touch other sites?", shown wherever a rollout is started or watched. */
 export const ISOLATION_NOTE =
     'Every customer site runs in its own isolated stack with its own copy of the application code. '
     + 'An update builds a new image for each selected site only, then runs that site’s database migration inside its own stack. '

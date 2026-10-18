@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { Notice } from '@/components/ui/notice';
 import { ArrowRight, CalendarDays, Check, Package, PlusCircle, Store, Users, X } from 'lucide-react';
 import { and, asc, eq, inArray } from 'drizzle-orm';
-import type { AddOn, Plan, Subscription, SubscriptionAddOn } from '@/db/types';
+import type { AddOn, Currency, Plan, Subscription, SubscriptionAddOn } from '@/db/types';
 import { db, schema } from '@/lib/db';
 import { requireCustomerSession } from '@/lib/customer-session';
 import { getSubscriptions, addSubscriptionAddOnAction, removeSubscriptionAddOnAction } from '@/app/customer/actions';
@@ -13,7 +13,7 @@ interface SubscriptionPageProps {
   searchParams: Promise<{ purchased?: string }>;
 }
 
-type SubscriptionWithRelations = Subscription & { plan: Plan; addOns: (SubscriptionAddOn & { addOn: AddOn })[] };
+type SubscriptionWithRelations = Subscription & { plan: Plan & { currency: Currency | null }; addOns: (SubscriptionAddOn & { addOn: AddOn })[] };
 
 export default async function SubscriptionPage({ searchParams }: SubscriptionPageProps) {
   const { purchased } = await searchParams;
@@ -21,9 +21,6 @@ export default async function SubscriptionPage({ searchParams }: SubscriptionPag
 
   const subscriptions = await getSubscriptions(session.userId);
 
-  // One query for every product's add-ons, not one per subscription. The old
-  // shape ran a findMany inside the render loop, so a customer with two
-  // subscriptions issued two extra round trips to render one page.
   const productIds = [...new Set(subscriptions.map((s) => s.plan.productId))];
   const attachedIds = new Set(subscriptions.flatMap((s) => s.addOns.map((row) => row.addOnId)));
   const addOnsByProduct = new Map<string, AddOn[]>();
@@ -184,7 +181,7 @@ function SubscriptionBlock({ subscription, availableAddOns }: { subscription: Su
 
       {monthlyTotal != null ? (
         <p className="mt-4 text-right portal-text-body text-muted-foreground">
-          Estimated monthly total: <strong className="text-foreground">{formatCurrency(monthlyTotal)}/mo</strong>
+          Estimated monthly total: <strong className="text-foreground">{formatCurrency(monthlyTotal, subscription.plan.currency)}/mo</strong>
         </p>
       ) : null}
     </div>

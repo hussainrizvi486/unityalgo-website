@@ -13,10 +13,6 @@ function Submit({ children, variant = 'default' }: { children: React.ReactNode; 
     return <Button type="submit" variant={variant} disabled={pending}>{pending ? 'Working…' : children}</Button>;
 }
 
-/**
- * What customers can do with an application and what it costs. A paid app is billed monthly per site as an item
- * on the customer's Paddle subscription, so it needs a Paddle price; "Sync" creates or updates it.
- */
 export function PricingForm({
     id, price, currency, paddlePriceId, installable, github, billing,
 }: {
@@ -26,7 +22,6 @@ export function PricingForm({
     paddlePriceId: string | null;
     installable: boolean;
     github: boolean;
-    /** How charges would be made right now: paddle, test, or null when billing is unavailable. */
     billing: 'paddle' | 'test' | null;
 }) {
     const [saved, save] = useActionState(saveAppPricingAction, undefined);

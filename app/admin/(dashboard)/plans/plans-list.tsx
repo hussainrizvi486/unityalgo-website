@@ -102,8 +102,6 @@ export function PlansList({
                         action: toggleAction,
                         id: row.id,
                     },
-                    // Custom-quote plans have no amount to push, so the control
-                    // is not offered rather than offered and then refused.
                     ...(row.canSync
                         ? [{ label: row.paddlePriceId ? 'Sync' : 'Add to Paddle', action: syncAction, id: row.id }]
                         : []),

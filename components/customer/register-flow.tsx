@@ -104,10 +104,6 @@ export function OtpStep({ email }: { email: string }) {
         return () => clearTimeout(timer);
     }, [cooldown]);
 
-    // Adjusted during render when the action result changes, rather than
-    // synced in an effect. React documents this pattern for "a value changed,
-    // reset some state": it settles before the browser paints, where the
-    // effect version committed once with the old state and again with the new.
     const [seenResend, setSeenResend] = useState(resendState);
     if (resendState !== seenResend) {
         setSeenResend(resendState);
@@ -117,8 +113,6 @@ export function OtpStep({ email }: { email: string }) {
         }
     }
 
-    // The notice clears itself. setState from a timer callback is not what the
-    // cascading-render rule is about — only a synchronous call in the body is.
     useEffect(() => {
         if (!resendNotice) return;
         const timer = setTimeout(() => setResendNotice(false), 4000);
@@ -157,7 +151,7 @@ export function OtpStep({ email }: { email: string }) {
                     >
                         <RefreshCw className="h-3.5 w-3.5" />
                         Resend code
-                        {/* {cooldown > 0 ? `Resend code in ${cooldown}s` : 'Resend code'} */}
+                        {}
                     </button>
                 </form>
                 <form action={restartRegistrationAction}>
@@ -175,15 +169,9 @@ export function OtpStep({ email }: { email: string }) {
 export function CustomerInfoStep({ email }: { email: string }) {
     const [state, formAction] = useActionState(createCustomerAction, undefined);
 
-    // Local errors come from typing; server errors arrive with the action
-    // result. A field shows whichever is current: local wins once the person
-    // has touched the field again, because it reflects what is in the box now.
     const [local, setLocal] = useState<FieldErrors>({});
     const [touched, setTouched] = useState<Record<string, boolean>>({});
 
-    // Adjusted during render rather than synced in an effect: when a new server
-    // result lands, its errors supersede the local ones from the submit that
-    // produced it.
     const [seen, setSeen] = useState(state);
     if (state !== seen) {
         setSeen(state);
@@ -199,9 +187,6 @@ export function CustomerInfoStep({ email }: { email: string }) {
         setLocal((e) => ({ ...e, [field]: validateField(field, event.target.value) ?? undefined }));
     };
 
-    // Re-checked on every keystroke, but only after the field has been left
-    // once — telling someone their name is too short while they type the first
-    // letter is noise, correcting it as they fix it is help.
     const recheck = (field: RegistrationField) => (event: React.ChangeEvent<HTMLInputElement>) => {
         if (!touched[field]) return;
         setLocal((e) => ({ ...e, [field]: validateField(field, event.target.value) ?? undefined }));
@@ -210,8 +195,6 @@ export function CustomerInfoStep({ email }: { email: string }) {
     const fieldProps = (field: RegistrationField) => ({
         name: field,
         id: field,
-        // Values are echoed back by the action, so a rejected submit redraws
-        // the form with everything still in it.
         defaultValue: state?.values?.[field] ?? '',
         onBlur: check(field),
         onChange: recheck(field),
@@ -221,8 +204,7 @@ export function CustomerInfoStep({ email }: { email: string }) {
     return (
         <AuthFrame eyebrow="Almost there" title="Tell us about yourself" description="Your email is verified — finish setting up your account.">
             <StepIndicator labels={STEPS} step={3} />
-            {/* noValidate: the browser's own bubbles would pre-empt these
-                messages and say something different from the server. */}
+            {}
             <form action={formAction} noValidate className="space-y-gap">
                 <div className="grid gap-gap sm:grid-cols-2">
                     <FormField id="firstName" label="First name" error={errorFor('firstName')}>
@@ -246,8 +228,6 @@ export function CustomerInfoStep({ email }: { email: string }) {
                 >
                     <PasswordInput
                         {...fieldProps('password')}
-                        // Never echoed by the server, so this one really is blank
-                        // again after a rejection.
                         defaultValue=""
                         autoComplete="new-password"
                         placeholder="Minimum 8 characters"

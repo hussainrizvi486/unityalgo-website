@@ -49,8 +49,6 @@ interface DatabaseFormProps {
 
 export function DatabaseForm({ action, defaultValues, submitLabel, isEdit }: DatabaseFormProps) {
     const [state, formAction] = useActionState(action, undefined);
-    // The cluster-only fields are meaningless for an external connection, so
-    // they're revealed rather than shown greyed out.
     const [role, setRole] = useState<string>(defaultValues?.role ?? 'external');
     // PostgreSQL hosts UnityCommerce tenants; MariaDB hosts Frappe sites.
     const [engine, setEngine] = useState<string>(defaultValues?.engine ?? 'postgres');
@@ -64,7 +62,7 @@ export function DatabaseForm({ action, defaultValues, submitLabel, isEdit }: Dat
                     <SelectTrigger id="engine" className="w-full"><SelectValue /></SelectTrigger>
                     <SelectContent>
                         <SelectItem value="postgres">PostgreSQL — UnityCommerce tenants</SelectItem>
-                        <SelectItem value="mariadb">MariaDB — Frappe / ERP sites</SelectItem>
+                        <SelectItem value="mariadb">MariaDB — ERP sites</SelectItem>
                     </SelectContent>
                 </Select>
                 {isEdit && <input type="hidden" name="engine" value={engine} />}

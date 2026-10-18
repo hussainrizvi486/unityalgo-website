@@ -3,19 +3,6 @@ import { and, count, eq } from 'drizzle-orm';
 import { db, schema } from '@/lib/db';
 import { paddleRequest } from '@/lib/paddle-catalog';
 
-/**
- * Charging for paid apps.
- *
- * A paid app is an item on the customer's existing Paddle subscription, priced per month and billed per site:
- * its quantity is the number of that customer's sites running it. Installing raises the quantity and Paddle
- * charges the prorated amount straight away; if that charge is refused nothing is installed. Removing or failing
- * an install lowers it again.
- *
- * `purchase` is the record of what was charged and `cancel` undoes it, so a failed install never leaves a charge
- * behind. Money only moves through Paddle: `APP_BILLING_MODE=test` records purchases without charging and is
- * refused in production.
- */
-
 export type BillingMode = 'paddle' | 'test';
 
 export class BillingError extends Error {}
@@ -25,13 +12,11 @@ export type AppPurchase = typeof schema.appPurchase.$inferSelect;
 
 export const isPaidApp = (app: Pick<App, 'priceAmount'>) => (app.priceAmount ?? 0) > 0;
 
-/** How charges will be made right now, or null when they cannot be (the customer is told, nothing is installed). */
 export function appBillingMode(): BillingMode | null {
     if (process.env.APP_BILLING_MODE === 'test') return process.env.NODE_ENV === 'production' ? null : 'test';
     return process.env.PADDLE_API_KEY ? 'paddle' : null;
 }
 
-/** The customer's active subscription that carries Paddle billing, preferring the plan their site is on. */
 export async function billingSubscription(userId: string, planId?: string | null) {
     const subscriptions = await db.query.subscription.findMany({
         where: and(eq(schema.subscription.userId, userId), eq(schema.subscription.status, 'ACTIVE')),
@@ -45,7 +30,6 @@ interface PaddleSubscription {
     items: Array<{ price: { id: string }; quantity: number }>;
 }
 
-/** Sets how many of `priceId` the subscription carries (0 removes it), leaving every other item as it is. */
 async function setQuantity(paddleSubscriptionId: string, priceId: string, quantity: number) {
     let current: PaddleSubscription;
     try {
@@ -54,7 +38,6 @@ async function setQuantity(paddleSubscriptionId: string, priceId: string, quanti
         throw new BillingError(`Your subscription could not be read: ${(error as Error).message}`);
     }
     if (current.status !== 'active') throw new BillingError('Your subscription is not active, so apps cannot be added to it.');
-    // Paddle replaces the whole item list, so the existing items are sent back unchanged.
     const items = current.items.filter((item) => item.price.id !== priceId).map((item) => ({ price_id: item.price.id, quantity: item.quantity }));
     if (quantity > 0) items.push({ price_id: priceId, quantity });
     try {
@@ -81,7 +64,6 @@ async function activeCount(userId: string, appId: string, paddleSubscriptionId: 
     return rows[0]?.n ?? 0;
 }
 
-/** Charge for `app` on `siteId` and record it. Throws BillingError, with nothing charged, when it cannot. */
 export async function purchaseApp(input: { userId: string; app: App; siteId: string; planId?: string | null }): Promise<AppPurchase> {
     const { userId, app, siteId } = input;
     if (!isPaidApp(app)) throw new BillingError('This application is free.');
@@ -108,7 +90,6 @@ export async function purchaseApp(input: { userId: string; app: App; siteId: str
         }).returning();
         return created;
     } catch (error) {
-        // The charge went through but the record did not: hand the money back rather than bill for nothing.
         if (mode === 'paddle' && paddleSubscriptionId && app.paddlePriceId) {
             await setQuantity(paddleSubscriptionId, app.paddlePriceId, await activeCount(userId, app.id, paddleSubscriptionId)).catch(() => undefined);
         }
@@ -116,7 +97,6 @@ export async function purchaseApp(input: { userId: string; app: App; siteId: str
     }
 }
 
-/** Stop charging for a purchase (an install that failed, or an app removed): lowers the subscription item and records it. */
 export async function cancelPurchase(purchase: AppPurchase): Promise<void> {
     const claimed = await db.update(schema.appPurchase)
         .set({ status: 'CANCELED', canceledAt: new Date() })
@@ -129,7 +109,6 @@ export async function cancelPurchase(purchase: AppPurchase): Promise<void> {
     try {
         await setQuantity(purchase.paddleSubscriptionId, app.paddlePriceId, await activeCount(purchase.userId, purchase.appId, purchase.paddleSubscriptionId));
     } catch (error) {
-        // Put the record back: the customer is still being billed, so it must not read as cancelled.
         await db.update(schema.appPurchase).set({ status: 'ACTIVE', canceledAt: null }).where(eq(schema.appPurchase.id, purchase.id));
         throw error;
     }
@@ -143,18 +122,9 @@ export async function activePurchase(siteId: string, appId: string) {
 
 const SETTLE_MS = 30 * 60_000;
 
-/**
- * Stop billing for apps that are not on the site they were bought for.
- *
- * Normally the controller tells us when an install fails and the charge is reversed straight away. If that message was
- * lost (this app down, the network), the purchase would stay active for an app the customer does not have. So whenever a
- * customer's sites are loaded, any purchase old enough to have finished installing whose site does not have the app, and
- * is not busy changing, is cancelled. With the full list of sites, a purchase whose site no longer exists is cancelled too.
- */
 export async function reconcilePurchases(
     userId: string,
     sites: Array<{ id: string; apps: string[]; status: string; activity: string | null }>,
-    /** True when `sites` is all of the customer's sites, so a purchase whose site is missing belongs to a deleted site. */
     complete = false,
 ) {
     const purchases = await db.query.appPurchase.findMany({

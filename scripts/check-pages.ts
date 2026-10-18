@@ -1,12 +1,3 @@
-/**
- * Fetches admin pages with a real session cookie and reports what they render.
- *
- * Next.js answers a server-component crash with a 200 whose body carries the
- * error, so a status check alone proves nothing — each page is also searched
- * for text that only appears when the data actually arrived.
- *
- *   npx tsx scripts/check-pages.ts
- */
 import 'dotenv/config';
 import { SignJWT } from 'jose';
 

@@ -26,9 +26,6 @@ if os.environ.get('SETUP_JSON'):
 run('enable-scheduler', ['bench', '--site', site, 'enable-scheduler'])
 """
 
-# Completes Frappe's setup wizard (company, country, currency, chart of accounts
-# and the owner user) so the customer lands on a configured ERP. Skipped when
-# the wizard already finished, which makes a retry safe.
 WIZARD_SCRIPT = """import datetime, json, os, re
 import frappe
 from frappe.geo.country_info import get_country_info
@@ -67,8 +64,6 @@ finally:
     frappe.destroy()
 """
 
-# Installed inside the site: stops anyone enabling or creating a user once the plan's seat limit is reached.
-# Frappe core has no seat limits of its own, and a Server Script runs in every code path that saves a User.
 LIMITS_SCRIPT = """import os
 import frappe
 os.chdir('sites')
@@ -109,7 +104,6 @@ finally:
 """
 
 
-# Lists the apps installed on the site with the version and commit each one is really running.
 APPS_SCRIPT = """import importlib, os, subprocess
 os.chdir('sites')
 import frappe
@@ -129,9 +123,6 @@ finally:
     frappe.destroy()
 """
 
-# A site's code lives in its image, so a new app or version is a new image layered on the current one. The
-# running site is untouched until the new image is ready. Built assets are copied out of the image because
-# the `sites` volume hides the image's own copy at runtime.
 APP_DOCKERFILE = """FROM {base}
 USER frappe
 WORKDIR /home/frappe/frappe-bench
@@ -149,8 +140,6 @@ RUN set -eux; \\
     rm -rf /home/frappe/built-assets; cp -a sites/assets /home/frappe/built-assets
 """
 
-# Same as above for a private repository: the worker clones it with the GitHub token, and only the token-free
-# checkout is copied in. The token never reaches the image, its layers or `docker history`.
 APP_DOCKERFILE_LOCAL = """FROM {base}
 USER frappe
 WORKDIR /home/frappe/frappe-bench
@@ -171,17 +160,12 @@ class SetupUnavailable(RuntimeError):
 class FrappeService:
     def __init__(self, site, server, settings, setup=None, external_db=None):
         self.site, self.server, self.settings = site, server, settings
-        # Wizard answers for Frappe. Never persisted by the controller; kept on the
-        # worker inside the 0600 compose file so a retry can reuse them.
         self.setup = setup
-        # {'host','port','user','password'} of a registered MariaDB server; None = bundled container.
         self.external_db = external_db
         self.ssh = SSHService(server, settings)
         self.path = "/opt/unityalgo/frappe/" + str(site.id)
         self.project = "frappe-" + str(site.id)
 
-    # Share of a site's RAM and CPU each service gets. The database drops out for a site on an external
-    # server, and its share is spread over the rest in proportion.
     WEIGHTS = {
         "backend": 0.30,
         "queue-long": 0.12,
@@ -330,7 +314,6 @@ class FrappeService:
         ]
         if self.external_db:
             del services["db"]
-        # Plan limits. Docker enforces these, so a site cannot take more than its plan gives it.
         allocation = self.allocation()
         for name, (memory_mb, cpus) in allocation.items():
             if name in services:
@@ -338,11 +321,9 @@ class FrappeService:
                     f"{memory_mb}m",
                     cpus,
                 )
-        # Redis must stop short of its container limit or the kernel kills it instead of evicting keys.
         services["redis-cache"]["command"][2] = (
             f"{int(allocation['redis-cache'][0] * 0.7)}mb"
         )
-        # One-off setup containers (install, migrate, restore) do the heavy lifting: give them the backend's share.
         for name in ("configurator", "create-site"):
             services[name]["mem_limit"], services[name]["cpus"] = (
                 f"{allocation['backend'][0]}m",
@@ -351,8 +332,6 @@ class FrappeService:
         services["configurator"].update(
             {"entrypoint": ["bash", "-c"], "restart": "no", "profiles": ["setup"]}
         )
-        # Compose interpolates dollar signs even in JSON. Preserve literal
-        # password characters instead of expanding the worker's environment.
         db = self.external_db or {
             "host": "db",
             "port": 3306,
@@ -410,9 +389,6 @@ class FrappeService:
                 "Docker Compose is not available on the assigned worker."
             )
         with self.ssh.connect() as client:
-            # No secrets are shell arguments or customer-visible log output.
-            # /opt is root-owned; create the tree with sudo, then hand it to the SSH user so
-            # the SFTP writes and unprivileged `docker compose` calls below work.
             path, user = shlex.quote(self.path), shlex.quote(self.server.ssh_user)
             result = self.ssh._sudo_exec(
                 client,
@@ -425,8 +401,6 @@ class FrappeService:
                 if self.setup is None:
                     self.setup = self._saved_setup(sftp)
                 if self.setup is None:
-                    # The wizard answers are never stored by the controller; without the
-                    # saved copy on the worker, continuing would build an unconfigured ERP.
                     raise SetupUnavailable(
                         "The site setup details are no longer available. Delete this site and create it again."
                     )
@@ -469,8 +443,6 @@ class FrappeService:
             timeout=timeout,
         )
         if not result.ok:
-            # The customer only ever sees a generic message; the activity log gets the real output.
-            # Progress bars redraw with carriage returns; drop them so the tail holds the real error.
             tail = self.ssh.run(
                 "tr '\\r' '\\n' < "
                 + shlex.quote(self.path + "/provision.log")
@@ -506,7 +478,6 @@ class FrappeService:
         )
 
     def rewrite_compose(self):
-        """Regenerate compose.json from the current limits (e.g. after a plan change). Carries no wizard answers."""
         self.setup = None
         with self.ssh.connect() as client, client.open_sftp() as sftp:
             self._write_compose(sftp)
@@ -548,12 +519,6 @@ class FrappeService:
         self.run(["restart", *self.APP_SERVICES], timeout=400)
 
     def destroy(self, drop_database, force=False):
-        """Remove the site completely: its database, containers, volumes and deploy folder.
-
-        With `force` every step is attempted even if an earlier one fails (used by an admin to clear
-        a site stuck half-created); otherwise the first failure stops the deletion, leaving the site
-        intact enough to retry.
-        """
         problems = []
 
         def attempt(label, action):
@@ -565,10 +530,7 @@ class FrappeService:
                 problems.append(f"{label}: {exc}")
 
         if drop_database:
-            # Remember which database this site uses before its files go, so it can be verified afterwards.
             attempt("read database name", self._remember_database_name)
-            # A one-off container that already carries the database credentials, so no secret appears on a
-            # command line. drop-site takes the server from the site's own config, hence no host flags.
             attempt(
                 "drop database",
                 lambda: self.run(
@@ -590,7 +552,7 @@ class FrappeService:
             lambda: self.run(["down", "-v", "--remove-orphans"], timeout=300),
         )
         try:
-            self.discard_images()  # leftover disk only; never a reason to keep a site that is otherwise gone
+            self.discard_images()
         except Exception:
             pass
         attempt("remove deploy folder", lambda: self._remove_folder())
@@ -599,7 +561,6 @@ class FrappeService:
     database_name = None
 
     def _remember_database_name(self):
-        """The database `bench new-site` created for this site (from its own config), or None if there is none yet."""
         command = self._compose_cmd(
             [
                 "run",
@@ -648,7 +609,6 @@ class FrappeService:
         )
 
     def apply_limits(self, user_limit):
-        """Install (or remove) the seat limit. Server Scripts must be enabled for the site's bench first."""
         self.exec_output(["bench", "set-config", "-gp", "server_script_enabled", "1"])
         self._in_site(LIMITS_SCRIPT, USER_LIMIT=user_limit or "")
 
@@ -697,7 +657,6 @@ class FrappeService:
     STAMP = __import__("re").compile(r"^(\d{8}_\d{6})-")
 
     def backup_sets(self):
-        """Backups grouped by bench's timestamp prefix: one set holds a backup's database, files and config."""
         sets = {}
         for item in self.list_backups():
             match = self.STAMP.match(item["name"])
@@ -731,11 +690,6 @@ class FrappeService:
         return sorted(sets.values(), key=lambda group: group["stamp"], reverse=True)
 
     def restore(self, stamp):
-        """Replace the site's database and files with those of backup set `stamp`, then migrate to current apps.
-
-        The file names come from the worker's own listing, never from the caller, so nothing outside the
-        site's backup folder can be named. The site's application containers are stopped for the duration.
-        """
         group = next((g for g in self.backup_sets() if g["stamp"] == stamp), None)
         if not group:
             raise RuntimeError("That backup no longer exists.")
@@ -757,7 +711,6 @@ class FrappeService:
             ["up", "-d", "--wait", "--wait-timeout", "180", *self.infrastructure()],
             timeout=400,
         )
-        # A one-off container that already carries the database credentials, so none appear on a command line.
         self.run(
             [
                 "run",
@@ -809,8 +762,6 @@ class FrappeService:
                 if not chunk:
                     break
                 yield chunk
-            # A missing or unreadable file ends the stream just like a finished one;
-            # only the exit status tells them apart, and a truncated "backup" must not look complete.
             if stdout.channel.recv_exit_status() != 0:
                 raise RuntimeError("The backup file could not be read completely.")
 
@@ -850,7 +801,6 @@ class FrappeService:
 
     # -- app management (App Store) ---------------------------------------------
     def installed_apps(self):
-        """{app name: {'version','commit','branch'}} for the apps installed on the site, read from its containers."""
         found = {}
         for line in self._in_site(APPS_SCRIPT).splitlines():
             if line.startswith("APP="):
@@ -868,10 +818,6 @@ class FrappeService:
         return "unityalgo-site-%s:%s" % (self.site.id, stamp)
 
     def build_app_image(self, app, repo_url, branch, commit, tag, token=None):
-        """Build `tag` from the site's current image with `app` checked out at `commit`. The live site keeps running.
-
-        With a `token` (private repository) the worker clones the code itself and the image only receives the checkout.
-        """
         import re
 
         if not (
@@ -926,7 +872,6 @@ class FrappeService:
             )
 
     def _clone_private(self, repo_url, branch, commit, context, token):
-        """Clone a private repository into `context`/src on the worker. The token lives in a 0600 file for the length of the clone."""
         secret, askpass = self.path + "/.gh-token", self.path + "/.gh-askpass"
         with self.ssh.connect() as client, client.open_sftp() as sftp:
             try:
@@ -979,7 +924,6 @@ class FrappeService:
         self.rewrite_compose()
 
     def apply_app_change(self, app, action):
-        """Inside the new image: refresh built assets and the app list, then install or migrate the site."""
         change = (
             'bench --site "$SITE_NAME" install-app %s' % shlex.quote(app)
             if action == "install"
@@ -1001,7 +945,6 @@ class FrappeService:
         )
 
     def install_bundled_app(self, app):
-        """Install an app that already ships in the site's image. Nothing is built; the site just gains the app."""
         self.run(
             [
                 "run",
@@ -1018,8 +961,6 @@ class FrappeService:
         )
 
     def uninstall_app(self, app):
-        """Remove an app from the site. Its data on this site goes with it; the caller has taken a backup first.
-        The app's code stays in the image, so it can be installed again later."""
         self.run(
             [
                 "run",
@@ -1046,11 +987,6 @@ class FrappeService:
         )
 
     def probe(self):
-        """(answered, milliseconds): one HTTP request to the site's own port, made on its worker.
-
-        This is what a visitor's request costs once it reaches the site. `healthy()` goes through `docker exec`
-        and is a good yes/no, but its time is mostly Docker's own overhead.
-        """
         url = "http://%s:%d/api/method/ping" % (self.server.dial_host, int(self.site.port))
         try:
             result = self.ssh.run(

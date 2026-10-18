@@ -8,7 +8,6 @@ export const metadata: Metadata = {
    description: "Transform your business with UnityAlgo. We specialize in scalable software engineering and custom ERP solutions to streamline operations and drive digital growth.",
    openGraph: {
       images: ["https://www.unityalgo.com/logo.png"]
-
    },
    twitter: {
       card: 'summary_large_image',

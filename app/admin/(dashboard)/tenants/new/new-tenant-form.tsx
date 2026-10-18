@@ -131,9 +131,6 @@ export function NewTenantForm({
                 <div>
                     <Label htmlFor="plan_tier" className="portal-text-body text-foreground/80 mb-1.5">Plan</Label>
                     {selected ? (
-                        // Derived, not entered: the plan is whatever the chosen
-                        // subscription is on, and the server overwrites this field
-                        // regardless of what is posted.
                         <div className="flex h-10 items-center rounded-md border border-border bg-muted px-3 portal-text-body text-foreground/70">
                             {selected.planName}
                             <span className="ml-1.5 portal-text-caption text-muted-foreground">({selected.planSlug})</span>

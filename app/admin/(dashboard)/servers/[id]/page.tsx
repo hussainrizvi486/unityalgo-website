@@ -133,8 +133,7 @@ export default async function ServerDetailPage({ params, searchParams }: PagePro
                         </form>
                     ))}
 
-                    {/* Role-specific: the API rejects these against the wrong role, so
-                        only offer the one that applies. */}
+                    {}
                     {isProxy ? (
                         <form action={serverMaintenanceAction}>
                             <input type="hidden" name="id" value={server.id} />

@@ -6,8 +6,6 @@ import { NewTenantForm } from './new-tenant-form';
 export default async function NewTenantPage() {
     await requireAdmin();
 
-    // A missing controller shouldn't block the form — it just means no cluster
-    // choice is offered and the tenant lands on the default.
     let clusters: ControllerDatabase[] = [];
     try {
         clusters = ((await controller.databases.list()).results ?? []).filter((db) => db.role === 'cluster');

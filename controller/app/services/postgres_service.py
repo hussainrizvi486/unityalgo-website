@@ -1,19 +1,3 @@
-"""Tenant database provisioning and backup/restore.
-
-Tenant data lives in PostgreSQL, never on the worker nodes -- those run only
-the stateless storefront container. Migrating a tenant between *nodes*
-therefore never moves data.
-
-Which PostgreSQL is decided per tenant. Historically there was exactly one
-(the controller's own, from settings.postgres_*); now a tenant may instead be
-assigned to a registered cluster (app/models/database_connection.py). Every
-operation here is parameterised by a ClusterTarget so the same code path
-serves both, and a tenant with no assigned cluster transparently gets the
-legacy one.
-
-Moving a tenant *between clusters* does move data -- see
-TenantController.migrate_database.
-"""
 
 import shutil
 import subprocess
@@ -38,12 +22,6 @@ CANDIDATE_BIN_DIRS = (
 
 
 class ClusterTarget:
-    """Everything needed to administer one PostgreSQL instance.
-
-    Exists so PostgresService never reads connection details from global
-    config: the same methods work against the legacy controller database or
-    any registered cluster, decided by the caller.
-    """
 
     __slots__ = (
         "host", "port", "user", "password", "sslmode",
@@ -74,8 +52,6 @@ class ClusterTarget:
             sslmode=config.postgres_sslmode,
             maintenance_db=config.postgres_db,
             connect_timeout=config.postgres_connect_timeout,
-            # TENANT_DB_HOST is the pre-cluster equivalent of
-            # DatabaseConnection.host_from_worker.
             worker_host=config.tenant_db_host,
             label="default cluster",
         )
@@ -100,11 +76,6 @@ class ClusterTarget:
 
 
 class PostgresService:
-    """Administers one PostgreSQL instance as the admin/superuser.
-
-    `target` selects which instance; omitting it keeps the historical
-    behaviour of using the controller's own database.
-    """
 
     def __init__(self, config=None, target=None):
         self.settings = config or settings
@@ -130,12 +101,6 @@ class PostgresService:
         )
 
     def _connection(self, dbname=None, autocommit=True):
-        """Admin connection, retried through transient network failures.
-
-        A managed database is reached over the internet, so a momentary DNS or
-        routing blip is normal. Without retries a single hiccup aborts a whole
-        provisioning run partway through.
-        """
         target = dbname or self.target.maintenance_db
         last_error = None
 
@@ -173,11 +138,6 @@ class PostgresService:
         return self._connection(autocommit=autocommit)
 
     def _pg_env(self, password):
-        """Environment for pg_dump / pg_restore.
-
-        PGSSLMODE matters for managed Postgres, which refuses unencrypted
-        connections -- without it a backup fails where the app connects fine.
-        """
         return {
             "PGPASSWORD": password,
             "PGSSLMODE": self.target.sslmode,
@@ -185,17 +145,7 @@ class PostgresService:
             "PATH": "/usr/bin:/bin",
         }
 
-    # ------------------------------------------------------------------
-    # provisioning
-    # ------------------------------------------------------------------
     def create_database(self, tenant):
-        """CREATE ROLE + CREATE DATABASE for a tenant. Idempotent.
-
-        Uses a bare connect/close rather than `with connection:` -- psycopg2's
-        connection context manager wraps statements in an implicit
-        transaction even when autocommit is on, and CREATE/DROP DATABASE
-        cannot run inside one.
-        """
         conn = self._admin_connection()
         try:
             with conn.cursor() as cur:
@@ -235,11 +185,6 @@ class PostgresService:
         finally:
             conn.close()
 
-        # PostgreSQL 15+ leaves a new database's `public` schema owned by
-        # whichever role ran CREATE DATABASE (the admin), not the database's
-        # own owner -- so the tenant role has no CREATE privilege in it until
-        # we hand the schema over explicitly. Must run against the tenant's
-        # own database, not the admin one.
         tenant_conn = self._connection(dbname=tenant.db_name)
         try:
             with tenant_conn.cursor() as cur:
@@ -281,9 +226,6 @@ class PostgresService:
         finally:
             conn.close()
 
-    # ------------------------------------------------------------------
-    # backup / restore
-    # ------------------------------------------------------------------
     def backup_path_for(self, tenant, when=None):
         when = when or datetime.now(timezone.utc)
         directory = Path(self.settings.backup_dir) / tenant.tenant_slug
@@ -326,10 +268,6 @@ class PostgresService:
         if not backup_path.exists():
             raise BackupError(f"Backup file not found: {backup_path}")
 
-        # No --no-owner: the dump records the tenant role as each object's
-        # owner, and restoring as the admin (a superuser) can reassign to it.
-        # Dropping --no-owner is what keeps restored tables owned by the
-        # tenant instead of by the admin connection that ran the restore.
         result = subprocess.run(
             [
                 pg_restore,
@@ -345,9 +283,6 @@ class PostgresService:
             text=True,
             timeout=600,
         )
-        # pg_restore exits 1 on warnings (e.g. "role does not exist" for
-        # ownership statements) even when the data restored fine, so only
-        # treat it as fatal when nothing was written at all.
         if result.returncode != 0 and "errors ignored on restore" not in result.stderr:
             raise BackupError(
                 f"pg_restore failed for tenant '{tenant.tenant_slug}': "

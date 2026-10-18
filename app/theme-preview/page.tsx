@@ -60,11 +60,6 @@ import { FeaturesGrid } from '@/components/website/features-grid';
 import { AdminPagination } from '@/components/admin/pagination';
 import { cn } from '@/utils';
 
-/**
- * Grouped so the contents read as four levels of the system rather than one
- * flat list: the raw tokens, the primitives built on them, the admin-only
- * compositions, and the full marketing sections.
- */
 const navGroups = [
     {
         label: 'Foundations',
@@ -119,13 +114,6 @@ const navGroups = [
     },
 ];
 
-/**
- * A section title with its source path and a one-line purpose.
- *
- * `source` is what makes this page usable as a reference rather than a poster:
- * every section says which file it documents, so a reader can go straight from
- * the specimen to the implementation.
- */
 function SectionHeading({
     id,
     title,
@@ -150,13 +138,6 @@ function SectionHeading({
     );
 }
 
-/**
- * A single specimen: a label, the live component, and optional guidance.
- *
- * Every component demo is framed the same way so the page reads as a catalogue
- * rather than a scrapbook — the pattern both shadcnstudio and the Brandly
- * template use to keep dozens of blocks legible.
- */
 function Spec({
     label,
     hint,
@@ -191,14 +172,6 @@ function Spec({
     );
 }
 
-/**
- * A labelled group inside a section.
- *
- * The label is short enough to survive being set in uppercase; anything
- * explanatory goes in `description`, at normal case. Uppercase strips the
- * ascender/descender shapes readers use to recognise words, so a full sentence
- * set that way is markedly slower to read than the same sentence in mixed case.
- */
 function SubHeading({ label, description }: { label: string; description?: string }) {
     return (
         <div className="mb-4">
@@ -232,12 +205,6 @@ const DEMO_STATUS_VARIANT = {
     Paused: 'neutral',
 } as const;
 
-/**
- * The real AdminListView, rendered with sample rows.
- *
- * This is the live component the admin panel uses, not a mock — so the page
- * stays honest about how the grid actually looks and behaves.
- */
 function ListViewDemo() {
     const columns: ListViewColumn<DemoRow>[] = [
         renderedColumn<DemoRow, { primary: string; secondary: string }>({
@@ -313,7 +280,6 @@ function FilterPillsDemo() {
     );
 }
 
-/** Long enough that the Radix select has to scroll and the autocomplete earns its filter. */
 const countryOptions = [
     { value: 'pk', label: 'Pakistan' },
     { value: 'ae', label: 'United Arab Emirates' },
@@ -343,12 +309,6 @@ const customerOptions = [
     { value: 'c6', label: 'Radia Perlman', description: 'radia@spanningtree.net · Enterprise' },
 ];
 
-/**
- * The field array behind the live AdminDynamicForm below.
- *
- * Deliberately exercises every break type and most field types at once, so the
- * specimen doubles as the worked example for anyone writing a new admin form.
- */
 const demoFormFields: AdminFormField[] = [
     { type: 'tab', label: 'Details' },
     { type: 'section', label: 'Identity', description: 'What this plan is called and where it sits in the list.' },
@@ -379,8 +339,6 @@ const demoFormFields: AdminFormField[] = [
 ];
 
 async function demoFormAction(): Promise<{ success: string }> {
-    // A real form points at a server action; this one only proves the pending
-    // state and the success banner render the way they will in the admin panel.
     await new Promise((resolve) => setTimeout(resolve, 900));
     return { success: 'Saved. (Preview only — nothing was written.)' };
 }
@@ -412,7 +370,6 @@ const flowStages = [
     { number: '04', title: 'Support', description: 'Ongoing maintenance and new functionality after launch.' },
 ];
 
-/** The list-view demo reads the URL, which has to sit inside a Suspense boundary to prerender. */
 export default function ThemePreviewRoute() {
     return (
         <Suspense>
@@ -591,8 +548,7 @@ function ThemePreviewPage() {
                             <Button variant="outline" size="lg" className="bg-card/60 backdrop-blur-md shadow-md border-input hover:bg-card">
                                 Our Services
                             </Button>
-                            {/* This one is white-on-white against the page, so it needs
-                                the dark surface it is actually used on to be legible. */}
+                            {}
                             <div className="flex items-center rounded-xl bg-primary px-4 py-3">
                                 <Button className="bg-card text-foreground hover:bg-secondary">CTA on dark background</Button>
                             </div>
@@ -1103,11 +1059,7 @@ function ThemePreviewPage() {
                     <section>
                         <SectionHeading id="badges" title="Badges & Tags" source="components/ui/badge.tsx" description="Status pills, tag chips, and eyebrow badges used across blog, admin, and marketing pages." />
 
-                        {/* The status row renders the real Badge component rather than
-                            re-styling a <span>. The hand-rolled copies that used to be
-                            here had drifted — font-semibold instead of the component's
-                            font-medium, and no status dot — so this page documented a
-                            badge the app does not actually ship. */}
+                        {}
                         <SubHeading label="Status" description="The Badge component — components/ui/badge.tsx." />
                         <div className="flex flex-wrap items-center gap-3 mb-8">
                             <Badge variant="success">Published</Badge>
@@ -1598,10 +1550,7 @@ function ThemePreviewPage() {
                     {/* NAVIGATION */}
                     <section>
                         <SectionHeading id="navigation" title="Navigation" description="Header nav pill (site) and sidebar pattern (admin) — recreated here since the live Header is fixed-position." />
-                        {/* The pill is a single non-wrapping row by design, and at
-                            ~450px it is wider than this column on a phone. Scrolling
-                            the panel keeps its real shape instead of letting it push
-                            the whole page sideways. */}
+                        {}
                         <div className="p-6 rounded-xl border border-border/60 bg-muted mb-6 overflow-x-auto">
                             <nav className="inline-flex items-center gap-1 bg-card/80 backdrop-blur-md px-2 py-1.5 rounded-lg border border-primary-foreground/20 shadow-sm">
                                 {['Home', 'Services', 'About Us', 'Blog', 'Contact'].map((item, i) => (
@@ -1831,14 +1780,7 @@ function ThemePreviewPage() {
                             source="app/globals.css — --shadow-*"
                             description="One neutral elevation scale, defined once in globals.css and tinted from the foreground token rather than from an accent. A coloured shadow reads as a glow, which competes with the status colours; the scale stays achromatic so elevation only ever communicates height."
                         />
-                        {/* One grid, not two: the tinted shadows used to sit in a
-                            separate max-w-md grid below, so their tiles never lined
-                            up with the elevation scale above them.
-
-                            The muted surface matters — a white tile casting a soft
-                            shadow onto a white page makes shadow-sm and shadow-md
-                            effectively invisible. The py-8 keeps the largest shadow
-                            from being clipped by the panel edge. */}
+                        {}
                         <div className="rounded-xl border border-border/60 bg-muted px-6 py-8">
                             <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-x-4 gap-y-8">
                                 {[
@@ -1862,10 +1804,7 @@ function ThemePreviewPage() {
                     {/* SPACING */}
                     <section>
                         <SectionHeading id="spacing" title="Spacing Scale" description="Common gap/padding values used for card and section rhythm." />
-                        {/* Bars are drawn at their true pixel width — that is the
-                            point of the scale — so the row carries the token and the
-                            px value too, rather than leaving most of the width blank
-                            with nothing but an unlabelled bar. */}
+                        {}
                         <div className="max-w-xl rounded-xl border border-border/60 bg-card divide-y divide-border/60">
                             {[1, 2, 3, 4, 6, 8, 10, 12, 16, 20, 24].map((n) => (
                                 <div key={n} className="flex items-center gap-4 px-5 py-2.5">

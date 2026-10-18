@@ -11,15 +11,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/utils';
 
-/**
- * Schema browser, data browser and SQL console over one connection.
- *
- * The read/write decision is not made here. `allowWrites` only changes what the
- * UI says; the controller enforces it with the engine's own READ ONLY mode
- * (PostgreSQL and MariaDB alike), so a statement typed into the console is refused
- * by the engine regardless of what this component believes.
- */
-
 type Tab = 'data' | 'structure' | 'sql';
 
 const TABLE_LIST_LIMIT = 400;
@@ -35,9 +26,6 @@ function formatBytes(bytes: number) {
 
 const ENGINE_LABEL: Record<DatabaseEngine, string> = { postgres: 'PostgreSQL', mariadb: 'MariaDB' };
 
-/** Quote an identifier the way the engine expects. PostgreSQL folds unquoted names to lower case, so anything
- *  with an upper-case letter or a dot needs double quotes; MariaDB quotes with backticks (Frappe's tables are
- *  named like `tabUser`, with a space or capital in many of them). */
 function quoteIdent(name: string, engine: DatabaseEngine) {
     if (engine === 'mariadb') return `\`${name.replace(/`/g, '``')}\``;
     return /^[a-z_][a-z0-9_]*$/.test(name) ? name : `"${name.replace(/"/g, '""')}"`;
@@ -77,8 +65,7 @@ function ResultGrid({ result }: { result: DbQueryResult }) {
                     </span>
                 ) : null}
             </div>
-            {/* The grid scrolls in its own box: a wide result must never make
-                the whole admin page scroll sideways. */}
+            {}
             <div className="max-h-104 overflow-auto rounded-md border border-border">
                 <table className="w-full border-collapse text-left portal-text-caption">
                     <thead className="sticky top-0 bg-muted">
@@ -132,8 +119,6 @@ export function DatabaseBrowser({
     const [filter, setFilter] = React.useState('');
     const [schemaFilter, setSchemaFilter] = React.useState('all');
     const schemas = React.useMemo(() => [...new Set(tables.map((table) => table.schema))].sort(), [tables]);
-    // Seeded from the first table rather than run on mount: opening the page
-    // should not silently issue a query against someone's production database.
     const [sql, setSql] = React.useState(
         () => (tables[0] ? `SELECT * FROM ${qualified(tables[0], engine)} LIMIT 100` : ''),
     );
@@ -149,11 +134,8 @@ export function DatabaseBrowser({
                 && (!needle || `${t.schema}.${t.name}`.toLowerCase().includes(needle)),
         );
     }, [tables, filter, schemaFilter]);
-    // A Frappe cluster holds hundreds of tables per site; drawing every row of every site helps nobody.
     const shown = visible.slice(0, TABLE_LIST_LIMIT);
 
-    // Cmd/Ctrl+K focuses the table search, matching what db-ui does and what a
-    // keyboard-driven admin expects.
     React.useEffect(() => {
         const onKey = (event: KeyboardEvent) => {
             if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
@@ -178,8 +160,6 @@ export function DatabaseBrowser({
         }
     }, [connectionId, runQuery]);
 
-    /** Opens a table's rows. Ordering is left to the server so the query stays
-     *  cheap on a table with no useful default sort. */
     const openTable = React.useCallback((table: DbTable) => {
         setSelected(table);
         setTab('data');
@@ -350,8 +330,6 @@ export function DatabaseBrowser({
                                 value={sql}
                                 onChange={(e) => setSql(e.target.value)}
                                 onKeyDown={(e) => {
-                                    // Cmd/Ctrl+Enter runs, the convention in every
-                                    // SQL console; plain Enter stays a newline.
                                     if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
                                         e.preventDefault();
                                         void execute(sql);

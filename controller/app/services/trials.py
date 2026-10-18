@@ -1,9 +1,3 @@
-"""Free trials: starting one, telling when it ends, and what ends it.
-
-A plan can offer a trial (the website decides that and passes `trial_days` when a site is created). The site runs normally
-until `trial_ends_at`. If its owner has subscribed to the plan by then the trial simply ends and the site carries on;
-if not, the site is deactivated and cannot be used until they subscribe.
-"""
 from datetime import datetime, timedelta, timezone
 from sqlalchemy import delete, select, text, update
 from sqlalchemy.exc import IntegrityError
@@ -19,7 +13,6 @@ def now():
 
 
 def has_subscription(session, user_id, plan_id):
-    """Whether the customer holds an active paid subscription to this plan. Subscriptions are the website's table, read here."""
     return session.execute(
         text('SELECT 1 FROM "Subscription" WHERE "userId" = :user AND "planId" = :plan AND status = \'ACTIVE\' LIMIT 1'),
         {'user': user_id, 'plan': plan_id},
@@ -31,7 +24,6 @@ def used_plan_ids(session, user_id):
 
 
 def begin(session, site, days):
-    """Make `site` a trial of `days` days, once per customer per plan. Raises ConflictError when they have had it."""
     try:
         with session.begin_nested():
             session.add(SiteTrial(user_id=site.user_id, plan_id=site.plan_id, site_id=site.id))

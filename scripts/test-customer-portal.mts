@@ -4,7 +4,6 @@ import { SignJWT } from 'jose';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 nextEnv.loadEnvConfig(process.cwd());
-// Imported after the environment is loaded: the database module reads DATABASE_URL when it is first imported.
 const { db, schema, closeDb } = await import('../lib/db');
 const base = 'http://localhost:3000';
 const ids: string[] = [];

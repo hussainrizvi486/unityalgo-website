@@ -9,7 +9,6 @@ from app.models.types import EncryptedString
 
 
 class SiteApp(Base):
-    """What a site actually runs for one app, as last read from the site (or recorded by a rollout)."""
     __tablename__ = 'site_apps'
     __table_args__ = (UniqueConstraint('site_id', 'app_name'),)
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
@@ -34,9 +33,7 @@ class AppRollout(Base):
     status: Mapped[str] = mapped_column(String(12), default='running')   # running | completed | partial | failed
     note: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_by: Mapped[str | None] = mapped_column(String(100), nullable=True)
-    # A private repository is fetched with the connected GitHub account on the worker, never inside the image.
     private: Mapped[bool] = mapped_column(default=False, server_default='false')
-    # 'github' = built from a repository into the site's image; 'image' = the app already ships in the platform image.
     source: Mapped[str] = mapped_column(String(10), default='github', server_default='github')
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
@@ -69,7 +66,6 @@ class AppRolloutSite(Base):
 
 
 class GithubAccount(Base):
-    """The GitHub account the platform uses for the App Store. At most one row; connecting again replaces it."""
     __tablename__ = 'github_accounts'
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     login: Mapped[str] = mapped_column(String(100))

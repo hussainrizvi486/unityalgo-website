@@ -7,22 +7,20 @@ import { getSubscriptions } from '@/app/customer/actions';
 import { PlanCheckoutButton } from '@/components/customer/plan-checkout-button';
 import { formatPlanPrice, formatTransactionFee } from '@/lib/pricing';
 import { Button } from '@/components/ui/button';
-
+import { trialDaysFor, trialEligibility } from '@/lib/site-trials';
 
 export default async function PurchasePlansPage() {
   const session = await requireCustomerSession();
 
-  const [plans, subscriptions] = await Promise.all([
-    // Drizzle cannot order by a related table's column, so order the (few) rows after fetching.
+  const [plans, subscriptions, eligibility] = await Promise.all([
     db.query.plan.findMany({
       where: eq(schema.plan.isActive, true),
-      with: { product: true },
+      with: { product: true, currency: true },
     }).then((rows) => rows.sort((a, b) => a.product.sortOrder - b.product.sortOrder || a.sortOrder - b.sortOrder)),
     getSubscriptions(session.userId),
+    trialEligibility(session.userId),
   ]);
 
-  // Products are rows now, so the grouping key is the product id and the
-  // heading comes from the row's own label rather than a hard-coded map.
   type PlanWithProduct = (typeof plans)[number];
   const groups = new Map<string, { label: string; plans: PlanWithProduct[] }>();
   for (const plan of plans) {
@@ -48,7 +46,10 @@ export default async function PurchasePlansPage() {
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {group.plans.map((plan) => {
               const isCurrent = subscriptionForProduct?.planId === plan.id;
-              const isCustomQuote = plan.priceAmount == null;
+              const isAlgoSuite = plan.product.slug === 'algosuite';
+              const isTrialOnly = isAlgoSuite && plan.priceAmount == null && Boolean(plan.trialDays);
+              const trialDays = isAlgoSuite ? trialDaysFor(plan, eligibility) : 0;
+              const isCustomQuote = plan.priceAmount == null && !isTrialOnly;
               const transactionFee = formatTransactionFee(plan.transactionFeePercent);
 
               return (
@@ -59,11 +60,11 @@ export default async function PurchasePlansPage() {
                   <h3 className="text-lg text-foreground">{plan.name}</h3>
                   {plan.tagline ? <p className="mt-1 portal-text-body text-muted-foreground">{plan.tagline}</p> : null}
                   <div className="mt-4">
-                    <span className="text-2xl font-bold text-foreground">{formatPlanPrice(plan)}</span>
+                    <span className="text-2xl font-bold text-foreground">{isTrialOnly ? `Free for ${plan.trialDays} days` : formatPlanPrice(plan)}</span>
                   </div>
-                  {plan.trialDays && !isCurrent ? <p className="mt-1 portal-text-caption font-medium text-success">{plan.trialDays}-day free trial when you create a site on this plan</p> : null}
+                  {trialDays > 0 && !isTrialOnly && !isCurrent ? <p className="mt-1 portal-text-caption font-medium text-success">{trialDays}-day free trial when you create a site on this plan</p> : null}
                   {transactionFee ? <p className="mt-1 portal-text-caption text-muted-foreground">+ {transactionFee}</p> : null}
-                  <p className="mt-1 portal-text-caption text-muted-foreground">{plan.userLimit == null ? 'Unlimited seats' : `Up to ${plan.userLimit} seats`}</p>
+                  <p className="mt-1 portal-text-caption text-muted-foreground">{plan.userLimit == null ? 'Unlimited seats' : `Up to ${plan.userLimit} seat${plan.userLimit === 1 ? "" : "s"}`}</p>
 
                   {plan.features.length ? (
                     <ul className="mt-5 space-y-2 portal-text-body text-foreground/70">
@@ -78,6 +79,12 @@ export default async function PurchasePlansPage() {
                       <Button type="button" disabled className="w-full rounded-md">
                         Current plan
                       </Button>
+                    ) : isTrialOnly ? (
+                      trialDays > 0 ? (
+                        <Button asChild type="button" className="w-full rounded-md"><Link href={`/dashboard/sites/new?plan=${plan.id}`}>Start free trial</Link></Button>
+                      ) : (
+                        <Button type="button" disabled className="w-full rounded-md">Free trial already used</Button>
+                      )
                     ) : isCustomQuote ? (
                       <Button asChild type="button" variant="outline" className="w-full gap-1.5 rounded-md"><Link href="/#contact">
                           <MessageCircle className="h-4 w-4" />Contact sales
@@ -87,6 +94,9 @@ export default async function PurchasePlansPage() {
                         planId={plan.id}
                         label={subscriptionForProduct ? 'Switch to this plan' : 'Choose plan'}
                       />
+                    )}
+                    {trialDays > 0 && !isTrialOnly && !isCurrent && !isCustomQuote && (
+                      <Button asChild type="button" variant="ghost" className="mt-2 w-full rounded-md"><Link href={`/dashboard/sites/new?plan=${plan.id}`}>Try free for {trialDays} days</Link></Button>
                     )}
                   </div>
                 </div>

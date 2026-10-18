@@ -7,7 +7,6 @@ import { Badge } from '@/components/ui/badge';
 import { PortalPanel } from '@/components/customer/portal-panel';
 import { LiveBadge } from '@/components/customer/live-badge';
 
-/** The customer's sites. New sites, progress and status changes arrive on their own, with no refresh. */
 export function SitesGrid({ initial }: { initial: CustomerSite[] }) {
     const [sites, setSites] = useState(initial);
     const [seenInitial, setSeenInitial] = useState(initial);
@@ -37,7 +36,7 @@ export function SitesGrid({ initial }: { initial: CustomerSite[] }) {
                 <Globe className="mx-auto size-10 text-muted-foreground" />
                 <h2 className="mt-5 text-xl">Your first site starts here.</h2>
                 <p className="mx-auto mt-3 max-w-md portal-text-body leading-7 text-foreground/70">
-                    Choose a name and your applications. We will assign an available server and start the Frappe
+                    Choose a name and your applications. We will assign an available server and start the
                     installation.
                 </p>
                 <Link href="/dashboard/sites/new" className="mt-6 inline-block font-semibold text-primary underline">

@@ -2,20 +2,6 @@ import * as React from 'react';
 import { AlertTriangle, CheckCircle2, Info, XCircle } from 'lucide-react';
 import { cn } from '@/utils';
 
-/**
- * The inline feedback banner above and inside forms.
- *
- * Extracted because the same four states had been hand-written roughly thirty
- * times across the app, drifting on radius (`rounded-md` vs `rounded-lg`), on
- * whether an icon was present, and on which text weight paired with which
- * fill. This is the shape the theme preview documents, in one place.
- *
- * `role` is chosen from the tone rather than passed in: an error is an alert
- * and interrupts a screen reader, a confirmation is a status and waits its
- * turn. Getting that backwards is the usual bug, so it is not a caller's
- * decision.
- */
-
 const TONES = {
     error: { fill: 'bg-destructive/10 text-destructive', Icon: XCircle },
     success: { fill: 'bg-success/10 text-success', Icon: CheckCircle2 },

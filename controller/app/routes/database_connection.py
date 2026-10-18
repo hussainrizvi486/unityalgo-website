@@ -53,10 +53,6 @@ class DatabaseConnectionDetailView(DatabaseConnectionBaseView):
 
 
 class DatabaseConnectionTestAdhocView(DatabaseConnectionBaseView):
-    """POST /api/v1/database-connections/test -- verify params before saving.
-
-    Body: {"host", "port"?, "database_name", "username", "password", "sslmode"?}
-    """
 
     def post(self):
         payload = self.json_body()
@@ -77,10 +73,6 @@ class DatabaseConnectionTestSavedView(DatabaseConnectionBaseView):
 
 
 class DatabaseConnectionQueryView(DatabaseConnectionBaseView):
-    """POST /api/v1/database-connections/<id>/query -- run one SQL statement.
-
-    Body: {"sql": "select * from ..."}
-    """
 
     def post(self, connection_id):
         payload = self.json_body()
@@ -92,11 +84,6 @@ class DatabaseConnectionQueryView(DatabaseConnectionBaseView):
 
 
 class DatabaseConnectionSchemaView(DatabaseConnectionBaseView):
-    """GET /api/v1/database-connections/<id>/schema -- tables, columns, keys.
-
-    Read-only by construction: introspection runs in a READ ONLY transaction
-    regardless of the connection's `allow_writes` setting.
-    """
 
     def get(self, connection_id):
         with self.session() as session:

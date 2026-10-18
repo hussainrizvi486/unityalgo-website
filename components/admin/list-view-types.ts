@@ -1,14 +1,6 @@
 import type * as React from 'react';
 import type { ColDef } from 'ag-grid-community';
 
-/**
- * Column shapes for the admin list view.
- *
- * Separate from the component so a page can describe its columns without
- * pulling AG Grid into the bundle: the `ColDef` import here is type-only and
- * erased at build, while `list-view-grid.tsx` holds the runtime.
- */
-
 export interface ListViewColumn<Row> extends ColDef<Row> {
     /** Column header text. */
     headerName: string;
@@ -18,13 +10,6 @@ export interface ListViewColumn<Row> extends ColDef<Row> {
     headerAlign?: 'left' | 'right';
 }
 
-/**
- * Builds a column whose cell is drawn by one of the shared renderers.
- *
- * `text` is what the column sorts and searches by; `get` is the rich object the
- * renderer draws. Keeping them separate is what lets a "Name" column search on
- * the plain name while rendering an avatar, a link and a subtitle.
- */
 export function renderedColumn<Row, Value>(
     column: ListViewColumn<Row> & {
         cellRenderer: unknown;

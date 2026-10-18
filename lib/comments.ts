@@ -1,10 +1,6 @@
 import { and, asc, eq } from 'drizzle-orm';
 import { db, schema } from '@/lib/db';
 
-// Registry of the entity types allowed to carry a comment thread, so
-// callers can't pass an arbitrary string as entityType by mistake. Add a
-// new entry here whenever another table wants comments — no schema change
-// needed since Comment itself stays generic.
 export const CommentEntityType = {
     SUPPORT_TICKET: 'SUPPORT_TICKET',
 } as const;

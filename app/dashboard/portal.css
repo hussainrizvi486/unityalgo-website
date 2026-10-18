@@ -1,7 +1,3 @@
-/*
- * Portal geometry for the customer portal and the admin panel (the `.dashboard` scope).
- * Nothing here defines a colour or a raw size: every value comes from the design tokens in globals.css.
- */
 .dashboard {
     --control-height: var(--btn-h);
     --control-font-size: var(--fs-xs);
@@ -251,5 +247,244 @@
 @media (min-width: 640px) {
     .dashboard {
         --portal-title-size: calc(var(--display-size) * 0.625);
+    }
+}
+
+.deploy-fill {
+    position: relative;
+    overflow: hidden;
+    transform-origin: left;
+    transform: scaleX(var(--p, 0));
+    transition: transform 0.6s ease;
+}
+
+.deploy-fill::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--primary-foreground) 35%, transparent), transparent);
+    transform: translateX(-100%);
+    animation: deploy-sheen 1.6s ease-in-out infinite;
+}
+
+.deploy-card[data-finished] .deploy-fill::after {
+    animation: none;
+    opacity: 0;
+}
+
+@keyframes deploy-sheen {
+    to {
+        transform: translateX(100%);
+    }
+}
+
+@keyframes deploy-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes deploy-halo {
+    0% {
+        transform: scale(1);
+        opacity: 0.6;
+    }
+
+    100% {
+        transform: scale(1.7);
+        opacity: 0;
+    }
+}
+
+.deploy-node {
+    position: relative;
+    flex: none;
+    width: calc(var(--spacing) * 10);
+    height: calc(var(--spacing) * 10);
+}
+
+.deploy-face {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    border-radius: 9999px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--muted-foreground);
+    transition: background-color 0.35s, color 0.35s, border-color 0.35s, transform 0.35s cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+
+.deploy-step[data-state='active'] .deploy-face {
+    color: var(--foreground);
+    border-color: color-mix(in srgb, var(--foreground) 50%, transparent);
+    transform: scale(1.06);
+}
+
+.deploy-step[data-state='done'] .deploy-face {
+    background: var(--primary);
+    color: var(--primary-foreground);
+    border-color: var(--primary);
+}
+
+.deploy-step[data-state='failed'] .deploy-face {
+    background: var(--destructive);
+    color: var(--destructive-foreground);
+    border-color: var(--destructive);
+}
+
+.deploy-ring {
+    position: absolute;
+    inset: calc(var(--spacing) * -1.25);
+    width: calc(var(--spacing) * 12.5);
+    height: calc(var(--spacing) * 12.5);
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.deploy-step[data-state='active'] .deploy-ring {
+    opacity: 1;
+    animation: deploy-spin 1.1s linear infinite;
+}
+
+.deploy-halo {
+    position: absolute;
+    inset: 0;
+    border-radius: 9999px;
+    border: 1px solid color-mix(in srgb, var(--foreground) 35%, transparent);
+    opacity: 0;
+}
+
+.deploy-step[data-state='active'] .deploy-halo {
+    animation: deploy-halo 1.8s ease-out infinite;
+}
+
+.deploy-badge {
+    position: absolute;
+    right: calc(var(--spacing) * -1);
+    bottom: calc(var(--spacing) * -1);
+    display: grid;
+    place-items: center;
+    width: calc(var(--spacing) * 4.5);
+    height: calc(var(--spacing) * 4.5);
+    border-radius: 9999px;
+    border: 2px solid var(--card);
+    background: var(--success);
+    color: var(--primary-foreground);
+    transform: scale(0);
+    transition: transform 0.4s cubic-bezier(0.3, 1.8, 0.5, 1);
+}
+
+.deploy-step[data-state='done'] .deploy-badge {
+    transform: scale(1);
+}
+
+.deploy-badge path {
+    stroke-dasharray: 14;
+    stroke-dashoffset: 14;
+    transition: stroke-dashoffset 0.35s 0.15s ease-out;
+}
+
+.deploy-step[data-state='done'] .deploy-badge path {
+    stroke-dashoffset: 0;
+}
+
+.deploy-rail {
+    position: absolute;
+    left: calc(var(--spacing) * 4.875);
+    top: calc(var(--spacing) * 11);
+    bottom: calc(var(--spacing) * -2);
+    width: 1px;
+    background: var(--border);
+}
+
+.deploy-rail > i {
+    position: absolute;
+    inset: 0;
+    background: var(--foreground);
+    transform-origin: top;
+    transform: scaleY(var(--sp, 0));
+    transition: transform 0.4s ease;
+}
+
+.deploy-step:last-child .deploy-rail {
+    display: none;
+}
+
+.deploy-title {
+    color: var(--muted-foreground);
+    transition: color 0.3s;
+}
+
+.deploy-step[data-state='active'] .deploy-title,
+.deploy-step[data-state='done'] .deploy-title,
+.deploy-step[data-state='failed'] .deploy-title {
+    color: var(--foreground);
+}
+
+.deploy-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: calc(var(--spacing) * 0.5) calc(var(--spacing) * 2.5);
+    border-radius: 9999px;
+    border: 1px solid transparent;
+    font-size: var(--fs-micro);
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.deploy-pill[data-v='pending'] {
+    color: var(--muted-foreground);
+    border-color: var(--border);
+}
+
+.deploy-pill[data-v='active'] {
+    background: var(--primary);
+    color: var(--primary-foreground);
+}
+
+.deploy-pill[data-v='done'] {
+    background: color-mix(in srgb, var(--success) 14%, transparent);
+    color: var(--success);
+}
+
+.deploy-pill[data-v='failed'] {
+    background: color-mix(in srgb, var(--destructive) 14%, transparent);
+    color: var(--destructive);
+}
+
+.deploy-mini {
+    height: calc(var(--spacing) * 1);
+    margin-top: 0;
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    border-radius: 9999px;
+    background: var(--muted);
+    transition: max-height 0.3s, opacity 0.3s, margin 0.3s;
+}
+
+.deploy-step[data-state='active'] .deploy-mini {
+    max-height: calc(var(--spacing) * 1);
+    margin-top: calc(var(--spacing) * 2.5);
+    opacity: 1;
+}
+
+.deploy-mini > i {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--foreground);
+    transform-origin: left;
+    transform: scaleX(var(--sp, 0));
+    transition: transform 0.4s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .deploy-ring,
+    .deploy-halo,
+    .deploy-fill::after {
+        animation: none !important;
     }
 }

@@ -1,9 +1,3 @@
-/**
- * Paid-app billing against the real database, with Paddle replaced by an in-memory fake: what is charged, when,
- * and that a failed install never leaves a charge behind.
- *
- *   npm run test:billing
- */
 import 'dotenv/config';
 import assert from 'node:assert/strict';
 import { eq, inArray } from 'drizzle-orm';
@@ -16,7 +10,6 @@ async function check(name: string, fn: () => Promise<void>) {
     catch (error) { failures++; console.log('FAIL', name, '\n     ', (error as Error).message.split('\n').slice(0, 6).join('\n      ')); }
 }
 
-// --- a fake Paddle: one subscription, items kept in memory, every call recorded ---------------------------------
 const paddle = {
     status: 'active',
     items: [{ price: { id: 'pri_plan' }, quantity: 1 }] as Array<{ price: { id: string }; quantity: number }>,
@@ -39,7 +32,6 @@ globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
 process.env.PADDLE_API_KEY = 'test_key';
 delete process.env.APP_BILLING_MODE;
 
-// --- fixtures ----------------------------------------------------------------------------------------------------
 const user = await db.query.user.findFirst({ where: eq(schema.user.role, 'CUSTOMER'), columns: { id: true } });
 const plan = await db.query.plan.findFirst({ columns: { id: true, productId: true } });
 assert.ok(user && plan, 'the development database needs a customer and a plan');

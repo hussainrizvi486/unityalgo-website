@@ -48,7 +48,6 @@ const Page = async () => {
 
 export default Page;
 
-
 const ANNUAL_DISCOUNT = 0.8;
 
 async function loadPlans(): Promise<UnityCommercePlan[]> {
@@ -68,8 +67,6 @@ async function loadPlans(): Promise<UnityCommercePlan[]> {
             : formatCurrencyAmount(plan.priceAmount * ANNUAL_DISCOUNT, plan.currency),
         audience: plan.tagline ?? '',
         features: plan.features,
-        // The middle plan carries the emphasis, which is where the hand-written
-        // grid put it and where a three-tier table conventionally puts it.
         highlighted: plans.length > 2 && index === Math.floor((plans.length - 1) / 2),
     }));
 }

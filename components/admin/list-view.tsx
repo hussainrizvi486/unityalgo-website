@@ -15,23 +15,6 @@ export {
     type ListViewProps,
 } from '@/components/admin/list-view-types';
 
-/**
- * The admin panel's list view: a searchable, sortable, paginated grid.
- *
- * One component behind every `/admin/*` list so they cannot drift apart. Pages
- * supply rows and column definitions; everything else — sorting, resizing,
- * quick search, pagination, the empty state — is handled here.
- *
- * Data arrives already fetched from the server component that renders this, so
- * the grid uses the client-side row model: sorting and filtering apply to the
- * whole set, not just the visible page. Lists that could grow without bound
- * cap their query and say so above the grid.
- *
- * The grid itself is loaded on demand. AG Grid is ~1.1MB and most routes under
- * /admin render a list, so the bundler was hoisting it into the layout's shared
- * chunk and every form page paid for a grid it never showed. The toolbar and
- * empty state stay in this file, so a list with no rows never fetches it at all.
- */
 const ListViewGrid = dynamic(
     () => import('@/components/admin/list-view-grid').then((m) => m.ListViewGrid),
     {
@@ -67,8 +50,6 @@ export function AdminListView<Row>({
     height,
     className,
 }: ListViewProps<Row>) {
-    // Search is debounced: it is written per keystroke, and an address-bar
-    // update on every character is both wasteful and jarring to read.
     const [query, setQuery] = useUrlParam('q', '', { debounceMs: 300 });
     const [sort, setSort] = useUrlParam('sort', '');
     const [page, setPage] = useUrlParam('page', '1');

@@ -64,9 +64,7 @@ export function Contact() {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
             >
-              {/* h2, not h1: the hero owns the page's single h1, and a second
-                  one leaves the document with no unambiguous title for search
-                  engines or a screen reader's heading list. */}
+              {}
               <h2 className="text-4xl md:text-5xl tracking-tight mb-6">
                 Great things start when we build together.
               </h2>
@@ -189,14 +187,7 @@ export function Contact() {
                   placeholder=""
                   className="peer h-10 w-full border-b-2 border-input text-foreground focus:outline-none focus:border-foreground transition-colors bg-transparent"
                 />
-                {/* <input
-                  id="message"
-                  value={formData.message}
-                  onChange={handleChange}
-                  required
-                  placeholder=" "
-                  className="peer w-full border-b-2 border-input text-foreground focus:outline-none focus:border-foreground transition-colors bg-transparent min-h-25 resize-none pt-2"
-                /> */}
+                {}
                 <label
                   htmlFor="message"
                   className="absolute left-0 -top-3.5 text-foreground/70 text-xs font-semibold tracking-wider transition-all peer-placeholder-shown:text-sm peer-placeholder-shown:font-normal peer-placeholder-shown:normal-case peer-placeholder-shown:tracking-normal peer-placeholder-shown:text-muted-foreground peer-placeholder-shown:top-2 peer-focus:-top-3.5 peer-focus:text-foreground peer-focus:text-xs peer-focus:font-semibold peer-focus:tracking-wider pointer-events-none"

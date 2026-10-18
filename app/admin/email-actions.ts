@@ -9,16 +9,6 @@ import { encryptSecret } from '@/lib/secret-box';
 import { buildSmtpTransport } from '@/lib/mail-accounts';
 import type { EmailPurpose } from '@/db/types';
 
-/**
- * Admin actions for mail accounts.
- *
- * Two rules hold throughout: every action re-checks the admin session rather
- * than trusting the page that rendered the form, and no password ever travels
- * back to the browser. A blank password field on an edit means "keep what is
- * stored", which is the only way to offer editing without round-tripping the
- * secret.
- */
-
 export interface EmailAccountFormState {
     error?: string;
     success?: string;
@@ -39,8 +29,6 @@ function readFields(formData: FormData) {
         smtpSecure: formData.get('smtpSecure') === 'on',
         smtpUsername: String(formData.get('smtpUsername') ?? '').trim(),
         smtpPassword: String(formData.get('smtpPassword') ?? ''),
-        // Incoming is optional; a blank host clears the whole IMAP block,
-        // which the table's CHECK constraint requires to be all-or-nothing.
         imapHost: imapHost || null,
         imapPort: imapHost ? Number(formData.get('imapPort') ?? 993) : null,
         imapSecure: formData.get('imapSecure') === 'on',
@@ -68,12 +56,6 @@ function validate(fields: ReturnType<typeof readFields>) {
     return null;
 }
 
-/**
- * Clears the previous default in the same transaction that sets the new one.
- *
- * The partial unique index would otherwise reject the write, and doing both
- * halves separately leaves a window with two defaults or none.
- */
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 async function withDefaultCleared<T>(isDefault: boolean, keepId: string | null, work: (tx: Tx | typeof db) => Promise<T>) {
@@ -83,7 +65,6 @@ async function withDefaultCleared<T>(isDefault: boolean, keepId: string | null, 
             .update(schema.emailAccount)
             .set({ isDefault: false })
             .where(and(eq(schema.emailAccount.isDefault, true), keepId ? ne(schema.emailAccount.id, keepId) : undefined));
-        // The write itself runs inside the same transaction, so there is never a moment with two defaults or none.
         return work(tx);
     });
 }
@@ -152,8 +133,6 @@ export async function updateEmailAccountAction(
                     smtpPort: fields.smtpPort,
                     smtpSecure: fields.smtpSecure,
                     smtpUsername: fields.smtpUsername,
-                    // Blank means "unchanged" — the form never receives the
-                    // stored password, so it cannot send it back.
                     ...(fields.smtpPassword ? { smtpPassword: encryptSecret(fields.smtpPassword) } : {}),
                     imapHost: fields.imapHost,
                     imapPort: fields.imapPort,
@@ -161,8 +140,6 @@ export async function updateEmailAccountAction(
                     imapUsername: fields.imapUsername,
                     ...(fields.imapHost
                         ? (fields.imapPassword ? { imapPassword: encryptSecret(fields.imapPassword) } : {})
-                        // Clearing the host clears the credentials with it, or
-                        // the all-or-nothing CHECK constraint rejects the row.
                         : { imapPassword: null }),
                     isDefault: fields.isDefault,
                     isActive: fields.isActive,
@@ -183,14 +160,6 @@ export async function deleteEmailAccountAction(formData: FormData) {
     revalidatePath('/admin/email-accounts');
 }
 
-/**
- * Dials the account's SMTP server and records the result.
- *
- * `verify()` completes the greeting, TLS negotiation and authentication without
- * sending anything, which is exactly the part that goes wrong — a wrong port or
- * a wrong `secure` flag otherwise surfaces as mail silently not arriving much
- * later.
- */
 export async function testEmailAccountAction(formData: FormData) {
     await requireAdmin();
     const id = String(formData.get('id') ?? '');
@@ -222,6 +191,64 @@ export async function testEmailAccountAction(formData: FormData) {
         .set({ lastTestedAt: new Date(), lastTestOk: ok, lastTestError: ok ? null : message })
         .where(eq(schema.emailAccount.id, id));
     revalidatePath('/admin/email-accounts');
+}
+
+export async function testSmtpSettingsAction(
+    _prev: EmailAccountFormState | undefined,
+    formData: FormData,
+): Promise<EmailAccountFormState> {
+    await requireAdmin();
+    const fields = readFields(formData);
+    if (!fields.smtpHost) return { error: 'Enter an SMTP host to test.' };
+    if (!fields.smtpUsername) return { error: 'Enter an SMTP username to test.' };
+    if (!Number.isInteger(fields.smtpPort) || fields.smtpPort < 1 || fields.smtpPort > 65535) {
+        return { error: 'SMTP port must be between 1 and 65535.' };
+    }
+
+    let password = fields.smtpPassword;
+    const id = String(formData.get('id') ?? '');
+    if (!password && id) {
+        const stored = await db.query.emailAccount.findFirst({ where: eq(schema.emailAccount.id, id), columns: { smtpPassword: true } });
+        if (stored) {
+            const { decryptSecret } = await import('@/lib/secret-box');
+            password = decryptSecret(stored.smtpPassword);
+        }
+    }
+    if (!password) return { error: 'Enter the SMTP password to test.' };
+
+    const transport = buildSmtpTransport({
+        host: fields.smtpHost, port: fields.smtpPort, secure: fields.smtpSecure, username: fields.smtpUsername, password,
+    });
+    try {
+        await transport.verify();
+        const to = String(formData.get('testTo') ?? '').trim();
+        if (!to) return { success: `Connected to ${fields.smtpHost}:${fields.smtpPort} and signed in as ${fields.smtpUsername}.` };
+        if (!to.includes('@')) return { error: 'The test recipient is not a valid email address.' };
+        const from = fields.fromName ? `"${fields.fromName.replace(/"/g, '')}" <${fields.address || fields.smtpUsername}>` : (fields.address || fields.smtpUsername);
+        await transport.sendMail({
+            from,
+            to,
+            subject: 'SMTP test from UnityAlgo',
+            text: 'This is a test message. If you can read it, these SMTP settings work.',
+        });
+        return { success: `Connected, signed in and sent a test message to ${to}.` };
+    } catch (error) {
+        return { error: friendlySmtpError(error) };
+    } finally {
+        transport.close();
+    }
+}
+
+function friendlySmtpError(error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    const code = (error as { code?: string } | null)?.code;
+    if (code === 'EAUTH' || /invalid login|authentication/i.test(message)) return `The server rejected the username or password. ${message}`;
+    if (code === 'ECONNREFUSED' || /ECONNREFUSED/.test(message)) return `Nothing is accepting connections at that host and port. Check the host and port. ${message}`;
+    if (code === 'ENOTFOUND' || /ENOTFOUND/.test(message)) return `The host name could not be found. Check the SMTP host. ${message}`;
+    if (code === 'ETIMEDOUT' || code === 'ESOCKET' || /greeting|timeout/i.test(message)) {
+        return `The server did not answer as expected. Port 465 needs "Implicit TLS" on; ports 587 and 25 need it off. ${message}`;
+    }
+    return message;
 }
 
 function friendlyError(error: unknown) {

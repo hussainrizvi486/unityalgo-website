@@ -1,8 +1,3 @@
-"""Paramiko SSH access to worker nodes.
-
-Supports password auth (local Multipass/dev VMs) and key auth (production),
-picking whichever the node record provides.
-"""
 
 import io
 import json
@@ -50,11 +45,6 @@ class CommandResult:
 
 
 class SSHService:
-    """Runs commands on one ServerNode over SSH.
-
-    Auth order: the node's `ssh_password`, then its `ssh_key_path`, then the
-    SSH_PASSWORD / SSH_KEY_PATH defaults from the environment.
-    """
 
     def __init__(self, server, config=None):
         self.server = server
@@ -107,12 +97,6 @@ class SSHService:
         return "none"
 
     def _load_pkey(self):
-        """Parse stored key content into a paramiko key object in memory.
-
-        Already validated at submit time (ServerController._validate_private_key)
-        so this should always succeed for content stored through the API;
-        still guarded here in case ENCRYPTION_KEY rotated onto garbage.
-        """
         content = self.key_content
         for key_class in (paramiko.RSAKey, paramiko.Ed25519Key, paramiko.ECDSAKey):
             try:
@@ -141,8 +125,6 @@ class SSHService:
         client = paramiko.SSHClient()
         client.set_missing_host_key_policy(self.host_key_policy())
         try:
-            # Pasted key content (in-memory) takes priority over a file path
-            # whenever key auth applies.
             pkey = self._load_pkey() if (self.auth_method == "key" and self.key_content) else None
             self._connect_with_retry(client, pkey)
             yield client
@@ -158,9 +140,6 @@ class SSHService:
         finally:
             client.close()
 
-    # A login that fails once and works a second later (a node just woken or briefly busy, sshd throttling a burst
-    # of connections) must not fail a whole provisioning, backup or restore. Only the connection attempt is retried,
-    # never a command, so nothing runs twice.
     CONNECT_ATTEMPTS = 3
     CONNECT_BACKOFF_SECONDS = (1.0, 3.0)
 
@@ -174,8 +153,6 @@ class SSHService:
                     password=self.password,
                     pkey=pkey,
                     key_filename=self.key_path if (self.auth_method == "key" and not pkey) else None,
-                    # Password auth must not silently fall back to the operator's
-                    # agent or ~/.ssh keys -- that hides a misconfigured node.
                     look_for_keys=self.auth_method == "key",
                     allow_agent=self.auth_method == "key",
                     timeout=self.settings.ssh_timeout,
@@ -197,11 +174,6 @@ class SSHService:
             return [self._exec(client, command, timeout) for command in commands]
 
     def _exec(self, client, command, timeout=None, stdin_data=None):
-        """Run `command`, optionally feeding `stdin_data` to it.
-
-        stdin is how secrets get in: anything passed as a command argument is
-        visible in the remote process table for the life of the process.
-        """
         stdin, stdout, stderr = client.exec_command(
             command, timeout=timeout or self.settings.ssh_command_timeout
         )
@@ -218,14 +190,6 @@ class SSHService:
         )
 
     def _sudo_exec(self, client, command, timeout=None):
-        """Run `command` as root.
-
-        The password is written to the sudo prompt over the SSH stdin stream,
-        never as a command-line argument -- so it never appears in `ps` on the
-        remote host. Falls back to non-interactive sudo (`-n`) when the node
-        only has a key configured; that only succeeds if the account has
-        passwordless sudo.
-        """
         if self.password:
             stdin, stdout, stderr = client.exec_command(
                 f"sudo -S -p '' -- {command}",
@@ -250,9 +214,6 @@ class SSHService:
         with self.connect() as client:
             return self._sudo_exec(client, command, timeout)
 
-    # ------------------------------------------------------------------
-    # higher-level probes
-    # ------------------------------------------------------------------
     def check(self):
         """Phase-1 acceptance probe: identity, OS and Docker availability."""
         whoami, hostname, uname, docker = self.run_many(
@@ -274,11 +235,6 @@ class SSHService:
         }
 
     def port_in_use(self, port):
-        """True when something is already listening on `port` on this node.
-
-        Pre-flight for port allocation: the deployments table tracks what *we*
-        allocated, but a non-Docker process could be holding the port.
-        """
         result = self.run(f"ss -ltnH 'sport = :{int(port)}'")
         return result.ok and bool(result.stdout.strip())
 
@@ -371,10 +327,6 @@ class SSHService:
                 f"Adding '{self.username}' to docker group",
                 f"usermod -aG docker {self.username}",
             ),
-            # Tenant containers attach to this network -- deploy() and
-            # run_once() both assume it already exists on the node. Without
-            # this step every deployment on a freshly bootstrapped node fails
-            # with "network ... not found".
             (
                 f"Creating '{self.settings.tenant_network}' network",
                 f"sh -c 'docker network inspect {self.settings.tenant_network} >/dev/null 2>&1 "
@@ -393,21 +345,6 @@ class SSHService:
         return results
 
     def bootstrap_caddy(self, on_step=None):
-        """Installs and starts Caddy on a role='proxy' node.
-
-        Assumes Docker is already installed (run bootstrap_docker first, same
-        as any worker) -- this only adds the Caddy-specific steps. Runs with
-        `--network host` rather than through DockerService.run_container()
-        (which has no such flag and is shaped for tenant container specs, not
-        infrastructure containers): Caddy's admin API needs to bind the
-        node's own loopback (127.0.0.1:2019, never exposed publicly -- see
-        CaddyAdminClient), and Caddy itself needs to dial arbitrary worker
-        `private_ip:port` addresses directly.
-
-        The only config pushed here is the admin API listener; every actual
-        route comes later via the admin API itself (ProxyConfigurationService)
-        -- the DB is desired state, this step just gets Caddy running.
-        """
         steps = [
             (
                 "Creating Caddy config/data directories",
@@ -426,10 +363,6 @@ class SSHService:
                 "Starting Caddy",
                 "docker run -d --name caddy --network host --restart unless-stopped "
                 "-v /etc/caddy/config:/config -v /etc/caddy/data:/data "
-                # No --adapter flag: the config file is already native Caddy
-                # JSON, and --adapter is only for converting *other* formats
-                # (e.g. Caddyfile) into JSON -- passing "json" as an adapter
-                # name is invalid and crash-loops the container.
                 "caddy:2-alpine caddy run --config /config/caddy.json",
             ),
             ("Verifying Caddy is running", "docker exec caddy caddy version"),
@@ -446,38 +379,6 @@ class SSHService:
         return results
 
     def apply_tenant_port_firewall(self, proxy_ip, port_start, port_end, on_step=None):
-        """Restricts the tenant port range to the proxy's IP only, via the
-        `DOCKER-USER` chain -- NOT ufw. Docker's `-p` publishing inserts DNAT
-        rules that are evaluated in `FORWARD` before ufw's `INPUT` chain ever
-        sees the packet, so `ufw deny 20000:29999/tcp` silently does nothing;
-        `DOCKER-USER` is the only chain Docker guarantees runs first for
-        published-port traffic.
-
-        Idempotent: tags every rule with a comment marker and removes any
-        prior rules bearing that marker before re-adding, so re-running this
-        (e.g. after changing which node is the proxy) doesn't pile up
-        duplicate rules.
-
-        Matches on `--ctorigdstport` (the conntrack *original* destination
-        port), not plain `--dport`: by the time a packet reaches DOCKER-USER,
-        Docker's PREROUTING DNAT has already rewritten its destination port
-        from the published host port (e.g. 20000) to the container's
-        internal port (e.g. 3000) -- a plain `--dport 20000:20099` match
-        never fires post-DNAT, so the rule silently does nothing (confirmed
-        live: 0 packet/byte counters on both rules after real traffic through
-        the published port). `--ctorigdstport` matches the port the packet
-        actually arrived on, before any rewriting.
-
-        Three rules, in this order, and the ordering is load-bearing:
-        DOCKER-USER sees traffic in *both* directions (it's the general
-        FORWARD hook, not a request-only chain) -- a container's response
-        back to the proxy has `source=container`, not `source=proxy`, so a
-        rule that only allows `-s <proxy_ip>` blocks the response and the
-        handshake never completes (confirmed live: SYN got through, the
-        connection still timed out because the SYN-ACK got dropped). The
-        established/related rule must come first so return traffic for an
-        already-permitted connection is never touched by the deny rule below.
-        """
         marker = "controller-tenant-port-lockdown"
         port_range = f"{port_start}:{port_end}"
         established_rule = (
@@ -504,9 +405,6 @@ class SSHService:
             ("Removing any previous established-traffic rule", remove_step(established_rule)),
             ("Removing any previous deny-by-default rule", remove_step(drop_rule)),
             ("Removing any previous proxy-allow rule", remove_step(allow_rule)),
-            # Insert order matters: each -I goes to position 1, so inserting
-            # last-desired-first-in-file means issuing them in *reverse* of
-            # the final intended top-to-bottom order.
             ("Adding deny-by-default rule", f"iptables -I DOCKER-USER {drop_rule}"),
             (
                 f"Allowing proxy ({proxy_ip}) through",

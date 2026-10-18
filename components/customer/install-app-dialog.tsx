@@ -31,10 +31,6 @@ export interface InstallableApp {
     priceCurrency: string;
 }
 
-/**
- * Pick one of your sites and install an app on it. A paid app says what it costs and that it is added to the
- * subscription before anything is charged; a free one just installs.
- */
 export function InstallAppDialog({
     app,
     sites,

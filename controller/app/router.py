@@ -27,16 +27,11 @@ class ApiRouter:
         self.register_error_handlers()
 
     def configure(self):
-        # No session cookie config: this service has no login and issues no
-        # cookies. SECRET_KEY is kept only because Flask requires one for
-        # its own internals (e.g. flashing, itsdangerous helpers).
         self.app.config.update(
             SECRET_KEY=self.settings.secret_key,
             JSON_SORT_KEYS=False,
             ENV=self.settings.app_env,
         )
-        # Treat /api/v1/servers and /api/v1/servers/ as the same route instead
-        # of 308-redirecting API clients.
         self.app.url_map.strict_slashes = False
 
     def register_routes(self):

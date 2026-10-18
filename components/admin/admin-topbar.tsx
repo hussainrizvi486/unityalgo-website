@@ -10,19 +10,6 @@ import { AdminBreadcrumbs } from '@/components/admin/admin-breadcrumbs';
 import { adminNavItems } from '@/components/admin/admin-sidebar';
 import { cn } from '@/utils';
 
-/**
- * The admin panel's top bar: collapse control, breadcrumbs, and jump-to search.
- *
- * The search is a navigator, not a data search — it filters the admin's own
- * sections so ⌘K takes you to Tenants without reaching for the sidebar. It is
- * built from a plain input and a listbox rather than pulling in `cmdk`: the
- * whole dataset is eleven static entries, and a dependency for that would cost
- * more than it carries.
- *
- * The light / dark switch switches the `.dashboard` token scope, which the
- * customer portal shares.
- */
-
 export function AdminTopbar() {
     const router = useRouter();
     const { isMobile } = useSidebar();
@@ -146,8 +133,6 @@ export function AdminTopbar() {
                                         onClick={() => go(item.href)}
                                         className={cn(
                                             'flex w-full items-center gap-2.5 px-3 py-2 text-left portal-text-body',
-                                            // Keyboard cursor: a neutral highlight, so it
-                                            // does not read as an alert on every keystroke.
                                             i === cursor ? 'bg-secondary text-foreground' : 'text-foreground/80',
                                         )}
                                     >

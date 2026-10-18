@@ -6,17 +6,6 @@ import { cva } from 'class-variance-authority';
 import { ChevronDown } from 'lucide-react';
 import { cn } from '@/utils';
 
-/**
- * Radix navigation menu, themed to the ink palette.
- *
- * Replaces the pair of hand-rolled hover dropdowns the header used to carry.
- * Those opened on `onMouseEnter` alone, which meant they were unreachable by
- * keyboard and invisible to screen readers. Radix gives roving focus, Escape
- * to close, an intent-aware "safe triangle" so a diagonal cursor path to the
- * panel does not dismiss it, and a single shared viewport that resizes between
- * panels — the movement that makes this pattern read as polished.
- */
-
 function NavigationMenu({
     className,
     children,
@@ -87,9 +76,6 @@ function NavigationMenuContent({ className, ...props }: React.ComponentProps<typ
         <NavigationMenuPrimitive.Content
             data-slot="navigation-menu-content"
             className={cn(
-                // Panels slide in from whichever side the previous panel was on,
-                // so moving between triggers reads as one surface travelling
-                // rather than two panels swapping.
                 'top-0 left-0 w-full p-1 pr-2.5 md:absolute md:w-auto',
                 'data-[motion^=from-]:animate-in data-[motion^=to-]:animate-out',
                 'data-[motion^=from-]:fade-in data-[motion^=to-]:fade-out',
@@ -112,9 +98,6 @@ function NavigationMenuViewport({
             <NavigationMenuPrimitive.Viewport
                 data-slot="navigation-menu-viewport"
                 className={cn(
-                    // The viewport animates its own width/height between panels
-                    // via the CSS variables Radix sets, which is the morph that
-                    // makes the menu feel like one object.
                     'origin-top-center relative mt-2 h-[var(--radix-navigation-menu-viewport-height)] w-full overflow-hidden',
                     'rounded-xl border border-border bg-popover text-popover-foreground shadow-lg',
                     'transition-[width,height] duration-300 ease-out',

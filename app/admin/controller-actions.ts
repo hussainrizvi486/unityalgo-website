@@ -6,15 +6,6 @@ import { SignJWT } from 'jose';
 import { controller, ControllerError, type DbQueryResult } from '@/lib/controller-client';
 import { requireAdmin } from '@/lib/admin-session';
 
-/**
- * Server Actions for the controller (infrastructure) admin pages.
- *
- * Kept separate from app/admin/actions.ts because this is a large, distinct
- * surface that talks to a different backend. Every action re-checks the
- * admin session server-side rather than trusting proxy.ts alone: the
- * middleware only verifies the JWT signature, not the ADMIN role.
- */
-
 export interface ControllerFormState {
     error?: string;
     success?: string;
@@ -66,11 +57,8 @@ export async function createServerAction(
         ssh_user: String(formData.get('ssh_user') ?? '').trim() || undefined,
         max_memory_mb: Number(formData.get('max_memory_mb') ?? 0) || undefined,
         max_containers: Number(formData.get('max_containers') ?? 0) || undefined,
-        // Blank means no limit; 0 is a real limit (take no new sites), so it must not be dropped like the others.
         ...(String(formData.get('max_sites') ?? '').trim() !== '' ? { max_sites: Number(formData.get('max_sites')) } : {}),
     };
-    // Only send credentials that were actually filled in, so the controller
-    // falls back to its configured defaults rather than storing empty strings.
     if (sshPassword) body.ssh_password = sshPassword;
 
     const result = await guarded(() => controller.servers.create(body));
@@ -127,11 +115,6 @@ export async function deleteServerAction(formData: FormData) {
     redirect('/admin/servers');
 }
 
-/**
- * One entry point for every per-server maintenance action, so the UI can send
- * `{ id, action }` from a plain form rather than needing a distinct action
- * export (and a distinct form component) for each of five buttons.
- */
 export async function serverMaintenanceAction(formData: FormData) {
     await requireAdmin();
     const id = String(formData.get('id') ?? '');
@@ -179,8 +162,6 @@ export async function createTenantAction(
         cpu_limit_cores: String(formData.get('cpu_limit_cores') ?? '').trim() || undefined,
     };
 
-    // A subscription carries the customer and the plan with it, so those
-    // fields are only sent for a store being created without one.
     const subscriptionId = String(formData.get('subscription_id') ?? '').trim();
     if (subscriptionId && subscriptionId !== 'none') {
         body.subscription_id = subscriptionId;
@@ -215,12 +196,6 @@ export async function deleteTenantAction(formData: FormData) {
     redirect('/admin/tenants');
 }
 
-/**
- * Lifecycle actions. The long-running ones (provision, redeploy, migrate,
- * backup) return an operation id immediately and continue on a Celery worker,
- * so this redirects to the tenant page where progress is polled rather than
- * blocking the request.
- */
 export async function tenantLifecycleAction(formData: FormData) {
     await requireAdmin();
     const id = String(formData.get('id') ?? '');
@@ -392,8 +367,6 @@ function readDatabaseFields(formData: FormData) {
         allow_writes: formData.get('allow_writes') === 'on',
         notes: String(formData.get('notes') ?? '').trim() || null,
     };
-    // An empty password on update means "keep the stored one" — the API
-    // only re-encrypts when a non-empty value is sent.
     const password = String(formData.get('password') ?? '');
     if (password) body.password = password;
     return body;
@@ -471,12 +444,6 @@ export async function testDatabaseAction(formData: FormData) {
     redirect(`/admin/databases?tested=${encodeURIComponent(outcome)}`);
 }
 
-/**
- * Moves a tenant's data to a different cluster.
- *
- * Unlike the node migration, this physically dumps and restores the tenant's
- * database, so it always runs on a worker and returns an operation to poll.
- */
 export async function migrateTenantDatabaseAction(
     id: string,
     _prev: ControllerFormState | undefined,
@@ -513,13 +480,6 @@ export interface OperationSnapshot {
     steps: Array<{ id: string; action: string; status: string; message: string | null }>;
 }
 
-/**
- * Reads one operation's current state, for the client-side progress poller.
- *
- * Exposed as a Server Action so the browser can poll without ever holding the
- * controller's internal API key. Returns null instead of throwing when the
- * controller is briefly unreachable, so a blip does not break the poll loop.
- */
 export async function fetchOperationAction(operationId: string): Promise<OperationSnapshot | null> {
     await requireAdmin();
 
@@ -545,16 +505,6 @@ export async function fetchOperationAction(operationId: string): Promise<Operati
 
 // ----------------------------------------------------------------- terminal
 
-/**
- * Mints the short-lived grant the browser presents to the WebSocket terminal
- * service.
- *
- * The terminal is the one part of the controller a browser talks to directly
- * (a WebSocket cannot be proxied through a Server Action), so it cannot use
- * the internal API key. Instead this issues a JWT signed with SESSION_SECRET
- * — shared with the Python service — scoped to a single server and expiring
- * in 60 seconds. See controller/app/terminal/auth.py for the verifier.
- */
 export async function mintTerminalTokenAction(serverId: string) {
     const admin = await requireAdmin();
 
@@ -577,51 +527,6 @@ export async function mintTerminalTokenAction(serverId: string) {
     };
 }
 
-/**
- * Mints the grant the browser presents to the live log/metric stream.
- *
- * Same mechanism as the terminal grant above and the same signing secret, but
- * a different purpose and a different subject: this one names a deployment and
- * a stream kind, so a token issued to tail one storefront's logs cannot be
- * replayed to open a root shell on the node hosting it, nor to read another
- * tenant's output. See controller/app/streams/auth.py for the verifier.
- */
-export async function mintStreamTokenAction(
-    deploymentId: string,
-    kind: 'logs' | 'stats',
-) {
-    const admin = await requireAdmin();
-
-    const secret = process.env.SESSION_SECRET;
-    if (!secret) throw new Error('SESSION_SECRET is not set.');
-
-    const token = await new SignJWT({
-        purpose: 'controller-stream',
-        deploymentId,
-        kind,
-        adminEmail: admin.email,
-    })
-        .setProtectedHeader({ alg: 'HS256' })
-        .setIssuedAt()
-        .setExpirationTime('60s')
-        .sign(new TextEncoder().encode(secret));
-
-    const base = process.env.NEXT_PUBLIC_CONTROLLER_WS_URL ?? 'ws://127.0.0.1:8765';
-    return { token, url: `${base}/ws/stream/${kind}/${deploymentId}?token=${encodeURIComponent(token)}` };
-}
-
-/**
- * Runs one statement from the database browser.
- *
- * Whether writes are allowed is decided by the connection's `allow_writes`
- * flag on the controller, enforced with a Postgres READ ONLY transaction — not
- * by anything this action sends, and not by inspecting the SQL text. The
- * controller also records every statement to the activity log before running
- * it, so a query that times out is still accounted for.
- *
- * Errors are returned rather than thrown: a syntax error is an ordinary result
- * for a console, not a page crash.
- */
 export async function runDatabaseQueryAction(connectionId: string, sql: string): Promise<{
     result?: DbQueryResult;
     error?: string;
@@ -652,7 +557,6 @@ export async function forceDeleteSiteAction(formData: FormData) {
     redirect('/admin/sites');
 }
 
-/** Extend a site's free trial by a number of days, or end it now (which switches the site off). */
 export async function adminSiteTrialAction(formData: FormData) {
     await requireAdmin();
     const id = String(formData.get('id') ?? '');

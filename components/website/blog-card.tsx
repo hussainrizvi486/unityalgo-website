@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import { imageSourceProps } from '@/lib/image-hosts';
 import Link from 'next/link';
 
 export interface BlogCardPost {
@@ -22,13 +23,11 @@ export function BlogCard({ post }: { post: BlogCardPost }) {
             className="group flex flex-col rounded border bg-muted border-border/60 overflow-hidden hover:shadow-md hover:shadow-foreground/5 hover:border-primary/25 transition-all duration-300"
         >
             <div className="aspect-16/10 bg-secondary relative overflow-hidden">
-                {/* A listing renders many of these, so serving the originals
-                    raw multiplies the cost by the number of posts. `sizes`
-                    describes the three-column grid so each card pulls a
-                    variant near its rendered width rather than the full file. */}
+                {}
                 {post.coverImage ? (
                     <Image
                         src={post.coverImage}
+                        {...imageSourceProps(post.coverImage)}
                         alt={post.title}
                         fill
                         sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"

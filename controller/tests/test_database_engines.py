@@ -1,4 +1,3 @@
-"""The schema browser and SQL console on MariaDB connections. The driver is mocked; the engine's behaviour was checked live."""
 import unittest
 from datetime import timedelta
 from unittest.mock import MagicMock, patch
@@ -48,7 +47,7 @@ class MariaDBConsoleTests(unittest.TestCase):
         self.assertIn('SET SESSION TRANSACTION READ ONLY', statements)
         self.assertLess(statements.index('SET SESSION TRANSACTION READ ONLY'), statements.index('SELECT 1'))
         self.assertTrue(any(sql.startswith('SET SESSION max_statement_time') for sql in statements))
-        conn.autocommit.assert_called_with(True)       # a session flag, not one transaction: DDL ends the transaction
+        conn.autocommit.assert_called_with(True)
         self.assertEqual(result['kind'], 'rows')
 
     def test_set_and_transaction_statements_are_refused_so_they_cannot_lift_read_only(self):
@@ -118,7 +117,6 @@ class MariaDBSchemaTests(unittest.TestCase):
 
 
 class EngineDispatchTests(unittest.TestCase):
-    """The service picks the driver from the connection's engine, so no caller branches on the database type."""
 
     def setUp(self):
         self.service = DatabaseConnectionService()

@@ -1,19 +1,12 @@
 'use client';
 
 import {
-    Activity, Inbox, AtSign, Boxes, Globe, Coins, Database, FileText, Layers, Mail,
+    Activity, Inbox, AtSign, Boxes, Globe, Coins, CreditCard, Database, FileText, Layers, Mail, MailOpen,
     MessageSquareText, PackagePlus, Server, Users,
 } from 'lucide-react';
 import { AppSidebar, type SidebarNavGroup, type SidebarUser } from '@/components/ui/app-sidebar';
 import { logoutAction } from '@/app/admin/actions';
 
-/**
- * The admin panel's navigation: data for the shared AppSidebar (components/ui/app-sidebar.tsx), which owns the
- * layout, collapse behaviour, active states and account menu for the customer portal as well.
- */
-
-// Grouped so the infrastructure sections (backed by the controller API) read as a distinct area from the
-// content and commerce ones.
 const navGroups: SidebarNavGroup[] = [
     {
         label: 'Platform',
@@ -30,12 +23,14 @@ const navGroups: SidebarNavGroup[] = [
                     { title: 'GitHub account', href: '/admin/apps/github' },
                 ],
             },
+            { title: 'Payments', href: '/admin/payments', icon: CreditCard },
             { title: 'Currencies', href: '/admin/currencies', icon: Coins },
             { title: 'Tickets', href: '/admin/tickets', icon: MessageSquareText },
             { title: 'Users', href: '/admin/users', icon: Users },
             { title: 'Leads', href: '/admin/leads', icon: Inbox },
             { title: 'Contacts', href: '/admin/contacts', icon: Mail },
             { title: 'Email accounts', href: '/admin/email-accounts', icon: AtSign },
+            { title: 'Email templates', href: '/admin/email-templates', icon: MailOpen },
         ],
     },
     {

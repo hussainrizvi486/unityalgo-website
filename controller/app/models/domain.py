@@ -10,17 +10,6 @@ from app.models.base import Base
 
 
 class DomainMapping(Base):
-    """One hostname routed to one tenant's current deployment.
-
-    The relationship that matters is `domain -> deployment`, not `domain ->
-    server`: a tenant can carry several domains (its platform subdomain, plus
-    any number of verified custom domains) that must all keep working when the
-    tenant moves nodes. Moving a tenant only ever rewrites `deployment_id` on
-    the rows that already exist here -- the domains and DNS never change.
-
-    `deployment_id` is nullable because the platform domain is reserved at
-    tenant-create time, before any deployment exists to point it at.
-    """
 
     __tablename__ = "domain_mappings"
 
@@ -34,9 +23,6 @@ class DomainMapping(Base):
     tenant_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False
     )
-    # SET NULL, not CASCADE: a deployment being torn down (stop/redeploy/
-    # migrate) must not destroy the domain reservation, only unroute it until
-    # the next deployment claims it.
     deployment_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         ForeignKey("deployments.id", ondelete="SET NULL"), nullable=True
     )
@@ -71,13 +57,6 @@ class DomainMapping(Base):
 
     @property
     def is_routable(self):
-        """Whether the edge proxy should have a live route for this domain.
-
-        Deliberately checks the deployment's *current* status, not just
-        whether one is attached: stop()/start() reuse the same deployment row
-        (flipping it between "live" and "stopped"), so routability tracks that
-        automatically without stop/start having to touch domain rows at all.
-        """
         return (
             self.status == "active"
             and self.deployment_id is not None

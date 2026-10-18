@@ -2,16 +2,6 @@ import * as React from 'react';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/utils';
 
-/**
- * Label, control, and one line of supporting text.
- *
- * Help and error share a slot — a field shows one or the other, never both —
- * so the row below the control never changes height when validation fires.
- *
- * `error` sets aria-describedby on the child control via `describedBy`, which
- * the caller must spread. Doing it here rather than per-form keeps the wiring
- * between message and control from being forgotten.
- */
 export function FormField({
     id,
     label,

@@ -12,11 +12,6 @@ import {
 } from '@/components/ui/breadcrumb';
 import { adminNavItems } from '@/components/admin/admin-sidebar';
 
-/**
- * Section names come from the sidebar, so a new nav entry is labelled here
- * without a second edit. This map only covers the handful whose breadcrumb
- * label differs from their nav label.
- */
 const SECTION_LABELS: Record<string, string> = Object.fromEntries(
     adminNavItems.map((item) => [item.href.replace('/admin/', ''), item.name]),
 );

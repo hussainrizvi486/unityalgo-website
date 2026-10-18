@@ -4,7 +4,6 @@ import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-/** Switch the branch a GitHub app is installed from. Saving re-reads the repository on that branch. */
 export function BranchPicker({
     appId,
     current,

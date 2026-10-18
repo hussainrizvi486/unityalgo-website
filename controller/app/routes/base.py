@@ -9,11 +9,6 @@ from app.errors import ValidationError
 
 
 class BaseView(MethodView):
-    """Request parsing, session handling and response shaping.
-
-    Subclasses set `controller_class` and `serializer_class`, then use
-    `self.session()` to run controller calls inside a transaction.
-    """
 
     controller_class = None
     serializer_class = None
@@ -28,8 +23,6 @@ class BaseView(MethodView):
         return self.db.session()
 
     def actor(self):
-        """Who to attribute activity-log entries to. Admin pages override this
-        with the signed-in username."""
         return "api"
 
     def controller(self, session, controller_class=None):
@@ -42,9 +35,6 @@ class BaseView(MethodView):
     def dump_many(self, instances, **options):
         return self.serializer_class.dump_many(instances, **options)
 
-    # ------------------------------------------------------------------
-    # request helpers
-    # ------------------------------------------------------------------
     def json_body(self):
         body = request.get_json(silent=True)
         if body is None:
@@ -89,9 +79,6 @@ class BaseView(MethodView):
         offset = self.int_arg("offset", 0, minimum=0)
         return limit, offset
 
-    # ------------------------------------------------------------------
-    # responses
-    # ------------------------------------------------------------------
     @staticmethod
     def ok(body, status=200):
         return jsonify(body), status

@@ -10,16 +10,6 @@ from app.models.base import Base
 
 
 class TenantBackup(Base):
-    """A point-in-time database dump for one tenant.
-
-    Taken before a destructive operation (migration, resize, delete) so it can
-    be restored on failure, on demand from the admin panel, or on a timer by
-    app/tasks/backup_tasks.py.
-
-    `reason` matters beyond bookkeeping: retention pruning only ever removes
-    reason="scheduled" rows, so a backup that is the record of an operation is
-    never deleted by a timer.
-    """
 
     __tablename__ = "tenant_backups"
 

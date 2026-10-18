@@ -77,10 +77,6 @@ export function ForgotPasswordOtpStep({ email }: { email: string }) {
         return () => clearTimeout(timer);
     }, [cooldown]);
 
-    // Adjusted during render when the action result changes, rather than
-    // synced in an effect. React documents this pattern for "a value changed,
-    // reset some state": it settles before the browser paints, where the
-    // effect version committed once with the old state and again with the new.
     const [seenResend, setSeenResend] = useState(resendState);
     if (resendState !== seenResend) {
         setSeenResend(resendState);
@@ -90,8 +86,6 @@ export function ForgotPasswordOtpStep({ email }: { email: string }) {
         }
     }
 
-    // The notice clears itself. setState from a timer callback is not what the
-    // cascading-render rule is about — only a synchronous call in the body is.
     useEffect(() => {
         if (!resendNotice) return;
         const timer = setTimeout(() => setResendNotice(false), 4000);

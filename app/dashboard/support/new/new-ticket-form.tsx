@@ -10,7 +10,6 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { createSupportTicketAction, type AccountFormState } from '@/app/customer/actions';
 
-
 function SubmitButton() {
   const { pending } = useFormStatus();
   return (

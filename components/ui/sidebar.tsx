@@ -516,12 +516,6 @@ function SidebarMenuSkeleton({
 }: React.ComponentProps<'div'> & {
   showIcon?: boolean;
 }) {
-  // Skeleton rows get varied widths so a stack of them doesn't read as a
-  // barcode. Upstream shadcn uses Math.random() here, but that is impure
-  // during render: the server and the client produce different widths, which
-  // is a hydration mismatch. Deriving the width from useId() keeps the
-  // variation while staying deterministic — the same row renders the same
-  // width on both sides.
   const id = React.useId();
   const width = `${50 + (Array.from(id).reduce((sum, ch) => sum + ch.charCodeAt(0), 0) % 40)}%`;
 

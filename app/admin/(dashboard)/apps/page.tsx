@@ -22,7 +22,6 @@ export default async function ApplicationsPage({ searchParams }: PageProps) {
         orderBy: [asc(schema.appCatalog.sortOrder), asc(schema.appCatalog.name)],
     });
 
-    // What the sites really run. The App Store still lists apps when the controller is down, just without the counts.
     const summary = await controller.apps.summary().then((r) => r.results).catch(() => null);
 
     const rows: AppRow[] = apps.map((app) => {

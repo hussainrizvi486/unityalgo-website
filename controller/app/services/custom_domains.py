@@ -1,8 +1,3 @@
-"""Customer-owned domains for Frappe sites: validation, DNS verification and certificate probing.
-
-A domain is only added to the proxy once DNS proves the customer controls it, i.e. it already points
-at this platform. Caddy then obtains and renews the certificate on its own.
-"""
 import re
 import socket
 import ssl
@@ -26,10 +21,6 @@ def validate_domain(value, platform_suffix):
 
 
 def check_dns(domain, site_domain, proxy_ips, resolver=None):
-    """Does `domain` already point at the site? Returns (ok, reason).
-
-    Accepted: a CNAME to the site's own address, or A records that include a proxy address.
-    """
     resolver = resolver or dns.resolver.Resolver()
     resolver.lifetime = 6
     try:

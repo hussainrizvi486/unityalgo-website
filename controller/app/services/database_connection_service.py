@@ -1,13 +1,3 @@
-"""Connects to and queries an arbitrary, admin-registered database: PostgreSQL or MariaDB.
-
-Distinct from PostgresService (app/services/postgres_service.py), which only
-ever talks to the control-plane database this app already owns, using fixed,
-hardcoded statements. This service connects to whatever host/credentials an
-operator registers and runs whatever SQL they type -- there is no statement
-filtering (by design, per product decision: the console behaves like a raw
-psql prompt). Safety here is about clean error handling and never leaking
-credentials, not restricting what SQL can run.
-"""
 
 import time
 
@@ -19,16 +9,8 @@ from app.services.query_values import jsonable
 
 
 class PostgresDatabase:
-    """The PostgreSQL implementation of the database-connection interface (connect, test, introspect, execute_query)."""
 
     def connect(self, host, port, database_name, username, password, sslmode, connect_timeout=10):
-        """A single connection attempt -- no retry/backoff.
-
-        Unlike PostgresService._connection() (which retries transient errors
-        for unattended provisioning flows), this backs an interactive "test
-        now" button: the operator wants a fast yes/no, not up to ~15s of
-        silent retries before an answer.
-        """
         try:
             return psycopg2.connect(
                 host=host,
@@ -45,8 +27,6 @@ class PostgresDatabase:
             ) from exc
 
     def test(self, host, port, database_name, username, password, sslmode):
-        """Connects and confirms the server actually answers a query.
-        Returns the server's version string on success."""
         conn = self.connect(host, port, database_name, username, password, sslmode)
         try:
             with conn.cursor() as cur:
@@ -56,23 +36,12 @@ class PostgresDatabase:
         finally:
             conn.close()
 
-    # System schemas are noise in a browser: nobody opens this to read
-    # pg_catalog. Excluded from every introspection query below.
     _SYSTEM_SCHEMAS = ("pg_catalog", "information_schema", "pg_toast")
 
     def introspect(
         self, host, port, database_name, username, password, sslmode,
         timeout_seconds=30,
     ):
-        """Describe the database: tables, columns, keys and indexes.
-
-        Four catalog queries, not four per table. A database with a few hundred
-        tables would otherwise take a few hundred round trips to draw one
-        sidebar; the results are stitched together in Python instead.
-
-        Runs READ ONLY -- introspection has no business writing, and saying so
-        to the engine costs nothing.
-        """
         conn = self.connect(host, port, database_name, username, password, sslmode)
         conn.autocommit = False
         try:
@@ -80,8 +49,6 @@ class PostgresDatabase:
                 cur.execute(f"SET statement_timeout = {int(timeout_seconds * 1000)}")
                 cur.execute("SET TRANSACTION READ ONLY")
 
-                # reltuples is the planner's estimate, not a count: an exact
-                # COUNT(*) per table would read every table on the server.
                 cur.execute(
                     """
                     SELECT n.nspname, c.relname, c.relkind,
@@ -197,31 +164,7 @@ class PostgresDatabase:
         self, host, port, database_name, username, password, sslmode, sql,
         timeout_seconds=30, max_rows=500, allow_writes=False,
     ):
-        """Runs one SQL statement.
-
-        Three guardrails. A server-side `statement_timeout`, so a slow or
-        hanging query can't block the request forever. A row cap, so a
-        `SELECT *` against a huge table doesn't pull millions of rows into
-        memory and the browser -- it fetches `max_rows + 1` to detect
-        truncation without a separate COUNT(*).
-
-        And, unless `allow_writes` is set, a Postgres READ ONLY transaction.
-        That is deliberately not a check on the SQL text: inspecting the
-        leading keyword misses `WITH ... DELETE`, `SELECT ... INTO`, and
-        anything hidden behind a comment or a function call. Handing the
-        decision to the engine means the guarantee holds for statements
-        nobody thought to enumerate. Writes still run unrestricted on a
-        connection an admin has opted in.
-
-        Returns {"kind": "rows", columns, rows, row_count, truncated,
-        duration_ms} for a SELECT-like statement, or {"kind": "status",
-        affected_rows, duration_ms} for INSERT/UPDATE/DELETE/DDL, based on
-        whether the cursor produced a result set (cur.description is None
-        for the latter).
-        """
         conn = self.connect(host, port, database_name, username, password, sslmode)
-        # A read-only run needs a real transaction to mark READ ONLY; a
-        # writable one autocommits, matching a raw psql session.
         conn.autocommit = bool(allow_writes)
         started = time.monotonic()
         try:
@@ -256,8 +199,6 @@ class PostgresDatabase:
                 }
         finally:
             if not allow_writes:
-                # Nothing to keep: the transaction exists only to hold the
-                # READ ONLY flag.
                 try:
                     conn.rollback()
                 except psycopg2.Error:
@@ -266,13 +207,6 @@ class PostgresDatabase:
 
 
 class DatabaseConnectionService:
-    """One interface over every supported engine.
-
-    Every call names the engine of the connection it concerns and is handed to the driver for that engine, so
-    callers (the test button, the schema browser, the SQL console) never branch on the database type
-    themselves. A driver offers the same four operations with the same arguments; adding an engine means adding
-    a driver here.
-    """
 
     def __init__(self):
         self._drivers = {"postgres": PostgresDatabase(), "mariadb": MariaDBService()}
@@ -293,8 +227,6 @@ class DatabaseConnectionService:
         return driver.connect(host, port, database_name, username, password, sslmode, connect_timeout)
 
     def test(self, engine, host, port, database_name, username, password, sslmode):
-        """Connect and confirm the server answers. Returns its version (with a warning when a MariaDB account
-        lacks the privileges Frappe needs)."""
         return self.driver(engine).test(host, port, database_name, username, password, sslmode)
 
     def introspect(self, engine, host, port, database_name, username, password, sslmode, timeout_seconds=30):

@@ -3,7 +3,7 @@ import { controller } from '@/lib/controller-client';
 import { eq } from 'drizzle-orm';
 import { db, schema } from '@/lib/db';
 import { recordSiteNotification } from '@/lib/customer-notifications';
-import { sendSiteEmail, type SiteEmailEvent } from '@/lib/site-emails';
+import { sendAppEmail, sendSiteEmail, type SiteEmailEvent } from '@/lib/site-emails';
 import { activePurchase, cancelPurchase } from '@/lib/app-billing';
 
 const EVENTS: SiteEmailEvent[] = ['started', 'milestone', 'ready', 'failed', 'trial_ending', 'trial_ended', 'trial_converted'];
@@ -11,12 +11,6 @@ const EVENTS: SiteEmailEvent[] = ['started', 'milestone', 'ready', 'failed', 'tr
 type AppEvent = 'app_installed' | 'app_failed' | 'app_removed' | 'app_removal_failed';
 const APP_EVENTS: AppEvent[] = ['app_installed', 'app_failed', 'app_removed', 'app_removal_failed'];
 
-/**
- * The result of an app install or removal the customer asked for.
- *
- * A failed install reverses the charge, because a paid app that did not install must not be billed. A finished removal
- * stops the charge, because the app is gone. A failed removal changes nothing: the app is still there and still billed.
- */
 async function handleAppResult(site: Awaited<ReturnType<typeof controller.sites.get>>, userId: string, frappeApp: string, event: AppEvent) {
     const app = frappeApp
         ? await db.query.appCatalog.findFirst({ where: eq(schema.appCatalog.frappeAppName, frappeApp), columns: { id: true, name: true } })
@@ -28,7 +22,6 @@ async function handleAppResult(site: Awaited<ReturnType<typeof controller.sites.
             await cancelPurchase(purchase);
             stopped = true;
         } catch {
-            // Billing could not be reached; the purchase stays active and the stale-purchase check retries it.
         }
     }
     const name = app?.name ?? frappeApp;
@@ -54,6 +47,12 @@ async function handleAppResult(site: Awaited<ReturnType<typeof controller.sites.
             href: `/dashboard/sites/${site.id}`,
         })
         .onConflictDoNothing({ target: [schema.notification.userId, schema.notification.eventKey] });
+    // Off unless an admin switches the event on under Admin > Email templates.
+    const customer = await db.query.user.findFirst({ where: eq(schema.user.id, userId), columns: { email: true } });
+    const to = customer?.email || site.owner_email;
+    if (to) {
+        await sendAppEmail(event, site, to, { name, detail: text.body }).catch((error) => console.error('[site-events] app email failed', error));
+    }
 }
 
 export async function POST(request: Request) {
@@ -93,7 +92,6 @@ export async function POST(request: Request) {
                 (event === 'milestone' && site.status === 'ready') ||
                 (event === 'ready' && site.status !== 'ready') ||
                 (event === 'failed' && site.status === 'ready') ||
-                // The customer subscribed before this arrived: no warning or shut-off notice applies any more.
                 ((event === 'trial_ending' || event === 'trial_ended') && !site.trial) ||
                 (event === 'trial_ending' && site.trial?.expired);
             const user = await db.query.user.findFirst({

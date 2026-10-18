@@ -1,4 +1,3 @@
-"""Free trials: starting one, ending one, converting it, and what a customer or admin may do with an ended one."""
 import unittest
 import uuid
 from datetime import datetime, timedelta, timezone

@@ -1,12 +1,3 @@
-/**
- * Seeds throwaway rows so the admin list views can be exercised with data.
- *
- *   npx tsx scripts/seed-demo-lists.ts          # create
- *   npx tsx scripts/seed-demo-lists.ts --clean  # remove
- *
- * Everything it writes is prefixed so `--clean` can find it again; it never
- * touches rows it did not create.
- */
 import 'dotenv/config';
 import { like } from 'drizzle-orm';
 import { closeDb, db, schema } from '../lib/db';
@@ -55,5 +46,4 @@ run()
         await closeDb();
         process.exit(1);
     });
-
 

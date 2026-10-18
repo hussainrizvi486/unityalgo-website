@@ -17,20 +17,6 @@ import {
 } from '@/components/ui/select';
 import { cn } from '@/utils';
 
-/**
- * An admin form described by an array instead of written out in JSX.
- *
- * Every admin form here was a hand-written block of markup, so the same label,
- * spacing and error handling was reimplemented per screen and drifted between
- * them. A form is now a list of fields, and this renders it.
- *
- * The layout markers — tab, section, column — are breaks rather than
- * containers, which is how ERP form builders describe a layout and how anyone
- * coming from one will expect to write it: fields belong to whichever break
- * last preceded them. `buildLayout` turns that flat list into the nesting the
- * markup needs, so a caller never has to close anything.
- */
-
 interface FieldBase {
     name: string;
     label: string;
@@ -51,8 +37,6 @@ export type AdminFormField =
         type: 'text' | 'email' | 'url' | 'password' | 'date';
         defaultValue?: string | number;
     })
-    // Numeric kinds all render the same text field; only the formatting and
-    // the character filtering differ. See components/ui/smart-input.tsx.
     | (FieldBase & {
         type: 'number' | 'integer' | 'decimal' | 'currency' | 'percent';
         defaultValue?: string | number | null;
@@ -81,12 +65,6 @@ type Column = { fields: AdminFormField[] };
 type Section = { label?: string; description?: string; columns: Column[] };
 type Tab = { label: string; sections: Section[] };
 
-/**
- * Turns the flat list of fields and breaks into tabs → sections → columns.
- *
- * A form with no breaks at all still produces one tab, one section and one
- * column, so the simple case needs no ceremony from the caller.
- */
 function buildLayout(fields: AdminFormField[]): Tab[] {
     const tabs: Tab[] = [];
     let tab: Tab | null = null;
@@ -196,8 +174,6 @@ function FieldControl({ field }: { field: AdminFormField }) {
                     required={field.required}
                     disabled={field.disabled}
                     placeholder={field.placeholder}
-                    // ?? undefined: a null default means "no value", and React
-                    // treats null on defaultValue as an uncontrolled reset.
                     defaultValue={field.defaultValue ?? undefined}
                 />
             )}
@@ -222,8 +198,6 @@ function SectionBlock({ section }: { section: Section }) {
             ) : null}
             <div
                 className="grid gap-gap-lg"
-                // Column count comes from how many breaks the caller wrote, so
-                // a two-column section and a four-column one need no extra prop.
                 style={{ ['--cols' as string]: section.columns.length }}
             >
                 <div className={cn('grid gap-gap-lg', section.columns.length > 1 && 'md:grid-cols-[repeat(var(--cols),minmax(0,1fr))]')}>

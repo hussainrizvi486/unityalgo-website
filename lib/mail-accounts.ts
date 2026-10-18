@@ -5,18 +5,6 @@ import type { EmailAccount, EmailPurpose } from '@/db/types';
 import { db, schema } from '@/lib/db';
 import { decryptSecret } from '@/lib/secret-box';
 
-/**
- * Resolving and dialling the mailboxes the platform sends from.
- *
- * Accounts are rows an admin edits (`EmailAccount`). The SMTP_* environment
- * variables still work and are used when no account matches, so an install that
- * never opens the admin screen keeps sending exactly as before — this is
- * additive, not a cutover.
- *
- * Nothing here is exported that returns a password. Transports are built inside
- * this module and only the transport escapes.
- */
-
 /** How long a built transport is reused before being rebuilt, in ms. */
 const TRANSPORT_TTL = 5 * 60 * 1000;
 
@@ -48,21 +36,12 @@ export interface ResolvedSender {
     accountId: string | null;
 }
 
-/**
- * Builds an SMTP transport from an account row.
- *
- * Exported for the admin "test connection" action, which needs to dial a set of
- * settings that may not be saved yet.
- */
 export function buildSmtpTransport(settings: {
     host: string; port: number; secure: boolean; username: string; password: string;
 }) {
     return nodemailer.createTransport({
         host: settings.host,
         port: settings.port,
-        // Port 465 is implicit TLS from the first byte; anything else (587, 25)
-        // starts plaintext and upgrades via STARTTLS. Getting this wrong makes
-        // nodemailer hang waiting for a greeting the server never sends.
         secure: settings.secure,
         connectionTimeout: 15_000,
         greetingTimeout: 15_000,
@@ -117,15 +96,7 @@ function environmentSender(): ResolvedSender {
     return { transport: envTransport, from: process.env.SMTP_FROM || SMTP_USER, accountId: null };
 }
 
-/**
- * The account that should send a given kind of mail.
- *
- * Preference order: an active account for that exact purpose, then the default
- * account, then the environment. Falling through rather than failing is
- * deliberate — an admin adding a MARKETING mailbox should never be able to stop
- * verification codes going out.
- */
-export async function resolveSender(purpose: EmailPurpose): Promise<ResolvedSender> {
+async function resolveSender(purpose: EmailPurpose): Promise<ResolvedSender> {
     const account = await db.query.emailAccount.findFirst({
         where: and(eq(schema.emailAccount.isActive, true), eq(schema.emailAccount.purpose, purpose)),
         orderBy: [desc(schema.emailAccount.isDefault), asc(schema.emailAccount.createdAt)],

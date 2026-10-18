@@ -2,9 +2,6 @@ import 'dotenv/config';
 import type { PriceUnit, AddOnPricingType } from '../db/types';
 import { closeDb, db, schema } from '../lib/db';
 
-// Placeholder pricing — the source brief only gave "$X" placeholders for
-// most tiers. Edit real numbers afterwards from /admin/plans and
-// /admin/addons; this script is safe to re-run (upserts on productId+slug).
 interface PlanSeed {
   productId: string;
   name: string;

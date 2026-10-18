@@ -8,7 +8,6 @@ import { ControllerOffline } from '@/components/admin/controller-offline';
 import { OPERATION_STATUS_BADGE, humanizeStatus } from '@/lib/controller-status';
 import { formatDateTime } from '@/lib/admin-format';
 
-/** Whole-text block: nothing is clamped, so a traceback can be read and copied in full. */
 function Pre({ children, tone }: { children: string; tone?: 'error' }) {
     return (
         <pre

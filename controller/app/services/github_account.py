@@ -1,4 +1,3 @@
-"""Which GitHub credentials the App Store uses: the account an admin connected, else GITHUB_TOKEN from the environment."""
 from sqlalchemy import select
 from app.models.app_rollout import GithubAccount
 

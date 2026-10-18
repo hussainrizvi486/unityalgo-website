@@ -15,12 +15,13 @@ export default async function AdminPlansPage({ searchParams }: PlansPageProps) {
 
     const [plans, totalCount] = await Promise.all([
         db
-            .select({ row: schema.plan, product: schema.product })
+            .select({ row: schema.plan, product: schema.product, currency: schema.currency })
             .from(schema.plan)
             .innerJoin(schema.product, eq(schema.product.id, schema.plan.productId))
+            .leftJoin(schema.currency, eq(schema.currency.id, schema.plan.currencyId))
             .orderBy(asc(schema.product.sortOrder), asc(schema.plan.sortOrder))
             .limit(ADMIN_LIST_LIMIT)
-            .then((rows) => rows.map(({ row, product }) => ({ ...row, product }))),
+            .then((rows) => rows.map(({ row, product, currency }) => ({ ...row, product, currency }))),
         db.$count(schema.plan),
     ]);
 

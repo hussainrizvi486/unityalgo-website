@@ -1,17 +1,5 @@
-"""Command line entrypoint for the Infrastructure Controller.
 
-    python main.py              # run the API server
-    python main.py migrate      # apply Alembic migrations to head
-    python main.py makemigration "add x"
-    python main.py rollback     # downgrade one revision
-    python main.py revision     # show the current revision
-    python main.py routes       # list registered routes
-    python main.py config       # show effective settings (secrets masked)
-    python main.py sshcheck <ip> [user] [password]             # probe a node
-    python main.py worker [extra celery flags]                 # run a Celery worker
-    python main.py beat [extra celery flags]                   # run the Celery Beat scheduler
-"""
-
+import os
 import sys
 from typing import ClassVar
 
@@ -25,12 +13,28 @@ class ControllerCLI:
         self.settings = config or settings
         self.db = db or database
 
+    def check_database(self, role):
+        mode = os.getenv("DB_STARTUP_CHECK", "strict").strip().lower()
+        if mode == "off":
+            return None
+        ok, lines = self.db.startup_check()
+        print("\n".join(lines), file=sys.stdout if ok else sys.stderr)
+        if ok:
+            return None
+        if mode == "warn":
+            print(f"DB_STARTUP_CHECK=warn: starting the {role} anyway.", file=sys.stderr)
+            return None
+        print(
+            f"The {role} was not started because the database is unreachable. "
+            "Fix the problem above, or set DB_STARTUP_CHECK=warn to start regardless.",
+            file=sys.stderr,
+        )
+        return 1
+
     def serve(self, *_args):
-        if not self.db.check_connection():
-            print(
-                f"warning: cannot reach {self.settings.safe_database_url()} -- "
-                "API routes that touch the database will return 503"
-            )
+        failed = self.check_database("API server")
+        if failed:
+            return failed
         print(
             f"{self.settings.app_name} listening on "
             f"http://{self.settings.app_host}:{self.settings.app_port}"
@@ -53,10 +57,6 @@ class ControllerCLI:
         self.db.current_revision()
 
     def sshcheck(self, *args):
-        """Probe a node over SSH without needing a database row.
-
-        python main.py sshcheck 192.168.252.2 [user] [password]
-        """
         if not args:
             print("usage: python main.py sshcheck <ip> [user] [password]")
             return 1
@@ -84,26 +84,17 @@ class ControllerCLI:
         return 0
 
     def worker(self, *args):
-        """python main.py worker [extra celery worker flags]
-
-        Equivalent to `celery -A app.tasks.celery_app worker --loglevel=info`.
-        Requires Redis reachable at REDIS_URL (see `python main.py config`).
-        """
+        failed = self.check_database("worker")
+        if failed:
+            return failed
         from app.tasks.celery_app import celery_app
 
         celery_app.worker_main(["worker", "--loglevel=info", *args])
 
     def beat(self, *args):
-        """python main.py beat [extra celery beat flags]
-
-        Equivalent to `celery -A app.tasks.celery_app beat --loglevel=info`.
-        Ticks the schedule defined in app/tasks/celery_app.py's
-        beat_schedule (currently: health_check_sweep every
-        HEALTH_CHECK_INTERVAL_SECONDS) -- run as its own process, separate
-        from `worker`. Celery requires exactly one beat scheduler running;
-        running it inside a worker (`-B`) would double-schedule across
-        worker restarts or multiple worker processes.
-        """
+        failed = self.check_database("scheduler")
+        if failed:
+            return failed
         from app.tasks.celery_app import celery_app
 
         celery_app.start(["beat", "--loglevel=info", *args])

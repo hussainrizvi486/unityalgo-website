@@ -4,9 +4,6 @@ import { closeDb, db, schema } from '../lib/db';
 // Currencies whose conventional digit grouping is lakh/crore.
 const LAKH_GROUPING = new Set(['INR', 'PKR', 'BDT', 'NPR', 'LKR']);
 
-// Names and symbols come from the runtime's ICU data, so they track ISO 4217
-// rather than a hand-typed list. Safe to re-run: a code that already exists is
-// left exactly as an admin edited it.
 async function main() {
   const names = new Intl.DisplayNames(['en'], { type: 'currency' });
   const codes = Intl.supportedValuesOf('currency');

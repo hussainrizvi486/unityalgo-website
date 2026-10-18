@@ -22,16 +22,6 @@ from app.models.base import Base
 
 
 class Deployment(Base):
-    """One running (or historical) tenant application on one worker node.
-
-    A tenant no longer points at a server directly -- it points at deployments,
-    and the deployment owns the server, the host port and the container. That
-    indirection is what makes migration a matter of standing up a second
-    deployment and repointing, rather than mutating the tenant in place.
-
-    Rows are never deleted: they are the deployment history, and their ports
-    stay reserved until teardown marks them `removed`.
-    """
 
     __tablename__ = "deployments"
 
@@ -46,8 +36,6 @@ class Deployment(Base):
         "removed",          # container gone, port released
     )
     HEALTH_STATUSES = ("unknown", "healthy", "unhealthy")
-    # Statuses that still occupy a port / count against node capacity. A
-    # stopped tenant keeps its slot so start() can bring the same one back.
     ACTIVE_STATUSES = (
         "pending", "deploying", "health_checking", "live", "stopped", "draining",
     )
@@ -66,8 +54,6 @@ class Deployment(Base):
     )
 
     application: Mapped[str] = mapped_column(String(50), default="storefront")
-    # Snapshotted, not read from settings, so redeploying an old deployment
-    # reproduces what actually ran.
     image: Mapped[str] = mapped_column(String(255), nullable=False)
     container_name: Mapped[str] = mapped_column(String(128), nullable=False)
     container_id: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
@@ -99,8 +85,6 @@ class Deployment(Base):
     stopped_at: Mapped[Optional[datetime]] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
-    # Set at teardown; a cooldown keeps the port out of the pool for a while so
-    # a new tenant can't inherit connections aimed at the old container.
     port_released_at: Mapped[Optional[datetime]] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
@@ -112,9 +96,6 @@ class Deployment(Base):
 
     __table_args__ = (
         UniqueConstraint("server_id", "port", name="uq_deployments_server_port"),
-        # At most one live deployment per tenant. Blue/green still works: the
-        # replacement sits in health_checking while the old one is live, and
-        # the flip happens inside one transaction.
         Index(
             "uq_deployments_live_per_tenant",
             "tenant_id",

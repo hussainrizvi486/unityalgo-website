@@ -3,7 +3,6 @@
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
 
-/** Re-reads the page's server data every few seconds while work is in progress. Renders nothing. */
 export function AutoRefresh({ active, seconds = 3 }: { active: boolean; seconds?: number }) {
     const router = useRouter();
     React.useEffect(() => {

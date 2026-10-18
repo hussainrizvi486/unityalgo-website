@@ -1,14 +1,3 @@
-/**
- * End-to-end check of the Paddle webhook, against a running app and the real
- * database.
- *
- *   npm run test:paddle
- *
- * Everything it creates is namespaced with `pw-e2e` and torn down at the end,
- * so it is safe to re-run against a dev database. It signs its own payloads
- * with PADDLE_WEBHOOK_SECRET, so it exercises the real signature check rather
- * than bypassing it.
- */
 import 'dotenv/config';
 import { createHmac, randomUUID } from 'node:crypto';
 import { and, eq, sql } from 'drizzle-orm';
@@ -17,7 +6,6 @@ import { closeDb, db, schema } from '../lib/db';
 const BASE = process.env.BASE_URL ?? 'http://localhost:3000';
 const SECRET = process.env.PADDLE_WEBHOOK_SECRET!;
 
-// Lookups the assertions below repeat; each returns null when there is no row, like the Prisma calls they replace.
 const subscriptionFor = async (userId: string, productId: string) =>
     (await db.query.subscription.findFirst({ where: and(eq(schema.subscription.userId, userId), eq(schema.subscription.productId, productId)) })) ?? null;
 const invoice$ = async (invoiceNumber: string) =>

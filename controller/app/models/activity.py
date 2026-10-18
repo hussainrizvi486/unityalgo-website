@@ -1,14 +1,3 @@
-"""Activity logging: a grouped `Operation` plus its ordered `ActivityLog` steps.
-
-Deliberately *not* foreign-keyed to tenants/servers/customers. Two reasons:
-
-1. Logs are written from an autonomous session (see ActivityLogger) so they
-   survive a rolled-back operation -- a real FK would reject rows referencing
-   an uncommitted parent, losing exactly the failure logs you need most.
-2. An audit trail should outlive the thing it describes. Denormalized label
-   columns (tenant_slug, server_name, ...) keep entries readable after the
-   subject is deleted.
-"""
 
 import uuid
 from datetime import datetime

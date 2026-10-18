@@ -8,6 +8,8 @@ import { and, asc, desc, eq, isNull, ne, or, sql } from 'drizzle-orm';
 import type { VerificationPurpose } from '@/db/types';
 import { db, schema } from '@/lib/db';
 import { sendVerificationEmail } from '@/lib/email';
+import { sendEventEmail } from '@/lib/email-templates';
+import { allowCodeRequest, checkOtp, generateOtp } from '@/lib/otp';
 import { CommentEntityType, createComment } from '@/lib/comments';
 import {
     verifyCustomerSessionToken,
@@ -17,8 +19,10 @@ import {
     signVerifiedEmailToken,
     signResetPendingToken,
     signResetVerifiedToken,
-    verifyRegToken,
-    verifyResetToken,
+    verifyRegPendingToken,
+    verifyRegVerifiedToken,
+    verifyResetPendingToken,
+    verifyResetVerifiedToken,
     REG_PENDING_COOKIE,
     REG_VERIFIED_COOKIE,
     REG_PENDING_DURATION_SECONDS,
@@ -41,11 +45,6 @@ export interface RegisterFormState {
     error?: string;
     /** Per-field problems, keyed by input name. */
     fieldErrors?: FieldErrors;
-    /**
-     * What was submitted, echoed back so a rejected form redraws with the
-     * values still in it. Passwords are deliberately absent — re-typing one is
-     * a small cost next to keeping it in a server response.
-     */
     values?: Record<string, string>;
 }
 
@@ -57,21 +56,12 @@ const COOKIE_BASE = {
     path: '/',
 };
 
-function generateOtp() {
-    return String(Math.floor(100000 + Math.random() * 900000));
-}
-
-
-
-// Throws only for a caller-facing message; the underlying SMTP/config error is
-// logged so it's still visible to whoever operates the deployment. `purpose`
-// keeps a registration OTP and a password-reset OTP for the same email from
-// ever being interchangeable.
 async function issueOtp(email: string, purpose: VerificationPurpose) {
+    const allowed = await allowCodeRequest(email, purpose);
+    if (!allowed.allowed) throw new Error(allowed.message);
     const otp = generateOtp();
     const expiresAt = new Date(Date.now() + OTP_TTL_MINUTES * 60 * 1000);
 
-    // Invalidate any earlier unverified codes for this email + purpose before issuing a new one.
     await db.delete(schema.emailVerification).where(and(
         eq(schema.emailVerification.email, email),
         eq(schema.emailVerification.purpose, purpose),
@@ -82,8 +72,6 @@ async function issueOtp(email: string, purpose: VerificationPurpose) {
     try {
         await sendVerificationEmail(email, otp);
     } catch (error) {
-        // A failed send must not leave an undelivered code active. Limit this
-        // cleanup to this attempt so a concurrent successful resend survives.
         await db.delete(schema.emailVerification).where(and(
             eq(schema.emailVerification.id, verification.id),
             isNull(schema.emailVerification.verifiedAt),
@@ -93,8 +81,6 @@ async function issueOtp(email: string, purpose: VerificationPurpose) {
     }
 }
 
-// Step 1: collect + verify the email address before anything else. No account
-// exists yet at this point — we're only confirming the user controls this inbox.
 export async function requestEmailVerificationAction(
     _prevState: RegisterFormState | undefined,
     formData: FormData
@@ -110,15 +96,15 @@ export async function requestEmailVerificationAction(
     }
 
     const existing = await db.query.user.findFirst({ where: eq(schema.user.email, email) });
-    if (existing) {
-        return {
-            fieldErrors: { email: 'An account with this email already exists. Try signing in instead.' },
-            values,
-        };
-    }
 
     try {
-        await issueOtp(email, 'REGISTRATION');
+        if (existing) {
+            const allowed = await allowCodeRequest(email, 'REGISTRATION');
+            if (!allowed.allowed) throw new Error(allowed.message);
+            await sendEventEmail('registration_existing_account', email, { 'user.email': email, 'user.name': existing.name ?? email, login_url: `${process.env.PLATFORM_PUBLIC_URL || 'https://www.unityalgo.com'}/login` });
+        } else {
+            await issueOtp(email, 'REGISTRATION');
+        }
     } catch (error) {
         return { error: error instanceof Error ? error.message : 'Something went wrong. Please try again.' };
     }
@@ -133,7 +119,7 @@ export async function requestEmailVerificationAction(
 export async function resendVerificationCodeAction(): Promise<RegisterFormState> {
     const cookieStore = await cookies();
     const pendingToken = cookieStore.get(REG_PENDING_COOKIE)?.value;
-    const pending = pendingToken ? await verifyRegToken(pendingToken) : null;
+    const pending = pendingToken ? await verifyRegPendingToken(pendingToken) : null;
     if (!pending) {
         return { error: 'Your verification session expired. Start again.' };
     }
@@ -150,16 +136,13 @@ export async function resendVerificationCodeAction(): Promise<RegisterFormState>
     return {};
 }
 
-// Step 1b: check the OTP. Once correct, the email is marked verified and we
-// hand back a short-lived signed cookie — step 3 trusts that cookie for the
-// email address, never a form field, so it can't be spoofed client-side.
 export async function verifyEmailOtpAction(
     _prevState: RegisterFormState | undefined,
     formData: FormData
 ): Promise<RegisterFormState> {
     const cookieStore = await cookies();
     const pendingToken = cookieStore.get(REG_PENDING_COOKIE)?.value;
-    const pending = pendingToken ? await verifyRegToken(pendingToken) : null;
+    const pending = pendingToken ? await verifyRegPendingToken(pendingToken) : null;
 
     if (!pending) {
         return { error: 'Your verification session expired. Start again.' };
@@ -170,24 +153,8 @@ export async function verifyEmailOtpAction(
         return { error: 'Enter the 6-digit code from your email.' };
     }
 
-    const record = await db.query.emailVerification.findFirst({
-        where: and(
-            eq(schema.emailVerification.email, pending.email),
-            eq(schema.emailVerification.purpose, 'REGISTRATION'),
-            isNull(schema.emailVerification.verifiedAt),
-        ),
-        orderBy: desc(schema.emailVerification.createdAt),
-    });
-
-    if (!record || record.expiresAt < new Date()) {
-        return { error: 'That code has expired. Request a new one.' };
-    }
-
-    if (record.otp !== code) {
-        return { error: 'That code is incorrect.' };
-    }
-
-    await db.update(schema.emailVerification).set({ verifiedAt: new Date() }).where(eq(schema.emailVerification.id, record.id));
+    const checked = await checkOtp(pending.email, 'REGISTRATION', code);
+    if (!checked.ok) return { error: checked.error };
 
     const verifiedToken = await signVerifiedEmailToken(pending.email);
     cookieStore.set(REG_VERIFIED_COOKIE, verifiedToken, { ...COOKIE_BASE, maxAge: REG_VERIFIED_DURATION_SECONDS });
@@ -196,16 +163,13 @@ export async function verifyEmailOtpAction(
     redirect('/register');
 }
 
-// Step 3: create the account. Role is always CUSTOMER — this action has no
-// "role" field to read in the first place, so there's nothing for a request
-// to elevate even if someone tried to smuggle one in.
 export async function createCustomerAction(
     _prevState: RegisterFormState | undefined,
     formData: FormData
 ): Promise<RegisterFormState> {
     const cookieStore = await cookies();
     const verifiedToken = cookieStore.get(REG_VERIFIED_COOKIE)?.value;
-    const verified = verifiedToken ? await verifyRegToken(verifiedToken) : null;
+    const verified = verifiedToken ? await verifyRegVerifiedToken(verifiedToken) : null;
 
     if (!verified) {
         return { error: 'Your verification session expired. Start again.' };
@@ -216,8 +180,6 @@ export async function createCustomerAction(
     const phone = String(formData.get('phone') ?? '').trim();
     const password = String(formData.get('password') ?? '');
 
-    // Echoed on every rejection so the form redraws filled in. The password is
-    // never included.
     const values = { firstName, lastName, phone };
 
     const fieldErrors = validateRegistration({ firstName, lastName, phone, password });
@@ -262,9 +224,6 @@ export async function restartRegistrationAction() {
     redirect('/register');
 }
 
-// Forgot password, step 1: only ever issue a code for an email that already
-// has a customer account — unlike registration, there's nothing useful to do
-// for an email that doesn't.
 export async function requestPasswordResetAction(
     _prevState: RegisterFormState | undefined,
     formData: FormData
@@ -276,12 +235,14 @@ export async function requestPasswordResetAction(
     }
 
     const user = await db.query.user.findFirst({ where: eq(schema.user.email, email) });
-    if (!user || user.role !== 'CUSTOMER') {
-        return { error: 'No account found with this email address.' };
-    }
-
     try {
-        await issueOtp(email, 'PASSWORD_RESET');
+        if (user && user.role === 'CUSTOMER') {
+            await issueOtp(email, 'PASSWORD_RESET');
+        } else {
+            const allowed = await allowCodeRequest(email, 'PASSWORD_RESET');
+            if (!allowed.allowed) throw new Error(allowed.message);
+            await new Promise((resolve) => setTimeout(resolve, 600 + Math.random() * 600));
+        }
     } catch (error) {
         return { error: error instanceof Error ? error.message : 'Something went wrong. Please try again.' };
     }
@@ -296,7 +257,7 @@ export async function requestPasswordResetAction(
 export async function resendPasswordResetCodeAction(): Promise<RegisterFormState> {
     const cookieStore = await cookies();
     const pendingToken = cookieStore.get(RESET_PENDING_COOKIE)?.value;
-    const pending = pendingToken ? await verifyResetToken(pendingToken) : null;
+    const pending = pendingToken ? await verifyResetPendingToken(pendingToken) : null;
     if (!pending) {
         return { error: 'Your reset session expired. Start again.' };
     }
@@ -313,15 +274,13 @@ export async function resendPasswordResetCodeAction(): Promise<RegisterFormState
     return {};
 }
 
-// Forgot password, step 2: same trust model as registration's OTP check —
-// the email only ever comes from the signed cookie, never a form field.
 export async function verifyPasswordResetOtpAction(
     _prevState: RegisterFormState | undefined,
     formData: FormData
 ): Promise<RegisterFormState> {
     const cookieStore = await cookies();
     const pendingToken = cookieStore.get(RESET_PENDING_COOKIE)?.value;
-    const pending = pendingToken ? await verifyResetToken(pendingToken) : null;
+    const pending = pendingToken ? await verifyResetPendingToken(pendingToken) : null;
 
     if (!pending) {
         return { error: 'Your reset session expired. Start again.' };
@@ -332,24 +291,8 @@ export async function verifyPasswordResetOtpAction(
         return { error: 'Enter the 6-digit code from your email.' };
     }
 
-    const record = await db.query.emailVerification.findFirst({
-        where: and(
-            eq(schema.emailVerification.email, pending.email),
-            eq(schema.emailVerification.purpose, 'PASSWORD_RESET'),
-            isNull(schema.emailVerification.verifiedAt),
-        ),
-        orderBy: desc(schema.emailVerification.createdAt),
-    });
-
-    if (!record || record.expiresAt < new Date()) {
-        return { error: 'That code has expired. Request a new one.' };
-    }
-
-    if (record.otp !== code) {
-        return { error: 'That code is incorrect.' };
-    }
-
-    await db.update(schema.emailVerification).set({ verifiedAt: new Date() }).where(eq(schema.emailVerification.id, record.id));
+    const checked = await checkOtp(pending.email, 'PASSWORD_RESET', code);
+    if (!checked.ok) return { error: checked.error };
 
     const verifiedToken = await signResetVerifiedToken(pending.email);
     cookieStore.set(RESET_VERIFIED_COOKIE, verifiedToken, { ...COOKIE_BASE, maxAge: RESET_VERIFIED_DURATION_SECONDS });
@@ -358,15 +301,13 @@ export async function verifyPasswordResetOtpAction(
     redirect('/customer/forgot-password');
 }
 
-// Forgot password, step 3: set the new password. Requires the verified-reset
-// cookie from step 2 — there's no path here that doesn't go through the OTP.
 export async function resetPasswordAction(
     _prevState: RegisterFormState | undefined,
     formData: FormData
 ): Promise<RegisterFormState> {
     const cookieStore = await cookies();
     const verifiedToken = cookieStore.get(RESET_VERIFIED_COOKIE)?.value;
-    const verified = verifiedToken ? await verifyResetToken(verifiedToken) : null;
+    const verified = verifiedToken ? await verifyResetVerifiedToken(verifiedToken) : null;
 
     if (!verified) {
         return { error: 'Your reset session expired. Start again.' };
@@ -406,8 +347,6 @@ export async function restartPasswordResetAction() {
     redirect('/customer/forgot-password');
 }
 
-// Signing in lives in app/login/actions.ts now — one action for both roles,
-// so this customer-only version would have been a second, diverging copy.
 export async function customerLogoutAction() {
     const cookieStore = await cookies();
     const token = cookieStore.get(CUSTOMER_SESSION_COOKIE)?.value;
@@ -420,11 +359,8 @@ export async function customerLogoutAction() {
     redirect('/login');
 }
 
-const SUBSCRIPTION_WITH = { plan: true, addOns: { with: { addOn: true } } } as const;
+const SUBSCRIPTION_WITH = { plan: { with: { currency: true } }, addOns: { with: { addOn: true } } } as const;
 
-// A customer can hold at most one subscription per product (one AlgoSuite
-// plan + one Unity Commerce plan at the same time) — enforced by the
-// [userId, product] unique index on Subscription, not just app logic.
 export async function getSubscriptions(userId: string) {
     const session = await requireCustomerSession();
     if (session.userId !== userId) throw new Error('You cannot access another customer account.');
@@ -435,7 +371,7 @@ export async function getSubscriptions(userId: string) {
     });
 }
 
-export async function getSubscriptionForProduct(userId: string, product: string) {
+async function getSubscriptionForProduct(userId: string, product: string) {
     const session = await requireCustomerSession();
     if (session.userId !== userId) throw new Error('You cannot access another customer account.');
     return (await db.query.subscription.findFirst({
@@ -444,26 +380,6 @@ export async function getSubscriptionForProduct(userId: string, product: string)
     })) ?? null;
 }
 
-// Purchase (or switch) a plan. Custom-quote plans (no price) aren't
-// self-serve — the pricing page routes those to "Contact sales" instead of
-// this action, and this is checked again here so a crafted request can't
-// bypass that. Only the subscription for the SAME product is touched — a
-// customer purchasing a Unity Commerce plan keeps their AlgoSuite
-// subscription (and its add-ons) untouched, and vice versa.
-/**
- * Starts a Paddle checkout for a plan. It does NOT grant anything.
- *
- * This used to write an ACTIVE subscription straight from the form post, which
- * meant a paid plan cost nothing to acquire — any session could post a planId
- * and be subscribed. The grant now happens only in the Paddle webhook, against
- * a payload Paddle signed (app/api/paddle/webhook/route.ts).
- *
- * What comes back is just what the browser needs to open Paddle's overlay. The
- * price id is read from the plan rather than taken from the client, so the
- * customer cannot substitute a cheaper one; `customData` carries the ids the
- * webhook uses to work out who bought what, and the webhook re-checks them
- * against our own tables because they travel through the browser.
- */
 export interface CheckoutIntent {
     ok: boolean;
     error?: string;
@@ -501,18 +417,6 @@ export async function startPlanCheckoutAction(planId: string): Promise<CheckoutI
     };
 }
 
-/**
- * Whether the webhook has landed for a plan the customer just paid for.
- *
- * The checkout overlay reports `checkout.completed` the moment Paddle accepts
- * the customer's details, which is before settlement and before our webhook
- * has written anything. The button polls this instead of refreshing once and
- * hoping: a single refresh usually lands *before* the webhook and leaves the
- * page looking as though the payment did nothing.
- *
- * Reads only the caller's own subscription, so it grants nothing and cannot be
- * used to probe anyone else's billing.
- */
 export async function checkoutSettlementAction(planId: string): Promise<{
     settled: boolean;
     status?: string;
@@ -532,28 +436,17 @@ export async function checkoutSettlementAction(planId: string): Promise<{
     });
     if (!subscription) return { settled: false };
 
-    // Settled means "this plan, and paying" — an older subscription to the
-    // same product sitting there ACTIVE is not evidence this purchase landed.
     const settled = subscription.planId === planId
         && (subscription.status === 'ACTIVE' || subscription.status === 'TRIAL');
 
     return { settled, status: subscription.status };
 }
 
-/**
- * Same as `startPlanCheckoutAction`, for the onboarding flow.
- *
- * Onboarding arrives with `?plan=Growth` — a display name, not an id — so the
- * plan is looked up by name or slug and then handed to the same checks. It
- * resolves against active plans only, so a stale link cannot open checkout on
- * a retired plan.
- */
 export async function startPlanCheckoutBySlugAction(nameOrSlug: string): Promise<CheckoutIntent> {
     await requireCustomerSession();
     const needle = nameOrSlug.trim();
     if (!needle) return { ok: false, error: 'No plan selected.' };
 
-    // Case-insensitive equality. Not ILIKE: that would treat % and _ in the visitor's text as wildcards.
     const plan = await db.query.plan.findFirst({
         where: and(
             eq(schema.plan.isActive, true),
@@ -569,10 +462,6 @@ export async function startPlanCheckoutBySlugAction(nameOrSlug: string): Promise
     return startPlanCheckoutAction(plan.id);
 }
 
-// Add an add-on to the caller's subscription for that add-on's product —
-// each product has its own subscription, so the add-on's own product tells
-// us which one to attach it to. Both the add-on and the matching
-// subscription must actually exist and be active, checked server-side.
 export async function addSubscriptionAddOnAction(formData: FormData) {
     const session = await requireCustomerSession();
     const addOnId = String(formData.get('addOnId') ?? '');
@@ -793,9 +682,6 @@ export async function deleteAddressAction(formData: FormData) {
 
     await db.delete(schema.address).where(eq(schema.address.id, id));
 
-    // If the deleted address was the default and other addresses remain,
-    // promote the most recently added one so there's always a default
-    // whenever at least one address exists.
     if (existing.isDefault) {
         const fallback = await db.query.address.findFirst({ where: eq(schema.address.userId, session.userId), orderBy: desc(schema.address.createdAt) });
         if (fallback) {

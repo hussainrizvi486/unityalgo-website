@@ -43,7 +43,6 @@ def provision_site_task(self, site_id, setup=None):
         if not site or site.status != 'queued':
             return
         site.status, site.progress, site.message = 'assigned', 5, 'The assigned server is preparing your site.'
-        # `setup` is an encrypted blob on first run and absent on retry (the worker keeps it).
         service = build_service(session, site, json.loads(decrypt(setup, settings)) if setup else None)
     current = ['assigned']
     succeeded = False
@@ -59,15 +58,15 @@ def provision_site_task(self, site_id, setup=None):
             op.ok('Provisioning started', message=f'{service.site.domain} on {service.server.name}', details={'port': service.site.port, 'apps': service.site.app_names})
             service.prepare()
             op.ok('Deployment folder and Compose file prepared')
-            step('pulling', 15, 'Downloading the Frappe and ERPNext images.')
-            op.ok('pulling', message='Downloading the Frappe and ERPNext images.')
+            step('pulling', 15, 'Downloading the AlgoSuite platform.')
+            op.ok('pulling', message='Downloading the AlgoSuite platform.')
             service.run(['pull'])
             service.run(['up','-d','--wait','--wait-timeout','180', *service.infrastructure()])
             step('configuring', 35, 'Configuring the database and background services.')
             op.ok('configuring', message='Configuring the database and background services.')
             service.run(['run','--rm','configurator'])
-            step('installing', 55, 'Creating your Frappe site and installing the selected applications.')
-            op.ok('installing', message='Creating your Frappe site and installing the selected applications.')
+            step('installing', 55, 'Creating your site and installing the selected applications.')
+            op.ok('installing', message='Creating your site and installing the selected applications.')
             service.run(['run','--rm','create-site'])
             step('starting', 80, 'Starting the application and checking its health.')
             op.ok('starting', message='Starting the application and checking its health.')
@@ -82,7 +81,6 @@ def provision_site_task(self, site_id, setup=None):
                 service.apply_limits(service.site.user_limit)
                 op.ok('Plan seat limit applied', message=str(service.site.user_limit or 'unlimited'))
             except Exception as exc:
-                # A site without its seat limit still works; the periodic audit reports any overage and re-applies it.
                 op.warn('Seat limit not applied yet', message=str(exc)[:300])
             step('routing', 90, 'Connecting your site address to the application.')
             op.ok('routing', message='Connecting your site address to the application.')
@@ -95,14 +93,12 @@ def provision_site_task(self, site_id, setup=None):
             try:
                 service.scrub_setup()
             except Exception:
-                pass  # The password stays in a 0600 file on the worker; not worth failing a live site.
+                pass
     except Exception as failure:
         label = dict(STEP_FLOW).get(current[0], 'deployment')
         reason = f'Deployment stopped at "{label}". '
         if isinstance(failure, SetupUnavailable):
             reason = str(failure) + ' '
-        # Never release capacity while containers might still be running. Only the cleanup call
-        # decides the outcome; a database hiccup while recording it must not look like a cleanup failure.
         cleaned = True
         try:
             service.run(['down','--remove-orphans'], timeout=120)
@@ -126,8 +122,6 @@ class SiteActionTask(celery_app.Task):
     abstract = True
 
     def on_failure(self, exc, task_id, args, kwargs, einfo):
-        """A killed or timed-out worker never reaches the task's own handler; clear the marker here
-        so the site is not left 'stopping' or 'backing up' forever."""
         site_id, action, origin = (list(args) + [None, None, None])[:3]
         if not site_id:
             return
@@ -144,7 +138,6 @@ class SiteActionTask(celery_app.Task):
 
 @celery_app.task(bind=True, base=SiteActionTask, name='site.action', soft_time_limit=1700, time_limit=1800)
 def site_action_task(self, site_id, action, origin=None):
-    """Stop, start, restart or back up a provisioned site. The route has already set the in-progress marker."""
     with database.session() as session:
         site = session.get(Site, uuid.UUID(site_id))
         if not site:
@@ -183,7 +176,6 @@ def site_action_task(self, site_id, action, origin=None):
         if action == 'backup':
             update(site_id, previous, 100, 'The last backup failed.', error='The backup could not be completed. Try again, or contact support.', activity=None)
         else:
-            # Put the site back where it was: only a failed start/reactivate leaves it not running.
             failed_to = origin if origin in ('ready', 'stopped', 'deactivated') else ('ready' if action in ('stop', 'restart') else 'stopped')
             update(site_id, failed_to, 100, f'The site could not be {action}ed.' if action != 'stop' else 'The site could not be stopped.',
                    error=f'Could not {action} the site. Try again, or contact support.')
@@ -199,7 +191,6 @@ def delete_site_task(self, site_id, previous_status, force=False):
             return
         service = build_service(session, site)
         slug, server_id = service.site.slug, site.server_id
-        # A database exists on an external server only once the site was actually created there.
         drop_database = bool(site.db_server_id) and previous_status in ('ready', 'stopped', 'stopping', 'restarting')
     try:
         with ActivityLogger().operation('site.delete', f'Site deletion: {slug}', category='deployment', tenant_slug=slug, server_name=service.server.name) as op:
@@ -207,8 +198,6 @@ def delete_site_task(self, site_id, previous_status, force=False):
             for problem in problems:
                 op.warn('Step failed (forced past it)', message=problem[:500])
             if drop_database and service.database_name and service.external_db:
-                # Verify rather than trust `bench drop-site`: an orphaned database keeps the customer's data on
-                # the shared server. Only a name in Frappe's own per-site format can ever be dropped here.
                 db = service.external_db
                 try:
                     removed = remove_site_database(db['controller_host'], db['port'], db['user'], db['password'], service.database_name, db.get('sslmode', 'disable'))
@@ -249,7 +238,6 @@ def limit_state(site, user_count, storage_mb):
 
 @celery_app.task(name='site.audit_limits', soft_time_limit=1500, time_limit=1700)
 def audit_limits_task(site_ids=None):
-    """Measure each running site's seats and storage against its plan (Celery Beat). `site_ids` narrows it to some sites."""
     with database.session() as session:
         query = select(Site).where(Site.status == 'ready', Site.activity.is_(None))
         if site_ids is not None:
@@ -279,11 +267,10 @@ def audit_limits_task(site_ids=None):
                                    message=str(exc)[:300], tenant_slug=slug)
 
 
-KEEP = {'scheduled': None, 'safety': 2}   # manual backups are never pruned; safety copies keep the newest two
+KEEP = {'scheduled': None, 'safety': 2}
 
 
 def run_backup(service, site_id, kind):
-    """Take a backup, record the new set under `kind`, and prune old sets of that kind. Returns (bench output, new stamps)."""
     before = {group['stamp'] for group in service.backup_sets()}
     output = service.backup()
     fresh = [group['stamp'] for group in service.backup_sets() if group['stamp'] not in before]
@@ -309,7 +296,6 @@ def run_backup(service, site_id, kind):
 
 @celery_app.task(name='site.scheduled_backups', soft_time_limit=3000, time_limit=3300)
 def scheduled_backups_task(site_ids=None):
-    """Back up every site whose schedule says it is due (Celery Beat). Each site's retention is applied after. `site_ids` narrows it."""
     interval = {'daily': timedelta(days=1), 'weekly': timedelta(days=7)}
     now = datetime.now(timezone.utc)
     with database.session() as session:
@@ -320,7 +306,6 @@ def scheduled_backups_task(site_ids=None):
                       if site.last_backup_at is None or now - site.last_backup_at >= interval[site.backup_schedule]]
     for site_id in candidates:
         with database.session() as session:
-            # Claim the site atomically so a customer's own backup or action cannot overlap this one.
             claimed = session.execute(update_table(Site).where(Site.id == uuid.UUID(site_id), Site.status == 'ready', Site.activity.is_(None))
                                       .values(activity='backup')).rowcount
             if not claimed:
@@ -346,7 +331,6 @@ def scheduled_backups_task(site_ids=None):
 
 @celery_app.task(bind=True, name='site.restore', soft_time_limit=3400, time_limit=3500)
 def restore_site_task(self, site_id, stamp, origin='ready'):
-    """Replace the site's data with a backup. A safety backup is taken first and put back if the restore fails."""
     with database.session() as session:
         site = session.get(Site, uuid.UUID(site_id))
         if not site:
@@ -392,7 +376,6 @@ def restore_site_task(self, site_id, stamp, origin='ready'):
 
 
 def sync_proxy():
-    """Rebuild the Caddy routes (a deactivated site loses its route, a reactivated one regains it)."""
     with database.session() as session:
         try:
             ProxyConfigurationService(settings).sync_all(session)
@@ -406,7 +389,6 @@ class PlanChangeRefused(RuntimeError):
 
 @celery_app.task(bind=True, name='site.change_plan', soft_time_limit=1700, time_limit=1800)
 def change_plan_task(self, site_id, plan, origin):
-    """Move a running site to another plan: new container limits, new seat limit, then the new plan record."""
     with database.session() as session:
         site = session.get(Site, uuid.UUID(site_id))
         if not site:
@@ -445,7 +427,6 @@ def change_plan_task(self, site_id, plan, origin):
     except PlanChangeRefused as refused:
         update(site_id, origin, 100, 'The plan was not changed.', error=str(refused))
     except Exception:
-        # Roll the containers back to the limits they had, so a half-applied change does not linger.
         try:
             point_snapshot_at(old)
             service.rewrite_compose()

@@ -66,8 +66,6 @@ export default async function TenantDetailPage({ params, searchParams }: PagePro
 
     try {
         tenant = await controller.tenants.get(id);
-        // Independent reads — one failing shouldn't blank the whole page, so
-        // they're settled rather than awaited together.
         const [domainsResult, backupsResult, serversResult, clustersResult] = await Promise.allSettled([
             controller.tenants.domains(id),
             controller.tenants.backups(id),
@@ -118,8 +116,7 @@ export default async function TenantDetailPage({ params, searchParams }: PagePro
                 </div>
             )}
 
-            {/* Long-running work continues on a Celery worker, so poll it here
-                rather than blocking the action that started it. */}
+            {}
             {operation ? <OperationProgress operationId={operation} /> : null}
 
             {/* --- account --- */}

@@ -1,7 +1,3 @@
-/**
- * Validation for the site-creation wizard. Shared by the client (per-step
- * checks) and the server action (authoritative check), so the rules cannot drift.
- */
 import { FRAPPE_COUNTRIES } from '@/lib/frappe-countries';
 
 export const COA_TYPES = [
@@ -9,7 +5,7 @@ export const COA_TYPES = [
     { value: 'numbered', label: 'Numbered (Standard with account numbers)' },
 ] as const;
 
-export const SLUG_PATTERN = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/;
+const SLUG_PATTERN = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/;
 const EMAIL = /^[^@\s]{1,64}@[^@\s]+\.[^@\s]{2,}$/;
 
 export interface SiteWizardValues {

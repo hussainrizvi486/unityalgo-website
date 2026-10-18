@@ -1,4 +1,3 @@
-"""Free trials: warn before one ends, switch the site off when it does, and carry on if the owner subscribed."""
 import uuid
 from datetime import timedelta
 from sqlalchemy import select
@@ -21,7 +20,6 @@ def handle(site_id, user_id=None):
         subscribed = trials.has_subscription(session, site.user_id, site.plan_id)
         current = trials.now()
         if subscribed:
-            # They paid for the plan: the site is theirs for good, and comes back if the trial had already switched it off.
             was_off = site.trial_expired_at is not None
             site.trial_ends_at = site.trial_expired_at = None
             site.trial_warned = False
@@ -47,7 +45,6 @@ def handle(site_id, user_id=None):
         try:
             site_action_task.apply_async(args=list(queue), retry=False)
         except Exception:
-            # Put it back so the next sweep tries again rather than leaving the site half-switched.
             with database.session() as session:
                 site = session.get(Site, uuid.UUID(site_id))
                 if site and result == 'expired':
@@ -66,7 +63,6 @@ def handle(site_id, user_id=None):
 
 @celery_app.task(name='site.expire_trials', soft_time_limit=280, time_limit=300)
 def expire_trials_task(user_id=None, plan_id=None):
-    """Sweep trial sites (Celery Beat, and straight after a customer subscribes). Narrowed to one customer/plan when given."""
     with database.session() as session:
         ids = [str(site.id) for site in trials.due(session, user_id, plan_id)]
     outcome = {}

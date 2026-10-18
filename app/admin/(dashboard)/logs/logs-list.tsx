@@ -30,13 +30,6 @@ export interface LogRow {
     statusVariant: BadgeVariant;
 }
 
-/**
- * The activity log, in either of its two shapes.
- *
- * Operations are end-to-end processes; events are the individual steps within
- * them, plus standalone ones like health sweeps. Both are lists of the same
- * shape, so one component renders either — the column set is what differs.
- */
 export function LogsList({
     view,
     rows,

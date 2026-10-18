@@ -6,19 +6,6 @@ import { Popover, PopoverAnchor, PopoverContent } from '@/components/ui/popover'
 import { Input } from '@/components/ui/input';
 import { cn } from '@/utils';
 
-/**
- * A text field that filters a list of options as you type.
- *
- * This is the control a `<Select>` cannot be: a select is fine for five plans,
- * but not for four hundred countries or every customer in the database, where
- * the only workable way in is to type a few letters.
- *
- * Like `<SmartInput>`, the visible field carries no `name` — a hidden input
- * holds the chosen option's value, so a server action receives `pk` rather
- * than the `Pakistan` the person read. The two controls deliberately share
- * that contract so form code does not have to care which one it is posting.
- */
-
 export interface AutocompleteOption {
     value: string;
     label: string;
@@ -39,10 +26,6 @@ export interface AutocompleteProps {
     invalid?: boolean;
     id?: string;
     className?: string;
-    /**
-     * Accept text that matches no option. Off by default: a field backed by a
-     * fixed list should not silently post a value the server cannot resolve.
-     */
     allowCustomValue?: boolean;
     onValueChange?: (value: string) => void;
 }
@@ -75,8 +58,6 @@ export function Autocomplete({
     const listRef = React.useRef<HTMLDivElement>(null);
     const listId = `${name}-listbox`;
 
-    // While the list is closed the field shows the chosen label in full; typing
-    // reopens it and the same string becomes the filter.
     const matches = React.useMemo(() => {
         const needle = normalise(query);
         if (!needle || normalise(selectedLabelOf(options, value)) === needle) return options;
@@ -87,10 +68,6 @@ export function Autocomplete({
         );
     }, [options, query, value]);
 
-    // Typing narrows the list, so the stored index can outrun it. Clamping on
-    // read rather than in an effect keeps the render consistent with the list
-    // it is describing — an effect would paint one frame with
-    // aria-activedescendant pointing at an option that is no longer there.
     const activeIndex = matches.length === 0 ? 0 : Math.min(rawActiveIndex, matches.length - 1);
 
     React.useEffect(() => {
@@ -131,8 +108,6 @@ export function Autocomplete({
     }
 
     function handleBlur() {
-        // Leaving the field with a half-typed filter would show text that does
-        // not match what is posted, so settle on one or the other.
         const exact = options.find((option) => normalise(option.label) === normalise(query));
         if (exact) { commit(exact); return; }
         if (allowCustomValue) { setValue(query); onValueChange?.(query); return; }
@@ -185,8 +160,6 @@ export function Autocomplete({
                 <PopoverContent
                     align="start"
                     sideOffset={4}
-                    // Focus has to stay in the input for typing to keep working,
-                    // so the popover must not pull it into the list on open.
                     onOpenAutoFocus={(event) => event.preventDefault()}
                     className="w-[var(--radix-popover-trigger-width)] min-w-48 p-1"
                 >
@@ -205,8 +178,6 @@ export function Autocomplete({
                                         aria-selected={chosen}
                                         aria-disabled={option.disabled || undefined}
                                         data-active={active}
-                                        // Mouse down would blur the input and close the
-                                        // list before the click could land.
                                         onMouseDown={(event) => event.preventDefault()}
                                         onMouseEnter={() => setActiveIndex(index)}
                                         onClick={() => commit(option)}

@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import { imageSourceProps } from '@/lib/image-hosts';
 import type { CSSProperties } from 'react';
 import Link from 'next/link';
 import Script from 'next/script';
@@ -136,11 +137,11 @@ export default async function BlogDetailsPage({
                         )}
 
                         <div className="relative aspect-16/9 bg-secondary rounded-xl overflow-hidden mb-12">
-                            {/* The post's LCP element — priority so it is not
-                                queued behind the rest of the page's requests. */}
+                            {}
                             {post.coverImage ? (
                                 <Image
                                     src={post.coverImage}
+                                    {...imageSourceProps(post.coverImage)}
                                     alt={post.title}
                                     fill
                                     priority

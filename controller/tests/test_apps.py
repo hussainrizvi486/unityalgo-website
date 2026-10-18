@@ -1,4 +1,3 @@
-"""App Store: GitHub inspection, rollout API and the per-site rollout task. GitHub, SSH and Docker are mocked."""
 import json
 import unittest
 import urllib.error
@@ -63,7 +62,6 @@ class GitHubParsingTests(unittest.TestCase):
 
 
 class FakeGitHub:
-    """urlopen stand-in: maps a URL fragment to a JSON body or text, and raises 404 for anything unknown."""
     def __init__(self, routes):
         self.routes, self.requests = routes, []
 
@@ -239,7 +237,7 @@ class RolloutApiTests(RolloutTestCase):
         response = self.roll(action='install')
         slugs = {s['site_slug'] for s in response.json['sites']}
         self.assertIn('lacks-it', slugs)
-        self.assertNotIn('has-it', slugs)       # other real sites in the development database may also lack the app
+        self.assertNotIn('has-it', slugs)
 
     def test_incompatible_unverified_and_stale_requests_are_refused(self):
         self.make_site('stale', installed={'version': '15.0.0', 'commit': SHA_OLD})
@@ -284,7 +282,6 @@ class RolloutApiTests(RolloutTestCase):
 
 
 class FakeService:
-    """Stands in for FrappeService: records what the task asks of the worker and can be told to fail at a step."""
     APP_SERVICES = ['backend']
 
     def __init__(self, site_image, installed, fail_at=None):

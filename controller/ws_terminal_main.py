@@ -1,22 +1,3 @@
-"""Entrypoint for the isolated WebSocket service.
-
-    python ws_terminal_main.py
-
-Serves two features that both need a socket the browser opens directly:
-
-    /ws/terminal/<server_id>            interactive SSH shell   (app/terminal)
-    /ws/stream/logs/<deployment_id>     live container logs     (app/streams)
-    /ws/stream/stats/<deployment_id>    live container metrics  (app/streams)
-
-One process rather than two: they share an auth root (a short-lived HS256
-grant minted by the Next.js admin panel), a systemd unit and an nginx
-upstream, and neither holds meaningful state. A second service would double
-the deployment surface to gain nothing.
-
-Deliberately separate from the main gunicorn app (main.py serve) -- see
-app/terminal/__init__.py. Never bind this to a public interface directly;
-WS_TERMINAL_HOST defaults to loopback-only for exactly that reason.
-"""
 
 import logging
 
@@ -33,13 +14,6 @@ TERMINAL_PREFIX = "/ws/terminal/"
 
 
 def _route_of(request):
-    """Which feature owns this path, decided once and stashed on the socket.
-
-    `process_request` and the connection handler receive the same connection
-    object, so the routing decision made before the handshake is the one the
-    handler acts on -- the path is never parsed twice and cannot disagree
-    with itself between the two.
-    """
     path = request.path.split("?", 1)[0]
     if path.startswith(TERMINAL_PREFIX):
         return terminal_handler
@@ -59,8 +33,6 @@ def process_request(connection, request):
 def handle_connection(ws):
     module = getattr(ws, "ws_route", None)
     if module is None:
-        # Unreachable: process_request rejects an unknown path before the
-        # handshake completes.
         ws.close(code=1011, reason="internal error")
         return
     module.handle_connection(ws)

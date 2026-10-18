@@ -13,13 +13,6 @@ export interface InstallResult {
     charged?: boolean;
 }
 
-/**
- * Install an app from the catalogue onto one of the signed-in customer's sites.
- *
- * Order matters for paid apps: the charge is taken first, so a declined card installs nothing, and it is reversed
- * if the install cannot be queued. If the install is queued but fails later, the controller tells the site-events
- * route, which reverses it there. The customer is never left paying for an app that is not on their site.
- */
 export async function installAppAction(input: { appId: string; siteId: string }): Promise<InstallResult> {
     const user = await requireCustomer();
     const app = await db.query.appCatalog.findFirst({
@@ -66,11 +59,6 @@ export async function installAppAction(input: { appId: string; siteId: string })
     return { ok: true, charged: Boolean(purchase) };
 }
 
-/**
- * Remove an app from one of the customer's sites. The site gets a safety backup first and the app's data on the site is
- * deleted. A paid app stops being billed once the removal has finished (the controller reports that; see the
- * site-events route), so a removal that fails does not stop the charge for an app that is still there.
- */
 export async function removeAppAction(input: { appId: string; siteId: string }): Promise<InstallResult> {
     const user = await requireCustomer();
     const app = await db.query.appCatalog.findFirst({ where: eq(schema.appCatalog.id, input.appId) });

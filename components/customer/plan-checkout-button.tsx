@@ -7,31 +7,9 @@ import { checkoutSettlementAction, startPlanCheckoutAction } from '@/app/custome
 import { Button } from '@/components/ui/button';
 import { Notice } from '@/components/ui/notice';
 
-/**
- * Opens Paddle's overlay for one plan.
- *
- * Everything that decides what is being sold comes from the server action —
- * the price id is read from the plan row, not passed in from here, so the
- * button cannot be pointed at a cheaper price by editing the page.
- *
- * Completing checkout does not subscribe anyone. Paddle's `checkout.completed`
- * fires in this tab as soon as the customer's details are accepted, which is
- * before settlement and is trivially forgeable; the subscription is written by
- * the signed webhook. What this does on completion is wait for that webhook to
- * land, and say plainly what is happening while it has not.
- */
-
 /** Paddle.js is a singleton — initialising twice leaks a second instance. */
 let paddlePromise: Promise<Paddle | undefined> | null = null;
 
-/**
- * The live callback, swapped per mount rather than re-registered.
- *
- * `paddle.Update({ eventCallback })` replaces the callback globally, so
- * calling it once per click meant the last button clicked owned every
- * subsequent event — and it was called *after* `Checkout.open()`, so a fast
- * completion could fire before anything was listening.
- */
 let activeCallback: ((event: { name?: string }) => void) | null = null;
 
 function getPaddle(token: string) {
@@ -54,8 +32,6 @@ export function PlanCheckoutButton({ planId, label }: { planId: string; label: s
     const [phase, setPhase] = React.useState<Phase>('idle');
     const [error, setError] = React.useState('');
 
-    // Cleared on unmount so a poll cannot outlive the page and call setState
-    // on a component that is gone.
     const cancelled = React.useRef(false);
     React.useEffect(() => {
         cancelled.current = false;
@@ -79,14 +55,10 @@ export function PlanCheckoutButton({ planId, label }: { planId: string; label: s
                     return;
                 }
             } catch {
-                // A failed poll is not a failed payment — the webhook is
-                // independent of this tab. Keep waiting.
             }
             await new Promise((resolve) => setTimeout(resolve, SETTLE_INTERVAL_MS));
         }
         if (!cancelled.current) {
-            // Deliberately not an error: the payment very likely succeeded and
-            // the webhook is just late or retrying.
             setPhase('slow');
             router.refresh();
         }
@@ -112,17 +84,12 @@ export function PlanCheckoutButton({ planId, label }: { planId: string; label: s
             const paddle = await getPaddle(token);
             if (!paddle) throw new Error('Paddle.js did not initialise.');
 
-            // Registered before the overlay opens, so a completion that
-            // arrives immediately is not missed.
             activeCallback = (event) => {
                 switch (event.name) {
                     case CheckoutEventNames.CHECKOUT_COMPLETED:
                         void waitForWebhook();
                         break;
                     case CheckoutEventNames.CHECKOUT_CLOSED:
-                        // Closing the overlay is not a failure — someone
-                        // changed their mind. Return the button to normal
-                        // rather than leaving it stuck on "Opening checkout…".
                         setPhase((current) => (current === 'open' ? 'idle' : current));
                         break;
                     case CheckoutEventNames.CHECKOUT_ERROR:

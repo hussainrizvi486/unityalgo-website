@@ -1,7 +1,7 @@
 'use client';
 
 import { Notice } from '@/components/ui/notice';
-import { useState } from 'react';
+import { useRef, useState, useTransition } from 'react';
 import { useFormStatus } from 'react-dom';
 import { useActionState } from 'react';
 import Link from 'next/link';
@@ -11,7 +11,7 @@ import { SmartInput } from '@/components/ui/smart-input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
-import type { EmailAccountFormState } from '@/app/admin/email-actions';
+import { testSmtpSettingsAction, type EmailAccountFormState } from '@/app/admin/email-actions';
 
 export interface EmailAccountFormValues {
     id?: string;
@@ -60,12 +60,18 @@ export function EmailAccountForm({
     isEdit?: boolean;
 }) {
     const [state, formAction] = useActionState(action, undefined);
-    // Incoming settings are hidden until asked for: most accounts only send,
-    // and an empty IMAP block is a supported state rather than a missing one.
+    const formRef = useRef<HTMLFormElement>(null);
+    const [test, setTest] = useState<EmailAccountFormState | undefined>();
+    const [testing, startTest] = useTransition();
+    const runTest = () => {
+        if (!formRef.current) return;
+        const data = new FormData(formRef.current);
+        startTest(async () => setTest(await testSmtpSettingsAction(undefined, data)));
+    };
     const [showIncoming, setShowIncoming] = useState(Boolean(defaultValues?.imapHost));
 
     return (
-        <form action={formAction} className="portal-detail space-y-gap-xl">
+        <form ref={formRef} action={formAction} className="portal-detail space-y-gap-xl">
             {defaultValues?.id ? <input type="hidden" name="id" value={defaultValues.id} /> : null}
 
             {state?.error ? (
@@ -141,6 +147,23 @@ export function EmailAccountForm({
                         </span>
                     </span>
                 </label>
+                <div className="rounded-lg border border-border p-4">
+                    <p className="portal-text-body font-medium">Test these settings</p>
+                    <p className="mt-1 portal-text-caption text-muted-foreground">
+                        Signs in with what is typed above, without saving. Add an address to also send a test message.
+                    </p>
+                    <div className="mt-3 flex flex-wrap items-end gap-gap">
+                        <div className="min-w-0 flex-1">
+                            <Label htmlFor="testTo" className="portal-text-body text-foreground/80 mb-1.5">Send a test message to <span className="text-muted-foreground font-normal">(optional)</span></Label>
+                            <Input id="testTo" name="testTo" type="email" placeholder="you@example.com" />
+                        </div>
+                        <Button type="button" variant="outline" onClick={runTest} disabled={testing}>
+                            {testing ? 'Testing…' : 'Test connection'}
+                        </Button>
+                    </div>
+                    {test?.error ? <Notice tone="error" className="mt-3">{test.error}</Notice> : null}
+                    {test?.success ? <Notice tone="success" className="mt-3">{test.success}</Notice> : null}
+                </div>
             </section>
 
             <section className="portal-stack border-t border-border pt-8">

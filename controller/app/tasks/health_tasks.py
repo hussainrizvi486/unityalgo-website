@@ -1,15 +1,3 @@
-"""Periodic fleet health sweep (Celery Beat -- see app/tasks/celery_app.py).
-
-Passive-only for v1: findings are logged to the Activity Log (visible
-immediately in the existing Logs page, filterable by category="health") and
-ServerNode.last_checked_at/last_check_status get refreshed. No
-email/Slack/webhook alerting -- there's no outbound-notification
-infrastructure anywhere in this codebase, and building one is out of scope
-here.
-
-Every check here composes existing, already-verified building blocks rather
-than reimplementing them -- see each helper's docstring for what it reuses.
-"""
 
 import socket
 from datetime import datetime, timezone
@@ -40,16 +28,6 @@ def health_check_sweep():
 
 
 def _check_servers(session, activity):
-    """SSH-reachability probe for every active server.
-
-    Deliberately uses SSHService.check() directly, not
-    ServerController.connect()/_connect_steps() -- that flow also collects
-    full hardware specs (6+ extra remote commands), which a sweep running
-    across a whole fleet every few minutes doesn't need and shouldn't pay
-    for repeatedly. last_checked_at/last_check_status are the same two
-    fields the UI already reads; this task is just a lighter way to refresh
-    them than the heavier operator-triggered "Connect & refresh specs" flow.
-    """
     servers = session.scalars(
         select(ServerNode).where(ServerNode.is_active.is_(True))
     ).all()
@@ -77,14 +55,8 @@ def _check_proxy_and_domains(session, activity):
     if proxy is None:
         return  # Phase 2 routing not set up -- nothing to check here.
 
-    # DNS resolution doesn't require SSH-ing into the proxy at all, so it
-    # stays useful even when the proxy itself is unreachable.
     _check_domain_dns(session, activity, proxy)
 
-    # _check_proxy_sync and _check_upstreams both SSH into the proxy (admin
-    # API tunnel / curl-from-proxy respectively) -- if the proxy itself is
-    # down, both would raise the same NodeUnreachableError. One clear
-    # finding beats crashing the whole sweep over an unreachable proxy.
     try:
         _check_proxy_sync(session, activity)
         _check_upstreams(session, activity, proxy)
@@ -97,8 +69,6 @@ def _check_proxy_and_domains(session, activity):
 
 
 def _check_proxy_sync(session, activity):
-    """Reuses ProxyConfigurationService.verify() as-is -- already
-    read-only/side-effect-free, exactly the reusable piece for this."""
     result = ProxyConfigurationService(settings).verify(session)
     if result["in_sync"] is False:
         activity.event(
@@ -109,14 +79,6 @@ def _check_proxy_sync(session, activity):
 
 
 def _check_domain_dns(session, activity, proxy):
-    """Read-only DNS check for active custom domains.
-
-    Reuses the socket.getaddrinfo/proxy-IP-match *pattern* from
-    DomainController.verify_and_activate (app/controller/domain.py) -- not
-    that method itself, which has activation side effects and raises rather
-    than returning. Platform domains are skipped: they're pointed at us by
-    construction and never DNS-verified in the first place.
-    """
     active_customs = session.scalars(
         select(DomainMapping).where(
             DomainMapping.domain_type == "custom",
@@ -148,14 +110,6 @@ def _check_domain_dns(session, activity, proxy):
 
 
 def _check_upstreams(session, activity, proxy):
-    """Single-attempt upstream reachability per routable domain.
-
-    Uses HealthCheckService.probe_once() (new), not probe() -- probe()'s
-    ~45s retry/backoff is for gating one new deployment at provision/migrate
-    time and must not change; a sweep can't afford that per domain across a
-    whole fleet every few minutes. One transient miss just gets caught on
-    the next cycle.
-    """
     health = HealthCheckService(settings)
     for mapping in DomainController(session, settings).routable():
         if not health.probe_once(proxy, mapping.deployment):

@@ -36,8 +36,6 @@ export function DatabasesList({
             text: (row) => row.name,
             get: (row) => ({
                 primary: row.name,
-                // `kind` already reads "Default cluster" / "External · workers
-                // use …", built by the page.
                 secondary: row.kind,
                 href: `/admin/databases/${row.id}`,
             }),

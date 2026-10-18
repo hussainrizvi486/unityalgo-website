@@ -22,7 +22,6 @@ export interface AppRow {
     compatibility: string | null;
     installedOn: number;
     behind: number;
-    /** False when the controller could not be asked, so the install counts are unknown rather than zero. */
     tracked: boolean;
     visible: boolean;
     checked: string | null;

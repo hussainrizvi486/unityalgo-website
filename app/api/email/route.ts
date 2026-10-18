@@ -1,8 +1,14 @@
 import nodemailer from 'nodemailer';
 import { eq } from 'drizzle-orm';
 import { db, schema } from '@/lib/db';
+import { clientIp, consume } from '@/lib/rate-limit';
 
 export async function POST(req: Request) {
+    const limit = await consume(`contact:${await clientIp()}`, 5, 10 * 60);
+    if (!limit.allowed) {
+        return Response.json({ success: false, message: limit.message }, { status: 429 });
+    }
+
     const { first_name, last_name, email, phone, message } = await req.json();
 
     if (!first_name || !last_name || !email || !phone || !message) {
@@ -10,8 +16,6 @@ export async function POST(req: Request) {
     }
 
     try {
-        // Linked to an account when one already exists on this address, so the
-        // admin can see at a glance that the enquiry is from a customer.
         const account = await db.query.user.findFirst({
             where: eq(schema.user.email, String(email).toLowerCase()),
             columns: { id: true },

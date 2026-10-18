@@ -9,35 +9,9 @@ import { AvatarInitials } from '@/components/admin/avatar-initials';
 import { DeleteButton } from '@/components/admin/delete-button';
 import { cn } from '@/utils';
 
-/**
- * Cell renderers shared by every admin list.
- *
- * These exist so a page can describe *what* a column holds — a title with a
- * subtitle under it, a status badge, a row's actions — instead of repeating
- * the same flex/truncate/text-size markup ten times. Each is a thin wrapper
- * over the primitives already used elsewhere in the panel (Badge, Button,
- * DeleteButton, AvatarInitials), so the grid inherits the panel's look rather
- * than introducing a second one.
- *
- * Every renderer reads its content from `get(row)` rather than from AG Grid's
- * `value`. That keeps the two jobs separate: `valueGetter` returns plain text
- * for sorting and the quick filter, while `get` returns the rich object to
- * draw. Sorting on a React element, or searching one, would not work.
- */
-
 /** Renderer props: AG Grid's own, plus the accessor the column supplies. */
 type CellProps<Row, Value> = ICellRendererParams<Row> & { get: (row: Row) => Value };
 
-/**
- * Vertically centres cell content; AG Grid cells are flex containers.
- *
- * `leading-normal` is load-bearing. AG Grid sets `line-height` on `.ag-cell` to
- * the row height (57px) so that a single line of plain text centres itself
- * vertically. Any text in here that does not set its own line-height inherits
- * that, so a two-line cell needs 114px inside a 57px box and the second line is
- * clipped by the cell's `overflow: hidden`. Resetting it here is what lets a
- * title sit above a subtitle.
- */
 const CELL = 'flex h-full flex-col justify-center min-w-0 py-2 leading-normal';
 
 // ---------------------------------------------------------------- text cells
@@ -49,10 +23,6 @@ export interface StackedValue {
     href?: string;
 }
 
-/**
- * A prominent first line with a dimmer second line under it — the panel's most
- * common cell (name over email, slug over date, plan over status).
- */
 export function StackedCell<Row>({ data, get }: CellProps<Row, StackedValue | null>) {
     if (!data) return null;
     const value = get(data);
@@ -99,12 +69,6 @@ export function AvatarCell<Row>({ data, get }: CellProps<Row, StackedValue | nul
     );
 }
 
-/**
- * Plain secondary text, truncated to one line.
- *
- * Needs no accessor — it renders AG Grid's own `value`, so a column using it
- * only has to supply a `valueGetter`.
- */
 export function MutedCell({ value }: ICellRendererParams) {
     return (
         <div className={cn(CELL, 'text-foreground/70')}>
@@ -182,12 +146,6 @@ export interface ActionsValue {
     remove?: DeleteAction;
 }
 
-/**
- * The trailing column: an optional badge, link buttons, and a delete control.
- *
- * Pinned right by the pages that use it, so it stays reachable when the grid
- * scrolls horizontally on a narrow screen.
- */
 export function ActionsCell<Row>({ data, get }: CellProps<Row, ActionsValue | null>) {
     if (!data) return null;
     const value = get(data);

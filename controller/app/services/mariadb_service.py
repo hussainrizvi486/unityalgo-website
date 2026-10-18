@@ -1,11 +1,3 @@
-"""Connects to an admin-registered MariaDB server that hosts Frappe site databases.
-
-Frappe's `bench new-site` logs in with this account and creates one database and
-one user per site, so the account needs CREATE, CREATE USER and GRANT OPTION.
-The test therefore checks the privileges as well as the connection: a server
-that answers but cannot create databases would otherwise pass here and fail
-later, in the middle of a customer's deployment.
-"""
 import re
 import time
 
@@ -21,16 +13,12 @@ class MariaDBService:
             return pymysql.connect(
                 host=host, port=port, user=username, password=password,
                 connect_timeout=connect_timeout, read_timeout=read_timeout or connect_timeout,
-                # An empty dict is falsy to pymysql and would silently skip TLS, so ask for it explicitly.
                 ssl={'check_hostname': False} if sslmode and sslmode != 'disable' else None,
             )
         except pymysql.MySQLError as exc:
             raise DatabaseUnreachableError(f"Could not connect to {host}:{port}: {exc}") from exc
 
     def test(self, host, port, database_name, username, password, sslmode="disable"):
-        """Return the server version, with a warning when the account lacks the privileges Frappe needs.
-
-        `database_name` is accepted for the shared driver interface; the check is about the account, not a database."""
         conn = self.connect(host, port, username, password, sslmode)
         try:
             with conn.cursor() as cur:
@@ -49,34 +37,21 @@ class MariaDBService:
         )
 
 
-    # Schemas that belong to the server itself. A browser that lists them buries the databases people came for.
     SYSTEM_SCHEMAS = ('information_schema', 'mysql', 'performance_schema', 'sys')
 
     _LIFTS_READ_ONLY = re.compile(r'^\s*(?:/\*.*?\*/\s*)*(?:SET|START|BEGIN|COMMIT|ROLLBACK|XA)\b', re.IGNORECASE | re.DOTALL)
 
     def use_database(self, conn, database_name):
-        """Make `database_name` the default database, unless it is a system schema (a cluster's maintenance database)."""
         if database_name and database_name.lower() not in self.SYSTEM_SCHEMAS:
             conn.select_db(database_name)
 
     def _schema_filter(self, database_name):
-        """(SQL, params) limiting a catalog query to the schemas worth showing.
-
-        A connection that points at one database shows just that database. One that points at a system schema
-        (the default `mysql` maintenance database of a cluster) shows every database on the server, which is
-        where a Frappe cluster keeps its per-site databases.
-        """
         if database_name and database_name.lower() not in self.SYSTEM_SCHEMAS:
             return '= %s', (database_name,)
         marks = ', '.join(['%s'] * len(self.SYSTEM_SCHEMAS))
         return f'NOT IN ({marks})', self.SYSTEM_SCHEMAS
 
     def introspect(self, host, port, database_name, username, password, sslmode, timeout_seconds=30):
-        """Describe the databases on the server: tables, columns, keys and indexes.
-
-        Five catalog queries however many tables there are, stitched together in Python. Runs inside a
-        READ ONLY transaction, because browsing has no business writing.
-        """
         conn = self.connect(host, port, username, password, sslmode, read_timeout=timeout_seconds)
         where, params = self._schema_filter(database_name)
         try:
@@ -153,17 +128,6 @@ class MariaDBService:
 
     def execute_query(self, host, port, database_name, username, password, sslmode, sql,
                       timeout_seconds=30, max_rows=500, allow_writes=False):
-        """Run one SQL statement. Same contract and guardrails as the PostgreSQL console.
-
-        A server-side `max_statement_time`, so a slow query cannot hold the request; a row cap, fetching
-        `max_rows + 1` to detect truncation; and, unless writes are allowed, a READ ONLY *session*. That is the
-        engine refusing writes, not a check on the SQL text, so it holds for statements nobody listed. It has to
-        be the session and not a single transaction: MariaDB ends the current transaction before running DDL,
-        so `START TRANSACTION READ ONLY` let CREATE and DROP through.
-
-        A session setting can be lifted by the statement that set it, so a read-only run also refuses SET and
-        transaction-control statements. They are the only SQL it looks at.
-        """
         conn = self.connect(host, port, username, password, sslmode, read_timeout=timeout_seconds + 5)
         started = time.monotonic()
         try:
@@ -197,20 +161,12 @@ class MariaDBService:
             conn.close()
 
 
-# The only database names a site deletion may remove: Frappe's own per-site names ("_" and 16 hex digits).
-# This is what stops a bug or a bad value from ever dropping one of the operator's own databases.
 FRAPPE_DB_NAME = re.compile(r'^_[0-9a-f]{16}$')
 
 
 def remove_site_database(host, port, username, password, name, sslmode="disable"):
-    """Drop a Frappe site's database and its login from a MariaDB server. Returns what it removed.
-
-    `bench drop-site` normally does this; this exists to finish the job when it did not, and refuses any name
-    that is not in Frappe's per-site format.
-    """
     if not FRAPPE_DB_NAME.fullmatch(name or ''):
         raise ValueError('Refusing to drop a database that is not a Frappe site database.')
-    # Dropping a database with ~1000 tables (an ERPNext site) takes far longer than a connection test.
     conn = MariaDBService().connect(host, port, username, password, sslmode, read_timeout=600)
     removed = []
     try:

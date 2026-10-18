@@ -4,26 +4,22 @@ import { jwtVerify } from 'jose';
 const ADMIN_SESSION_COOKIE = 'unityalgo_admin_session';
 const CUSTOMER_SESSION_COOKIE = 'unityalgo_customer_session';
 
-// Sign-in moved to /login, which is outside this middleware's matcher and so
-// needs no exemption. These are the customer-area pages that stay public.
 const PUBLIC_CUSTOMER_PATHS = new Set(['/register', '/customer/forgot-password']);
 
-/** Sends an unauthenticated visitor to the shared sign-in, keeping their
- *  destination so they land where they were headed. */
 function toLogin(pathname: string, request: NextRequest) {
     return NextResponse.redirect(
         new URL(`/login?next=${encodeURIComponent(pathname)}`, request.url),
     );
 }
 
-async function isSessionValid(token: string | undefined) {
+async function isSessionValid(token: string | undefined, kind: 'admin' | 'customer') {
     if (!token) return false;
     const secret = process.env.SESSION_SECRET;
     if (!secret) return false;
 
     try {
-        await jwtVerify(token, new TextEncoder().encode(secret));
-        return true;
+        const { payload } = await jwtVerify(token, new TextEncoder().encode(secret), kind === 'admin' ? { audience: 'admin' } : undefined);
+        return kind === 'admin' || (typeof payload.sessionId === 'string' && payload.purpose === undefined);
     } catch {
         return false;
     }
@@ -38,7 +34,7 @@ export async function proxy(request: NextRequest) {
         }
 
         const token = request.cookies.get(CUSTOMER_SESSION_COOKIE)?.value;
-        const valid = await isSessionValid(token);
+        const valid = await isSessionValid(token, 'customer');
 
         if (!valid) return toLogin(pathname, request);
 
@@ -46,9 +42,13 @@ export async function proxy(request: NextRequest) {
     }
 
     const token = request.cookies.get(ADMIN_SESSION_COOKIE)?.value;
-    const valid = await isSessionValid(token);
+    const valid = await isSessionValid(token, 'admin');
 
-    if (!valid) return toLogin(pathname, request);
+    if (!valid) {
+        // An API client wants a status code, not a redirect to a page it cannot use.
+        if (pathname.startsWith('/api/')) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        return toLogin(pathname, request);
+    }
 
     return NextResponse.next();
 }

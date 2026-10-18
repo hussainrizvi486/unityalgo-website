@@ -13,12 +13,6 @@ interface AdminPageHeaderProps {
     children?: React.ReactNode;
 }
 
-/**
- * The title block every admin list page opens with.
- *
- * Server component: it renders no interactive state of its own, so pages keep
- * it outside the client boundary drawn by AdminListView.
- */
 export function AdminPageHeader({ title, subtitle, action, children }: AdminPageHeaderProps) {
     return (
         <div className="portal-page-header">

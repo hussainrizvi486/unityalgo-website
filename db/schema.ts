@@ -1,13 +1,3 @@
-/**
- * The website's tables, as they exist in Postgres.
- *
- * Generated with `drizzle-kit pull` from the live database, then adjusted by hand to keep the behaviour
- * Prisma had in the client: ids are generated here (cuid, or uuid for LoginSession), `updatedAt` is set on
- * insert and on every update, timestamps come back as Date objects, and text[] columns default to empty.
- *
- * Do not edit the table shapes without a migration: `npm run db:generate` diffs this file against the last
- * snapshot in db/migrations.
- */
 import { pgTable, index, text, timestamp, uniqueIndex, boolean, foreignKey, doublePrecision, integer, uuid, check, jsonb, pgEnum } from "drizzle-orm/pg-core"
 import { sql } from "drizzle-orm"
 import { createId } from "@paralleldrive/cuid2"
@@ -24,7 +14,6 @@ export const role = pgEnum("Role", ['ADMIN', 'CUSTOMER'])
 export const subscriptionStatus = pgEnum("SubscriptionStatus", ['ACTIVE', 'TRIAL', 'PAST_DUE', 'CANCELED'])
 export const ticketStatus = pgEnum("TicketStatus", ['OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED'])
 export const verificationPurpose = pgEnum("VerificationPurpose", ['REGISTRATION', 'PASSWORD_RESET'])
-
 
 export const contactSubmission = pgTable("contact_list", {
 	id: text().primaryKey().notNull().$defaultFn(() => createId()),
@@ -46,8 +35,17 @@ export const emailVerification = pgTable("EmailVerification", {
 	verifiedAt: timestamp({ precision: 3, mode: 'date' }),
 	createdAt: timestamp({ precision: 3, mode: 'date' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
 	purpose: verificationPurpose().default('REGISTRATION').notNull(),
+	attempts: integer().default(0).notNull(),
 }, (table) => [
 	index("EmailVerification_email_purpose_idx").using("btree", table.email.asc().nullsLast().op("text_ops"), table.purpose.asc().nullsLast().op("text_ops")),
+]);
+
+export const rateLimit = pgTable("RateLimit", {
+	key: text().primaryKey().notNull(),
+	count: integer().default(0).notNull(),
+	resetAt: timestamp({ precision: 3, mode: 'date' }).notNull(),
+}, (table) => [
+	index("RateLimit_resetAt_idx").using("btree", table.resetAt.asc().nullsLast().op("timestamp_ops")),
 ]);
 
 export const post = pgTable("Post", {
@@ -290,6 +288,31 @@ export const billingRecord = pgTable("BillingRecord", {
 		}).onUpdate("cascade").onDelete("set null"),
 ]);
 
+export const emailTemplate = pgTable("EmailTemplate", {
+	id: text().primaryKey().notNull().$defaultFn(() => createId()),
+	name: text().notNull(),
+	subject: text().notNull(),
+	bodyHtml: text().notNull(),
+	isActive: boolean().default(true).notNull(),
+	createdAt: timestamp({ precision: 3, mode: 'date' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
+	updatedAt: timestamp({ precision: 3, mode: 'date' }).notNull().$defaultFn(() => new Date()).$onUpdate(() => new Date()),
+}, (table) => [
+	uniqueIndex("EmailTemplate_name_key").using("btree", table.name.asc().nullsLast().op("text_ops")),
+]);
+
+export const emailEvent = pgTable("EmailEvent", {
+	eventKey: text().primaryKey().notNull(),
+	templateId: text(),
+	enabled: boolean().default(true).notNull(),
+	updatedAt: timestamp({ precision: 3, mode: 'date' }).notNull().$defaultFn(() => new Date()).$onUpdate(() => new Date()),
+}, (table) => [
+	foreignKey({
+			columns: [table.templateId],
+			foreignColumns: [emailTemplate.id],
+			name: "EmailEvent_templateId_fkey"
+		}).onUpdate("cascade").onDelete("set null"),
+]);
+
 export const emailAccount = pgTable("EmailAccount", {
 	id: text().primaryKey().notNull().$defaultFn(() => createId()),
 	label: text().notNull(),
@@ -387,7 +410,6 @@ export const appCatalog = pgTable("AppCatalog", {
 	isInstallable: boolean().default(false).notNull(),
 	isActive: boolean().default(true).notNull(),
 	sortOrder: integer().default(0).notNull(),
-	// 'image' = built into the platform's Frappe image; 'github' = pulled from a public repository per site.
 	source: text().default('image').notNull(),
 	repoUrl: text(),
 	branch: text(),
@@ -403,7 +425,6 @@ export const appCatalog = pgTable("AppCatalog", {
 	compatibility: text(),
 	compatibilityNote: text(),
 	lastCheckedAt: timestamp({ precision: 3, mode: 'date' }),
-	// Monthly price per site in major units (5 = $5.00); null or 0 = free. Charged as an item on the customer's Paddle subscription.
 	priceAmount: doublePrecision(),
 	priceCurrency: text().default('USD').notNull(),
 	paddlePriceId: text(),
@@ -498,8 +519,6 @@ export const plan = pgTable("Plan", {
 		}).onUpdate("cascade").onDelete("set null"),
 ]);
 
-
-/** A paid app installed on a customer's site. One active row per site and app; it is what the customer is billed for. */
 export const appPurchase = pgTable("AppPurchase", {
 	id: text().primaryKey().notNull().$defaultFn(() => createId()),
 	userId: text().notNull(),
@@ -508,7 +527,6 @@ export const appPurchase = pgTable("AppPurchase", {
 	status: text().default('ACTIVE').notNull(),
 	priceAmount: doublePrecision().notNull(),
 	currency: text().notNull(),
-	// 'paddle' = charged on the subscription; 'test' = recorded only (development, APP_BILLING_MODE=test).
 	billingMode: text().notNull(),
 	paddleSubscriptionId: text(),
 	createdAt: timestamp({ precision: 3, mode: 'date' }).default(sql`CURRENT_TIMESTAMP`).notNull(),

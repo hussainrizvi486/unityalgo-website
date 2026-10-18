@@ -30,10 +30,10 @@ const FILE_LABEL: Record<string, string> = {
     database: 'Database', files: 'Public files', 'private-files': 'Private files', config: 'Site config', other: 'Other',
 };
 
-function Pending({ children, enabled = true, variant = 'default' }: { children: React.ReactNode; enabled?: boolean; variant?: 'default' | 'outline' | 'destructive' }) {
+function Pending({ children, enabled = true, variant = 'default', size = 'sm' }: { children: React.ReactNode; enabled?: boolean; variant?: 'default' | 'outline' | 'destructive'; size?: 'sm' | 'default' }) {
     const { pending } = useFormStatus();
     return (
-        <Button type="submit" size="sm" variant={variant} disabled={!enabled || pending}>
+        <Button type="submit" size={size} variant={variant} disabled={!enabled || pending}>
             {pending && <LoaderCircle className="size-4 motion-safe:animate-spin" />}
             {children}
         </Button>
@@ -49,7 +49,7 @@ function Schedule({ site, backups }: { site: CustomerSite; backups: SiteBackups 
             <input type="hidden" name="siteId" value={site.id} />
             <input type="hidden" name="schedule" value={schedule} />
             <p className="font-medium">Automatic backups</p>
-            <div className="mt-3 grid gap-gap sm:grid-cols-3 sm:items-end">
+            <div className="mt-3 grid gap-gap sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-end">
                 <FormField id="schedule" label="How often">
                     <Select value={schedule} onValueChange={setSchedule}>
                         <SelectTrigger id="schedule"><SelectValue /></SelectTrigger>
@@ -60,11 +60,12 @@ function Schedule({ site, backups }: { site: CustomerSite; backups: SiteBackups 
                         </SelectContent>
                     </Select>
                 </FormField>
-                <FormField id="retention" label="Keep the latest" help="Older automatic backups are removed.">
+                <FormField id="retention" label="Keep the latest">
                     <Input id="retention" name="retention" type="number" min={1} max={30} value={retention} onChange={(e) => setRetention(e.target.value)} disabled={schedule === 'off'} />
                 </FormField>
-                <div><Pending variant="outline">Save</Pending></div>
+                <div><Pending variant="outline" size="default">Save</Pending></div>
             </div>
+            <p className="mt-2 portal-text-caption text-muted-foreground">Older automatic backups are removed.</p>
             {state?.error && <p role="alert" className="mt-2 text-xs text-destructive">{state.error}</p>}
             {state?.success && <p className="mt-2 text-xs text-success">{state.success}</p>}
             {site.backup.last_at && (

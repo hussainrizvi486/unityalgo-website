@@ -51,8 +51,6 @@ class DomainDetailView(DomainBaseView):
 
 
 class DomainActivateView(DomainBaseView):
-    """POST /api/v1/domains/<id>/activate -- no-DNS-check activate, for the
-    platform domain only (already pointed at us by construction)."""
 
     def post(self, domain_id):
         with self.session() as session:
@@ -61,8 +59,6 @@ class DomainActivateView(DomainBaseView):
 
 
 class DomainVerifyView(DomainBaseView):
-    """POST /api/v1/domains/<id>/verify -- real DNS-ownership check for a
-    custom domain, activating it in the same step on success."""
 
     def post(self, domain_id):
         with self.session() as session:

@@ -10,14 +10,6 @@ export interface FilterOption<T extends string> {
     count?: number;
 }
 
-/**
- * A segmented control for the one-of-N filters above a list (status, product,
- * role).
- *
- * Client-side: the list already holds every row, so switching filters is
- * instant and needs no round trip. Rendered as radios rather than buttons so
- * arrow keys move between options and screen readers announce the group.
- */
 export function FilterPills<T extends string>({
     options,
     value,

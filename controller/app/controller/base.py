@@ -10,12 +10,6 @@ from app.validators import Validator
 
 
 class BaseController:
-    """One controller instance per request, bound to one session.
-
-    Subclasses declare `model`, `resource_name`, `writable_fields` and
-    `required_on_create`, then implement `clean()` to validate a payload into
-    model attributes.
-    """
 
     model = None
     resource_name = "resource"
@@ -29,13 +23,8 @@ class BaseController:
         self.settings = config or settings
         self.validator = Validator
         self.actor = actor
-        # Writes on its own session so failure logs survive a rolled-back
-        # operation -- see app/services/activity_logger.py.
         self.activity = ActivityLogger(actor=actor)
 
-    # ------------------------------------------------------------------
-    # payload handling
-    # ------------------------------------------------------------------
     def clean(self, data, partial):
         raise NotImplementedError
 
@@ -57,9 +46,6 @@ class BaseController:
             field=locked[0],
         )
 
-    # ------------------------------------------------------------------
-    # queries
-    # ------------------------------------------------------------------
     def base_query(self):
         return select(self.model)
 
@@ -81,9 +67,6 @@ class BaseController:
             )
         return instance
 
-    # ------------------------------------------------------------------
-    # writes
-    # ------------------------------------------------------------------
     def create(self, data):
         values = self.clean(data, partial=False)
         values = self.apply_defaults(values)
@@ -116,9 +99,6 @@ class BaseController:
             self.session.rollback()
             raise ConflictError(conflict_message)
 
-    # ------------------------------------------------------------------
-    # hooks
-    # ------------------------------------------------------------------
     def apply_defaults(self, values):
         return values
 

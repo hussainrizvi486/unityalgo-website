@@ -8,8 +8,6 @@ export async function recordSiteNotification(
     site: CustomerSite,
 ) {
     if (!['ready', 'failed', 'cleanup_required'].includes(site.status)) return;
-    // Keyed by attempt, not by update time: stopping, backing up or restarting a site changes
-    // updated_at and would otherwise raise a fresh "ready" notification each time.
     const eventKey = `site:${site.id}:${site.attempt}:${site.status}`;
     await db
         .insert(schema.notification)

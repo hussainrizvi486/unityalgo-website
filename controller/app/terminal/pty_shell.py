@@ -1,18 +1,3 @@
-"""Opens an interactive PTY over SSH and pumps bytes to/from a WebSocket.
-
-Reuses SSHService's existing auth resolution as-is (app/services/ssh_service.py)
--- its connect() context manager already resolves password vs. pasted-key
-auth transparently, so this works identically for both without any new auth
-code. The only genuinely new piece is invoke_shell() -- SSHService is
-exec-only everywhere else in this codebase (one-shot exec_command() calls
-that buffer full output), and an interactive terminal needs a real PTY.
-
-Control-frame convention: xterm.js sends raw keystrokes as text frames and
-resize notifications as a small JSON text frame recognizable by its `{"`
-prefix -- terminal input a user could type never starts a frame with that
-exact sequence, so a cheap prefix check is enough to disambiguate without
-a second WebSocket subprotocol/framing layer.
-"""
 
 import json
 import socket

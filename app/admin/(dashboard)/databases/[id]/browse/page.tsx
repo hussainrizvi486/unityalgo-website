@@ -7,13 +7,6 @@ import { ControllerOffline } from '@/components/admin/controller-offline';
 import { AdminPageError } from '@/components/admin/page-header';
 import { DatabaseBrowser } from './database-browser';
 
-/**
- * The database workspace: schema browser, data browser and SQL console.
- *
- * The schema is fetched once here and handed to the client. It is a few
- * hundred KB at most for a large database, and having it in memory is what
- * makes the table search instant and the structure tab free.
- */
 export default async function DatabaseBrowsePage({ params }: { params: Promise<{ id: string }> }) {
     await requireAdmin();
     const { id } = await params;
@@ -32,8 +25,6 @@ export default async function DatabaseBrowsePage({ params }: { params: Promise<{
     try {
         schema = await controller.databases.schema(id);
     } catch (error) {
-        // A connection that cannot be introspected is still worth opening —
-        // the console may be exactly how the admin diagnoses why.
         schemaError = error instanceof ControllerError ? error.message : 'Could not read the schema.';
     }
 

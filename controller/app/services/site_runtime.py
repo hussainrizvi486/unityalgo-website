@@ -1,10 +1,3 @@
-"""Reach a provisioned Frappe site's containers on its worker.
-
-Provisioning, the stop/start/restart/backup task and the usage and backup
-endpoints all need the same thing: a FrappeService wired to the right worker
-and the right database server, built from plain snapshots so it stays usable
-after the ORM session that loaded it has closed.
-"""
 from app.config import settings
 from app.models.database_connection import DatabaseConnection
 from app.models.server import ServerNode
@@ -23,7 +16,6 @@ def build_service(session, site, setup=None):
         connection = session.get(DatabaseConnection, site.db_server_id)
         external_db = {'host': connection.host_from_worker or connection.host, 'port': connection.port,
                        'user': connection.username, 'password': decrypt(connection.password_encrypted, settings),
-                       # Where the controller itself reaches the server (the worker may use another address).
                        'controller_host': connection.host, 'sslmode': connection.sslmode}
     service = FrappeService(site, server, settings, setup, external_db)
     # Snapshot values before the ORM session closes (its commit expires rows).

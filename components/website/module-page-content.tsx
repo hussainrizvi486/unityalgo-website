@@ -14,23 +14,13 @@ export interface ModulePageConfig {
     heading: string;
     subheading: string;
     heroImage: string;
-    /** Alt text for the hero image. Falls back to the heading, which is
-     *  better than nothing but describes the page rather than the picture. */
     heroAlt?: string;
     overviewOptions: OverviewOption[];
     features: string[];
-    /**
-     * Omit for a service sold as a project rather than a subscription.
-     * Engagements are scoped and quoted, so showing fixed tiers on one would
-     * be inventing a price list that does not exist.
-     */
     pricingPlans?: PricingPlan[];
     faqItems: FaqItem[];
     ctaHeading: string;
     ctaDescription: string;
-    /** Label on both call-to-action buttons. "Request Demo" is wrong for a
-     *  service where the next step is a conversation, not a walkthrough of a
-     *  product that does not exist yet. */
     ctaLabel?: string;
     /** Heading above the overview panel, and the line under it. */
     overviewHeading?: string;

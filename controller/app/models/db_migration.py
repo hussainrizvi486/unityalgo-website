@@ -1,12 +1,3 @@
-"""Audit trail and state machine for moving a tenant's database between
-clusters.
-
-The direct counterpart of TenantMigration (app/models/migration.py), which
-tracks moving a tenant's *container* between worker nodes. The two are
-deliberately independent: after clusters were introduced, "where is this
-tenant" became two coordinates -- which node runs it, and which cluster holds
-its data -- and either can move without the other.
-"""
 
 import uuid
 from datetime import datetime
@@ -37,8 +28,6 @@ class TenantDatabaseMigration(Base):
     tenant_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True
     )
-    # Nullable: the source may be the legacy global cluster, which has no row
-    # in database_connections.
     from_connection_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         ForeignKey("database_connections.id"), nullable=True
     )
@@ -46,8 +35,6 @@ class TenantDatabaseMigration(Base):
         ForeignKey("database_connections.id"), nullable=False
     )
     status: Mapped[str] = mapped_column(String(30), default="pending")
-    # Kept after a successful move as well as a failed one -- it is the only
-    # copy of the pre-move data once the source database is dropped.
     backup_path: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     size_bytes: Mapped[Optional[int]] = mapped_column(BigInteger, nullable=True)
     error_message: Mapped[Optional[str]] = mapped_column(Text, nullable=True)

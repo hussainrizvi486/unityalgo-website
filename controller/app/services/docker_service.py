@@ -1,7 +1,3 @@
-"""Remote Docker container lifecycle, driven over SSH (no Docker SDK / socket
-exposure needed -- the CLI is already installed on the node by
-SSHService.bootstrap_docker()).
-"""
 
 import json
 import shlex
@@ -40,15 +36,6 @@ class DockerService:
 
     # ------------------------------------------------------------------
     def run_container(self, spec):
-        """`docker run -d` from a container_spec dict (see
-        TenantController.container_spec). Returns the full container id.
-
-        Idempotent: a same-named container is removed first. Without this, a
-        container left over from a prior failed run (`docker run` can create
-        the container and then fail during network setup, leaving it behind
-        in a stopped state) would permanently block every retry with a name
-        conflict.
-        """
         if self.exists(spec["name"]):
             self.remove(spec["name"], force=True)
 
@@ -64,9 +51,6 @@ class DockerService:
             "--cpus", f"{cpus:.2f}",
             "--restart", spec.get("restart_policy", {}).get("Name", "unless-stopped"),
         ]
-        # Publish a host port so the edge proxy (on another machine) can reach
-        # the container at all. Without this the container is only addressable
-        # from inside the node's docker network.
         if spec.get("host_port"):
             bind_ip = spec.get("bind_ip")
             if not bind_ip:
@@ -90,11 +74,6 @@ class DockerService:
         return result.stdout.strip()
 
     def file_exists_in_image(self, image, path):
-        """True when `path` exists inside the image's filesystem.
-
-        Lets callers fail with a precise message instead of surfacing a raw
-        "Cannot find module" from the container.
-        """
         result = self.ssh.run(
             f"docker run --rm --entrypoint sh {shlex.quote(image)} "
             f"-c {shlex.quote(f'test -e {path}')}"
@@ -102,15 +81,6 @@ class DockerService:
         return result.ok
 
     def run_once(self, image, command, environment=None, timeout=300, stdin_data=None):
-        """Run a throwaway `docker run --rm` container and return its result.
-
-        Used for one-off jobs (schema migrations, admin seeding) that need the
-        tenant's environment but must not become a long-lived container.
-
-        `stdin_data` is piped into the container (`docker run -i`), which is how
-        secrets should be passed -- a value in `command` or in `-e` ends up in
-        the node's process table for the lifetime of the run.
-        """
         args = ["docker", "run", "--rm", "--network", self.settings.tenant_network]
         if stdin_data is not None:
             args.append("-i")

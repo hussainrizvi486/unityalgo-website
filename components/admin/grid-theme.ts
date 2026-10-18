@@ -1,15 +1,5 @@
 import { themeQuartz, iconSetQuartzLight, colorSchemeLight } from 'ag-grid-community';
 
-/**
- * AG Grid theme, driven by the tokens in app/globals.css.
- *
- * AG Grid v33+ styles itself through the Theming API rather than a stylesheet,
- * so there is no CSS file to import and nothing to override with `!important`.
- * Its params take any CSS colour string, so they reference the custom
- * properties directly instead of duplicating the hexes — change a token in
- * globals.css and the grid follows.
- */
-
 const INK_50 = 'var(--muted)';
 const INK_100 = 'var(--secondary)';
 const INK_200 = 'var(--border)';
@@ -31,8 +21,6 @@ export const adminGridTheme = themeQuartz
         headerFontWeight: 500,
         headerTextColor: INK_500,
 
-        // Surfaces. The grid sits inside an already-bordered card, so its own
-        // outer border is removed and only the internal rules are kept.
         backgroundColor: SURFACE,
         foregroundColor: INK_900,
         borderColor: INK_100,
@@ -41,8 +29,6 @@ export const adminGridTheme = themeQuartz
         rowBorder: { color: INK_100, width: 1 },
         headerBackgroundColor: INK_50,
 
-        // Rows. Generous height because most cells stack a primary line over a
-        // dimmer secondary one, matching the old table's px-6 py-4 rhythm.
         rowHeight: 'var(--portal-grid-row-height, 60px)',
         headerHeight: 'var(--portal-grid-header-height, 44px)',
         cellHorizontalPadding: 'var(--portal-grid-cell-padding, 20px)',

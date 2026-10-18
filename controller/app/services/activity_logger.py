@@ -1,18 +1,3 @@
-"""Structured, step-by-step activity logging.
-
-Every multi-step process (provisioning a tenant, bootstrapping a node) opens
-an `Operation` and records an ordered `ActivityLog` row per step, so the admin
-panel can replay the whole thing as a timeline instead of showing one terminal
-success/failure line.
-
-Autonomous sessions
--------------------
-Log rows are written on their *own* session and committed immediately, never
-on the caller's session. That is the whole point: when provisioning blows up,
-the caller's transaction rolls back, and any log rows written on that session
-would roll back with it -- destroying exactly the diagnostics you need. Paying
-one short transaction per step buys durable forensics.
-"""
 
 import re
 import time
@@ -35,7 +20,6 @@ def _uuid_or_none(value):
         return None
 
 
-# Secrets that command lines and tracebacks carry. Anything matching is replaced before it is stored.
 _SECRET_FLAG = re.compile(r"(--[\w-]*(?:password|passwd|secret|token|api-key)[\w-]*[= ])(\S+)", re.I)
 _SECRET_ASSIGN = re.compile(r"((?:password|passwd|secret|token)['\"]?\s*[:=]\s*['\"]?)([^\s'\",}]+)", re.I)
 
@@ -53,7 +37,6 @@ def redact(text):
 
 
 def redact_value(value):
-    """redact() applied to every string inside a JSON-able structure (log details), leaving its shape intact."""
     if isinstance(value, str):
         return redact(value)
     if isinstance(value, dict):
@@ -88,8 +71,6 @@ class OperationRecorder:
         self._step_started = now
 
         merged = {**self.context, **{k: v for k, v in context.items() if v is not None}}
-        # These two are named parameters on write(), so they must not also
-        # arrive via **subject or Python raises "multiple values for keyword".
         resolved_action = action or merged.pop("action", None) or "system.event"
         resolved_category = merged.pop("category", None) or "system"
 
@@ -128,10 +109,6 @@ class OperationRecorder:
 
 
 class ActivityLogger:
-    """Entry point for writing operations and their steps.
-
-    `db` defaults to the module-level Database singleton; tests inject their own.
-    """
 
     def __init__(self, db=None, actor=None):
         if db is None:
@@ -223,16 +200,6 @@ class ActivityLogger:
     # ------------------------------------------------------------------
     @contextmanager
     def operation(self, kind, label, category=None, operation_id=None, **context):
-        """Run a block as one tracked operation.
-
-        Marks the operation failed (and records a terminating step) if the
-        block raises, then re-raises -- the caller's own error handling is
-        unchanged, it just gets logged on the way past.
-
-        Pass `operation_id` when the row already exists (a route pre-created
-        it via `start_operation()` before handing the id to a Celery task) --
-        steps resume against that row instead of a freshly minted one.
-        """
         started = time.monotonic()
         resolved_category = category or kind.split(".")[0]
         if operation_id is None:
@@ -247,8 +214,6 @@ class ActivityLogger:
         try:
             yield recorder
         except Exception as exc:
-            # Keep the whole failure, not just str(exc): the traceback is what an
-            # operator needs when the message is a generic "step failed".
             full = format_exception(exc)
             recorder.step(
                 "Operation failed",
@@ -264,9 +229,6 @@ class ActivityLogger:
         else:
             self.finish_operation(operation_id, "success", started_monotonic=started)
 
-    # ------------------------------------------------------------------
-    # one-shot events (no multi-step operation around them)
-    # ------------------------------------------------------------------
     def event(self, category, action, step_name, status="success", **kw):
         return self.write(
             category=category, action=action, step_name=step_name, status=status, **kw

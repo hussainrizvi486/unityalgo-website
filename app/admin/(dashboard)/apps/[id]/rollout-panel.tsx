@@ -105,7 +105,6 @@ export function RolloutPanel({ appId, appTitle, sites, blocked, unverified }: Pr
         ? (confirming.all ? outdated : group(confirming.mode).filter((site) => picked[confirming.mode].has(site.id)))
         : [];
 
-    // A plain function, not a component: a component declared here would remount on every tick of state.
     function siteTable(mode: Mode) {
         const rows = group(mode);
         const chosen = picked[mode];
@@ -226,7 +225,7 @@ export function RolloutPanel({ appId, appTitle, sites, blocked, unverified }: Pr
                                 type="button"
                                 disabled={pending || (unverified && !accepted) || !targetCount}
                                 onClick={(event) => {
-                                    event.preventDefault();      // stay open until the controller answers, so an error can be shown
+                                    event.preventDefault();
                                     confirm();
                                 }}
                             >

@@ -1,11 +1,4 @@
 #!/usr/bin/env node
-/**
- * Writes lib/design-tokens.generated.ts from the token blocks in app/globals.css.
- *
- * The CSS file is the only place token values are written. HTML email cannot use CSS variables, so server
- * code that builds email reads this generated copy instead of repeating any value. `npm run dev` and
- * `npm run build` run this first; commit the result so deploys that ship without the CSS still work.
- */
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -14,7 +7,6 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const css = readFileSync(join(root, 'app/globals.css'), 'utf8');
 
 function block(selector) {
-    // A scope may be declared more than once (e.g. :root also carries the derived values), so read every block.
     const tokens = {};
     let from = 0;
     for (;;) {

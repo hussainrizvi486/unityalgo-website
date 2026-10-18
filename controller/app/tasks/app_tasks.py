@@ -1,8 +1,3 @@
-"""App Store rollouts: install or update one app on one site, and keep the record of what each site runs.
-
-Every site is its own Docker stack with its own image, so a new app version is a new image for that site
-alone; no other site shares its code. The migration is per site too, and runs inside that site's own stack.
-"""
 import time
 import uuid
 from datetime import datetime, timezone
@@ -63,7 +58,6 @@ class RolloutTask(celery_app.Task):
     abstract = True
 
     def on_failure(self, exc, task_id, args, kwargs, einfo):
-        """A killed or timed-out worker never reaches the task's own handler; do not leave the site 'updating'."""
         if not args:
             return
         with database.session() as session:
@@ -165,7 +159,6 @@ def rollout_site_task(self, row_id):
                     mark(row_id, f'{app} removed.', status='success', step='Done', progress=100, finished_at=now())
                     op.ok('Removal completed')
                 elif bundled:
-                    # The app ships in the platform image: install it into the site, then restart so every process loads it.
                     progress(40, 'Installing the app')
                     state['touched'] = True
                     service.install_bundled_app(app)
@@ -228,7 +221,6 @@ def rollout_site_task(self, row_id):
                     except Exception:
                         pass
     except Exception as exc:
-        # Something may have changed on the site: its image (a built app) or its data (the install itself).
         changed = state['switched'] or (in_place and state['touched'])
         recovered = not changed
         if changed:
@@ -254,7 +246,6 @@ def rollout_site_task(self, row_id):
             site = session.get(Site, uuid.UUID(site_id))
             if recovered:
                 site.status, site.message = 'ready', 'Your site is ready.'
-                # A customer started this, so tell them in their own words; an admin reads the rollout page.
                 site.error = (f'{app} could not be {"removed" if removing else "installed"}. Your site was returned to how it was.' if spec['customer'] else None)
             else:
                 site.status, site.message = 'stopped', 'An application update failed and the site could not be restored.'
@@ -274,7 +265,6 @@ def rollout_site_task(self, row_id):
 
 @celery_app.task(name='apps.scan', soft_time_limit=3000, time_limit=3300)
 def scan_apps_task(site_ids=None):
-    """Ask each running site which apps (and which versions) it really has, and record the answer."""
     with database.session() as session:
         query = select(Site).where(Site.status == 'ready', Site.activity.is_(None))
         if site_ids is not None:

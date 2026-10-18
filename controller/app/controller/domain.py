@@ -1,10 +1,3 @@
-"""Domain <-> deployment mapping.
-
-Owns the `domain -> deployment` relationship and nothing else: no Docker, no
-SSH, no Caddy. The edge proxy (Phase 2) reads `is_routable` rows from here to
-build its config; this controller's job is to keep those rows correct as
-tenants get created, provisioned, migrated and deleted.
-"""
 
 import socket
 from datetime import datetime, timezone
@@ -27,14 +20,10 @@ class DomainController(BaseController):
     STATUSES = DomainMapping.STATUSES
     SSL_STATUSES = DomainMapping.SSL_STATUSES
 
-    # Public API creation is always a custom domain -- the platform domain is
-    # reserved internally by ensure_platform_mapping(), never via a raw payload.
     writable_fields = ("tenant_id", "domain")
     required_on_create = ("tenant_id", "domain")
 
     def base_query(self):
-        # deployment is read for .upstream in templates/serializers after the
-        # request session has closed; eager-load so that never lazy-loads.
         return select(DomainMapping).options(joinedload(DomainMapping.deployment))
 
     def clean(self, data, partial):
@@ -55,10 +44,6 @@ class DomainController(BaseController):
         values.setdefault("ssl_status", "none")
         tenant = self._require_tenant(values["tenant_id"])
 
-        # A domain added after the tenant is already running should point at
-        # its current deployment immediately, not sit unroutable until the
-        # next provision/migrate happens to call repoint_all(). Status still
-        # starts 'pending' -- ownership must be verified before it goes live.
         live = self.session.scalars(
             select(Deployment).where(
                 Deployment.tenant_id == tenant.id, Deployment.status == "live"
@@ -76,8 +61,6 @@ class DomainController(BaseController):
             )
 
     def delete(self, resource_id, force=False):
-        # A routable mapping's Caddy route must disappear the moment the row
-        # does -- otherwise it dangles until an unrelated provision/migrate.
         instance = super().delete(resource_id, force)
         self._sync_proxy()
         return instance
@@ -92,9 +75,6 @@ class DomainController(BaseController):
             raise NotFoundError(f"Tenant '{tenant_id}' not found")
         return tenant
 
-    # ------------------------------------------------------------------
-    # queries
-    # ------------------------------------------------------------------
     def list_for_tenant(self, tenant_id, limit=50, offset=0):
         tenant_id = self.validator.uuid(tenant_id, "tenant_id")
         total = self.session.scalar(
@@ -128,18 +108,9 @@ class DomainController(BaseController):
         return mapping
 
     def routable(self, limit=1000):
-        """Active mappings with a live deployment -- what the edge proxy syncs.
-
-        Filters at the Python level on `is_routable` rather than in SQL: the
-        set is small (one row per domain, not per request) and this keeps the
-        "routable" definition in exactly one place, the model property.
-        """
         rows = self.session.scalars(self.base_query().limit(limit)).all()
         return [r for r in rows if r.is_routable]
 
-    # ------------------------------------------------------------------
-    # lifecycle -- called by TenantController, not directly by the API
-    # ------------------------------------------------------------------
     def ensure_platform_mapping(self, tenant, recorder=None):
         """Reserve the tenant's platform subdomain. Idempotent."""
         existing = self.platform_for(tenant)
@@ -163,13 +134,6 @@ class DomainController(BaseController):
         return mapping
 
     def repoint_all(self, tenant, deployment, recorder=None):
-        """Point every one of a tenant's domains at `deployment`.
-
-        Called after a deployment goes live (provision) or a migration
-        completes -- the domains and DNS never change, only which upstream
-        they resolve to. Passing `deployment=None` un-routes them (e.g. after
-        a stop), which is what makes `is_routable` false without touching DNS.
-        """
         mappings = self.session.scalars(
             select(DomainMapping).where(DomainMapping.tenant_id == tenant.id)
         ).all()
@@ -189,13 +153,7 @@ class DomainController(BaseController):
             )
         return mappings
 
-    # ------------------------------------------------------------------
-    # admin-facing actions on a single mapping
-    # ------------------------------------------------------------------
     def activate(self, mapping_id):
-        """Manually mark a domain active with no DNS check -- used for the
-        platform domain, which is already pointed at us by construction.
-        Custom domains go through verify_and_activate() instead."""
         mapping = self.get(mapping_id)
         if mapping.deployment_id is None:
             raise ConflictError(
@@ -209,11 +167,6 @@ class DomainController(BaseController):
         return mapping
 
     def verify_and_activate(self, mapping_id):
-        """Real DNS-ownership check for a custom domain: resolve it and
-        confirm it actually points at the registered proxy's public IP,
-        then activate in the same step. Replaces the honor-system "just
-        click Activate" flow that used to be the only option here.
-        """
         mapping = self.get(mapping_id)
         if mapping.domain_type == "platform":
             raise ConflictError("The platform domain doesn't need DNS verification")
@@ -265,10 +218,6 @@ class DomainController(BaseController):
         return mapping
 
     def _sync_proxy(self):
-        """Push the route table update immediately instead of leaving it to
-        the next unrelated provision/migrate/stop/start. Lazy import: avoids
-        a circular import with ProxyConfigurationService (see that module's
-        own lazy imports of DomainController/ServerController)."""
         from app.services.proxy_configuration_service import ProxyConfigurationService
 
         proxy = self.session.scalars(

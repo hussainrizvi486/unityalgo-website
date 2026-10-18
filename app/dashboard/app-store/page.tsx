@@ -52,7 +52,6 @@ export default async function AppStorePage() {
             sites={sites}
             apps={apps.map(({ source, compatibility, ...app }) => ({
                 ...app,
-                // Apps built from a repository are installed onto a site; the rest must ship in the platform's image.
                 available: Boolean(
                     app.isInstallable &&
                     app.frappeAppName &&

@@ -6,11 +6,6 @@ import { FilterPills } from '@/components/admin/filter-pills';
 import { Notice } from '@/components/ui/notice';
 import { AvailabilityStrip, MetricChart } from '@/components/ui/metric-chart';
 
-/**
- * Monitoring for one site: availability, response time, CPU, memory, storage and active users over a chosen
- * period. Used by the customer's site page and the admin's, which only differ in the endpoint they read.
- */
-
 const RANGES: { value: MetricsRange; label: string }[] = [
     { value: '1h', label: '1 hour' },
     { value: '6h', label: '6 hours' },

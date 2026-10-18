@@ -107,13 +107,7 @@ export function Footer() {
               >
                 <Linkedin className="w-5 h-5" />
               </Link>
-              {/* <Link
-                href="https://github.com/orgs/UnityAlgo/dashboard"
-                className="w-10 h-10 rounded-full bg-primary-foreground/10 hover:brightness-90 flex items-center justify-center transition-colors"
-                aria-label="GitHub"
-              >
-                <Github className="w-5 h-5" />
-              </Link> */}
+              {}
             </div>
           </div>
         </div>
@@ -124,11 +118,7 @@ export function Footer() {
             <p className="text-center md:text-left">
               &copy; 2026 UnityAlgo. All rights reserved.
             </p>
-            {/* <div className="flex gap-gap-lg">
-              <Link href="/privacy-policy">
-                Privacy Policy
-              </Link>
-            </div> */}
+            {}
           </div>
         </div>
       </div>

@@ -10,9 +10,6 @@ export default async function EditEmailAccountPage({ params }: { params: Promise
     await requireAdmin();
     const { id } = await params;
 
-    // Password columns are deliberately not selected: the form shows a blank
-    // field meaning "unchanged", so the stored secret never has to travel.
-    // Passwords are deliberately not selected: the form's password field means "unchanged" when blank.
     const account = await db.query.emailAccount.findFirst({
         where: eq(schema.emailAccount.id, id),
         columns: {

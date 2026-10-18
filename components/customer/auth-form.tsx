@@ -13,7 +13,6 @@ import { Label } from '@/components/ui/label';
 import { PasswordInput } from '@/components/ui/password-input';
 import { loginAction } from '@/app/login/actions';
 
-
 export function AuthFrame({ children, eyebrow, title, description }: { children: React.ReactNode; eyebrow: string; title: string; description: string }) {
   return (
     <main className="min-h-screen bg-card px-page py-10 sm:py-section">
@@ -34,7 +33,7 @@ export function AuthFrame({ children, eyebrow, title, description }: { children:
           </div>
         </div>
         <div>
-          {/* <div className="rounded-2xl border border-border bg-card p-card shadow-lg sm:p-8"> */}
+          {}
           <div>
             <p className="mb-2 text-xs font-bold uppercase tracking-eyebrow text-primary">{eyebrow}</p>
           </div>
@@ -59,17 +58,10 @@ function SubmitButton({ label, pendingLabel }: { label: string; pendingLabel: st
 export function CustomerAuthForm() {
   const searchParams = useSearchParams();
   const [state, formAction] = useActionState(loginAction, undefined);
-  // No default: an admin signing in should not be pushed at /dashboard. The
-  // action picks the right home for the role when `next` is empty.
   const next = searchParams.get('next') ?? '';
   const query = next ? new URLSearchParams({ next }).toString() : '';
   const resetSuccess = searchParams.get('reset') === 'success';
 
-  // Controlled, so a rejected sign-in keeps the address that was typed.
-  // React resets an uncontrolled form after a form action completes, which is
-  // why the field used to come back empty and the whole thing had to be
-  // retyped. The password is deliberately not restored — it is never echoed
-  // back from the server, and re-entering it is the expected cost of a miss.
   const [email, setEmail] = useState(state?.email ?? '');
 
   return (

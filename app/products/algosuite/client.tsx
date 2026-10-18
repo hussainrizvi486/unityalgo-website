@@ -498,25 +498,10 @@ export const MainContent = () => (
             className="scroll-mt-24 bg-muted px-4 pb-16 pt-32 md:px-6 md:pb-20 md:pt-40"
         >
             <div className={container}>
-                {/* <div className="mb-10 flex gap-2 text-xs text-muted-foreground">
-                    <Link href="/" className="hover:text-primary">
-                        Home
-                    </Link>
-                    <span>/</span>
-                    <span>Products</span>
-                    <span>/</span>
-                    <span className="text-foreground">AlgoSuite</span>
-                </div> */}
+                {}
                 <div className="grid items-center gap-12 lg:grid-cols-[1fr_1.08fr] lg:gap-16">
                     <div>
-                        {/* <div className="mb-6 flex flex-wrap items-center gap-3">
-                            <span className="text-sm font-semibold text-primary">
-                                AlgoSuite / Business management
-                            </span>
-                            <span className="border-l border-input pl-3 text-xs text-muted-foreground">
-                                In development
-                            </span>
-                        </div> */}
+                        {}
                         <h1 className="max-w-xl text-4xl leading-none tracking-tighter sm:text-6xl xl:text-7xl">
                             Your whole business.
                             <br />
@@ -963,10 +948,7 @@ export const MainContent = () => (
                     <h2 className="text-3xl tracking-tight md:text-4xl">
                         Questions we get
                     </h2>
-                    {/* <p className="mt-5 max-w-sm text-sm leading-7 text-foreground/70">
-                        AlgoSuite is still being built, so some answers are
-                        &ldquo;not yet&rdquo;.
-                    </p> */}
+                    {}
                 </div>
                 <Accordion type="single" collapsible>
                     {questions.map((item, index) => (

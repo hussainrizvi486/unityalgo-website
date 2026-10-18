@@ -1,10 +1,5 @@
-import 'server-only';
 import { designTokens } from '@/lib/design-tokens.generated';
 
-/**
- * The look of the HTML emails, taken from the design tokens (the site scope: emails open outside the
- * dashboards). Email clients cannot read CSS variables, so values are inlined here from the generated copy.
- */
 const t = designTokens.site;
 
 export const emailStyle = {

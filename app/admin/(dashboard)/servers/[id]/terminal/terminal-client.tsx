@@ -9,19 +9,6 @@ import '@xterm/xterm/css/xterm.css';
 
 type Phase = 'idle' | 'connecting' | 'open' | 'closed' | 'error';
 
-/**
- * Browser SSH terminal, talking directly to the controller's WebSocket
- * service.
- *
- * This is the one place the browser contacts the controller without going
- * through a Server Action — a WebSocket cannot be proxied through one. It
- * therefore never sees the internal API key: instead it asks the server for a
- * short-lived grant (mintTerminalTokenAction), scoped to this one server and
- * valid for ~60 seconds, and presents that on the handshake.
- *
- * xterm.js is imported dynamically because it touches `window` at module
- * scope, which would break server rendering.
- */
 export function TerminalClient({ serverId, serverName }: { serverId: string; serverName: string }) {
     const containerRef = useRef<HTMLDivElement>(null);
     const socketRef = useRef<WebSocket | null>(null);
@@ -82,8 +69,6 @@ export function TerminalClient({ serverId, serverName }: { serverId: string; ser
             socket.onopen = () => {
                 if (disposed) return;
                 setPhase('open');
-                // Tell the PTY our size, using the control-frame convention the
-                // Python side expects (a JSON frame starting with `{"resize"`).
                 const send = () => {
                     fit.fit();
                     socket.send(JSON.stringify({ resize: [term.cols, term.rows] }));
@@ -95,16 +80,8 @@ export function TerminalClient({ serverId, serverName }: { serverId: string; ser
                 term.focus();
             };
 
-            // The PTY writes raw bytes, so frames arrive binary. Take them as
-            // ArrayBuffer rather than the default Blob: Blob.text() is async,
-            // and awaiting it per frame lets two chunks resolve out of order,
-            // which scrambles terminal output.
             socket.binaryType = 'arraybuffer';
 
-            // A single UTF-8 character can be split across two frames, so the
-            // decoder is kept across messages with stream: true — decoding
-            // each frame independently would corrupt any multi-byte character
-            // that straddles a boundary.
             const decoder = new TextDecoder('utf-8');
 
             socket.onmessage = (event) => {

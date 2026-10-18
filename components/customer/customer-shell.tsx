@@ -20,10 +20,9 @@ import { AppSidebar, type SidebarNavGroup } from '@/components/ui/app-sidebar';
 import { SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { Separator } from '@/components/ui/separator';
 
-/** The customer portal's pages. `description` is the line shown under the title in the top bar. */
 const pages = [
     { title: 'Dashboard', description: 'Your account and sites at a glance', href: '/dashboard', icon: BarChart3, exact: true },
-    { title: 'Sites', description: 'Create, manage and monitor your Frappe sites', href: '/dashboard/sites', icon: Globe },
+    { title: 'Sites', description: 'Create, manage and monitor your AlgoSuite sites', href: '/dashboard/sites', icon: Globe },
     { title: 'App Store', description: 'Browse and install marketplace apps onto your sites', href: '/dashboard/app-store', icon: AppWindow },
     { title: 'Plans', description: 'Compare plans and choose what fits', href: '/dashboard/plans', icon: Layers },
     { title: 'Subscription', description: 'Your plan, billing and invoices', href: '/dashboard/subscription', icon: CreditCard },

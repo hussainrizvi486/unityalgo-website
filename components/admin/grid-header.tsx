@@ -11,19 +11,10 @@ export interface AdminHeaderParams extends IHeaderParams {
     align?: 'left' | 'right';
 }
 
-/**
- * Column header: an optional icon, the label, and a sort affordance.
- *
- * A custom component rather than AG Grid's default because the default takes
- * its icon from a string template, which cannot render a React (lucide) icon —
- * and those icons are what make the admin headers recognisable.
- */
 export function AdminGridHeader(params: AdminHeaderParams) {
     const { displayName, enableSorting, column, icon, align = 'left' } = params;
     const [sort, setSort] = React.useState<'asc' | 'desc' | null>(() => column.getSort() ?? null);
 
-    // The sort can change from outside this header (another column being
-    // sorted clears it), so track the column rather than local clicks alone.
     React.useEffect(() => {
         const onChanged = () => setSort(column.getSort() ?? null);
         column.addEventListener('sortChanged', onChanged);

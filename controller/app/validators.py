@@ -1,9 +1,3 @@
-"""Field validation.
-
-The project runs on Flask rather than FastAPI, so there is no Pydantic layer
-validating requests for us. `Validator` keeps the coercion rules in one place
-instead of scattering isinstance checks through the controllers.
-"""
 
 import re
 import uuid

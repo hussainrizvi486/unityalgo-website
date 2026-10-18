@@ -1,18 +1,5 @@
 import 'server-only';
 
-/**
- * Typed client for the controller API (the Python/Flask service in
- * controller/).
- *
- * Server-only by construction. The `server-only` import above makes the build
- * fail if a Client Component ever imports this, because every call carries
- * CONTROLLER_INTERNAL_API_KEY — the single shared secret protecting endpoints
- * that can SSH into production nodes. It must never reach a browser.
- *
- * Callers are Server Components and Server Actions under app/admin, which run
- * only after proxy.ts has verified an admin session.
- */
-
 const BASE_URL = process.env.CONTROLLER_API_URL ?? 'http://127.0.0.1:8000';
 
 export class ControllerError extends Error {
@@ -62,14 +49,10 @@ async function request<T>(
                 ...(body ? { 'Content-Type': 'application/json' } : {}),
             },
             body: body ? JSON.stringify(body) : undefined,
-            // Infrastructure state changes outside this app (a health sweep,
-            // a Celery task completing), so caching is opt-in per call.
             cache: revalidate === undefined ? 'no-store' : undefined,
             next: revalidate === undefined ? undefined : { revalidate },
         });
     } catch {
-        // A refused connection here means the Python service is down, which
-        // is worth saying plainly rather than surfacing "fetch failed".
         throw new ControllerError(
             `Controller API is unreachable at ${BASE_URL}. Is it running? (cd controller && python main.py serve)`,
             503,
@@ -236,10 +219,6 @@ export interface DbSchema {
     tables: DbTable[];
 }
 
-/**
- * A statement's result. `rows` for anything that produced a result set,
- * `status` for INSERT/UPDATE/DELETE/DDL, mirroring what the cursor reported.
- */
 export type DbQueryResult =
     | {
           kind: 'rows';
@@ -278,14 +257,6 @@ export interface ControllerDomain {
     verified_at: string | null;
 }
 
-/**
- * One end-to-end process recorded by the controller.
- *
- * Field names mirror OperationSerializer in controller/app/serializers.py
- * exactly — an earlier version of this interface guessed at `name`, `message`
- * and `finished_at`, none of which the API sends, so the operations list
- * rendered blank titles.
- */
 export interface ControllerOperation {
     id: string;
     kind: string;
@@ -343,7 +314,6 @@ export interface AsyncAccepted {
 
 export type SiteAction = 'stop' | 'start' | 'restart' | 'backup' | 'deactivate' | 'reactivate';
 
-/** A site as the admin panel sees it: any customer's, with the account that owns it. */
 export interface AdminSite extends CustomerSite {
     owner_account_email: string;
     user_id: string;
@@ -388,7 +358,6 @@ export interface SiteUsage {
     storage_mb: number;
 }
 
-/** One backup: its database, files and config share a timestamp and are restored together. */
 export interface SiteBackupSet {
     stamp: string;
     kind: 'manual' | 'scheduled' | 'safety';
@@ -436,14 +405,12 @@ export interface SiteBackups {
 
 export interface SiteTrialInfo {
     ends_at: string;
-    /** The trial has ended: the site is switched off until its owner subscribes to the plan. */
     expired: boolean;
     days_left: number;
     plan_id: string | null;
 }
 
 export interface CustomerSite {
-    /** Where to open the site: its domain, or the worker's address and port when running locally. */
     url: string;
     id: string;
     name: string;
@@ -616,7 +583,6 @@ export const controller = {
         /** Plans whose free trial this customer has already used. */
         trials: (userId: string) =>
             request<{ used_plan_ids: string[] }>(`/api/v1/sites/trials?user_id=${encodeURIComponent(userId)}`, { timeoutMs: 20_000 }),
-        /** The customer has subscribed to a plan: end their trial sites on it and keep the sites. */
         convertTrials: (userId: string, planId: string) =>
             request<{ queued: boolean }>('/api/v1/sites/trials/convert', {
                 method: 'POST',
@@ -727,7 +693,6 @@ export const controller = {
                 `/api/v1/sites/${encodeURIComponent(id)}/restore`,
                 { method: 'POST', body: { user_id: userId, stamp, confirm }, timeoutMs: 20_000 },
             ),
-        /** The raw response, so a large backup streams to the browser instead of being buffered. */
         backupFile: (id: string, userId: string, name: string) =>
             fetch(
                 `${BASE_URL}/api/v1/sites/${encodeURIComponent(id)}/backups/${encodeURIComponent(name)}?user_id=${encodeURIComponent(userId)}`,
@@ -917,11 +882,6 @@ export const controller = {
         /** Tables, columns, keys and indexes. Always read-only server-side. */
         schema: (id: string) =>
             request<DbSchema>(`/api/v1/database-connections/${id}/schema`),
-        /**
-         * Runs one statement. Whether writes are permitted is the connection's
-         * `allow_writes` setting, enforced by the controller in a Postgres
-         * READ ONLY transaction — not by anything sent from here.
-         */
         query: (id: string, sql: string) =>
             request<DbQueryResult>(`/api/v1/database-connections/${id}/query`, {
                 method: 'POST',

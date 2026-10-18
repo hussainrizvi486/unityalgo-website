@@ -21,9 +21,6 @@ class ServerController(BaseController):
     resource_name = "server"
     ROLES = ServerNode.ROLES
 
-    # used_memory_mb / active_containers are deliberately absent: they are a
-    # cache derived from deployments (see refresh_capacity) and must not be
-    # settable through the API.
     writable_fields = (
         "name",
         "ip_address",
@@ -43,8 +40,6 @@ class ServerController(BaseController):
         "frappe_enabled",
     )
     SSH_AUTH_METHODS = ("password", "key")
-    # DSA/DSSKey was removed from paramiko itself as of 5.0 (pinned in
-    # requirements.txt) -- RSA/Ed25519/ECDSA is the full supported set.
     SSH_KEY_CLASSES = (paramiko.RSAKey, paramiko.Ed25519Key, paramiko.ECDSAKey)
     required_on_create = ("name", "ip_address")
 
@@ -99,8 +94,6 @@ class ServerController(BaseController):
             values["ssh_auth_method"] = v.choice(
                 data["ssh_auth_method"], "ssh_auth_method", self.SSH_AUTH_METHODS
             )
-        # An empty/omitted key on update means "keep the existing one" -- only
-        # validate+encrypt+store when non-empty content was actually sent.
         if data.get("ssh_key"):
             raw = v.string(data["ssh_key"], "ssh_key", max_length=16384)
             self._validate_private_key(raw)
@@ -123,12 +116,6 @@ class ServerController(BaseController):
         return values
 
     def _validate_private_key(self, raw):
-        """Parse-check pasted key content at submit time, not first-connect time.
-
-        Passphrase-protected keys are out of scope for v1 (no passphrase
-        field); a protected key fails every class below and surfaces the
-        same "not recognized" error as garbage input.
-        """
         for key_class in self.SSH_KEY_CLASSES:
             try:
                 key_class.from_private_key(io.StringIO(raw))
@@ -155,20 +142,11 @@ class ServerController(BaseController):
         values.setdefault("ssh_key_path", self.settings.ssh_key_path)
         values.setdefault("ssh_auth_method", "password")
         values.setdefault("role", "worker")
-        # Without a distinct private address, tenant ports are published on
-        # whatever `ip_address` is. Fine for a private/local network; on a
-        # public VPS set private_ip explicitly.
         values.setdefault("private_ip", values.get("ip_address"))
-        # Only fall back to the global dev password when key auth wasn't
-        # explicitly chosen -- otherwise a server created with a pasted key
-        # ends up with a stored password it was never meant to have.
         if self.settings.ssh_password and values["ssh_auth_method"] == "password":
             values.setdefault("ssh_password", self.settings.ssh_password)
         return values
 
-    # ------------------------------------------------------------------
-    # SSH operations
-    # ------------------------------------------------------------------
     def ssh(self, server):
         return SSHService(server, self.settings)
 
@@ -232,14 +210,6 @@ class ServerController(BaseController):
             return server
 
     def connect(self, server_id, recorder=None):
-        """Full connect flow for a registered node: SSH in, collect hardware
-        and OS specs, persist them. This is what "connecting" a server means
-        for the platform -- after this the node's specs are up to date for
-        capacity planning and the admin dashboard.
-
-        `recorder` lets a surrounding operation (e.g. bootstrap) absorb these
-        steps into its own timeline instead of opening a nested operation.
-        """
         server = self.get(server_id)
         if recorder is not None:
             return self._connect_steps(server, recorder)
@@ -355,8 +325,6 @@ class ServerController(BaseController):
             }
 
     def bootstrap_caddy(self, server_id):
-        """Installs and starts Caddy on a role='proxy' node. Assumes Docker
-        is already installed (run bootstrap() first, same as any worker)."""
         server = self.get(server_id)
         with self.activity.operation(
             "server.bootstrap_caddy", f"Caddy installation: {server.name}",
@@ -398,11 +366,6 @@ class ServerController(BaseController):
             return {"steps": [r.to_dict() for r in results], "ok": ok}
 
     def apply_firewall_lockdown(self, server_id):
-        """Restricts this worker's tenant port range to the registered
-        proxy's IP only, via the DOCKER-USER chain. Opt-in, explicit action
-        -- not run automatically during bootstrap, since it changes what's
-        reachable on a node that may already be serving live traffic.
-        """
         server = self.get(server_id)
         if server.role != "worker":
             raise ConflictError(
@@ -484,13 +447,6 @@ class ServerController(BaseController):
         )
 
     def before_delete(self, server, force):
-        """Refuse to delete a node that still runs deployments.
-
-        `Deployment.server_id` is ON DELETE RESTRICT, so the rows must be torn
-        down (not just detached) before the node can go. With `force` we mark
-        the deployments removed and detach the legacy tenant pointer -- the
-        containers themselves are unreachable once the node is gone.
-        """
         active = self.deployment_count(server)
         if self.session.scalar(select(func.count()).select_from(Site).where(Site.server_id == server.id)):
             raise ConflictError('Frappe sites are assigned to this server. Recover or relocate those sites before removing the server.')
@@ -510,8 +466,6 @@ class ServerController(BaseController):
                 .values(status="removed", stopped_at=now, port_released_at=now)
             )
 
-        # RESTRICT covers historical rows too, so repoint every remaining
-        # deployment off the node before it is deleted.
         self.session.execute(
             Deployment.__table__.delete().where(Deployment.server_id == server.id)
         )
@@ -542,12 +496,6 @@ class ServerController(BaseController):
         return rows, total
 
     def node_load(self):
-        """Per-node load derived from live deployments.
-
-        `ServerNode.active_containers` / `used_memory_mb` are a cache refreshed
-        by refresh_capacity(); placement reads the deployments table directly so
-        a stale cache can never cause an overcommit.
-        """
         allocations = union_all(
             select(Deployment.server_id.label('server_id'), Deployment.memory_limit_mb.label('memory'), literal(1).label('slots')).where(Deployment.status.in_(Deployment.ACTIVE_STATUSES)),
             select(Site.server_id.label('server_id'), Site.memory_limit_mb.label('memory'), Site.container_slots.label('slots')).where(Site.status.in_(Site.ACTIVE_STATUSES)),
@@ -568,8 +516,6 @@ class ServerController(BaseController):
         self.session.execute(text("SELECT pg_advisory_xact_lock(hashtext('customer-site-placement'))"))
         reserve = self.settings.node_memory_reserve_mb
         load = self.node_load()
-        # OUTER JOIN + COALESCE: a node with no deployments must still be
-        # eligible, and an inner join would silently exclude every empty node.
         containers = func.coalesce(load.c.containers, 0)
         used_mb = func.coalesce(load.c.used_mb, 0)
         free_mb = ServerNode.max_memory_mb - reserve - used_mb
@@ -590,13 +536,6 @@ class ServerController(BaseController):
         return self.session.scalars(stmt).first()
 
     def proxy_node(self):
-        """The registered Caddy edge node, if any.
-
-        Only one is expected in practice today; returns the first active one
-        if somehow more than one is registered. None means Phase 2 routing
-        isn't set up yet -- callers must treat that as "stay on IP:PORT",
-        not as an error.
-        """
         return self.session.scalars(
             select(ServerNode)
             .where(ServerNode.role == "proxy", ServerNode.is_active.is_(True))
@@ -605,11 +544,6 @@ class ServerController(BaseController):
         ).first()
 
     def capacity_report(self, required_memory_mb=None):
-        """Per-node placement math, and why each node was or wasn't eligible.
-
-        Used to turn "no node available" into an actionable message instead of
-        making an operator go read the placement query.
-        """
         required = required_memory_mb or self.settings.tenant_memory_limit_mb
         reserve = self.settings.node_memory_reserve_mb
         load = self.node_load()

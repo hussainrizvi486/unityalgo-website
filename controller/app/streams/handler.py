@@ -1,14 +1,3 @@
-"""Per-connection handler for /ws/stream/<kind>/<deployment_id>.
-
-Mirrors app/terminal/handler.py: `process_request` is the auth gate that runs
-before the handshake, so an unauthorised caller never gets an open socket,
-and the resolved grant is stashed on the connection for the handler to read
-back.
-
-The deployment is resolved to its container name and its node here, inside a
-session that closes before streaming starts -- a stream can stay open for
-minutes and must not hold a database connection for its lifetime.
-"""
 
 import time
 import uuid
@@ -34,9 +23,6 @@ def _reject(status_code, reason):
 
 
 def _extract_token(path):
-    """The grant travels as ?token=... -- browsers cannot set headers on a
-    WebSocket handshake. Acceptable because the token is single-purpose,
-    bound to one deployment and expires in ~60s."""
     if "?" not in path:
         return None
     for pair in path.split("?", 1)[1].split("&"):
@@ -91,8 +77,6 @@ def handle_connection(ws):
     container = getattr(ws, "stream_container", None)
     server_id = getattr(ws, "stream_server_id", None)
     if grant is None or container is None or server_id is None:
-        # Unreachable -- process_request rejects first -- but never stream
-        # from an unauthenticated connection.
         ws.close(code=1011, reason="internal error")
         return
 

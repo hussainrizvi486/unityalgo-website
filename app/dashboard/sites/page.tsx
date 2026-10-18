@@ -29,7 +29,7 @@ export default async function SitesPage() {
                         Sites
                     </h1>
                     <p className="mt-3 portal-text-body text-foreground/70">
-                        Manage your Frappe sites and follow their installation
+                        Manage your AlgoSuite sites and follow their installation
                         progress.
                     </p>
                 </div>

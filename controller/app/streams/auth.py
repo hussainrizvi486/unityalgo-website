@@ -1,21 +1,9 @@
-"""Verifies the short-lived stream token minted by the Next.js admin panel.
-
-Deliberately a near-copy of app/terminal/auth.py's `resolve_terminal_grant`
-in shape, but bound to a *deployment* rather than a server and carrying its
-own purpose string, so a token minted to watch one storefront's logs cannot
-be replayed to open a root shell on the node that hosts it.
-
-The signature check itself is imported, not reimplemented -- see
-app/terminal/auth.verify_hs256.
-"""
 
 import time
 
 from app.config import settings
 from app.terminal.auth import verify_hs256
 
-# Distinct from TERMINAL_TOKEN_PURPOSE. A grant is only ever accepted for the
-# action it was minted for.
 STREAM_TOKEN_PURPOSE = "controller-stream"
 
 _CLOCK_SKEW_SECONDS = 30
@@ -51,13 +39,9 @@ def resolve_stream_grant(token, deployment_id, kind):
     if payload.get("purpose") != STREAM_TOKEN_PURPOSE:
         return None
 
-    # Bound to one deployment: a grant for tenant A's container must not tail
-    # tenant B's logs, which would leak another customer's order data.
     if str(payload.get("deploymentId")) != str(deployment_id):
         return None
 
-    # A logs grant must not be reused to stream stats, and vice versa. Cheap
-    # to enforce, and keeps the token's meaning exactly what it says.
     if payload.get("kind") != kind:
         return None
 

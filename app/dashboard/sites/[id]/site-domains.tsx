@@ -72,8 +72,6 @@ export function SiteDomainsPanel({ site }: { site: CustomerSite }) {
     const [data, setData] = useState<SiteDomains | null>(null);
     const [error, setError] = useState(false);
     const [version, setVersion] = useState(0);
-    // Refresh the list from inside the action, once the domain is saved. React 19 also clears the
-    // (uncontrolled) input after a successful submit, so there is nothing to reset by hand.
     const [state, addAction] = useActionState(async (previous: Awaited<ReturnType<typeof addDomainAction>> | undefined, form: FormData) => {
         const result = await addDomainAction(previous, form);
         if (result.success) setVersion((v) => v + 1);

@@ -1,42 +1,15 @@
 'use server';
 
 import { cookies } from 'next/headers';
+import bcrypt from 'bcryptjs';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
-import bcrypt from 'bcryptjs';
 import { and, eq } from 'drizzle-orm';
 import { db, schema } from '@/lib/db';
-import { createSessionToken, SESSION_COOKIE, SESSION_DURATION_SECONDS } from '@/lib/auth';
+import { SESSION_COOKIE } from '@/lib/auth';
 import { CommentEntityType, createComment } from '@/lib/comments';
 import { getCurrentAdminEmail, requireAdmin } from '@/lib/admin-session';
 import { syncPlanToPaddle } from '@/lib/paddle-catalog';
-
-export async function loginAction(_prevState: { error?: string } | undefined, formData: FormData) {
-    const email = String(formData.get('email') ?? '').trim().toLowerCase();
-    const password = String(formData.get('password') ?? '');
-
-    const adminUser = await db.query.user.findFirst({ where: eq(schema.user.email, email) });
-    if (!adminUser || adminUser.role !== 'ADMIN') {
-        return { error: 'Invalid email or password.' };
-    }
-
-    const passwordMatches = await bcrypt.compare(password, adminUser.passwordHash);
-    if (!passwordMatches) {
-        return { error: 'Invalid email or password.' };
-    }
-
-    const token = await createSessionToken(adminUser.email);
-    const cookieStore = await cookies();
-    cookieStore.set(SESSION_COOKIE, token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        path: '/',
-        maxAge: SESSION_DURATION_SECONDS,
-    });
-
-    redirect('/admin');
-}
 
 export async function logoutAction() {
     const cookieStore = await cookies();
@@ -253,9 +226,6 @@ export async function createUserAction(
 
     const passwordHash = await bcrypt.hash(password, 10);
 
-    // Admin-panel "New User" always creates an ADMIN account — customer accounts
-    // can only be created through the public registration flow (app/customer/actions.ts),
-    // which hardcodes role: 'CUSTOMER' and never reads a role from the form.
     await db.insert(schema.user).values({ email, name, passwordHash, role: 'ADMIN' });
 
     revalidatePath('/admin/users');
@@ -279,8 +249,6 @@ export async function updateUserAction(
         return { error: `A user with email "${email}" already exists.` };
     }
 
-    // Role is intentionally never accepted from this form — it's not part of
-    // UserFormValues, so there's nothing here for an admin to elevate/change.
     await db.update(schema.user).set({ email, name }).where(eq(schema.user.id, id));
 
     revalidatePath('/admin/users');
@@ -325,8 +293,6 @@ export async function deleteUserAction(formData: FormData) {
         redirect('/admin/users?error=' + encodeURIComponent('You cannot delete your own account.'));
     }
 
-    // Only the "last remaining admin" lockout applies to admins — deleting the
-    // last customer is always fine, it just means there are no customers left.
     if (user.role === 'ADMIN') {
         const totalAdmins = await db.$count(schema.user, eq(schema.user.role, 'ADMIN'));
         if (totalAdmins <= 1) {
@@ -373,8 +339,6 @@ function readPlanFields(formData: FormData) {
         priceUnit: String(formData.get('priceUnit') ?? 'FLAT_MONTHLY') as 'PER_USER_MONTHLY' | 'FLAT_MONTHLY',
         priceAmount: parseOptionalFloat(formData.get('priceAmount')),
         transactionFeePercent: parseOptionalFloat(formData.get('transactionFeePercent')),
-        // Blank means the plan is not sold online — checkout refuses rather
-        // than falling back to some other plan's price.
         paddlePriceId: String(formData.get('paddlePriceId') ?? '').trim() || null,
         currencyId: String(formData.get('currencyId') ?? '').trim() || null,
         userLimit: parseOptionalInt(formData.get('userLimit')),
@@ -634,14 +598,6 @@ export async function addAdminTicketCommentAction(formData: FormData) {
     revalidatePath(`/admin/tickets/${ticketId}`);
 }
 
-/**
- * Pushes a plan's price into Paddle, creating it if it has none yet.
- *
- * The plan is the source of truth: whatever amount and currency an admin has
- * set here is what Paddle is made to charge. It is deliberately one direction —
- * pulling from Paddle would let a change made in their dashboard silently
- * contradict what the site displays.
- */
 export async function syncPlanWithPaddleAction(formData: FormData) {
     await requireAdmin();
     const id = String(formData.get('id') ?? '');

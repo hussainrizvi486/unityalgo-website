@@ -4,7 +4,6 @@ import { Header } from '@/components/layouts/header';
 import { Footer } from '@/components/layouts/footer';
 import { NotFoundClient } from '@/components/not-found';
 
-
 export const metadata: Metadata = {
     title: 'Page Not Found | UnityAlgo',
     description: 'The page you are looking for does not exist.',

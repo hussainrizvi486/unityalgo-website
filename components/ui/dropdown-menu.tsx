@@ -4,19 +4,6 @@ import * as React from 'react';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { cn } from '@/utils';
 
-/**
- * The small action menu behind a "…" or an account button.
- *
- * Built on the Popover already in the project rather than pulling in
- * @radix-ui/react-dropdown-menu: a menu is a popover plus roving arrow-key
- * focus and the right roles, and that is cheaper to own than another
- * dependency shipping its own copy of the same primitives.
- *
- * Radix's version would give us typeahead and submenus. Neither is needed by
- * any menu in this app; if one ever is, swap the internals here and the call
- * sites keep working.
- */
-
 const MenuContext = React.createContext<{ close: () => void }>({ close: () => {} });
 
 export function DropdownMenu({
@@ -47,8 +34,6 @@ export function DropdownMenu({
         if (all.length === 0) return;
         const current = all.indexOf(document.activeElement as HTMLElement);
         const step = event.key === 'ArrowDown' ? 1 : -1;
-        // -1 (focus is on the container) steps to the first item going down and
-        // the last going up, which is what both directions should open on.
         const next = current === -1 ? (step === 1 ? 0 : all.length - 1) : (current + step + all.length) % all.length;
         all[next]?.focus();
     }
@@ -109,8 +94,6 @@ export function DropdownMenuItem({
             type="button"
             role="menuitem"
             disabled={disabled}
-            // The arrow-key walker skips anything marked disabled, and a plain
-            // attribute keeps that check out of React state.
             data-disabled={disabled ? '' : undefined}
             onClick={() => { onSelect?.(); close(); }}
             className={cn(

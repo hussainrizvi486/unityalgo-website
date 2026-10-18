@@ -8,13 +8,6 @@ import { requireAdmin } from '@/lib/admin-session';
 import type { AdminFormState } from '@/components/admin/dynamic-form';
 import { NUMBER_FORMATS } from '@/lib/currency';
 
-/**
- * Admin actions for currencies.
- *
- * Every action re-checks the admin session rather than trusting the page that
- * rendered the form.
- */
-
 function readFields(formData: FormData) {
     const format = String(formData.get('numberFormat') ?? '#,###.##');
     return {
@@ -85,8 +78,6 @@ export async function deleteCurrencyAction(formData: FormData) {
     await requireAdmin();
     const id = String(formData.get('id') ?? '');
     if (!id) return;
-    // Plans referencing it are not deleted — the foreign key is ON DELETE SET
-    // NULL, so they fall back to the default display currency instead.
     await db.delete(schema.currency).where(eq(schema.currency.id, id));
     revalidatePath('/admin/currencies');
     revalidatePath('/admin/plans');

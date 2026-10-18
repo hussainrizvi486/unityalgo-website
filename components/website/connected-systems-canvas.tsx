@@ -15,56 +15,12 @@ import {
 } from '@/components/website/hero-stack-parts';
 import { cn } from '@/utils';
 
-/**
- * "The Stack" — the hero scene.
- *
- * A software system drawn the way engineers picture one: five boards, each
- * populated with the things that actually live at that level. Data and storage
- * at the base, orchestration above it, application code, the interface, and the
- * AI core under glass on top. The boards stay pulled apart into an exploded
- * view — how you draw a system when you are explaining it — and the assembly
- * turns on the spot to follow the pointer.
- *
- * The boards assemble themselves bottom-up on first paint, and steel risers run
- * between them carrying packets upward, so the five layers read as one system
- * rather than five separate objects. Individual components keep their own
- * motion — fans turn, progress bars fill, status lights chase — which is what
- * makes the thing look like it is running rather than posed.
- *
- * Every piece is parametric rather than a downloaded model, which keeps the
- * scene at a few KB of geometry code instead of a multi-megabyte GLB on a page
- * that is already image-heavy. Geometry and materials are built once in
- * `useStackKit` and shared by every mesh.
- *
- * Porcelain, graphite, glass and a little steel, with the brand crimson
- * reserved for the parts that are meant to look powered: status lights, the
- * packets climbing the risers, the core under the glass.
- */
-
 const clamp01 = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v);
 
 const SLAB_H = 0.14;
-// Clearance between one board's deck and the underside of the next. Fixed: the
-// stack used to collapse toward the pointer, which read as the whole object
-// shrinking rather than as an assembly closing. It has to clear the tallest
-// prop — the glass core stands ~0.3 above its board — with room to spare.
 const BOARD_GAP = 0.78;
-// How far the pointer turns the assembly, in radians. The stack stays put and
-// spins in place: moving it across the hero competes with the copy, and at this
-// viewing angle a turntable shows off the populated decks far better than a
-// slide does. Kept narrow enough that the swing never reaches square-on, where
-// the boards lose their three-quarter read and flatten out.
 const SPIN_Y = 0.42;
 
-/**
- * Board plan sizes, tapering upward so the closed stack reads as one form.
- *
- * The taper is steep on purpose: at this camera pitch a board of the same size
- * as the one below it would cover most of that board's deck, and the deck is
- * where all the detail lives.
- */
-// `glass` belongs to the base sheet and nothing else: a stack of translucent
-// boards has no silhouette, and every deck below shows through the one above.
 const BOARDS = [
     { w: 3.20, d: 2.46, dark: false, glass: true },
     { w: 2.78, d: 2.12, dark: true, glass: false },
@@ -73,16 +29,6 @@ const BOARDS = [
     { w: 1.80, d: 1.40, dark: false, glass: false },
 ];
 
-/**
- * Pointer position relative to the hero, in -1..1.
- *
- * Tracked on `window` rather than through R3F's `state.pointer`, which only
- * updates from events landing on the canvas. The hero renders this layer with
- * `pointer-events-none` so it never intercepts clicks on the headline or CTAs —
- * which also meant the canvas saw no pointer events at all and the interaction
- * was silently dead. Listening on the window keeps the layer click-through and
- * still lets the stack respond while the cursor is over the copy.
- */
 function usePointer(host: React.RefObject<HTMLElement | null>, enabled: boolean) {
     const pointer = React.useRef({ x: 0, y: 0 });
     React.useEffect(() => {
@@ -100,13 +46,6 @@ function usePointer(host: React.RefObject<HTMLElement | null>, enabled: boolean)
     return pointer;
 }
 
-/**
- * Where the inter-board risers stand, one pair per gap.
- *
- * Corners of the *upper* board's footprint, so a riser lands on solid deck at
- * both ends. Alternating diagonals per gap keeps them from forming one straight
- * column up the side of the stack.
- */
 const RISER_SLOTS = BOARDS.slice(1).map((board, gap) => {
     const x = board.w / 2 - 0.2;
     const z = board.d / 2 - 0.2;
@@ -115,24 +54,8 @@ const RISER_SLOTS = BOARDS.slice(1).map((board, gap) => {
         : [[x, -z], [-x, z]] as const;
 });
 
-/**
- * Contents of each board, bottom to top.
- *
- * Laid out to each board's full footprint rather than clustered at its centre.
- * The board above hides a band across the middle of the one below it, so the
- * centre is the one place a component is guaranteed not to be seen; the busiest
- * rows sit toward the front edge, where every deck stays visible at any spread.
- */
 function BoardContents({ index, kit, reduced }: { index: number; kit: StackKit; reduced: boolean }) {
     switch (index) {
-        // 0 — the platform itself: the AI core under glass, the cloud, the
-        // servers and the database it runs on.
-        //
-        // A single row, all of it in the front third of the deck. Board 1
-        // covers the middle and back of this board at every spread, and a prop
-        // standing here hides a band roughly 1.4x its own height behind it — so
-        // one row is genuinely all that can be seen, and a composition centred
-        // the way a standalone render would be is one nobody ever sees.
         case 0: return (
             <>
                 <Discs kit={kit} position={[-1.28, 0.07, 0.9]} count={3} cap />
@@ -140,8 +63,7 @@ function BoardContents({ index, kit, reduced }: { index: number; kit: StackKit; 
                 <BrainCore kit={kit} position={[-0.05, 0.07, 0.9]} reduced={reduced} />
                 <RackUnit kit={kit} position={[0.64, 0.07, 0.92]} rotation={0.2} bays={2} />
                 <Cloud kit={kit} position={[1.12, 0.07, 0.88]} />
-                {/* Behind the row: read as depth past the front pieces rather
-                    than as objects in their own right. */}
+                {}
                 <ChartPane kit={kit} position={[0.3, 0.07, 0.34]} rotation={-0.18} reduced={reduced} />
                 <Appliance kit={kit} position={[-1.16, 0.07, 0.36]} rotation={0.16} />
                 <Trace kit={kit} from={[-1.28, 0.9]} to={[-0.78, 0.92]} pulse reduced={reduced} delay={0.0} />
@@ -214,13 +136,6 @@ function BoardContents({ index, kit, reduced }: { index: number; kit: StackKit; 
     }
 }
 
-/**
- * The one unmistakable through-line in the model.
- *
- * The individual deck traces show activity within a layer; this rail shows the
- * layers working as a system. It sits just outside the smallest boards so the
- * crimson packets remain visible instead of disappearing through components.
- */
 function DataSpine({ kit, reduced }: { kit: StackKit; reduced: boolean }) {
     const pulses = React.useRef<THREE.Mesh[]>([]);
     const bottom = -1.05;
@@ -279,8 +194,6 @@ function Stack({ reduced, pointer }: {
 
     // 0 -> 1 once, on mount: the stack assembles itself rather than appearing.
     const intro = React.useRef(reduced ? 1 : 0);
-    // Smoothed turntable angle, so the object eases toward the cursor rather
-    // than tracking it rigidly.
     const spin = React.useRef(0);
 
     useFrame((state, dt) => {
@@ -294,23 +207,15 @@ function Stack({ reduced, pointer }: {
         for (let i = 0; i < BOARDS.length; i++) {
             const g = boards.current[i];
             if (!g) continue;
-            // Staggered so the boards arrive bottom-up, the way the thing would
-            // actually be built. Cubic ease-out: fast in, settling at the end.
             const p = clamp01((intro.current - i * 0.11) / 0.6);
             const enter = 1 - Math.pow(1 - p, 3);
 
-            // Higher boards travel further, so the stack fans from its base
-            // like a real exploded view instead of sliding uniformly.
             const rest = i * (SLAB_H + BOARD_GAP) - 1.05;
-            // A slow per-board bob, phase-shifted, so the layers never look
-            // welded to one another.
             const bob = reduced ? 0 : Math.sin(t * 0.9 + i * 0.8) * 0.014;
             g.position.y = rest + bob - (1 - enter) * 1.4;
             g.rotation.y = (i % 2 === 0 ? 0.07 : -0.07) + (1 - enter) * 0.5;
             g.scale.setScalar(0.6 + 0.4 * enter);
 
-            // Contents land a beat after the board they sit on, so the stack
-            // assembles rather than appearing fully built.
             const deck = decks.current[i];
             if (deck) {
                 const dp = clamp01((intro.current - i * 0.11 - 0.16) / 0.5);
@@ -350,10 +255,6 @@ function Stack({ reduced, pointer }: {
                         }
                         // A glass sheet is thinner than a machined board.
                         scale={[board.w, board.glass ? SLAB_H * 0.68 : SLAB_H, board.d]}
-                        // A shadow map has no notion of opacity, so a glass
-                        // caster throws the same solid black shape a porcelain
-                        // one does. The base sheet is grounded by the contact
-                        // shadow underneath it instead.
                         castShadow={!board.glass}
                         receiveShadow
                     />
@@ -398,15 +299,6 @@ const OBJECT_W = 4.3;
 /** How much of the hero, in CSS px, the copy column and its gutter claim. */
 const COPY_COLUMN = 700;
 
-/**
- * Sizes and places the stack from the space actually left beside the copy.
- *
- * A fixed offset only ever framed one viewport: the object's on-screen size
- * tracks viewport *height* (the camera's field of view is vertical) while the
- * copy column's width is near-constant, so at 1024–1280 a stack framed for
- * 1440 sat straight on top of the paragraph. This measures the free strip and
- * fits the object to it.
- */
 function Rig({ children }: { children: React.ReactNode }) {
     const { size, viewport } = useThree();
     const { scale, x } = React.useMemo(() => {
@@ -421,16 +313,6 @@ function Rig({ children }: { children: React.ReactNode }) {
     return <group position={[x, 0, 0]} scale={scale}>{children}</group>;
 }
 
-/**
- * A soft light that rises through the stack on a loop.
- *
- * One moving light does what no amount of extra geometry can: it picks out a
- * different layer every few seconds, so the eye is walked up through the
- * assembly instead of settling on the top board. Kept neutral rather than
- * crimson — a tinted light would wash the porcelain boards pink and pull the
- * brand colour off the parts that are meant to carry it.
- */
-/** Studio light colours: the page background, shaded toward the muted tone by `shade`. */
 const lightColor = (shade: number) => rgbHex(mixRgb(tokenRgb('--background'), tokenRgb('--muted'), shade));
 
 function SweepLight({ reduced }: { reduced: boolean }) {
@@ -452,9 +334,7 @@ function Scene({ reduced, pointer }: {
 }) {
     return (
         <>
-            {/* Studio rig, inline. drei's `preset` environments fetch an HDR
-                from a CDN at runtime — a network dependency this page should
-                not carry, and one that fails behind a strict CSP. */}
+            {}
             <Environment resolution={256}>
                 <Lightformer intensity={3.2} position={[2, 5, 3]} scale={[7, 3, 1]} color={lightColor(0)} />
                 <Lightformer intensity={1.3} position={[-5, 1, 2]} scale={[3, 7, 1]} color={lightColor(0.15)} />
@@ -501,16 +381,6 @@ function Scene({ reduced, pointer }: {
     );
 }
 
-/**
- * Renders nothing if the scene cannot start.
- *
- * three.js throws `Error creating WebGL context` outright when WebGL is
- * unavailable — a locked-down browser, a blocklisted driver, a VM without
- * acceleration. The hero's headline, copy and CTAs do not depend on the scene,
- * so the right outcome is to drop the visual silently rather than surface an
- * uncaught error. The plain-three version of this file guarded the renderer in
- * a try/catch; moving to React Three Fiber lost that, and this restores it.
- */
 class CanvasBoundary extends React.Component<
     { children: React.ReactNode },
     { failed: boolean }
@@ -528,9 +398,6 @@ export function ConnectedSystemsCanvas({ className }: { className?: string }) {
     const reduced = usePrefersReducedMotion();
     const host = React.useRef<HTMLDivElement>(null);
     const pointer = usePointer(host, !reduced);
-    // The hero already gates on this before importing the module, so reaching
-    // here unsupported should be impossible — kept because the component is
-    // exported and a future caller may not know to check.
     const [supported] = React.useState(detectWebGL);
 
     return (

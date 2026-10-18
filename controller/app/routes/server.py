@@ -95,8 +95,6 @@ class ServerBootstrapView(ServerBaseView):
 
 
 class ServerBootstrapCaddyView(ServerBaseView):
-    """/api/v1/servers/<id>/bootstrap-caddy -- install+start Caddy over SSH
-    (a role='proxy' node; assumes Docker is already installed)."""
 
     def post(self, server_id):
         with self.session() as session:
@@ -105,8 +103,6 @@ class ServerBootstrapCaddyView(ServerBaseView):
 
 
 class ServerLockdownView(ServerBaseView):
-    """/api/v1/servers/<id>/lockdown -- restrict this worker's tenant port
-    range to the registered proxy's IP only (DOCKER-USER chain)."""
 
     def post(self, server_id):
         with self.session() as session:

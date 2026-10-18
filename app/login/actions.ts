@@ -11,16 +11,7 @@ import {
     CUSTOMER_SESSION_DURATION_SECONDS,
 } from '@/lib/customer-auth';
 import { createTrackedCustomerSession } from '@/lib/login-sessions';
-
-/**
- * One sign-in for both roles.
- *
- * The *page* is shared; the sessions are not. An admin still gets the admin
- * cookie and a customer still gets the customer cookie, because that
- * separation is what stops a customer session opening the admin panel — the
- * property the cross-role isolation tests exist to protect. Merging the two
- * cookies would have quietly removed it.
- */
+import { checkLoginAllowed, recordLoginFailure, recordLoginSuccess } from '@/lib/login-limits';
 
 export interface LoginFormState {
     error?: string;
@@ -30,15 +21,6 @@ export interface LoginFormState {
 
 const HOME_FOR = { ADMIN: '/admin', CUSTOMER: '/dashboard' } as const;
 
-/**
- * Where to send someone after signing in.
- *
- * `next` arrives from the query string, so it is only honoured when it is a
- * path on this site — a bare `/foo`. Anything protocol-relative (`//evil.com`)
- * or absolute would turn the login page into an open redirect. It is also
- * checked against the role: sending a customer to `/admin/users` would just
- * bounce them straight back here.
- */
 function safeDestination(next: string | null, role: 'ADMIN' | 'CUSTOMER') {
     const home = HOME_FOR[role];
     if (!next || !next.startsWith('/') || next.startsWith('//')) return home;
@@ -55,17 +37,22 @@ export async function loginAction(
     const password = String(formData.get('password') ?? '');
     const next = String(formData.get('next') ?? '') || null;
 
+    const gate = await checkLoginAllowed(email);
+    if (!gate.allowed) return { error: gate.message, email };
+
     const user = await db.query.user.findFirst({ where: eq(schema.user.email, email) });
 
-    // One message for "no such account" and "wrong password" alike: telling
-    // them apart lets anyone enumerate which addresses have accounts. bcrypt
-    // still runs on a miss so the two paths take comparable time.
     const invalid: LoginFormState = { error: 'Invalid email or password.', email };
     if (!user) {
         await bcrypt.compare(password, '$2a$10$invalidinvalidinvalidinvalidinvalidinvalidinvalidinvalidin');
+        await recordLoginFailure(email, gate.ip);
         return invalid;
     }
-    if (!(await bcrypt.compare(password, user.passwordHash))) return invalid;
+    if (!(await bcrypt.compare(password, user.passwordHash))) {
+        await recordLoginFailure(email, gate.ip);
+        return invalid;
+    }
+    await recordLoginSuccess(email, gate.ip);
 
     const cookieStore = await cookies();
     if (user.role === 'ADMIN') {

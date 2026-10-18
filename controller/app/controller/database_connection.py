@@ -59,8 +59,6 @@ class DatabaseConnectionController(BaseController):
             )
         if "username" in data:
             values["username"] = v.string(data["username"], "username", max_length=255)
-        # An empty/omitted password on update means "keep the existing one" --
-        # only encrypt+store a new one when a non-empty value was actually sent.
         if data.get("password"):
             values["password_encrypted"] = crypto.encrypt(
                 v.string(data["password"], "password", max_length=255), self.settings
@@ -77,8 +75,6 @@ class DatabaseConnectionController(BaseController):
             )
         if "is_default" in data:
             values["is_default"] = bool(data["is_default"])
-        # Opting a connection into writes is an explicit act; absent means
-        # unchanged on update, and false on create via the column default.
         if "allow_writes" in data:
             values["allow_writes"] = bool(data["allow_writes"])
         if "notes" in data:
@@ -102,15 +98,6 @@ class DatabaseConnectionController(BaseController):
         return self.paginate(self.base_query(), limit, offset)
 
     def _record_test_result(self, connection_id, status, message):
-        """Persist the test outcome on its own session, committed immediately.
-
-        On the failure path this is called right before re-raising, and the
-        route's request session rolls back on that exception -- writing
-        through `self.session` (flush only, no commit) would lose the result
-        along with the rollback. Same "autonomous session" reasoning as
-        ActivityLogger (app/services/activity_logger.py): the record of what
-        happened must survive the failure it's recording.
-        """
         from app.db import database
 
         with database.session() as autonomous_session:
@@ -149,13 +136,6 @@ class DatabaseConnectionController(BaseController):
         return self.service.test(engine, host, port, database_name, username, password, sslmode)
 
     def execute_query(self, connection_id, sql):
-        """Run one statement, honouring the connection's write setting.
-
-        Every statement is recorded before it runs, not after: a query that
-        times out or crashes the connection is exactly the one worth having in
-        the log, and an audit trail that only captures successes is not an
-        audit trail.
-        """
         connection = self.get(connection_id)
         sql = self.validator.string(sql, "sql")
         password = crypto.decrypt(connection.password_encrypted, self.settings)
@@ -170,8 +150,6 @@ class DatabaseConnectionController(BaseController):
                 "connection": connection.name,
                 "engine": connection.engine,
                 "allow_writes": connection.allow_writes,
-                # Truncated: the log is for who-ran-what, not a copy of every
-                # payload ever pasted into the console.
                 "sql": sql[:2000],
             },
         )
@@ -185,12 +163,6 @@ class DatabaseConnectionController(BaseController):
         )
 
     def introspect(self, connection_id):
-        """The schema behind a connection: tables, columns, keys, indexes.
-
-        Read entirely from the catalogs in one round trip per concern, rather
-        than per table -- a database with a few hundred tables would otherwise
-        make a few hundred queries to draw one sidebar.
-        """
         connection = self.get(connection_id)
         password = crypto.decrypt(connection.password_encrypted, self.settings)
         schema = self.service.introspect(
@@ -202,27 +174,16 @@ class DatabaseConnectionController(BaseController):
 
     # ------------------------------------------------------------------
     def apply_defaults(self, values):
-        # BaseController.create() calls apply_defaults(), not before_create() --
-        # there is no before_create hook, so the guard has to live here to run
-        # on creation as well as update.
         values = self._engine_defaults(super().apply_defaults(values))
         self._guard_default(values)
         return values
 
     def before_update(self, connection, values):
-        # The engine decides which driver, default and placement rules apply to everything
-        # already living on this connection, so it is fixed at registration.
         if "engine" in values and values["engine"] != connection.engine:
             raise ValidationError("A connection's engine cannot be changed. Register a new connection instead.")
         self._guard_default(values, current=connection)
 
     def _guard_default(self, values, current=None):
-        """Only a cluster may be the default, and only one may hold it.
-
-        A partial unique index enforces the second rule at the database level;
-        clearing the previous holder here is what stops that index from
-        rejecting an otherwise reasonable request.
-        """
         if not values.get("is_default"):
             return
 

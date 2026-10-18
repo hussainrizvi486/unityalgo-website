@@ -2,13 +2,6 @@ import 'server-only';
 import { asc, eq } from 'drizzle-orm';
 import { db, schema } from '@/lib/db';
 
-/**
- * Currencies offerable on a plan.
- *
- * Only enabled ones: a plan already priced in a disabled currency keeps it
- * until an admin changes it, but a disabled currency is not offered for a new
- * one. Mirrors how `listProducts` gates on isActive.
- */
 export function listCurrencies() {
     return db
         .select({

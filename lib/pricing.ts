@@ -1,14 +1,23 @@
-import type { AddOn, AddOnPricingType, Plan, PriceUnit } from '@/db/types';
+import type { AddOn, AddOnPricingType, Currency, Plan, PriceUnit } from '@/db/types';
+import { DEFAULT_CURRENCY, formatCurrencyAmount } from '@/lib/currency';
 
-const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
+export type PriceCurrency = Pick<Currency, 'symbol' | 'numberFormat'> & { code?: string };
+type PlanPricing = Pick<Plan, 'priceAmount' | 'priceUnit'> & { currency?: PriceCurrency | null };
 
-export function formatPlanPrice(plan: Pick<Plan, 'priceAmount' | 'priceUnit'>) {
+function formatMoney(amount: number, currency?: PriceCurrency | null) {
+    const c = currency ?? DEFAULT_CURRENCY;
+    let text = formatCurrencyAmount(amount, c);
+    if (Number.isInteger(amount)) text = text.replace(/[.,]0+$/, '');
+    return /[A-Za-z]$/.test(c.symbol) ? text.replace(c.symbol, `${c.symbol} `) : text;
+}
+
+export function formatPlanPrice(plan: PlanPricing) {
     if (plan.priceAmount == null) return 'Custom quote';
     const suffix: Record<PriceUnit, string> = {
         PER_USER_MONTHLY: '/user/mo',
         FLAT_MONTHLY: '/mo',
     };
-    return `${currency.format(plan.priceAmount)}${suffix[plan.priceUnit]}`;
+    return `${formatMoney(plan.priceAmount, plan.currency)}${suffix[plan.priceUnit]}`;
 }
 
 export function formatAddOnPrice(addOn: Pick<AddOn, 'priceAmount' | 'pricingType'>) {
@@ -17,7 +26,7 @@ export function formatAddOnPrice(addOn: Pick<AddOn, 'priceAmount' | 'pricingType
         FLAT_MONTHLY: '/mo',
         ONE_TIME: ' one-time',
     };
-    return `${currency.format(addOn.priceAmount)}${suffix[addOn.pricingType]}`;
+    return `${formatMoney(addOn.priceAmount)}${suffix[addOn.pricingType]}`;
 }
 
 export function formatTransactionFee(percent: number | null) {
@@ -25,15 +34,12 @@ export function formatTransactionFee(percent: number | null) {
     return `${percent}% transaction fee`;
 }
 
-export function formatCurrency(amount: number) {
-    return currency.format(amount);
+export function formatCurrency(amount: number, currency?: PriceCurrency | null) {
+    return formatMoney(amount, currency);
 }
 
-// Only meaningful for flat-monthly plans — a per-user plan's total depends
-// on seat count, which isn't tracked yet, so callers should hide the total
-// line rather than show a misleading number for those.
 export function computeMonthlyTotal(
-    plan: Pick<Plan, 'priceAmount' | 'priceUnit'>,
+    plan: PlanPricing,
     addOns: Array<Pick<AddOn, 'priceAmount' | 'pricingType'>>,
 ): number | null {
     if (plan.priceAmount == null || plan.priceUnit !== 'FLAT_MONTHLY') return null;
@@ -44,13 +50,6 @@ export function computeMonthlyTotal(
     return plan.priceAmount + addOnTotal;
 }
 
-/**
- * Product display name.
- *
- * Labels live on the `Product` row now, so callers that already loaded the
- * relation should read `product.label` directly; this only covers the places
- * holding a bare id.
- */
 export function formatProductName(product: { label: string } | string) {
     return typeof product === 'string' ? product : product.label;
 }

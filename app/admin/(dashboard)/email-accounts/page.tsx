@@ -7,12 +7,6 @@ import { deleteEmailAccountAction, testEmailAccountAction } from '@/app/admin/em
 import { AdminPageHeader, AdminPageError, AdminPageNotice } from '@/components/admin/page-header';
 import { EmailAccountsList, type EmailAccountRow } from './email-accounts-list';
 
-/**
- * Mail accounts the platform sends from.
- *
- * Passwords are never selected here. The list needs host, port and status; the
- * ciphertext has no business leaving the database for a page render.
- */
 export default async function AdminEmailAccountsPage() {
     await requireAdmin();
 

@@ -57,12 +57,7 @@ class TenantController(BaseController):
         "memory_limit_mb",
         "cpu_limit_cores",
     )
-    # customer_email and plan_tier are derived from the subscription when one
-    # is given (see account_resolver), so neither is required up front -- the
-    # check that at least one identity source exists is in apply_defaults.
     required_on_create = ("tenant_slug",)
-    # The slug drives the subdomain, database name and container name, so it is
-    # fixed once the tenant record exists.
     immutable_after_create = ("tenant_slug",)
     # Set False to create a tenant without picking a worker node for it.
     auto_assign_node = True
@@ -74,25 +69,10 @@ class TenantController(BaseController):
         self.domains = DomainController(session, config, actor)
 
     def base_query(self):
-        """Eager-load everything TenantSerializer touches.
-
-        The serializer reads `live_deployment` (which walks `deployments`),
-        `domains` and `database_connection` for every row, so a plain
-        select(Tenant) turned a 20-tenant listing into 40-odd queries.
-        selectinload issues one extra query per relationship regardless of
-        row count, which keeps a listing flat at ~5 queries instead of 2N+3.
-
-        selectinload rather than joinedload: these are collections, and a
-        LEFT JOIN would multiply the tenant rows by their deployments and
-        domains before de-duplication, which is slower and interacts badly
-        with LIMIT/OFFSET pagination.
-        """
         return select(Tenant).options(
             selectinload(Tenant.deployments),
             selectinload(Tenant.domains),
             selectinload(Tenant.database_connection),
-            # The account side is scalar many-to-one, so joinedload folds it
-            # into the same statement rather than adding a round trip each.
             joinedload(Tenant.user),
             joinedload(Tenant.subscription).joinedload(PlatformSubscription.plan),
         )
@@ -106,8 +86,6 @@ class TenantController(BaseController):
             values["tenant_slug"] = v.slug(data["tenant_slug"], "tenant_slug", 63)
         if "customer_email" in data:
             values["customer_email"] = v.email(data["customer_email"], "customer_email")
-        # user_id / subscription_id are cuid strings owned by the platform's
-        # Prisma tables, not uuids -- validated by the FK, not parsed here.
         if "user_id" in data:
             values["user_id"] = data["user_id"] or None
         if "subscription_id" in data:
@@ -166,9 +144,6 @@ class TenantController(BaseController):
 
     def apply_defaults(self, values):
         """Derive everything a webhook shouldn't have to send."""
-        # Who this store belongs to, and on what plan. Resolved first: it
-        # rewrites customer_email and plan_tier from the linked subscription,
-        # and the defaults below assume those are settled.
         account = account_resolver.resolve_account(self.session, values)
         account.apply_to(values)
 
@@ -196,9 +171,6 @@ class TenantController(BaseController):
             if node is not None:
                 values["node_id"] = node.id
 
-        # Which cluster holds this tenant's data. Resolved once, at creation:
-        # after the database exists, changing it means moving data, which is
-        # migrate_database()'s job, not an attribute update.
         if values.get("database_connection_id") is not None:
             self._require_cluster(values["database_connection_id"])
         else:
@@ -208,12 +180,6 @@ class TenantController(BaseController):
         return values
 
     def _require_cluster(self, connection_id):
-        """Load a registered cluster, refusing non-cluster connections.
-
-        A query-console entry ('external') has read credentials but no
-        authority to CREATE DATABASE, so provisioning onto one would fail
-        partway through with a permissions error.
-        """
         connection = self.session.get(DatabaseConnection, connection_id)
         if connection is None:
             raise NotFoundError(f"Database cluster {connection_id} was not found")
@@ -227,13 +193,8 @@ class TenantController(BaseController):
     def before_update(self, tenant, values):
         if values.get("node_id") is not None:
             self.servers.get(values["node_id"])
-        # Re-resolve when any part of the account link is being touched, so an
-        # update cannot leave the tenant pointing at one customer while its
-        # subscription belongs to another.
         if {"subscription_id", "user_id", "customer_email"} & values.keys():
             account_resolver.resolve_account(self.session, values, tenant=tenant).apply_to(values)
-        # Reassigning the cluster by attribute would leave the tenant pointing
-        # at an instance where its database does not exist.
         if (
             "database_connection_id" in values
             and values["database_connection_id"] != tenant.database_connection_id
@@ -244,13 +205,6 @@ class TenantController(BaseController):
             )
 
     def before_delete(self, tenant, force):
-        """A tenant with a live container is refused unless forced -- removing
-        the row first would orphan the container on the worker node.
-
-        With `force`, the containers are actually torn down (and their ports
-        released) rather than abandoned, since the deployment rows cascade away
-        with the tenant.
-        """
         deployment = self.deployments.current_for(tenant)
         if deployment is not None and not force:
             raise ConflictError(
@@ -295,8 +249,6 @@ class TenantController(BaseController):
             stmt = stmt.where(Tenant.node_id == self.validator.uuid(node_id, "node_id"))
         if plan_tier is not None:
             stmt = stmt.where(Tenant.plan_tier == plan_tier)
-        # Backs "which stores does this customer have?" on the platform's user
-        # page. cuid strings, so matched as-is rather than parsed as uuids.
         if user_id is not None:
             stmt = stmt.where(Tenant.user_id == user_id)
         if subscription_id is not None:
@@ -321,15 +273,7 @@ class TenantController(BaseController):
     def generate_password(length=32):
         return secrets.token_urlsafe(length)
 
-    # ------------------------------------------------------------------
-    # deployment access
-    # ------------------------------------------------------------------
     def live_deployment(self, tenant, required=True):
-        """The deployment currently serving this tenant.
-
-        Replaces the old `if not tenant.node_id or not tenant.container_id`
-        guards; the error message is unchanged so API behaviour is identical.
-        """
         deployment = self.deployments.live_for(tenant)
         if deployment is None and required:
             raise ConflictError("Tenant has no running container")
@@ -339,12 +283,6 @@ class TenantController(BaseController):
         return self.servers.get(deployment.server_id)
 
     def sync_legacy_pointers(self, tenant, deployment=None):
-        """Keep `tenant.node_id` / `container_id` matching the live deployment.
-
-        Write-through cache for Phases 1-3 only: the columns still back the
-        serializer, admin views and templates. Phase 4 drops them along with
-        this method.
-        """
         if deployment is None:
             deployment = self.deployments.live_for(tenant)
         tenant.node_id = deployment.server_id if deployment else None
@@ -381,9 +319,6 @@ class TenantController(BaseController):
             op.ok("Tenant creation started", message=f"Requested slug: {requested_slug}")
 
             values = self.clean(data, partial=False)
-            # apply_defaults resolves the customer and plan from the linked
-            # subscription, so the "validated" step below is logged after it --
-            # before it, plan_tier and customer_email may not exist yet.
             values = self.apply_defaults(values)
             op.ok(
                 "Tenant information validated",
@@ -417,8 +352,6 @@ class TenantController(BaseController):
                     details={"node_id": str(node.id), "node_name": node.name},
                 )
             else:
-                # Say *why* now -- otherwise the operator only finds out at
-                # provision time, with no clue which limit was hit.
                 reason = self.servers.placement_error(
                     values.get("memory_limit_mb")
                 ).message
@@ -443,16 +376,7 @@ class TenantController(BaseController):
             )
             return tenant
 
-    # ------------------------------------------------------------------
-    # provisioning / lifecycle
-    # ------------------------------------------------------------------
     def provision(self, tenant_id, server_id=None, operation_id=None):
-        """First-time provisioning: create the tenant's database, reserve a
-        deployment slot (node + host port) and start its container.
-
-        Every stage is logged as its own step so the operation timeline shows
-        exactly how far it got before any failure.
-        """
         tenant = self.get(tenant_id)
         target_id = server_id or tenant.node_id
         node = self.servers.get(target_id) if target_id else None
@@ -471,8 +395,6 @@ class TenantController(BaseController):
                     "Tenant is already provisioned; use start/stop/resize/migrate"
                 )
             if node is None:
-                # Try once more at provision time -- capacity may have freed up
-                # since the tenant record was created.
                 node = self.servers.available_node(tenant.memory_limit_mb)
                 if node is None:
                     raise self.servers.placement_error(tenant.memory_limit_mb)
@@ -521,9 +443,6 @@ class TenantController(BaseController):
             # -- deployment slot (node + host port) ---------------------
             deployment = self.deployments.create_for(tenant, node, recorder=op)
 
-            # -- schema ---------------------------------------------------
-            # Must complete before the app starts, or the storefront boots
-            # against an empty database and 500s on every request.
             if self.settings.tenant_migrate_on_provision:
                 self.deployments.run_db_migrations(
                     deployment, tenant, recorder=op, server=node
@@ -537,13 +456,6 @@ class TenantController(BaseController):
             # -- image + container --------------------------------------
             self.deployments.deploy(deployment, tenant, recorder=op)
 
-            # -- proxy health gate (Phase 2) -----------------------------
-            # Only runs when a proxy is registered; otherwise behaves exactly
-            # as before this existed (reachable at IP:PORT only). A failure
-            # here raises -- the container stays running on the worker for
-            # `docker logs` debugging, and the deployment never reaches
-            # status='live', so `is_routable` stays correctly False with no
-            # special-casing needed anywhere else.
             proxy = self.servers.proxy_node()
             if proxy is not None:
                 op.started(
@@ -600,10 +512,6 @@ class TenantController(BaseController):
             self.deployments.stop(deployment, recorder=op)
             tenant.status = "paused"
             self.session.flush()
-            # No health-gating needed -- this is an existing deployment being
-            # stopped, not a new one being promoted. is_routable already goes
-            # False the moment deployment.status flips off 'live'; this just
-            # makes the proxy's actual config catch up to that.
             if self.servers.proxy_node() is not None:
                 ProxyConfigurationService(self.settings).sync_all(self.session, recorder=op)
             op.ok("Tenant stopped", message=f"{tenant.tenant_slug} is now paused")
@@ -637,13 +545,6 @@ class TenantController(BaseController):
             return tenant
 
     def redeploy(self, tenant_id, pull=True, image=None, operation_id=None):
-        """Recreate the tenant's container from the current image and config.
-
-        Use this to roll out a new image build, apply changed environment, or
-        repair a container that drifted from its spec. Keeps the same node and
-        host port. If the tenant has never been provisioned, this falls through
-        to provision() so the button always does the sensible thing.
-        """
         tenant = self.get(tenant_id)
         deployment = self.deployments.current_for(tenant)
         if deployment is None:
@@ -677,10 +578,6 @@ class TenantController(BaseController):
             return tenant
 
     def run_db_migrations(self, tenant_id, operation_id=None):
-        """Create/upgrade this tenant's database schema.
-
-        Separate from migrate(), which moves the container between nodes.
-        """
         tenant = self.get(tenant_id)
         deployment = self.deployments.current_for(tenant)
         if deployment is None:
@@ -705,10 +602,6 @@ class TenantController(BaseController):
             return tenant
 
     def create_store_admin(self, tenant_id, email, password, name=None, operation_id=None):
-        """Create a storefront admin login for this tenant's own app.
-
-        Distinct from AdminUser, which signs into *this* controller panel.
-        """
         email = self.validator.email(email, "email")
         password = self.validator.string(password, "password", max_length=255)
         if len(password) < 8:
@@ -746,8 +639,6 @@ class TenantController(BaseController):
             return tenant
 
     def resize(self, tenant_id, memory_limit_mb=None, cpu_limit_cores=None):
-        """Change a tenant's resource caps, live-applying to its container
-        when one is running."""
         if memory_limit_mb is None and cpu_limit_cores is None:
             raise ValidationError("Provide memory_limit_mb and/or cpu_limit_cores")
 
@@ -812,14 +703,7 @@ class TenantController(BaseController):
             deployment.container_name, tail=tail
         )
 
-    # ------------------------------------------------------------------
-    # backups
-    # ------------------------------------------------------------------
     def create_backup(self, tenant_id, reason="manual", recorder=None, operation_id=None):
-        """Dump the tenant database. `recorder` lets a surrounding operation
-        (e.g. a migration) absorb these steps into its own timeline; called
-        top-level (no recorder), this opens its own Operation so a standalone
-        backup is Celery- and progress-poll-able like every other action."""
         tenant = self.get(tenant_id)
 
         if recorder is not None:
@@ -910,22 +794,9 @@ class TenantController(BaseController):
             op.ok("Database restored", message=f"{tenant.db_name} from backup {backup.id}")
             return tenant
 
-    # ------------------------------------------------------------------
-    # migration
-    # ------------------------------------------------------------------
     def migrate(self, tenant_id, target_node_id, backup_first=True, operation_id=None):
-        """Move a tenant's container to a different node.
-
-        Tenant data lives in the controller's own Postgres, not on the worker
-        node, so there is nothing to copy -- the target node just needs its
-        own copy of the container pointed at the same database. `backup_first`
-        still takes a pg_dump snapshot as a safety net before touching
-        anything.
-        """
         tenant = self.get(tenant_id)
         target = self.servers.get(target_node_id)
-        # The deployment, not the legacy tenant pointer, is the truth about
-        # where this tenant currently runs.
         current = self.deployments.current_for(tenant)
         source_id = current.server_id if current else None
         if source_id == target.id:
@@ -972,8 +843,6 @@ class TenantController(BaseController):
                 else:
                     op.warn("Backup skipped", message="backup_first was not set")
 
-                # Stand the replacement up on the target BEFORE touching the
-                # source, so a failure on the target leaves the tenant serving.
                 migration.status = "transferring"
                 self.session.flush()
                 old_deployment = self.deployments.current_for(tenant)
@@ -983,11 +852,6 @@ class TenantController(BaseController):
                 op.bind(server_id=target.id, server_name=target.name)
                 self.deployments.deploy(new_deployment, tenant, recorder=op)
 
-                # -- proxy health gate (Phase 2) -------------------------
-                # Checked BEFORE tearing down the old deployment -- this is
-                # the actual safety guarantee blue/green migration exists
-                # for: a failure here leaves the tenant serving from the
-                # untouched source, not a half-migrated gap.
                 proxy = self.servers.proxy_node()
                 if proxy is not None:
                     op.started(
@@ -1003,8 +867,6 @@ class TenantController(BaseController):
                         )
                     op.ok("New deployment is healthy", message=new_deployment.upstream)
 
-                # Retire the old slot, then promote -- in that order, because
-                # only one deployment per tenant may be 'live' at a time.
                 migration.status = "restoring"
                 self.session.flush()
                 if old_deployment is not None:
@@ -1021,8 +883,6 @@ class TenantController(BaseController):
                 if source:
                     self.servers.refresh_capacity(source)
                 self.servers.refresh_capacity(target)
-                # Domains and DNS never change on a migration -- only which
-                # deployment (and therefore which upstream) they point at.
                 self.domains.repoint_all(tenant, new_deployment, recorder=op)
 
                 if proxy is not None:
@@ -1047,12 +907,6 @@ class TenantController(BaseController):
                     },
                 )
             except ApiError as exc:
-                # Broad on purpose: any application-level failure here (a port
-                # race, a bad target role, an unreachable node, a failed
-                # backup...) must leave the migration row as 'failed', not
-                # stuck at whatever in-progress status it last had. Narrower
-                # (NodeUnreachableError, BackupError)-only handling missed
-                # ConflictError, e.g. from create_for()'s port allocation.
                 migration.status = "failed"
                 migration.error_message = str(exc)
                 migration.completed_at = datetime.now(timezone.utc)
@@ -1090,29 +944,7 @@ class TenantController(BaseController):
         ).all()
         return rows, total
 
-    # ------------------------------------------------------------------
-    # database cluster migration
-    # ------------------------------------------------------------------
     def migrate_database(self, tenant_id, target_connection_id, operation_id=None):
-        """Move a tenant's *data* to a different PostgreSQL cluster.
-
-        Unlike migrate() -- which moves the container and copies nothing --
-        this has to physically move the database, so it is dump/restore
-        rather than a repoint:
-
-            dump from source -> create role+database on target
-            -> restore -> repoint the tenant -> redeploy the container
-            -> drop the source database
-
-        Ordered so the source is never destroyed until the tenant is
-        verifiably serving from the target. If any step before the switch
-        fails, the tenant is still running untouched against the source and
-        the migration is simply marked failed.
-
-        The source database is dropped last and only on success; the dump
-        file is kept either way, since after the drop it is the only copy of
-        the pre-move state.
-        """
         tenant = self.get(tenant_id)
         target = self._require_cluster(target_connection_id)
 
@@ -1173,9 +1005,6 @@ class TenantController(BaseController):
                 target_service.restore_database(tenant, record.backup_path)
                 op.ok("Restore complete", message=tenant.db_name)
 
-                # -- 4. repoint, then redeploy so the container picks up
-                #       the new DSN. Until the redeploy lands, the running
-                #       container is still talking to the source.
                 record.status = "switching"
                 self.session.flush()
                 tenant.database_connection_id = target.id
@@ -1194,8 +1023,6 @@ class TenantController(BaseController):
                 record.status = "failed"
                 record.error_message = str(exc)
                 record.completed_at = datetime.now(timezone.utc)
-                # Roll the pointer back so the tenant keeps serving from the
-                # source, which is still intact at every failure point.
                 tenant.database_connection_id = record.from_connection_id
                 self.session.flush()
                 op.fail("Database migration failed", exc)
@@ -1207,8 +1034,6 @@ class TenantController(BaseController):
                 source_service.drop_database(tenant)
                 op.ok("Source database dropped", message=source_label)
             except Exception as exc:
-                # The move itself succeeded; a leftover database on the old
-                # cluster is a cleanup task, not a failed migration.
                 op.warn(
                     "Source database could not be dropped — remove it manually",
                     message=str(exc),

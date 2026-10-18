@@ -1,18 +1,3 @@
-"""Pumps a long-running `docker logs -f` / `docker stats --stream` to a socket.
-
-The existing DockerService.logs()/stats() are one-shot: they run the command,
-wait for it to exit, and return the buffered output. Neither can be used here
--- `docker logs -f` never exits, so `SSHService.run()` would block forever and
-return nothing.
-
-So this opens the SSH channel itself, exactly the way pty_shell.py does for
-the terminal, and reads as output arrives. It reuses SSHService.connect() for
-auth resolution (password vs. pasted key), so it works on every node the rest
-of the controller already reaches, with no new credential handling.
-
-One direction only. The socket is never read from, and nothing is ever sent
-to the remote shell -- these two commands are the entire surface.
-"""
 
 import json
 import shlex
@@ -26,15 +11,10 @@ from app.services.ssh_service import SSHService
 
 RECV_POLL_SECONDS = 1.0
 
-# `docker logs -f` replays history before it starts following. Without a cap
-# a container that has been up for a month would dump a month of output into
-# the browser before the first live line arrived.
 DEFAULT_TAIL = 200
 
 
 def logs_command(container_name, tail=DEFAULT_TAIL):
-    # 2>&1 because container stderr is where most application errors go, and
-    # a log viewer that silently drops them is worse than no log viewer.
     return (
         f"docker logs --tail {int(tail)} --follow --timestamps "
         f"{shlex.quote(container_name)} 2>&1"
@@ -42,9 +22,6 @@ def logs_command(container_name, tail=DEFAULT_TAIL):
 
 
 def stats_command(container_name):
-    # --no-trunc keeps the container id readable; the JSON format matches what
-    # DockerService.stats() already returns for the one-shot case, so the
-    # browser can render a live frame and a polled frame with the same code.
     return (
         f"docker stats --no-trunc --format '{{{{json .}}}}' "
         f"{shlex.quote(container_name)}"
@@ -52,11 +29,6 @@ def stats_command(container_name):
 
 
 def run_stream(ws, server, command, settings, idle_timeout, on_line=None):
-    """Blocks for the lifetime of one stream (open -> close).
-
-    Returns the number of frames sent, which the caller records in the audit
-    log so an empty stream is distinguishable from one that never opened.
-    """
     ssh = SSHService(server, settings)
     with ssh.connect() as client:
         channel = client.get_transport().open_session()
@@ -73,14 +45,8 @@ def run_stream(ws, server, command, settings, idle_timeout, on_line=None):
 
 def _pump(ws, channel, idle_timeout, on_line):
     sent = 0
-    # Idle, not total: a busy container streaming steadily for an hour is
-    # working as intended, while one that has produced nothing for the whole
-    # window is a tab someone left open. Reset on every chunk received.
     last_data = time.monotonic()
     buffer = b""
-    # One close at the end, carrying why. Closing inside the loop and again
-    # on the way out means the reason the client sees is whichever call
-    # happened to land last.
     reason = "stream ended"
 
     while True:
@@ -91,8 +57,6 @@ def _pump(ws, channel, idle_timeout, on_line):
         try:
             data = channel.recv(8192)
         except socket.timeout:
-            # No output yet. Not an error -- a healthy idle container is
-            # silent, and stats emits roughly once a second.
             if channel.exit_status_ready() and not channel.recv_ready():
                 break
             continue
@@ -104,8 +68,6 @@ def _pump(ws, channel, idle_timeout, on_line):
 
         last_data = time.monotonic()
 
-        # Send whole lines only. A partial line would render as a torn log
-        # entry, and for stats it would be unparseable JSON.
         buffer += data
         *lines, buffer = buffer.split(b"\n")
         for line in lines:
@@ -133,11 +95,6 @@ def _pump(ws, channel, idle_timeout, on_line):
 
 
 def parse_stats_line(line):
-    """`docker stats --format json` line -> dict, or None if unparseable.
-
-    Exposed for tests and for any caller that wants the parsed frame rather
-    than the raw text the socket carries.
-    """
     try:
         return json.loads(line)
     except (json.JSONDecodeError, TypeError):

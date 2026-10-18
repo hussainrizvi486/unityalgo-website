@@ -9,17 +9,6 @@ import dynamic from 'next/dynamic';
 import { useMediaQuery } from '@/lib/use-reduced-motion';
 import { detectWebGL } from '@/lib/webgl';
 
-// three.js is ~600KB, so it is code-split out of the initial bundle and only
-// fetched once the hero mounts. ssr:false because it needs a WebGL context.
-/**
- * Loaded only once we know it will be used.
- *
- * next/dynamic defers the chunk, but it still fetches as soon as the component
- * renders — and the scene's own "is this viewport wide enough / does WebGL
- * exist" checks live *inside* it. That meant every phone downloaded ~960KB of
- * three.js to render nothing. The gate is hoisted above the import below, so
- * the chunk is fetched only where the scene actually runs.
- */
 const ConnectedSystemsCanvas = dynamic(
     () => import('@/components/website/connected-systems-canvas'),
     { ssr: false },
@@ -34,25 +23,6 @@ const headlineLines = [
     { text: 'THE AI ERA.', accent: true },
 ];
 
-/**
- * Extruded display type, to match the object beside it.
- *
- * Stacked hard-edged shadows at a fixed offset — an axonometric extrusion, the
- * same projection the 3D scene is drawn in, rather than a perspective one that
- * would read as a different space. Offsets are in `em` so the depth tracks the
- * type size across breakpoints instead of overwhelming the headline on mobile.
- *
- * This is text-shadow rather than WebGL on purpose: the headline is the page's
- * h1, and it has to stay selectable, searchable and readable by a screen
- * reader. Extruded glyph geometry in the canvas would be none of those.
- */
-// Many shallow steps rather than a few deep ones: at six steps the staircase
-// is visible along diagonal strokes, where each copy lands a whole pixel from
-// the last. The step stays small as the depth grows, so deeper means more
-// copies, not coarser ones.
-// Keep just enough depth to relate the type to the exploded stack. The former
-// 0.15em extrusion became a second visual object of its own and made the copy
-// column feel heavier than the model.
 const EXTRUDE_DEPTH = 0.055;
 const EXTRUDE_STEP = 0.0055;
 const EXTRUDE_STEPS = Math.round(EXTRUDE_DEPTH / EXTRUDE_STEP);
@@ -62,8 +32,6 @@ function extrude(side: string) {
         const offset = ((i + 1) * EXTRUDE_STEP).toFixed(4);
         return `${offset}em ${offset}em 0 ${side}`;
     });
-    // One soft cast underneath, so the letters sit on the page rather than
-    // floating in front of it.
     layers.push('0.08em 0.1em 0.14em color-mix(in srgb, var(--foreground) 9%, transparent)');
     return layers.join(', ');
 }
@@ -106,26 +74,19 @@ function MagneticButton({ children, className, ...props }: React.ComponentProps<
 }
 
 export function HeroSection() {
-    // Below this width there is no room for the scene beside the copy, and
-    // without WebGL it cannot start at all. Both are checked here rather than
-    // inside the scene so the decision precedes the import.
     const wideEnough = useMediaQuery('(min-width: 1000px)');
     const [webglAvailable] = useState(detectWebGL);
 
     const showScene = wideEnough && webglAvailable;
 
     const scrollToSection = (id: string) => {
-        // Smooth scrolling is motion too — honouring the preference here as
-        // well as in the 3D scene, rather than only where it is obvious.
         const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         document.getElementById(id)?.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth' });
     };
 
     return (
         <section className="relative flex min-h-180 items-center overflow-hidden bg-background px-page pb-section pt-hero lg:min-h-screen lg:pb-section lg:pt-hero">
-            {/* One background, not three. The node field replaced the CSS
-                orbital sphere and its wave canvas, which were competing with it
-                and with the headline. */}
+            {}
             <HeroBackdrop />
             {showScene ? <ConnectedSystemsCanvas className="z-0 pointer-events-none" /> : null}
             
@@ -179,10 +140,6 @@ export function HeroSection() {
 
                     <h1 className="mb-7 font-display text-display leading-none tracking-tighter [word-spacing:0.08em]">
                         {headlineLines.map((line, i) => (
-                            // The wrapper clips for the reveal, which would cut
-                            // the extrusion off at the baseline; the padding
-                            // gives it room and the negative margin keeps the
-                            // line spacing where it was.
                             <span key={line.text} className="-mb-(--descender) block overflow-hidden pb-(--descender)">
                                 <motion.span
                                     initial={{ y: '110%' }}

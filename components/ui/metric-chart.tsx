@@ -3,14 +3,6 @@
 import * as React from 'react';
 import { cn } from '@/utils';
 
-/**
- * A small area chart for one metric over time, drawn as SVG from the design tokens.
- *
- * Gaps in the data (a stopped site takes no readings) break the line instead of being joined across.
- * An optional limit is drawn as a dashed line and the scale always reaches it, so "how close to the limit"
- * is visible at a glance. Hovering or touching shows the nearest reading.
- */
-
 export interface ChartPoint {
     t: string;
     value: number | null;
@@ -152,7 +144,6 @@ export function MetricChart({
     );
 }
 
-/** One bar per time slice, green when the site answered every check, red when it did not. */
 export function AvailabilityStrip({ points, className }: { points: { t: string; up: number }[]; className?: string }) {
     return (
         <figure className={cn('rounded-xl border bg-card p-card', className)}>

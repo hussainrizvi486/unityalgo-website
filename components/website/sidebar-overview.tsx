@@ -50,11 +50,6 @@ export function SidebarOverview({
                                     aria-current={isActive ? 'true' : undefined}
                                     className={cn(
                                         'w-full text-left px-6 py-5 transition-colors flex items-center justify-between gap-3',
-                                        // Selection is carried by weight, ink and a
-                                        // leading rule rather than a colour wash. A
-                                        // tinted fill on the selected row reads as a
-                                        // warning or an error, and pairs badly with
-                                        // the focus ring landing on top of it.
                                         'border-l-2 outline-none focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:relative',
                                         isActive
                                             ? 'border-l-ink-900 bg-muted text-foreground'

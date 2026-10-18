@@ -232,7 +232,7 @@ export function ComponentLibrary() {
     const rows = [
         {
             name: 'Main workspace',
-            app: 'ERPNext',
+            app: 'AlgoSuite',
             status: 'Ready',
             tone: 'success' as const,
         },

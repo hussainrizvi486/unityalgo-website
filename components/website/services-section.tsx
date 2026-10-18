@@ -210,11 +210,7 @@ const ServiceCard = (props: ServiceType & { index: number }) => {
                 </div>
 
                 <div className="relative shrink-0 md:w-50">
-                    {/* next/image, not a raw <img>: these source files are
-                        1254x1254 PNGs rendered at 128-160px, so served raw they
-                        cost 3.5MB on the landing page — more than everything
-                        else on it combined. `sizes` caps the generated variant
-                        at the largest size the card actually uses. */}
+                    {}
                     <Image
                         src={props.image}
                         alt={props.title}

@@ -4,26 +4,12 @@ import { ArrowLeft, Boxes, CreditCard, Store } from 'lucide-react';
 import { desc, eq } from 'drizzle-orm';
 import { db, schema } from '@/lib/db';
 import { requireAdmin } from '@/lib/admin-session';
+import { formatDate, formatPrice } from '@/lib/admin-format';
 import { tenantsForUser } from '@/lib/tenant-accounts';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { TENANT_STATUS_BADGE, TENANT_STATUS_LABEL } from '@/lib/controller-status';
 
-const money = (amount: number | null, currency = 'USD') =>
-    amount === null
-        ? 'Custom'
-        : new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amount);
-
-const date = (value: Date) => new Intl.DateTimeFormat('en-US', { dateStyle: 'medium' }).format(value);
-
-/**
- * A customer's account: who they are, what they subscribe to, and which
- * storefronts those subscriptions run.
- *
- * The tenants come from the controller rather than Prisma — they live in an
- * Alembic-owned table that Prisma cannot join to — so the section degrades to
- * a notice if the controller is down instead of failing the page.
- */
 export default async function AdminUserDetailPage({ params }: { params: Promise<{ id: string }> }) {
     await requireAdmin();
     const { id } = await params;
@@ -43,8 +29,6 @@ export default async function AdminUserDetailPage({ params }: { params: Promise<
     const tenants = await tenantsForUser(user.id);
     const displayName = user.name ?? [user.firstName, user.lastName].filter(Boolean).join(' ').trim() ?? user.email;
 
-    // Which subscription each storefront belongs to, so a subscription row can
-    // point at the store it funds.
     const storeFor = new Map((tenants ?? []).map((t) => [t.subscription_id, t]));
 
     return (
@@ -63,7 +47,7 @@ export default async function AdminUserDetailPage({ params }: { params: Promise<
                     </div>
                     <p className="mt-1 portal-text-body text-muted-foreground">
                         {user.email}
-                        {user.company ? ` · ${user.company}` : ''} · joined {date(user.createdAt)}
+                        {user.company ? ` · ${user.company}` : ''} · joined {formatDate(user.createdAt)}
                     </p>
                 </div>
                 <Button asChild variant="outline" ><Link href={`/admin/users/${user.id}/edit`}>Edit</Link></Button>
@@ -90,7 +74,7 @@ export default async function AdminUserDetailPage({ params }: { params: Promise<
                                             </span>
                                         </div>
                                         <div className="portal-text-body text-muted-foreground">
-                                            {money(sub.plan.priceAmount)} · started {date(sub.startedAt)}
+                                            {formatPrice(sub.plan.priceAmount)} · started {formatDate(sub.startedAt)}
                                             {sub.storeName ? ` · ${sub.storeName}` : ''}
                                         </div>
                                         {sub.productId === 'unity_commerce' && (

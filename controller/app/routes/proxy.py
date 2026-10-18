@@ -9,8 +9,6 @@ from .base import BaseView
 
 
 class ProxyInfoView(BaseView):
-    """GET /api/v1/proxy/info -- the registered proxy's public IP, for the
-    frontend's "point your DNS here" instructions."""
 
     controller_class = ServerController
 
@@ -28,8 +26,6 @@ class ProxyInfoView(BaseView):
 
 
 class ProxySyncView(BaseView):
-    """POST /api/v1/proxy/sync -- full manual resync, the disaster-recovery
-    button: nuke Caddy's config, one call repairs it from domain_mappings."""
 
     controller_class = ServerController
 
@@ -44,8 +40,6 @@ class ProxySyncView(BaseView):
 
 
 class ProxyVerifyView(BaseView):
-    """GET /api/v1/proxy/verify -- diff the proxy's live config against what
-    domain_mappings says it should be."""
 
     controller_class = ServerController
 

@@ -8,17 +8,6 @@ import { fetchOperationAction, type OperationSnapshot } from '@/app/admin/contro
 const TERMINAL_STATUSES = new Set(['success', 'failed', 'warning']);
 const POLL_INTERVAL_MS = 2000;
 
-/**
- * Live progress for a queued controller operation.
- *
- * Provisioning, migration and backups run on a Celery worker and can take
- * minutes, so the action that starts them returns an operation id immediately
- * and this polls it. Polling goes through a Server Action rather than fetch()
- * so the browser never needs the controller's internal API key.
- *
- * The page is refreshed once on completion, so the tenant's new status and
- * deployment show up without the admin reloading manually.
- */
 export function OperationProgress({ operationId }: { operationId: string }) {
     const router = useRouter();
     const [snapshot, setSnapshot] = useState<OperationSnapshot | null>(null);

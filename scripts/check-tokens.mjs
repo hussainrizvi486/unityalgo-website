@@ -1,14 +1,4 @@
 #!/usr/bin/env node
-/**
- * Fails when UI code hardcodes a value the design tokens own.
- *
- * Every colour, size and radius must come from the tokens in app/globals.css, either through a Tailwind utility
- * mapped to them (bg-primary, p-card, gap-gap, h-btn …) or through var(--token). This scans app/, components/
- * and lib/ for what slips past that: literal colours, the retired palette (ink-*, brand-*, white, black,
- * status shades) and arbitrary pixel/rem lengths in class names.
- *
- *   npm run lint:tokens
- */
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';

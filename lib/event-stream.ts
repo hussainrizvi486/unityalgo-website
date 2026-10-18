@@ -1,14 +1,5 @@
 import 'server-only';
 
-/**
- * A Server-Sent Events response that pushes `read()`'s result whenever it changes.
- *
- * The browser keeps one connection open and the server checks the source every couple of seconds, sending only
- * what changed, so a page updates within seconds of the change without any client-side polling. A slower
- * interval is used while nothing is in progress. `read` returns null when the thing no longer exists (the page
- * is told to leave) and may throw while the source is briefly unavailable (the connection stays up and tries
- * again). The loop ends when the browser disconnects.
- */
 export function eventStream(
     request: Request,
     read: () => Promise<unknown | null>,

@@ -1,7 +1,3 @@
-"""App Store API: inspect GitHub apps, see what each site runs, and roll versions out to chosen sites.
-
-Admin-only in practice: the Next.js admin pages are the only callers. Customers never reach these routes.
-"""
 import uuid
 from datetime import datetime, timezone
 from flask import Blueprint
@@ -14,7 +10,7 @@ from app.models.site import Site
 from app.services.github_account import current_token
 from app.services.github_service import GitHubClient, APP_NAME, parse_repo_url
 
-PROTECTED_APPS = frozenset({'frappe'})     # the framework itself is part of the platform image, not an App Store app
+PROTECTED_APPS = frozenset({'frappe'})
 ACTIONS = ('install', 'update')
 REQUIRED_HOLD = ('pending', 'running')
 
@@ -24,7 +20,6 @@ def iso(value):
 
 
 def github(view):
-    """A GitHub client using the connected account (or GITHUB_TOKEN), or anonymous access when neither exists."""
     with view.session() as session:
         token, _, _ = current_token(session, view.settings)
     return GitHubClient(token, view.settings.frappe_compatible_majors)
@@ -77,7 +72,6 @@ def serialize_rollout(rollout, detail=False):
 
 
 class AppInspectView(BaseView):
-    """POST /inspect. Body: repo_url, branch?. Reads the repository's details, branches, latest commit and Frappe compatibility."""
     def post(self):
         data = self.json_body()
         if not isinstance(data, dict):
@@ -86,10 +80,6 @@ class AppInspectView(BaseView):
 
 
 class AppInstallationsView(BaseView):
-    """POST /installations. Body: app_name, repo_url?, branch?. Every site with what it runs of the app and whether it can take a rollout.
-
-    With a repository, also says how far behind the branch head each distinct installed commit is.
-    """
     def post(self):
         data = self.json_body()
         if not isinstance(data, dict):
@@ -132,7 +122,6 @@ class AppInstallationsView(BaseView):
 
 
 class AppSummaryView(BaseView):
-    """GET /summary. For every app: how many sites run it and how many are on each commit (the App Store list view)."""
     def get(self):
         with self.session() as session:
             rows = session.execute(select(SiteApp.app_name, SiteApp.commit, func.count()).group_by(SiteApp.app_name, SiteApp.commit)).all()
@@ -166,7 +155,6 @@ class AppRolloutsView(BaseView):
             return self.ok({'results': [serialize_rollout(r) for r in session.scalars(query).unique()]})
 
     def post(self):
-        """Body: app_name, repo_url, branch, action (install|update), site_ids (list) or all_sites (true), note?, commit?, allow_unverified?, created_by?"""
         data = self.json_body()
         if not isinstance(data, dict):
             raise ValidationError('Request body must be an object.')
@@ -242,7 +230,6 @@ class AppRolloutsView(BaseView):
 
     @staticmethod
     def enqueue(rollout_id, row_ids):
-        """Hand each site to the worker. Sites that could not be queued are marked failed so nothing waits forever."""
         from app.db import database
         from app.tasks.app_tasks import rollout_site_task, settle_rollout
         unqueued = []
@@ -267,7 +254,6 @@ class AppRolloutDetailView(BaseView):
 
 
 class AppRolloutRetryView(BaseView):
-    """POST /rollouts/<id>/retry. Re-queues the sites that failed or were skipped. Sites that succeeded are not touched."""
     def post(self, rollout_id):
         with self.session() as session:
             rollout = load_rollout(session, rollout_id)
@@ -295,14 +281,6 @@ def load_rollout(session, rollout_id):
 
 
 class SiteAppsView(BaseView):
-    """The apps on one of a customer's sites, and installing another from the catalogue.
-
-    GET  /sites/<id>?user_id=            what the site runs and whether it can take an install right now
-    POST /sites/<id> {user_id, app_name, source, repo_url?, branch?}   queue an install on that one site
-
-    The website decides who may install what (and charges for paid apps) before calling this; the controller still checks
-    the site belongs to the user, is idle, and that the app is installable and works with this platform's Frappe.
-    """
     def installed(self, session, site):
         rows = {row.app_name: row for row in session.scalars(select(SiteApp).where(SiteApp.site_id == site.id))}
         names = set(rows) | set(site.app_names or [])
@@ -368,14 +346,12 @@ class SiteAppsView(BaseView):
         AppRolloutsView.enqueue(rollout_id, [row_id])
         with self.session() as session:
             if session.get(AppRolloutSite, uuid.UUID(row_id)).status == 'failed':
-                # Nothing is going to run it, and the customer should hear that now rather than watch a site that never changes.
                 raise ConflictError('The background queue is unavailable. Try again shortly.')
         return self.ok({'rollout_id': rollout_id, 'queued': True}, 202)
 
     PROTECTED_SITE_APPS = frozenset({'frappe', 'erpnext'})
 
     def delete(self, site_id):
-        """DELETE /sites/<id>?user_id=&app_name=  remove an app from the site. Its data on this site is deleted; a backup is kept."""
         from app.routes.site import owned_site
         user_id = self.str_arg('user_id') or ''
         app = app_name_arg({'app_name': self.str_arg('app_name') or ''})

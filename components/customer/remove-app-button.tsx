@@ -11,7 +11,6 @@ import {
 } from '@/components/ui/alert-dialog';
 import { formatPrice } from '@/lib/admin-format';
 
-/** Remove an installed app from the site, after saying what that does. A paid app stops being billed once it is gone. */
 export function RemoveAppButton({
     appId, siteId, name, priceAmount, priceCurrency, disabled,
 }: {

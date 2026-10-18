@@ -125,7 +125,6 @@ class SiteProvisioningTests(unittest.TestCase):
         external = build(8192, 4, {'host': 'h', 'port': 3306, 'user': 'u', 'password': 'p'}).compose()['services']
         self.assertNotIn('db', external)
         self.assertGreater(int(external['backend']['mem_limit'][:-1]), int(services['backend']['mem_limit'][:-1]))
-        # a small plan still gives every service a workable floor, and redis stays under its own limit
         small = build(768, 0.25).compose()['services']
         self.assertGreaterEqual(int(small['backend']['mem_limit'][:-1]), 512)
         cache_limit = int(small['redis-cache']['mem_limit'][:-1])

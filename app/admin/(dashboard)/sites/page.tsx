@@ -24,7 +24,6 @@ export default async function AdminSitesPage({ searchParams }: PageProps) {
         throw error;
     }
 
-    // A stopped worker looks like operations that stay "queued" forever, so say so plainly.
     const queue = await controller.sites.adminQueue().catch(() => null);
 
     const rows: SiteRow[] = sites.map((site) => ({

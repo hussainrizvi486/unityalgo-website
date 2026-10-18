@@ -13,7 +13,6 @@ import { Logo } from '@/components/Logo';
 import { CheckoutEventNames, initializePaddle } from '@paddle/paddle-js';
 import { startPlanCheckoutBySlugAction } from '@/app/customer/actions';
 
-
 interface Profile {
   firstName: string;
   lastName: string;
@@ -39,10 +38,6 @@ export function OnboardingFlow({ profile, planName, planPrice }: {
     setStep(2);
   }
 
-  // Paddle has taken the payment; the subscription itself is written by the
-  // signed webhook (app/api/paddle/webhook/route.ts). This used to fabricate a
-  // subscription in localStorage from the browser's own completion event,
-  // which showed an active plan whether or not any money moved.
   function completePayment() {
     setStep(3);
   }
@@ -56,10 +51,6 @@ export function OnboardingFlow({ profile, planName, planPrice }: {
     }
     setOpeningCheckout(true);
     try {
-      // The price comes from the plan row, resolved server-side, so the plan
-      // named in the URL cannot be pointed at a different price than the one
-      // it is sold at. This replaces a lookup of env vars keyed by plan name,
-      // which went stale the moment a plan was renamed.
       const intent = await startPlanCheckoutBySlugAction(plan);
       if (!intent.ok || !intent.priceId) {
         setPaymentError(intent.error ?? 'Could not start checkout.');
@@ -76,9 +67,6 @@ export function OnboardingFlow({ profile, planName, planPrice }: {
       paddle.Checkout.open({
         items: [{ priceId: intent.priceId, quantity: 1 }],
         customer: { email: profile.email },
-        // The webhook reads these back to decide who bought what, and
-        // re-checks them against our own tables because they travel through
-        // the browser.
         customData: { ...intent.customData, store_name: storeData.storeName || 'My Unity Store' },
         settings: { displayMode: 'overlay', variant: 'one-page', theme: 'light', locale: 'en', allowLogout: false },
       });

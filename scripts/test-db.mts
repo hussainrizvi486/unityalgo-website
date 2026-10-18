@@ -1,10 +1,3 @@
-/**
- * Checks the behaviour the database layer must keep, against the real database: generated ids and
- * `updatedAt`, Date-typed timestamps, relation names, unique-violation detection and conflict handling.
- * These are the things the previous ORM did in the client and that a schema change could silently lose.
- *
- *   npm run test:db
- */
 import 'dotenv/config';
 import assert from 'node:assert/strict';
 import { and, asc, desc, eq, isNull } from 'drizzle-orm';
@@ -17,7 +10,6 @@ async function check(name: string, fn: () => Promise<void>) {
     try { await fn(); console.log('ok  ', name); }
     catch (error) { failures++; console.log('FAIL', name, '\n     ', (error as Error).message.split('\n').slice(0, 6).join('\n      ')); }
 }
-// Currency.code must be 3-8 uppercase letters (a database check), so make unique ones from letters.
 const letters = (n: number) => Array.from({ length: n }, () => String.fromCharCode(65 + Math.floor(Math.random() * 26))).join('');
 
 await check('products are listed active-first in display order, with their active plans nested', async () => {

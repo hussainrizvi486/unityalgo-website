@@ -1,4 +1,3 @@
-"""Connect a GitHub account to the App Store so private repositories can be used and API limits are higher."""
 import re
 from flask import Blueprint
 from sqlalchemy import delete
@@ -8,7 +7,6 @@ from app.models.app_rollout import GithubAccount
 from app.services.github_account import current_token
 from app.services.github_service import GitHubClient
 
-# Classic (ghp_…), fine-grained (github_pat_…), OAuth and app tokens are all letters, digits and underscores.
 TOKEN = re.compile(r'^[A-Za-z0-9_]{20,255}$')
 
 
@@ -38,7 +36,6 @@ class GithubAccountView(BaseView):
         return self.ok(snapshot)
 
     def put(self):
-        """Body: token, connected_by?. Checks the token with GitHub, then stores it encrypted, replacing any earlier account."""
         data = self.json_body()
         token = str(data.get('token', '')).strip() if isinstance(data, dict) else ''
         if not TOKEN.fullmatch(token):

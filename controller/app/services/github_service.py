@@ -1,9 +1,3 @@
-"""Read a Frappe app's details from its public GitHub repository.
-
-Used by the App Store: an admin pastes a repository URL and this works out the app's name, description,
-branches, latest commit and whether it supports the Frappe version the platform runs. Only public
-repositories are supported, because a site's image is built from the repository with a plain `git clone`.
-"""
 import json
 import re
 import urllib.error
@@ -43,10 +37,6 @@ def version_tuple(text):
 
 
 def range_allows(spec, major):
-    """Does a version range such as '>=15.0.0-dev,<16.0.0' admit some release of Frappe `major`?
-
-    Tested against the first and a late release of the major, so a bound inside the major still counts.
-    """
     clauses = [clause.strip() for clause in str(spec).split(',') if clause.strip()]
     if not clauses:
         return True
@@ -54,7 +44,7 @@ def range_allows(spec, major):
     def satisfied(version, clause):
         match = re.fullmatch(r'(>=|<=|==|~=|!=|>|<|\^|~)?\s*v?([0-9][0-9A-Za-z.\-*]*)', clause)
         if not match:
-            return True      # a clause we do not understand never blocks an install on its own
+            return True
         op, wanted = match.group(1) or '==', version_tuple(match.group(2).replace('*', '0'))
         if op == '>=':
             return version >= wanted
@@ -76,7 +66,6 @@ def range_allows(spec, major):
 
 
 def branch_major(branch):
-    """The Frappe major a branch name claims to target: version-15, version-15-hotfix, v15, release-15."""
     match = re.search(r'(?:version|release|v)[-_/]?(\d{2})\b', branch or '')
     return int(match.group(1)) if match else None
 
@@ -94,7 +83,6 @@ def toml_frappe_range(text):
 
 
 def assess_compatibility(branch, frappe_range, majors):
-    """{'status': 'compatible' | 'incompatible' | 'unknown', 'reason': ...} for the Frappe majors we run."""
     label = ' or '.join(str(major) for major in majors) or 'the installed version'
     if frappe_range and majors:
         if any(range_allows(frappe_range, major) for major in majors):
@@ -109,7 +97,6 @@ def assess_compatibility(branch, frappe_range, majors):
 
 
 def order_branches(names, default):
-    """Default branch first, then release branches newest first, then everything else (bot branches last)."""
     def key(name):
         major = branch_major(name)
         return (name != default, major is None, -(major or 0), name.startswith(('mergify/', 'dependabot/')), name)
@@ -156,7 +143,7 @@ class GitHubClient:
     def _raw(self, owner, repo, ref, path):
         """File text at a commit, or None when the file does not exist."""
         try:
-            if self.token:      # private repositories are not served by raw.githubusercontent.com without a token header
+            if self.token:
                 return self._fetch(f'{self.API}/repos/{owner}/{repo}/contents/{urllib.parse.quote(path)}?ref={ref}', 'application/vnd.github.raw+json')
             return self._fetch(f'{self.RAW}/{owner}/{repo}/{ref}/{urllib.parse.quote(path)}', 'text/plain')
         except NotFoundError:
@@ -186,7 +173,6 @@ class GitHubClient:
                 'date': (data['commit'].get('committer') or {}).get('date'), 'author': (data['commit'].get('author') or {}).get('name')}
 
     def compare(self, owner, repo, base, head):
-        """How many commits `head` is ahead of `base`; None when GitHub cannot say (e.g. history was rewritten)."""
         try:
             data = self._json(f'/repos/{owner}/{repo}/compare/{base}...{head}')
         except ApiError:
@@ -194,7 +180,6 @@ class GitHubClient:
         return {'ahead_by': data.get('ahead_by'), 'behind_by': data.get('behind_by'), 'status': data.get('status')}
 
     def _package(self, owner, repo, ref, repo_name):
-        """(package folder, app_name, hooks text) for the Frappe app at the top level of the repository."""
         tree = self._json(f'/repos/{owner}/{repo}/git/trees/{ref}')
         folders = [item['path'] for item in tree.get('tree', []) if item['type'] == 'tree' and not item['path'].startswith('.')]
         candidates = sorted(folders, key=lambda name: (name.replace('-', '_') != repo_name.replace('-', '_'), name))
@@ -243,7 +228,6 @@ class GitHubClient:
 
     # -- the connected account ------------------------------------------------------
     def account(self):
-        """Who the token belongs to, what it may do, and how much of GitHub's request allowance is left."""
         body, headers = self._fetch(self.API + '/user', 'application/vnd.github+json', with_headers=True)
         data = json.loads(body)
         return {'login': data['login'], 'name': data.get('name'), 'avatar_url': data.get('avatar_url'), 'html_url': data.get('html_url'),

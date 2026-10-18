@@ -1,15 +1,3 @@
-"""Celery tasks wrapping TenantController's long-running methods.
-
-Each task just opens a session and calls the same controller method the
-synchronous admin/API routes used to call directly -- no controller logic
-changes, no new progress-reporting mechanism. `operation_id` is minted by
-the route *before* the task is enqueued (see app/routes/tenant.py), so the
-202 response can hand the caller an id to poll immediately; the task resumes
-recording steps against that same row via ActivityLogger.operation().
-
-`stop`/`start`/`resize` deliberately have no task here -- they're single
-fast SSH commands and stay synchronous.
-"""
 
 from app.config import settings
 from app.controller.tenant import TenantController
@@ -60,11 +48,6 @@ def migrate_tenant_task(self, tenant_id, operation_id, target_node_id, backup_fi
 
 @celery_app.task(bind=True, base=DBTask, name="tenant.migrate_database")
 def migrate_tenant_database_task(self, tenant_id, operation_id, target_connection_id, actor=None):
-    """Move a tenant's data to another cluster.
-
-    Queued rather than synchronous because it is a dump + restore of the whole
-    tenant database, which is unbounded in duration.
-    """
     with database.session() as session:
         TenantController(session, settings, actor=actor).migrate_database(
             tenant_id, target_connection_id, operation_id=operation_id

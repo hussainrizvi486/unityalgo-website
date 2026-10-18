@@ -55,11 +55,6 @@ class DependencyMissingError(ApiError):
 
 
 class DatabaseUnreachableError(ApiError):
-    """The control-plane database could not be reached (DNS, network, TLS).
-
-    Distinct from a SQLAlchemy error on the request's own session: this is the
-    admin connection used for tenant provisioning.
-    """
 
     status_code = HTTP_503_SERVICE_UNAVAILABLE
 
@@ -83,25 +78,15 @@ class ForbiddenError(ApiError):
 
 
 class ConfigurationError(ApiError):
-    """A feature was used but the server isn't configured for it (e.g. a
-    required setting like ENCRYPTION_KEY is unset) -- distinct from a
-    ValidationError, which means the caller's own input was wrong."""
 
     status_code = HTTP_500_INTERNAL_SERVER_ERROR
 
 
 class QueryExecutionError(ApiError):
-    """An ad-hoc SQL statement against a registered database failed (syntax
-    error, constraint violation, ...) -- distinct from DatabaseUnreachableError,
-    which means the connection itself failed."""
 
     status_code = HTTP_400_BAD_REQUEST
 
 
 class ProxyConfigurationError(ApiError):
-    """Caddy's admin API was reached (the SSH tunnel opened fine) but
-    rejected the request -- a bad config document, an invalid route, etc.
-    Distinct from NodeUnreachableError, which means the tunnel itself
-    couldn't be opened."""
 
     status_code = HTTP_502_BAD_GATEWAY

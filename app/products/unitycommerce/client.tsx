@@ -18,14 +18,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { cn } from '@/utils';
 
-/**
- * A plan as this page draws it.
- *
- * Built by the server component from the Plans table, so the prices here are
- * the prices an admin edits — the page used to carry its own hardcoded list,
- * which had drifted to a different currency and different amounts than the
- * plans the checkout actually sells.
- */
 export interface UnityCommercePlan {
     name: string;
     /** Pre-formatted in the plan's own currency, or null for a custom quote. */
@@ -57,12 +49,6 @@ const themes = [
     { name: 'Paper', tag: 'Books & Stationery' },
 ];
 
-/**
- * The three steps in the closing section.
- *
- * The artwork is portrait, so the cards are built around a 3:4 frame rather
- * than the 16:9 the rest of the page uses.
- */
 const launchSteps = [
     {
         step: '01',
@@ -84,13 +70,6 @@ const launchSteps = [
     },
 ];
 
-/**
- * Stands in for artwork that has not been produced yet.
- *
- * Deliberately looks unfinished rather than decorative: a placeholder that
- * reads as a design choice is one nobody remembers to replace. Swap each usage
- * for an <Image> and delete this when the real screenshots land.
- */
 function ImagePlaceholder({
     label,
     tone = 'dark',
@@ -107,8 +86,6 @@ function ImagePlaceholder({
             className={cn(
                 'flex h-full w-full flex-col items-center justify-center gap-2 border border-dashed',
                 light ? 'border-input bg-muted' : 'border-primary-foreground/15 bg-card/[0.03]',
-                // A faint diagonal hatch, so it cannot be mistaken for a real
-                // flat-colour panel at a glance.
                 light
                     ? '[background-image:repeating-linear-gradient(45deg,color-mix(in_srgb,var(--scrim)_3.5%,transparent)_0_10px,transparent_10px_20px)]'
                     : '[background-image:repeating-linear-gradient(45deg,color-mix(in_srgb,var(--on-scrim)_3%,transparent)_0_10px,transparent_10px_20px)]',
@@ -268,12 +245,7 @@ export const MainContent = ({ plans }: { plans: UnityCommercePlan[] }) => {
                         </p>
                     </div>
 
-                    {/*
-                        A grid rather than a slider: ten portrait cards fit on one
-                        screen at three or four across, and a slider would hide
-                        most of the range behind an interaction while adding
-                        keyboard and screen-reader work for nothing.
-                    */}
+                    {}
                     <div className="grid grid-cols-2 gap-5 lg:grid-cols-4">
                         {themes.map((theme, index) => (
                             <motion.div
@@ -299,16 +271,13 @@ export const MainContent = ({ plans }: { plans: UnityCommercePlan[] }) => {
                     </div>
 
                     <div className="mt-10 flex flex-wrap items-center gap-gap">
-                        {/* <Button asChild size="lg" className="h-12 bg-card px-7 font-bold text-foreground hover:bg-card/85"><Link href="/register?next=/customer/onboarding&plan=Growth">
-                                Browse all themes
-                                <ArrowRight className="ml-2 size-4" />
-                            </Link></Button> */}
+                        {}
                         <p className="text-xs text-primary-foreground/45">Switch themes at any time — your products and orders stay put.</p>
                     </div>
                 </div>
             </section>
 
-            {/* ── PRICING (structure unchanged; recoloured for the dark page) ── */}
+            {}
             <section id="pricing" className="scroll-mt-20 border-t border-border/60 site-section-spacing">
                 <div className="site-container px-4">
                     <div className="mb-12 text-center">
@@ -355,8 +324,7 @@ export const MainContent = ({ plans }: { plans: UnityCommercePlan[] }) => {
                                 transition={{ delay: index * 0.1 }}
                                 className="group relative aspect-3/4 overflow-hidden rounded-2xl border border-primary-foreground/10 bg-primary transition-colors hover:border-primary-foreground/30"
                             >
-                                {/* Portrait artwork: a 3:4 frame, so nothing is cropped
-                                    to a letterbox the source images were never shot for. */}
+                                {}
                                 <Image
                                     src={step.image}
                                     alt={step.title}
@@ -365,16 +333,7 @@ export const MainContent = ({ plans }: { plans: UnityCommercePlan[] }) => {
                                     className="object-cover object-top transition-transform duration-500 group-hover:scale-[1.03]"
                                 />
 
-                                {/*
-                                    The caption sits on the photograph, so the image has
-                                    to carry it. Four stops rather than a plain
-                                    from-scrim/70: a linear fade leaves the middle of the
-                                    text band too light over a bright photo, and going
-                                    dark enough to fix that turns the bottom third into a
-                                    black bar. This holds ~0.9 behind the text, releases
-                                    quickly, and is gone by 70% so most of the picture is
-                                    untouched.
-                                */}
+                                {}
                                 <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_top,color-mix(in_srgb,var(--scrim)_92%,transparent)_0%,color-mix(in_srgb,var(--scrim)_72%,transparent)_22%,color-mix(in_srgb,var(--scrim)_28%,transparent)_45%,color-mix(in_srgb,var(--scrim)_0%,transparent)_70%)]" />
 
                                 <span className="absolute left-4 top-4 rounded-full bg-scrim/50 px-3 py-1 font-mono text-xs font-bold text-primary-foreground backdrop-blur-sm">

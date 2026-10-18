@@ -1,12 +1,5 @@
 import { PlugZap } from 'lucide-react';
 
-/**
- * Shown when the controller API cannot be reached.
- *
- * The controller runs as a separate Python process, so it can be down while
- * the rest of the admin panel is perfectly healthy. Saying so plainly — with
- * the command to start it — is far more useful than an error boundary.
- */
 export function ControllerOffline({ message }: { message: string }) {
     return (
         <div className="flex min-h-72 flex-col items-center justify-center rounded-xl border border-dashed border-warning/40 bg-warning/10 p-8 text-center">

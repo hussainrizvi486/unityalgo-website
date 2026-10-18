@@ -15,17 +15,6 @@ import { adminGridTheme } from '@/components/admin/grid-theme';
 import { AdminGridHeader } from '@/components/admin/grid-header';
 import type { ListViewColumn } from '@/components/admin/list-view-types';
 
-/**
- * The AG Grid half of the admin list view.
- *
- * Split out so it can be reached through `next/dynamic`. AG Grid is ~1.1MB, and
- * because most routes under /admin render a list, the bundler was hoisting it
- * into the layout's shared chunk — which meant every form page, including
- * "New user" and "New plan", downloaded a grid it never rendered.
- *
- * The toolbar, empty state and search live in the wrapper, so they still render
- * immediately while this loads.
- */
 export function ListViewGrid<Row>({
     rows,
     columns,
@@ -52,8 +41,6 @@ export function ListViewGrid<Row>({
     onPageChange: (next: number) => void;
 }) {
     const apiRef = React.useRef<GridApi<Row> | null>(null);
-    // Applying the restored sort and page fires the grid's own change events;
-    // without this they would immediately write the defaults back to the URL.
     const restoring = React.useRef(true);
 
     const onGridReady = React.useCallback((event: GridReadyEvent<Row>) => {
@@ -83,8 +70,6 @@ export function ListViewGrid<Row>({
         onPageChange(event.api.paginationGetCurrentPage() + 1);
     }, [onPageChange]);
 
-    // AG Grid's quick filter is imperative, so the input drives it through the
-    // api rather than by re-rendering the grid with different rows.
     React.useEffect(() => {
         apiRef.current?.setGridOption('quickFilterText', query);
     }, [query]);
@@ -93,9 +78,6 @@ export function ListViewGrid<Row>({
         () => ({
             sortable: true,
             resizable: true,
-            // Column menus and floating filters are deliberately off: the quick
-            // search covers admin needs, and per-column menus add chrome that
-            // fights the panel's clean look.
             suppressHeaderMenuButton: true,
             filter: false,
             cellClass: 'portal-text-body',
@@ -107,11 +89,6 @@ export function ListViewGrid<Row>({
         () =>
             columns.map(({ icon, headerAlign, headerName, ...rest }) => ({
                 headerName,
-                // Most columns render through a cellRenderer and have no
-                // `field`, so AG Grid would fall back to the column's index as
-                // its id — and an index in the URL points at a different column
-                // the moment anyone reorders the list. The header text is
-                // stable and unique within a list.
                 colId: rest.colId ?? rest.field ?? headerName.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
                 ...rest,
                 headerComponent: AdminGridHeader,
@@ -138,8 +115,6 @@ export function ListViewGrid<Row>({
                 paginationPageSize={pageSize}
                 paginationPageSizeSelector={[25, 50, 100]}
                 suppressCellFocus
-                // Rows carry links and buttons; a text selection drag
-                // across them should not start a range selection.
                 cellSelection={false}
                 animateRows={false}
                 overlayNoRowsTemplate={`<span class="portal-text-body text-muted-foreground">No matches for that search.</span>`}
@@ -148,6 +123,4 @@ export function ListViewGrid<Row>({
     );
 }
 
-// AG Grid v33+ ships as modules that must be registered once per app. Doing it
-// here means registration travels with the grid chunk itself.
 ModuleRegistry.registerModules([AllCommunityModule]);

@@ -8,25 +8,6 @@ import {
 } from '@/lib/numeric-input';
 import { cn } from '@/utils';
 
-/**
- * One text field for text, whole numbers, decimals, currency and percentages.
- *
- * It is always `type="text"`. `type="number"` cannot be formatted — no
- * grouping separators, no symbol — and brings problems of its own: the value
- * changes when the wheel is scrolled over it, and an entry the browser
- * considers invalid comes back as an empty string, so there is no way to tell
- * a cleared field from a mistyped one.
- *
- * Two inputs are rendered. The visible one is what a person reads and edits;
- * a hidden one carries `name` and always holds the canonical value, so a
- * server action receives `1234.56` no matter what the field is displaying.
- * Nothing downstream has to know a field was formatted.
- *
- * Formatting appears on blur and disappears on focus. Regrouping digits while
- * someone is typing moves the caret out from under them, which is the single
- * most irritating thing a formatted input can do.
- */
-
 export interface SmartInputProps
     extends Omit<React.ComponentProps<'input'>, 'type' | 'value' | 'defaultValue' | 'onChange'> {
     name: string;
@@ -73,8 +54,6 @@ export function SmartInput({
     );
 
     const [canonical, setCanonical] = React.useState(() =>
-        // The incoming value is what the server stored, not what someone typed,
-        // so it is read as canonical rather than through the display locale.
         numeric ? fromStored(defaultValue, options) : (defaultValue == null ? '' : String(defaultValue)),
     );
     const [editing, setEditing] = React.useState(false);
@@ -87,17 +66,6 @@ export function SmartInput({
 
     const shown = !numeric || editing ? canonical : toDisplay(canonical, options);
 
-    // Focusing swaps "$1,234.50" for "1234.5". Writing that shorter string into
-    // the DOM node collapses the selection to the end of it, so the caret is no
-    // longer where the click put it and anything typed next is appended to the
-    // old value instead of replacing it. Selecting the whole value settles both
-    // problems, and these fields are short enough that select-on-focus is what
-    // people expect anyway.
-    //
-    // This has to be a layout effect, not a frame later: it must run in the same
-    // synchronous commit that writes the new string, before the browser delivers
-    // the next keystroke. The focus check matters because select() also focuses,
-    // and a stale call would drag focus back out of wherever it had moved on to.
     React.useLayoutEffect(() => {
         if (!numeric || !editing) return;
         const element = inputRef.current;
@@ -115,8 +83,6 @@ export function SmartInput({
             <Input
                 {...rest}
                 type="text"
-                // No `name`: the visible field may be showing "$1,234.56", and
-                // that is not what the server should receive.
                 value={shown}
                 onChange={handleChange}
                 ref={inputRef}

@@ -12,9 +12,6 @@ export interface LeadFormState {
     success?: string;
 }
 
-/** Status and internal notes are the only fields an admin edits — the name,
- *  email, phone and message are what the person actually submitted, and
- *  editing those would misrepresent the record. */
 export async function updateLeadAction(
     _prev: LeadFormState | undefined,
     formData: FormData,

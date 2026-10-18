@@ -15,14 +15,13 @@ WORKERS = 4
 
 
 def sample(service):
-    """One reading of a site, taken on its worker. A site that does not answer is recorded as down, not skipped."""
     healthy, response_ms = service.probe()
     reading = {'healthy': healthy, 'response_ms': response_ms}
     try:
         usage = service.usage()
         reading.update(cpu_percent=usage['cpu_percent'], memory_mb=usage['memory_mb'], storage_mb=usage['storage_mb'])
     except Exception:
-        pass     # the health result is still worth keeping when the stats could not be read
+        pass
     return reading
 
 
@@ -33,7 +32,6 @@ def record(site_id, reading, users):
 
 @celery_app.task(name='site.collect_metrics', soft_time_limit=280, time_limit=300)
 def collect_metrics_task(site_ids=None):
-    """Take a reading of every running site (Celery Beat) and drop readings past the retention window."""
     with database.session() as session:
         query = select(Site).where(Site.status == 'ready')
         if site_ids is not None:

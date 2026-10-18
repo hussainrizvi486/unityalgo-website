@@ -14,7 +14,6 @@ export default async function NewApplicationPage({ searchParams }: { searchParam
     const builtIn = source === 'image';
     const categories = [...new Set((await db.query.appCatalog.findMany({ columns: { category: true } })).map((app) => app.category))].sort();
 
-    // The picker is a convenience; adding by URL still works when GitHub is not connected or cannot be reached.
     const github = await controller.github.repositories().catch(() => ({ connected: false, results: [] }));
 
     return (

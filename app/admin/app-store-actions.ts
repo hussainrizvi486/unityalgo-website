@@ -8,14 +8,6 @@ import { requireAdmin } from '@/lib/admin-session';
 import { controller, ControllerError, type AppInspection } from '@/lib/controller-client';
 import { syncAppToPaddle } from '@/lib/paddle-catalog';
 
-/**
- * Server Actions for the App Store admin pages: adding GitHub apps, checking
- * them for updates, and rolling versions out to customer sites.
- *
- * The repository details are always re-read from GitHub here, on the server.
- * A browser can show what it fetched, but it never decides what gets saved.
- */
-
 export interface InspectState {
     error?: string;
     data?: AppInspection;
@@ -116,7 +108,6 @@ export async function createGithubAppAction(
     redirect(`/admin/apps/${id}`);
 }
 
-/** Re-reads the repository for an app already in the catalogue: new commit, version, branches, compatibility. */
 export async function refreshGithubAppAction(formData: FormData) {
     await requireAdmin();
     const id = String(formData.get('id') ?? '');
@@ -203,7 +194,6 @@ export async function retryRolloutAction(formData: FormData) {
     redirect(`/admin/apps/rollouts/${id}?done=${encodeURIComponent(notice)}`);
 }
 
-/** Asks every running site which app versions it really has; the answer lands in the Sites table within a minute or two. */
 export async function scanSitesAction(formData: FormData) {
     await requireAdmin();
     const id = String(formData.get('id') ?? '');
@@ -217,7 +207,6 @@ export async function scanSitesAction(formData: FormData) {
     redirect(`${back}?done=${encodeURIComponent(notice)}`);
 }
 
-/** Removes an application that nobody has installed. Built-in apps and apps on sites are kept. */
 export async function deleteAppAction(formData: FormData) {
     await requireAdmin();
     const id = String(formData.get('id') ?? '');
@@ -263,7 +252,6 @@ export async function disconnectGithubAction() {
     redirect(`/admin/apps/github?done=${encodeURIComponent(notice)}`);
 }
 
-/** Set an application's monthly price per site. 0 or blank makes it free. Existing buyers keep paying what Paddle holds until it is synced. */
 export async function saveAppPricingAction(_previous: AppFormState | undefined, data: FormData): Promise<AppFormState> {
     await requireAdmin();
     const id = String(data.get('id') ?? '');

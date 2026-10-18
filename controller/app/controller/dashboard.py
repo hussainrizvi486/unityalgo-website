@@ -1,12 +1,3 @@
-"""Fleet-overview aggregates for the admin dashboard.
-
-Not a BaseController subclass -- there's no single CRUD `model` here, just a
-handful of read-only aggregate queries behind `/api/v1/dashboard/summary`.
-
-Customer and billing counts come from the platform's Prisma-owned tables,
-read through the read-only mirrors in app/models/platform.py. See
-controller/README.md for the table-ownership convention.
-"""
 
 from decimal import Decimal
 

@@ -23,7 +23,6 @@ const serviceLinks = [
 
 const productLinks = [
   { name: 'AlgoSuite', href: '/products/algosuite', desc: 'Our ERP platform — accounting, HR, inventory and CRM.', status: null },
-  // { name: 'UnityCommerce', href: '/products/unitycommerce', desc: 'Launch and run an online store, built in-house.'},
 ];
 
 const navLinks = [
@@ -47,15 +46,6 @@ export const UIStore = create<UIState>((set) => ({
 }))
 
 
-/**
- * Desktop navigation.
- *
- * Services and Products are Radix navigation-menu panels rather than the pair
- * of hover-only dropdowns this file used to carry: those could not be reached
- * by keyboard, and each duplicated the other's markup. The single shared
- * viewport resizes between the two panels, so moving from one trigger to the
- * other reads as one surface travelling rather than two panels swapping.
- */
 const DesktopNav = ({ isScrolled }: { isScrolled: boolean }) => (
   <NavigationMenu
     className={cn(
@@ -158,7 +148,7 @@ export function Header() {
             </div>
             <div className="hidden md:flex items-center gap-gap">
               <Link href="#contact">
-                {/* sm:text-base bg-primary hover:bg-primary/90 text-primary-foreground rounded-full shadow-lg shadow-foreground/10 transition-all */}
+                {}
                 <Button className="py-2 transition-all duration-300 bg-primary hover:bg-primary/90 text-primary-foreground shadow-md">
                   Get Started
                 </Button>

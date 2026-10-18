@@ -1,15 +1,3 @@
-"""Per-connection WebSocket handler: auth gate, server lookup, PTY session.
-
-`process_request` runs *before* the WebSocket handshake completes -- an
-unauthorized caller never gets an open socket, just a plain HTTP rejection.
-`process_request` and the connection handler function both receive the same
-`ServerConnection` instance, so the resolved grant gets stashed as an
-attribute on it in `process_request` and read back once the handler runs
-(this is the documented pattern for auth with `websockets.sync.server`).
-
-The browser authenticates with a short-lived, server-scoped token minted by
-the Next.js admin panel rather than a cookie -- see app/terminal/auth.py.
-"""
 
 import time
 import uuid
@@ -32,12 +20,6 @@ def _reject(status_code, reason):
 
 
 def _extract_token(path):
-    """The grant token travels as ?token=... on the WebSocket URL.
-
-    Browsers cannot set arbitrary headers on a WebSocket handshake, so the
-    query string is the only place it can go. That is acceptable here because
-    the token is single-purpose, bound to one server and expires in ~60s.
-    """
     if "?" not in path:
         return None
     query = path.split("?", 1)[1]
@@ -74,8 +56,6 @@ def process_request(connection, request):
         server = session.get(ServerNode, server_id)
         if server is None or not server.is_active:
             return _reject(404, "Server not found or inactive")
-        # Detach the two fields the handler needs -- the session closes at
-        # the end of this `with` block.
         connection.terminal_server_id = server.id
         connection.terminal_server_name = server.name
 
@@ -88,8 +68,6 @@ def handle_connection(ws):
     grant = getattr(ws, "terminal_grant", None)
     server_id = getattr(ws, "terminal_server_id", None)
     if grant is None or server_id is None:
-        # Should be unreachable -- process_request rejects before the
-        # handshake otherwise -- but never open an unauthenticated shell.
         ws.close(code=1011, reason="internal error")
         return
 

@@ -64,7 +64,6 @@ export default async function SiteDetailPage({
     } catch {
         /* the list of installable apps simply stays short */
     }
-    // What is on the site, with what each costs, so a paid app can show its price and be removed to stop the charge.
     const known = Object.fromEntries(
         catalogue.map((app) => [app.frappeAppName!, { id: app.id, name: app.name, priceAmount: app.priceAmount, priceCurrency: app.priceCurrency }]),
     );
@@ -96,8 +95,8 @@ export default async function SiteDetailPage({
             }))}
             applicationNames={{
                 ...applicationNames,
-                erpnext: 'ERPNext',
-                frappe: 'Frappe',
+                erpnext: 'AlgoSuite ERP',
+                frappe: 'AlgoSuite platform',
             }}
         />
     );

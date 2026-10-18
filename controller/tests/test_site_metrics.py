@@ -1,4 +1,3 @@
-"""Monitoring: bucketing and summary of readings, the sampler, and the metrics endpoint. SSH and Docker are mocked."""
 import unittest
 import uuid
 from datetime import datetime, timedelta, timezone

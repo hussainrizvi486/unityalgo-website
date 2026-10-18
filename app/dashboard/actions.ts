@@ -84,6 +84,8 @@ export async function createSiteAction(
     if (apps.length !== new Set(values.apps).size)
         return { error: 'One of the selected applications is unavailable.' };
     const trialDays = trialDaysFor(plan, await trialEligibility(user.id));
+    if (plan.priceAmount == null && plan.trialDays && !trialDays)
+        return { error: 'You have already used the free trial. Choose a paid plan to create another site.' };
     let site;
     try {
         site = await controller.sites.create({
@@ -95,7 +97,6 @@ export async function createSiteAction(
             app_names: apps.map((app) => app.frappeAppName),
             plan_id: plan.id,
             plan_name: plan.name,
-            // What the plan grants; the controller applies it as container limits and seat/storage limits.
             plan_vcpu: plan.vcpu,
             plan_ram_mb: plan.ramMb,
             plan_storage_gb: plan.storageGb,
@@ -327,7 +328,6 @@ export async function verifyDomainAction(
         result = await controller.sites.verifyDomain(siteId, user.id, String(data.get('domainId') || ''));
     }, 'Checked.');
     if (outcome.error) return outcome;
-    // "Pending" is a normal answer (DNS has not caught up), not a failure of the request.
     return result?.status === 'active'
         ? { success: 'Verified. Your domain is live; the HTTPS certificate follows within a few minutes.' }
         : { error: result?.error || 'DNS does not point at your site yet.' };

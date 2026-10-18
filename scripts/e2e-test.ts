@@ -1,23 +1,3 @@
-/**
- * End-to-end validation of the whole platform.
- *
- * Covers three layers, in order:
- *   1. Routing/auth    — every route renders, and auth gates actually gate.
- *   2. Data flows      — the real mutations (register, purchase, add-ons,
- *                        addresses, tickets/comments) against the real DB.
- *   3. Integration     — the controller API and its shared-DB wiring.
- *
- * Everything it creates is namespaced with E2E_PREFIX and torn down at the
- * end, including on failure — so it is safe to re-run against a dev database.
- * It deliberately never touches rows it did not create.
- *
- * Usage:
- *   npm run test:e2e              # against http://localhost:3000
- *   BASE_URL=... npm run test:e2e
- *
- * Requires the Next.js dev server to be running. The controller API section
- * is skipped automatically if it is not reachable.
- */
 import 'dotenv/config';
 import { and, asc, desc, eq, inArray, isNotNull, like, sql } from 'drizzle-orm';
 import { closeDb, db, schema } from '../lib/db';
@@ -30,7 +10,6 @@ const BASE_URL = process.env.BASE_URL ?? 'http://localhost:3000';
 const CONTROLLER_URL = process.env.CONTROLLER_URL ?? 'http://localhost:8000';
 const SESSION_SECRET = process.env.SESSION_SECRET;
 const E2E_PREFIX = 'e2e-test-';
-
 
 // ---------------------------------------------------------------- reporting
 
@@ -90,11 +69,6 @@ interface FetchResult {
     body: string;
 }
 
-/**
- * The account-linked shape of a controller tenant. Declared here rather than
- * imported from lib/controller-client, which is `server-only` and so cannot
- * load in a plain script.
- */
 interface LinkedTenant {
     id: string;
     tenant_slug: string;
@@ -118,25 +92,10 @@ async function get(path: string, cookie?: string): Promise<FetchResult> {
     };
 }
 
-/**
- * A Next.js page that throws during render still returns 200 with an error
- * payload embedded in the streamed HTML, so status alone is not enough to
- * call a page healthy.
- */
 function looksLikeRenderError(body: string) {
     return body.includes('Application error') || body.includes('__next_error__');
 }
 
-/**
- * Searches a page for text, including inside the React flight payload.
- *
- * The admin lists render their rows in the browser (AG Grid), so the row data
- * reaches the page as client-component props inside `self.__next_f.push(...)`
- * chunks rather than as HTML. Those chunks are split at arbitrary byte
- * offsets and their contents are JSON-escaped, so a plain `includes` on the
- * raw body misses a value whose string happens to straddle a boundary. This
- * rebuilds the stream first, then searches.
- */
 function pageContains(body: string, needle: string) {
     if (body.includes(needle)) return true;
 
@@ -144,8 +103,6 @@ function pageContains(body: string, needle: string) {
         .map((match) => match[1]);
     if (chunks.length === 0) return false;
 
-    // Each chunk is a JS string literal; decoding it yields the flight text,
-    // which is itself JSON containing further escaped quotes.
     const stream = chunks
         .map((chunk) => {
             try {
@@ -192,8 +149,6 @@ async function cleanup() {
 
     if (userIds.length) {
         const tickets = await db.select({ id: schema.supportTicket.id }).from(schema.supportTicket).where(inArray(schema.supportTicket.userId, userIds));
-        // Comments are polymorphic (entityType/entityId), so they have no FK
-        // to cascade from — they must be deleted explicitly.
         if (tickets.length) {
             await db.delete(schema.comment).where(and(
                 eq(schema.comment.entityType, 'SUPPORT_TICKET'),
@@ -206,9 +161,6 @@ async function cleanup() {
 
     await db.delete(schema.emailVerification).where(like(schema.emailVerification.email, `${E2E_PREFIX}%`));
 
-    // Controller-owned rows. Raw SQL because Drizzle does not map these tables
-    // (they belong to Alembic — see controller/README.md), and guarded because
-    // they only exist once the controller's migrations have been applied.
     try {
         await db.execute(sql.raw(`DELETE FROM tenants WHERE tenant_slug LIKE '${E2E_PREFIX}%'`));
         await db.execute(sql.raw(`DELETE FROM database_connections WHERE name LIKE '${E2E_PREFIX}%'`));
@@ -244,8 +196,6 @@ async function main() {
         await expectRenders(path);
     }
 
-    // The ERP was renamed from UnityERP to AlgoSuite; the old path must keep
-    // redirecting rather than 404ing.
     {
         const res = await fetch(`${BASE_URL}/products/unityerp`, { redirect: 'manual' });
         check('GET /products/unityerp → redirects to /products/algosuite',
@@ -277,9 +227,6 @@ async function main() {
         await expectRedirect(path, '/login');
     }
 
-    // Cross-role isolation: a customer session must not open the admin panel,
-    // and vice versa. This is the security property the two-cookie design exists
-    // to guarantee, so it is worth asserting explicitly rather than assuming.
     section('Cross-role session isolation');
     const [throwawayCustomer] = await db.insert(schema.user).values({
             email: `${E2E_PREFIX}isolation@example.com`,
@@ -318,8 +265,6 @@ async function main() {
 
     const customerCookie = `unityalgo_customer_session=${await mintCustomerSession(customer.id, customer.email)}`;
 
-    // Empty states must render before any subscription exists — this is the
-    // path a brand-new customer actually sees on first login.
     await expectRenders('/dashboard', customerCookie, 'No active subscription');
     await expectRenders('/dashboard/subscription', customerCookie, 'No active subscription');
     await expectRenders('/dashboard/plans', customerCookie, 'Choose a plan');
@@ -344,8 +289,6 @@ async function main() {
         await expectRenders('/dashboard', customerCookie, plan.name);
         await expectRenders('/dashboard/subscription', customerCookie, plan.name);
 
-        // One subscription per product is enforced by a DB unique index, not
-        // just app logic — assert the constraint really exists.
         let duplicateRejected = false;
         try {
             await db.insert(schema.subscription).values({ userId: customer.id, planId: plan.id, productId: plan.productId, status: 'ACTIVE' });
@@ -407,8 +350,6 @@ async function main() {
         && updatedProfile?.companyEmail === 'ops@e2e-industries.test');
     await expectRenders('/dashboard/settings', customerCookie, 'E2E Industries');
 
-    // username is uniquely indexed but nullable — the nullable half matters,
-    // since most customers will never set one.
     let duplicateUsernameRejected = false;
     try {
         await db.insert(schema.user).values({
@@ -452,8 +393,6 @@ async function main() {
             isDefault: false,
         }).returning();
 
-    // Promoting a default must demote the previous one, or the UI would show
-    // two defaults.
     await db.transaction(async (tx) => {
         await tx.update(schema.address).set({ isDefault: false }).where(eq(schema.address.userId, customer.id));
         await tx.update(schema.address).set({ isDefault: true }).where(eq(schema.address.id, second.id));
@@ -463,8 +402,6 @@ async function main() {
         afterPromote.filter((a) => a.isDefault).length === 1
         && afterPromote.find((a) => a.isDefault)?.id === second.id);
 
-    // Deleting the default should promote a survivor, so a customer with any
-    // addresses always has exactly one default.
     await db.delete(schema.address).where(eq(schema.address.id, second.id));
     const fallback = await db.query.address.findFirst({
         where: eq(schema.address.userId, customer.id),
@@ -512,8 +449,6 @@ async function main() {
     check(`comment thread ordered oldest-first (${thread.length} comments)`, thread.length >= 1);
     await expectRenders(`/dashboard/support/${ticket.id}`, customerCookie, 'Customer reply from the E2E suite.');
 
-    // The comment table is deliberately generic; if it were secretly
-    // ticket-only this would fail and the abstraction would be a lie.
     await db.insert(schema.comment).values({
             entityType: 'PLAN',
             entityId: 'e2e-non-ticket-entity',
@@ -562,9 +497,6 @@ async function main() {
         await expectRenders(`/admin/tickets/${ticket.id}`, adminCookie, 'E2E cannot access store');
         await expectRenders('/admin/users', adminCookie, customerEmail);
 
-        // Controller-backed admin pages. These render an "unavailable" panel
-        // rather than erroring when the Python service is down, so a 200 here
-        // is meaningful either way — it proves the page itself is sound.
         section('Admin panel — controller pages');
         for (const path of [
             '/admin/servers', '/admin/servers/new',
@@ -665,8 +597,6 @@ async function main() {
                     },
                 });
 
-            // Register the local Postgres as a cluster. Credentials come from
-            // DATABASE_URL so this works on any dev machine.
             const dbUrl = new URL(process.env.DATABASE_URL!);
             const created = await api('/api/v1/database-connections', {
                 method: 'POST',
@@ -721,8 +651,6 @@ async function main() {
                     check('tenant reports the cluster it was assigned to',
                         tenant.database_connection_id === cluster.id);
 
-                    // Reassigning by attribute would strand the data, so the
-                    // API must refuse it and point at the migration endpoint.
                     const patched = await api(`/api/v1/tenants/${tenant.id}`, {
                         method: 'PATCH',
                         body: JSON.stringify({ database_connection_id: null }),
@@ -773,10 +701,6 @@ async function main() {
                 await api(`/api/v1/database-connections/${cluster.id}`, { method: 'DELETE' });
             }
 
-            // --- tenant ↔ customer ↔ plan ----------------------------------
-            // A tenant is the infrastructure realisation of one UnityCommerce
-            // subscription, so customer_email / user_id / plan_tier are caches
-            // of the subscription's rows, not independently-settable fields.
             section('Tenant ↔ customer ↔ plan');
 
             const [linkUser] = await db.insert(schema.user).values({
@@ -795,8 +719,6 @@ async function main() {
                     userId: linkUser.id, planId: linkPlan.id,
                     productId: 'unity_commerce', status: 'ACTIVE',
                 }).returning();
-            // A second product for the same person, to prove only the
-            // UnityCommerce one can carry a storefront.
             const [algoPlan] = await db.insert(schema.plan).values({
                     productId: 'algo_suite', name: 'E2E Algo',
                     slug: `${E2E_PREFIX}algo`, priceAmount: 29,
@@ -848,8 +770,6 @@ async function main() {
                 check('a non-UnityCommerce subscription is refused',
                     wrongProduct.status >= 400, `status ${wrongProduct.status}`);
 
-                // Naming a different owner than the subscription's would
-                // attach the store to the wrong account.
                 const wrongOwner = await api('/api/v1/tenants', {
                     method: 'POST',
                     body: JSON.stringify({
@@ -890,11 +810,6 @@ async function main() {
             info('CONTROLLER_INTERNAL_API_KEY not set — skipping cluster checks');
         }
 
-        // --- SSH terminal ---------------------------------------------------
-        // A WebSocket handshake begins as a plain HTTP GET, and the terminal
-        // service authenticates *before* upgrading — so the auth gate can be
-        // exercised with fetch alone. 401 = rejected; 426 Upgrade Required
-        // means the token was accepted and only the WS headers were missing.
         section('SSH terminal service');
         const TERMINAL_URL = process.env.CONTROLLER_WS_HTTP_URL
             ?? (process.env.NEXT_PUBLIC_CONTROLLER_WS_URL ?? 'ws://127.0.0.1:8765').replace(/^ws/, 'http');
@@ -922,8 +837,6 @@ async function main() {
                     .setExpirationTime(expires)
                     .sign(secret);
 
-            // Needs a real server row: auth is checked before the server is
-            // looked up, so a valid token against a missing server still 404s.
             const { rows: serverRows } = await db.execute<{ id: string }>(sql`
                 SELECT id::text FROM server_nodes WHERE is_active = true LIMIT 1
             `);
@@ -975,13 +888,7 @@ async function main() {
             }
         }
 
-        // The controller maps a few Prisma tables read-only so its foreign
-        // keys resolve. If Alembic ever stopped excluding them, autogenerate
-        // would emit DDL against tables Prisma owns — including DROPs for the
-        // ones it does not mirror. Assert the guard is still wired up.
         section('Schema ownership guard');
-        // fileURLToPath, not .pathname — the repo path may contain spaces,
-        // which .pathname would leave percent-encoded.
         const envPy = await readFile(
             fileURLToPath(new URL('../controller/alembic/env.py', import.meta.url)),
             'utf8',
@@ -998,14 +905,10 @@ async function main() {
         check('website-owned tables still present and intact', websiteOwned.length === 3,
             `found ${websiteOwned.length} of 3`);
 
-        // The identity merge should have removed the controller's parallel
-        // copies of people/billing entirely.
         check('retired controller identity tables are gone',
             !names.includes('customers') && !names.includes('addresses')
             && !names.includes('billing_records') && !names.includes('admin_users'));
 
-        // Cross-tool foreign keys are the thing most likely to be quietly
-        // missing after a schema change, so assert them directly.
         const fks = (await db.execute<{ constraint_name: string }>(sql`
             SELECT tc.constraint_name
             FROM information_schema.table_constraints tc

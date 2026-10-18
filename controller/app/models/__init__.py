@@ -1,7 +1,3 @@
-"""Import every mapped class here so SQLAlchemy can resolve the string-based
-forward references used in relationship() type hints (e.g. Tenant.customer),
-and so Alembic's autogenerate sees the full schema from one import.
-"""
 
 from app.models.activity import ActivityLog, Operation
 from app.models.backup import TenantBackup

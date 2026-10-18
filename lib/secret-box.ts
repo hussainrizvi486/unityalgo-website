@@ -1,23 +1,6 @@
 import 'server-only';
 import { createCipheriv, createDecipheriv, randomBytes } from 'node:crypto';
 
-/**
- * Authenticated encryption for secrets kept in our own database.
- *
- * Mail account passwords have to be recoverable — nodemailer needs the actual
- * password to authenticate — so they cannot be hashed the way a user password
- * is. They are encrypted instead, with the key held outside the database in
- * `CREDENTIAL_ENCRYPTION_KEY`. That is what makes a leaked database dump
- * useless on its own.
- *
- * AES-256-GCM rather than CBC: it authenticates as well as encrypts, so a
- * ciphertext altered in the database fails to decrypt instead of silently
- * yielding different plaintext. The controller does the same job with Fernet
- * on the Python side (`DatabaseConnection.password_encrypted`); this is the
- * Node equivalent, deliberately kept to one small module so there is one place
- * to audit and one place to rotate.
- */
-
 /** Output format marker, so the scheme can change without ambiguity later. */
 const VERSION = 'v1';
 const ALGORITHM = 'aes-256-gcm';
@@ -56,8 +39,6 @@ export function encryptSecret(plaintext: string) {
     const iv = randomBytes(IV_BYTES);
     const cipher = createCipheriv(ALGORITHM, getKey(), iv);
     const body = Buffer.concat([cipher.update(plaintext, 'utf8'), cipher.final()]);
-    // Nonce and tag are not secret, and both are needed to decrypt, so they
-    // travel with the ciphertext rather than in separate columns.
     return [
         VERSION,
         iv.toString('base64url'),
@@ -79,11 +60,3 @@ export function decryptSecret(payload: string) {
     ]).toString('utf8');
 }
 
-/**
- * A hint like `••••••••ab`, for showing that a secret exists without revealing
- * it. Nothing outside this module should ever hand a password to a client.
- */
-export function maskSecret(plaintext: string) {
-    if (plaintext.length <= 2) return '••••••••';
-    return `••••••••${plaintext.slice(-2)}`;
-}

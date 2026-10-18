@@ -16,7 +16,8 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { StepIndicator } from '@/components/customer/step-indicator';
-import { FRAPPE_COUNTRIES } from '@/lib/frappe-countries';
+import { CountrySelect } from '@/components/ui/country-select';
+import { currencyOfCountry, findCountry, guessCountry } from '@/lib/countries';
 import {
     COA_TYPES,
     WIZARD_STEPS,
@@ -39,6 +40,8 @@ interface PlanOption {
     trialDays: number;
     /** The plan has a trial but this customer has used it. */
     trialUsed: boolean;
+    /** Cannot be chosen: the plan is only a free trial and this customer has had it. */
+    unavailable: boolean;
 }
 
 type Availability =
@@ -65,24 +68,34 @@ export function SiteForm({
     available,
     domainSuffix,
     selectedApp,
+    selectedPlan,
+    defaultCountry,
 }: {
     requestKey: string;
     apps: { id: string; name: string; available: boolean }[];
     plans: PlanOption[];
-    currencies: { code: string; name: string }[];
+    currencies: { code: string; name: string; symbol: string }[];
     available: boolean;
     domainSuffix: string;
     selectedApp?: string;
+    selectedPlan?: string;
+    defaultCountry?: string | null;
 }) {
     const [state, action] = useActionState(createSiteAction, undefined);
     const [step, setStep] = useState(0);
+    // The currency a country usually uses, when this shop offers it.
+    const currencyFor = (country: string) => {
+        const code = currencyOfCountry(country);
+        return code && currencies.some((currency) => currency.code === code) ? code : '';
+    };
+    const startCountry = findCountry(defaultCountry) ?? '';
     const [values, setValues] = useState<SiteWizardValues>({
         slug: '',
         companyName: '',
-        country: '',
-        currency: '',
+        country: startCountry,
+        currency: currencyFor(startCountry),
         coaType: 'standard',
-        planId: '',
+        planId: plans.find((plan) => plan.id === selectedPlan && !plan.unavailable)?.id ?? '',
         apps: apps
             .filter((app) => app.available && app.id === selectedApp)
             .map((app) => app.id),
@@ -105,6 +118,20 @@ export function SiteForm({
         setValues((current) => ({ ...current, [key]: value }));
         setErrors((current) => ({ ...current, [key]: undefined }));
     };
+
+    const currencyChosen = useRef(false);
+    useEffect(() => {
+        if (startCountry) return;
+        const guess = guessCountry();
+        if (!guess) return;
+        const timer = setTimeout(() => {
+            setValues((current) => current.country
+                ? current
+                : { ...current, country: guess, currency: currencyChosen.current ? current.currency : currencyFor(guess) || current.currency });
+        }, 0);
+        return () => clearTimeout(timer);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     // Debounced, race-safe availability check for the site name.
     useEffect(() => {
@@ -135,7 +162,6 @@ export function SiteForm({
             }
         }, 400);
         return () => clearTimeout(timer);
-        // Only the slug drives the check.
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [values.slug]);
 
@@ -282,26 +308,24 @@ export function SiteForm({
                         />
                     </FormField>
                     <FormField id="country" label="Country" error={errors.country}>
-                        <Select
+                        <CountrySelect
+                            id="country"
                             value={values.country}
-                            onValueChange={(value) => set('country', value)}
-                        >
-                            <SelectTrigger id="country" aria-invalid={Boolean(errors.country)}>
-                                <SelectValue placeholder="Select a country" />
-                            </SelectTrigger>
-                            <SelectContent className="max-h-72">
-                                {FRAPPE_COUNTRIES.map((country) => (
-                                    <SelectItem key={country} value={country}>
-                                        {country}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                            invalid={Boolean(errors.country)}
+                            onValueChange={(value) => {
+                                set('country', value);
+                                // The currency follows the country until the customer picks one themselves.
+                                if (!currencyChosen.current && currencyFor(value)) set('currency', currencyFor(value));
+                            }}
+                        />
                     </FormField>
                     <FormField id="currency" label="Currency" error={errors.currency}>
                         <Select
                             value={values.currency}
-                            onValueChange={(value) => set('currency', value)}
+                            onValueChange={(value) => {
+                                currencyChosen.current = true;
+                                set('currency', value);
+                            }}
                         >
                             <SelectTrigger id="currency" aria-invalid={Boolean(errors.currency)}>
                                 <SelectValue placeholder="Select a currency" />
@@ -309,7 +333,10 @@ export function SiteForm({
                             <SelectContent className="max-h-72">
                                 {currencies.map((currency) => (
                                     <SelectItem key={currency.code} value={currency.code}>
-                                        {currency.code} — {currency.name}
+                                        <span className="flex items-center gap-2">
+                                            <span className="w-8 shrink-0 text-center font-semibold">{currency.symbol}</span>
+                                            {currency.code} — {currency.name}
+                                        </span>
                                     </SelectItem>
                                 ))}
                             </SelectContent>
@@ -355,9 +382,10 @@ export function SiteForm({
                                 key={plan.id}
                                 type="button"
                                 aria-pressed={values.planId === plan.id}
+                                disabled={plan.unavailable}
                                 onClick={() => set('planId', plan.id)}
                                 className={cn(
-                                    'rounded-lg border p-4 text-left transition-colors',
+                                    'rounded-lg border p-4 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-60',
                                     values.planId === plan.id
                                         ? 'border-foreground bg-muted'
                                         : 'border-border',
@@ -377,7 +405,7 @@ export function SiteForm({
                                 )}
                                 {plan.trialUsed && (
                                     <span className="mt-2 block portal-text-caption text-muted-foreground">
-                                        Free trial already used. Subscribe to this plan first.
+                                        {plan.unavailable ? 'Free trial already used.' : 'Free trial already used. Subscribe to this plan first.'}
                                     </span>
                                 )}
                                 {plan.tagline && (
@@ -414,7 +442,7 @@ export function SiteForm({
                 <fieldset>
                     <legend className="portal-text-body font-semibold">Applications</legend>
                     <p className="mt-2 portal-text-caption text-muted-foreground">
-                        Frappe and ERPNext are included. Select additional
+                        AlgoSuite is included. Select additional
                         applications to install.
                     </p>
                     <div className="mt-4 space-y-3">

@@ -25,7 +25,6 @@ function Submit({ disabled }: { disabled: boolean }) {
     );
 }
 
-/** Paste a repository address; the app’s name, description, branches and Frappe support are read from GitHub. */
 export function GithubAppForm({
     categories,
     connected,

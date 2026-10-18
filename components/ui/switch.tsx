@@ -3,20 +3,6 @@
 import * as React from 'react';
 import { cn } from '@/utils';
 
-/**
- * A binary toggle that applies immediately.
- *
- * A switch is not a checkbox. A checkbox is a value you are proposing, which
- * takes effect when the form is submitted; a switch takes effect the moment it
- * is thrown. Use `<Checkbox>` inside a form that has a Save button, and this
- * where the change is the action — a billing period, a live/paused state, a
- * preference that persists on its own.
- *
- * Built on a plain button rather than another Radix package: the whole of a
- * switch is `role="switch"`, `aria-checked`, and moving a knob 24px. Space and
- * Enter come free with the button element.
- */
-
 export interface SwitchProps
     extends Omit<React.ComponentProps<'button'>, 'onChange' | 'value' | 'type' | 'children'> {
     /** Controlled state. Pair with `onCheckedChange`. */
@@ -24,11 +10,6 @@ export interface SwitchProps
     /** Uncontrolled starting state. */
     defaultChecked?: boolean;
     onCheckedChange?: (checked: boolean) => void;
-    /**
-     * Posts `on` with the form when checked, and nothing at all when not —
-     * the same shape a native checkbox has, so server actions can keep reading
-     * `formData.get(name) === 'on'`.
-     */
     name?: string;
     /** Which ground it sits on. Pages here alternate white and near-black. */
     tone?: 'light' | 'dark';
@@ -45,8 +26,6 @@ const KNOB = {
     sm: 'size-4',
 };
 
-// The knob travels the track's inner width minus its own width. Both are fixed,
-// so the distance is a constant rather than something to measure at runtime.
 const TRAVEL = {
     default: 'translate-x-6',
     sm: 'translate-x-4',
@@ -110,8 +89,6 @@ const Switch = React.forwardRef<HTMLButtonElement, SwitchProps>(function Switch(
                         'transition duration-200 ease-in-out',
                         KNOB[size],
                         on ? TRAVEL[size] : 'translate-x-0',
-                        // On a dark ground the track turns white when on, so a
-                        // white knob would disappear into it.
                         dark && on ? 'bg-primary' : 'bg-card',
                     )}
                 />

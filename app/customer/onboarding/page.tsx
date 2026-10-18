@@ -21,20 +21,17 @@ export default async function CustomerOnboardingPage({
   const user = await db.query.user.findFirst({ where: eq(schema.user.id, session.userId) });
   if (!user || user.role !== 'CUSTOMER') redirect('/login');
 
-  // The price shown has to be the price charged, so it comes from the same
-  // plan row checkout resolves. It used to come from a hard-coded table that
-  // no longer matched the plans admins edit.
   const selectedPlan = plan
     ? ((await db.query.plan.findFirst({
         where: and(
           eq(schema.plan.isActive, true),
-          // Case-insensitive equality. Not ILIKE: that would treat % and _ in what the visitor typed as wildcards.
           or(
             sql`lower(${schema.plan.slug}) = ${plan.toLowerCase()}`,
             sql`lower(${schema.plan.name}) = ${plan.toLowerCase()}`,
           ),
         ),
         columns: { name: true, priceAmount: true, priceUnit: true },
+        with: { currency: true },
       })) ?? null)
     : null;
 
@@ -50,7 +47,7 @@ export default async function CustomerOnboardingPage({
         planPrice={
           selectedPlan?.priceAmount == null
             ? null
-            : formatCurrency(selectedPlan.priceAmount)
+            : formatCurrency(selectedPlan.priceAmount, selectedPlan.currency)
         }
       />
     </Suspense>

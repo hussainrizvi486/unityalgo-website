@@ -2,8 +2,8 @@ import { NextResponse } from 'next/server';
 import { and, eq, inArray, notInArray, sql } from 'drizzle-orm';
 import { db, schema } from '@/lib/db';
 import { controller } from '@/lib/controller-client';
+import { asDate, asRecord, asString, fromMinorUnits } from '@/lib/paddle-data';
 
-/** The handle a transaction callback receives, which carries the same query methods as `db`. */
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 import {
     HANDLED_PADDLE_EVENTS,
@@ -14,63 +14,11 @@ import {
     type PaddleWebhookEvent,
 } from '@/lib/paddle';
 
-/**
- * Paddle's notification endpoint — the one place a subscription is granted.
- *
- * Nothing the browser reports is trusted: the customer's tab sees
- * `checkout.completed` before Paddle has finished settling, and a server action
- * behind it could be posted to directly by anyone holding a session. Access is
- * granted here, from a payload Paddle signed, or not at all.
- *
- * Point Paddle at POST /api/paddle/webhook (Paddle > Notifications) and put the
- * destination's secret in PADDLE_WEBHOOK_SECRET.
- *
- * Delivery state lives on the PaddleEvent row rather than in the shape of the
- * table: the row is claimed before any work, and only reaching PROCESSED stops
- * a retry being handled again. A handler that throws leaves a FAILED row with
- * its error, so a payment stuck behind a bug is visible instead of silently
- * dropped — which is what deleting the row used to do.
- */
-
-function asRecord(value: unknown): Record<string, unknown> {
-    return value && typeof value === 'object' ? (value as Record<string, unknown>) : {};
-}
-
-function asString(value: unknown): string | null {
-    return typeof value === 'string' && value.length > 0 ? value : null;
-}
-
-function asDate(value: unknown): Date | null {
-    const text = asString(value);
-    if (!text) return null;
-    const date = new Date(text);
-    return Number.isNaN(date.getTime()) ? null : date;
-}
-
-/** Paddle sends money as a minor-unit string ("4900" for $49.00). */
-function fromMinorUnits(value: unknown): number | null {
-    const amount = Number(value);
-    return Number.isFinite(amount) ? amount / 100 : null;
-}
-
 interface Target {
     userId: string;
     plan: { id: string; productId: string; name: string };
 }
 
-/**
- * Works out which customer and plan an event refers to.
- *
- * `custom_data` is attached when checkout opens and is echoed back by Paddle,
- * so it is the primary link. It is still verified against our own tables rather
- * than trusted: the ids travel through the browser, and a customer could edit
- * them before checkout opens. The price id is the fallback for events that
- * carry no custom data, such as an automatic renewal.
- *
- * Resolved once per delivery and threaded through the handlers — it used to be
- * recomputed by each of them, which meant a completed transaction ran the same
- * three lookups twice.
- */
 async function resolveTarget(data: Record<string, unknown>): Promise<Target | null> {
     const custom = asRecord(data.custom_data);
     const userId = asString(custom.userId);
@@ -87,10 +35,7 @@ async function resolveTarget(data: Record<string, unknown>): Promise<Target | nu
         if (user && plan) return { userId: user.id, plan };
     }
 
-    // Renewals arrive without custom data. Recover the plan from the price and
-    // the customer from the Paddle subscription we already recorded.
     const items = Array.isArray(data.items) ? data.items : [];
-    // A subscription can carry app items next to the plan, so look for the item that is a plan rather than taking the first.
     const priceIds = items
         .map((item) => asString(asRecord(asRecord(item).price).id))
         .filter((id): id is string => Boolean(id));
@@ -137,18 +82,11 @@ async function applySubscription(
     const paddleCustomerId = asString(data.customer_id);
     const status = subscriptionStatusForEvent(event.event_type, data);
 
-    // The two event families name this differently: subscription.* sends
-    // `current_billing_period`, transaction.completed sends `billing_period`.
-    // Reading only the first left a freshly purchased subscription showing
-    // whatever renewal date it had before, or none at all.
     const currentPeriodEnd =
         asDate(asRecord(data.current_billing_period).ends_at)
         ?? asDate(asRecord(data.billing_period).ends_at);
 
     const canceled = status === 'CANCELED';
-    // Paddle reports a scheduled cancellation as `scheduled_change` while the
-    // subscription is still active. Cancelling is not the same as losing the
-    // rest of a period already paid for, so this only records the intent.
     const scheduledAction = asString(asRecord(data.scheduled_change).action);
     const cancelAtPeriodEnd = canceled ? false : scheduledAction === 'cancel';
 
@@ -173,8 +111,6 @@ async function applySubscription(
             cancelAtPeriodEnd,
         })
         .onConflictDoUpdate({
-            // One subscription per customer per product, which is the existing
-            // rule — buying a second AlgoSuite plan replaces the first.
             target: [schema.subscription.userId, schema.subscription.productId],
             set: {
                 planId: plan.id,
@@ -244,22 +180,11 @@ async function recordBilling(
             paymentReference: transactionId,
         })
         .onConflictDoUpdate({
-            // The invoice number is unique, and deriving it from Paddle's
-            // transaction id is what keeps a retried delivery from writing a
-            // second invoice for one payment.
             target: schema.billingRecord.invoiceNumber,
             set: { status: 'PAID', amount, paidAt },
         });
 }
 
-/**
- * Marks the invoice behind a failed charge overdue.
- *
- * A declined renewal previously wrote nothing at all, so the customer's
- * billing history showed the last successful payment and then silence. The
- * invoice is created if this is the first anyone has heard of the transaction
- * — Paddle raises the transaction before it charges.
- */
 async function recordFailedPayment(
     tx: Tx,
     event: PaddleWebhookEvent,
@@ -299,19 +224,10 @@ async function recordFailedPayment(
         .onConflictDoUpdate({
             target: schema.billingRecord.invoiceNumber,
             set: { status: 'OVERDUE', notes: 'Payment attempt declined by the provider.' },
-            // Never downgrade a payment that already settled: a `payment_failed` for one attempt can arrive
-            // after a later attempt succeeded. (The previous code overwrote the status unconditionally.)
             setWhere: notInArray(schema.billingRecord.status, ['PAID', 'REFUNDED']),
         });
 }
 
-/**
- * Applies a refund or credit to the invoice it reverses.
- *
- * Adjustments name their transaction, so this needs no target resolution —
- * and must not invent an invoice: an adjustment against a transaction we never
- * recorded is nothing this app can act on.
- */
 async function recordAdjustment(tx: Tx, event: PaddleWebhookEvent) {
     const data = event.data;
     const transactionId = asString(data.transaction_id);
@@ -327,8 +243,6 @@ async function recordAdjustment(tx: Tx, event: PaddleWebhookEvent) {
     const refunded = fromMinorUnits(totals.total) ?? 0;
     const action = asString(data.action);
 
-    // Only a refund reverses money. A `credit` adjustment offsets a future
-    // invoice and leaves this one paid.
     if (action !== 'refund') return;
 
     // Partial refunds keep the invoice PAID: the customer did pay, just less.
@@ -345,15 +259,11 @@ async function recordAdjustment(tx: Tx, event: PaddleWebhookEvent) {
 }
 
 export async function POST(request: Request) {
-    // The exact received bytes, read before anything else: re-serializing
-    // parsed JSON changes key order and whitespace, and with it the hash.
     const rawBody = await request.text();
     const signature = request.headers.get('paddle-signature');
 
     const secret = paddleWebhookSecret();
     if (!secret) {
-        // Refuse rather than accept unverified events. An endpoint that grants
-        // subscriptions must never be reachable without its secret configured.
         console.error('[paddle] PADDLE_WEBHOOK_SECRET is not set; rejecting webhook');
         return NextResponse.json({ error: 'Webhook not configured' }, { status: 500 });
     }
@@ -375,12 +285,8 @@ export async function POST(request: Request) {
     const handled = HANDLED_PADDLE_EVENTS.has(event.event_type);
     const payload: unknown = JSON.parse(rawBody);
 
-    // Claim the delivery before doing any work. Paddle retries until it gets a
-    // 2xx, so the same event id arrives repeatedly. `attempts` counts those
-    // deliveries; only a PROCESSED row short-circuits one.
     let claim: { status: 'PENDING' | 'PROCESSED' | 'IGNORED' | 'FAILED'; attempts: number };
     try {
-        // One atomic statement: claim a new delivery, or count a repeat of one we already have.
         [claim] = await db
             .insert(schema.paddleEvent)
             .values({
@@ -397,17 +303,11 @@ export async function POST(request: Request) {
             })
             .returning({ status: schema.paddleEvent.status, attempts: schema.paddleEvent.attempts });
     } catch (error) {
-        // Logged and answered rather than thrown: an unhandled throw returns
-        // an empty 500 that says nothing about a payment that may have
-        // succeeded.
         console.error('[paddle] could not record event', event.event_id, error);
         return NextResponse.json({ error: 'Could not record event' }, { status: 500 });
     }
 
     if (!handled) {
-        // Recorded above, which is the point — unhandled types stay auditable.
-        // Checked before the duplicate test so the first delivery of an
-        // unrelated event reports what actually happened to it.
         return NextResponse.json({ ok: true, ignored: true });
     }
 
@@ -416,9 +316,6 @@ export async function POST(request: Request) {
         return NextResponse.json({ ok: true, duplicate: true });
     }
 
-    // A row left IGNORED by an earlier deploy, for an event type this build
-    // now handles, is deliberately allowed through rather than skipped.
-
     try {
         const target =
             event.event_type === PADDLE_EVENTS.ADJUSTMENT_CREATED
@@ -426,9 +323,6 @@ export async function POST(request: Request) {
                 ? null
                 : await resolveTarget(event.data);
 
-        // One transaction: a granted subscription with no invoice behind it,
-        // or an invoice for access nobody got, are both worse than retrying
-        // the pair.
         await db.transaction(async (tx) => {
             switch (event.event_type) {
                 case PADDLE_EVENTS.ADJUSTMENT_CREATED:
@@ -457,8 +351,6 @@ export async function POST(request: Request) {
             .set({ status: 'PROCESSED', processedAt: new Date(), error: null })
             .where(eq(schema.paddleEvent.id, event.event_id));
 
-        // A customer who has just subscribed to a plan no longer needs the free trial of their site on it. Best effort:
-        // the controller's own sweep ends the trial anyway, this only does it straight away.
         if (target) {
             const held = await db.query.subscription.findFirst({
                 where: and(eq(schema.subscription.userId, target.userId), eq(schema.subscription.planId, target.plan.id), eq(schema.subscription.status, 'ACTIVE')),
@@ -467,9 +359,6 @@ export async function POST(request: Request) {
             if (held) await controller.sites.convertTrials(target.userId, target.plan.id).catch(() => undefined);
         }
     } catch (error) {
-        // The row stays, carrying why. Paddle's retry finds it PENDING/FAILED
-        // and is allowed to run the handler again; deleting it, as this used
-        // to, destroyed the only evidence the delivery ever arrived.
         const message = error instanceof Error ? error.message : String(error);
         await db
             .update(schema.paddleEvent)

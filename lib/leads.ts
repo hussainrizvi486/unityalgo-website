@@ -2,8 +2,6 @@ import type { LeadStatus, LeadSource } from '@/db/types';
 
 type BadgeVariant = 'neutral' | 'success' | 'info' | 'warning' | 'error' | 'brand';
 
-/** One place for the vocabulary, so the list, the form and any future
- *  dashboard tile all label a lead the same way. */
 export const LEAD_STATUS_LABEL: Record<LeadStatus, string> = {
     NEW: 'New',
     CONTACTED: 'Contacted',

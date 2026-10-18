@@ -121,8 +121,6 @@ export function TenantDatabaseMigrateForm({
         undefined,
     );
 
-    // Moving to the cluster it is already on is rejected by the API; leaving
-    // it out of the list stops that being an option at all.
     const options = clusters.filter((cluster) => cluster.id !== currentClusterId);
 
     if (options.length === 0) {

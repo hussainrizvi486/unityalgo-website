@@ -1,12 +1,6 @@
 import type { AdminFormField } from '@/components/admin/dynamic-form';
 import { NUMBER_FORMATS } from '@/lib/currency';
 
-/**
- * The currency form, as data.
- *
- * One definition drives both the new and edit screens, so the two cannot drift.
- * `tab`, `section` and `column` are breaks: every field after one belongs to it.
- */
 export function currencyFormFields(values?: {
     code?: string;
     name?: string;

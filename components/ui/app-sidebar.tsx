@@ -28,15 +28,6 @@ import { useDashboardTheme } from '@/components/ui/dashboard-root';
 import { AvatarInitials } from '@/components/admin/avatar-initials';
 import { cn } from '@/utils';
 
-/**
- * The one sidebar for the customer portal and the admin panel.
- *
- * Both shells describe their navigation as data and hand it here, so the header, grouped sections,
- * collapsible sub-menus, active-state rules, account menu and collapse behaviour exist once. The layout
- * follows shadcn's sidebar blocks: a brand header, labelled groups, and an account menu in the footer.
- * Colours, sizes and radii all come from the design tokens through the primitives in ui/sidebar.tsx.
- */
-
 export interface SidebarNavChild {
     title: string;
     href: string;
@@ -92,7 +83,6 @@ export interface AppSidebarProps {
 const isCurrent = (pathname: string, item: { href: string; exact?: boolean }) =>
     item.exact ? pathname === item.href : pathname === item.href || pathname.startsWith(item.href + '/');
 
-/** A sub-page is current unless a sibling with a longer matching path is (so /apps does not light up on /apps/github). */
 const isCurrentChild = (pathname: string, child: SidebarNavChild, siblings: SidebarNavChild[]) =>
     isCurrent(pathname, child)
     && !siblings.some((other) => other !== child && other.href.length > child.href.length && isCurrent(pathname, other));
@@ -162,7 +152,6 @@ function NavItem({ item, pathname }: { item: SidebarNavItem; pathname: string })
         );
     }
 
-    // With sub-pages, the row toggles them; collapsed to icons it opens the section's first page instead.
     return (
         <SidebarMenuItem>
             <SidebarMenuButton

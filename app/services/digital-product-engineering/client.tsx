@@ -2,12 +2,6 @@
 
 import { ModulePageContent, ModulePageConfig } from '@/components/website/module-page-content';
 
-/**
- * Tailored Software Development.
- *
- * No pricing table: this is scoped and quoted per engagement, so publishing
- * fixed tiers would be inventing a price list that does not exist.
- */
 const config: ModulePageConfig = {
     badge: "Software Development",
     heading: "Software built for how your business actually works",

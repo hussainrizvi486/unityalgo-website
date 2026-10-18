@@ -1,8 +1,8 @@
 'use client';
 import Link from 'next/link';
-import { useActionState } from 'react';
+import { useActionState, useEffect, useRef, useState } from 'react';
 import { useFormStatus } from 'react-dom';
-import { ArrowUpRight, Check, CircleAlert, Globe, LoaderCircle, X } from 'lucide-react';
+import { ArrowUpRight, LoaderCircle } from 'lucide-react';
 import type { CustomerSite } from '@/lib/controller-client';
 import { retrySiteAction } from '../../actions';
 import { Button } from '@/components/ui/button';
@@ -10,9 +10,9 @@ import { Notice } from '@/components/ui/notice';
 import { SiteOverview, type KnownApps, type PlanChoice } from './site-overview';
 import type { InstallableApp } from '@/components/customer/install-app-dialog';
 import { DeleteSite } from './delete-site';
+import { DeployProgress } from '@/components/customer/deploy-progress';
 import { LiveBadge } from '@/components/customer/live-badge';
 import { useLiveSite } from '@/lib/use-live-site';
-// Once installed, the site gets the full management page instead of the progress view.
 const installed = ['ready', 'stopping', 'stopped', 'restarting', 'restoring', 'updating', 'deactivated'];
 function RetryButton() {
     const { pending } = useFormStatus();
@@ -35,9 +35,16 @@ export function SiteStatus({
     installable: InstallableApp[];
     known: KnownApps;
 }) {
-    // Pushed to the page as it changes: no refreshing, and it keeps following the site after it settles.
     const { site, connection } = useLiveSite(initial);
     const [retry, action] = useActionState(retrySiteAction, undefined);
+    const watchedCreation = useRef(!installed.includes(initial.status));
+    const [celebrating, setCelebrating] = useState(false);
+    useEffect(() => {
+        if (site.status !== 'ready' || !watchedCreation.current) return;
+        const start = setTimeout(() => setCelebrating(true), 0);
+        const end = setTimeout(() => { watchedCreation.current = false; setCelebrating(false); }, 3500);
+        return () => { clearTimeout(start); clearTimeout(end); };
+    }, [site.status]);
 
     if (site.status === 'deleting')
         return (
@@ -52,7 +59,7 @@ export function SiteStatus({
                 </Notice>
             </div>
         );
-    if (installed.includes(site.status))
+    if (installed.includes(site.status) && !celebrating)
         return (
             <SiteOverview
                 site={site}
@@ -69,11 +76,6 @@ export function SiteStatus({
             : site.status === 'failed' || site.status === 'cleanup_required'
               ? 'failed'
               : 'creating';
-    const phaseLabel = {
-        creating: 'Creating Site',
-        success: 'Success',
-        failed: 'Failed',
-    }[phase];
     return (
         <div className="mx-auto portal-detail">
             <Link
@@ -103,83 +105,19 @@ export function SiteStatus({
                     </Button>
                 )}
             </div>
-            <div
-                role="status"
-                className="mt-6 flex items-center gap-3 rounded-xl border border-border p-4"
-            >
-                {phase === 'creating' && (
-                    <LoaderCircle className="size-5 motion-safe:animate-spin" />
-                )}
-                {phase === 'success' && <Check className="size-5 text-success" />}
-                {phase === 'failed' && <CircleAlert className="size-5 text-destructive" />}
-                <div>
-                    <p className="font-semibold">{phaseLabel}</p>
-                    <p className="portal-text-caption text-muted-foreground">
-                        {phase === 'creating' &&
-                            'The site is being provisioned and configured.'}
-                        {phase === 'success' &&
-                            'Deployment completed. Your site is ready to use.'}
-                        {phase === 'failed' && 'Deployment encountered an error.'}
-                    </p>
-                </div>
-            </div>
             {phase === 'failed' && (
                 <Notice tone="error" className="mt-4">
                     {site.error || site.message}
                 </Notice>
             )}
-            <section className="mt-6 rounded-xl border border-border p-card">
-                <div className="flex items-center gap-3">
-                    <Globe className="size-5 text-primary" />
-                    <h2 className="">Installation progress</h2>
-                    <span className="ml-auto portal-text-body text-muted-foreground">
-                        {site.progress}%
-                    </span>
-                </div>
-                <div
-                    role="progressbar"
-                    aria-label="Site installation"
-                    aria-valuenow={site.progress}
-                    aria-valuemin={0}
-                    aria-valuemax={100}
-                    className="mt-5 h-2 overflow-hidden rounded-full bg-secondary"
-                >
-                    <div
-                        className="h-full bg-primary transition-[width] motion-reduce:transition-none"
-                        style={{ width: `${site.progress}%` }}
-                    />
-                </div>
-                <p className="mt-5 portal-text-body leading-7 text-foreground/70">
-                    {site.message}
-                </p>
-                <p className="mt-3 portal-text-caption text-muted-foreground">
-                    Assigned server: {site.server_name}
-                </p>
-                <ol className="mt-8 grid gap-gap sm:grid-cols-2">
-                    {site.steps.map((item, number) => (
-                        <li
-                            key={item.key}
-                            className={`flex items-center gap-3 portal-text-body ${item.state === 'pending' ? 'text-muted-foreground' : 'text-foreground'}`}
-                        >
-                            <span
-                                className={`flex size-6 shrink-0 items-center justify-center rounded-full ${item.state === 'done' ? 'bg-primary text-primary-foreground' : item.state === 'failed' ? 'bg-destructive text-destructive-foreground' : 'border border-input'}`}
-                            >
-                                {item.state === 'done' ? (
-                                    <Check className="size-3.5" />
-                                ) : item.state === 'failed' ? (
-                                    <X className="size-3.5" />
-                                ) : item.state === 'active' ? (
-                                    <LoaderCircle className="size-3.5 motion-safe:animate-spin" />
-                                ) : (
-                                    number + 1
-                                )}
-                            </span>
-                            {item.label}
-                        </li>
-                    ))}
-                </ol>
-                <LiveBadge connection={connection} className="mt-6" />
-            </section>
+            {site.trial && !site.trial.expired && (
+                <Notice tone="info" className="mt-6">
+                    <span className="font-medium">Free trial: {site.trial.days_left} day{site.trial.days_left === 1 ? '' : 's'} left.</span>{' '}
+                    Subscribe to {site.plan_name ?? 'this plan'} before it ends to keep your site.
+                </Notice>
+            )}
+            <DeployProgress site={site} />
+            <LiveBadge connection={connection} className="mt-4" />
             <section className="mt-6 rounded-xl border border-border p-card">
                 <h2 className="">Selected applications</h2>
                 <p className="mt-3 portal-text-body text-foreground/70">

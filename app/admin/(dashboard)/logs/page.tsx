@@ -73,8 +73,7 @@ export default async function AdminLogsPage({ searchParams }: PageProps) {
                 subtitle="Every infrastructure operation the controller has run, and the individual steps within each."
             />
 
-            {/* Operations are grouped end-to-end processes; events are the
-                individual steps, including standalone ones like health sweeps. */}
+            {}
             <div className="mb-4 flex flex-wrap gap-2">
                 <Button asChild size="sm" variant={view === 'operations' ? 'default' : 'outline'} ><Link href="/admin/logs">
                         Operations

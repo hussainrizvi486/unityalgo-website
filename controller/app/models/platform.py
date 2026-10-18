@@ -1,25 +1,3 @@
-"""Read-only mappings of the platform's Prisma-owned tables.
-
-The platform (Next.js) and the controller share one database, with Prisma
-owning the PascalCase tables and Alembic the snake_case ones — see
-controller/README.md. These classes let the controller *read* a few of
-Prisma's tables through the ORM and, more importantly, let SQLAlchemy resolve
-foreign keys that point at them: without `User` present in this MetaData,
-`ForeignKey("User.id")` on `tenants` cannot be constructed at all.
-
-Three rules keep this safe:
-
-1. **Alembic must never manage these tables.** alembic/env.py filters them
-   out of autogenerate via PRISMA_OWNED_TABLES below. Without that filter,
-   `makemigration` would emit DDL to alter or drop tables Prisma owns.
-2. **Read-only from here.** Writes go through the Next.js app, which owns the
-   business rules for them. Nothing in the controller writes these.
-3. **Mirror the minimum.** Every column listed here is one that has to be
-   kept in sync with schema.prisma by hand. Only the handful the controller
-   genuinely reads are mapped; a column added on the Prisma side that is not
-   here simply is not visible, which is harmless. Adding columns to the
-   mirror is only worth it when the controller actually needs them.
-"""
 
 from datetime import datetime
 from typing import Optional
@@ -29,9 +7,6 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base
 
-# Consulted by alembic/env.py. Every table Prisma owns belongs here, not just
-# the ones mapped below -- autogenerate compares against the live database, so
-# an unmapped Prisma table would otherwise look like one to DROP.
 PRISMA_OWNED_TABLES = frozenset({
     "AppCatalog", "LoginSession", "Notification", "EmailAccount", "Currency", "PaddleEvent", "leads",
     "User",
@@ -52,13 +27,6 @@ PRISMA_OWNED_TABLES = frozenset({
 
 
 class PlatformUser(Base):
-    """Prisma's `User` — the one identity table for the whole platform.
-
-    Mapped so `tenants.user_id` can be a real foreign key and so the dashboard
-    can count customers through the ORM. Named PlatformUser rather than User
-    to make it obvious at the call site that this is not a controller-owned
-    model.
-    """
 
     __tablename__ = "User"
     __table_args__ = {"extend_existing": True}
@@ -82,12 +50,6 @@ class PlatformUser(Base):
 
 
 class PlatformProduct(Base):
-    """Prisma's `Product` — was an enum, promoted to a table.
-
-    Mapped read-only so `Plan.productId` / `Subscription.productId` can be real
-    foreign keys and so the controller can read a product's label without
-    hard-coding it.
-    """
 
     __tablename__ = "Product"
     __table_args__ = {"extend_existing": True}
@@ -102,12 +64,6 @@ class PlatformProduct(Base):
 
 
 class PlatformPlan(Base):
-    """Prisma's `Plan` — a purchasable tier of one product.
-
-    Mapped so a tenant's plan can be resolved through its subscription rather
-    than trusting the free-text `tenants.plan_tier` string, which is now a
-    cache of `Plan.slug` rather than an independently-entered value.
-    """
 
     __tablename__ = "Plan"
     __table_args__ = {"extend_existing": True}
@@ -127,19 +83,11 @@ class PlatformPlan(Base):
 
 
 class PlatformSubscription(Base):
-    """Prisma's `Subscription` — a customer's plan for one product.
-
-    This is the join that ties a tenant to both a person and a plan: a tenant
-    is the infrastructure realisation of one UnityCommerce subscription.
-    """
 
     __tablename__ = "Subscription"
     __table_args__ = {"extend_existing": True}
 
     id: Mapped[str] = mapped_column(Text, primary_key=True)
-    # Real ForeignKeys so `joinedload` can walk subscription -> user/plan in a
-    # single statement when serializing tenants. The constraints themselves
-    # are Prisma's; these declarations only tell SQLAlchemy how to join.
     userId: Mapped[str] = mapped_column(ForeignKey("User.id"))
     planId: Mapped[str] = mapped_column(ForeignKey("Plan.id"))
     productId: Mapped[str] = mapped_column(ForeignKey("Product.id"))

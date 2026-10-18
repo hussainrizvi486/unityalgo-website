@@ -31,10 +31,6 @@ class TenantBaseView(BaseView):
     serializer_class = TenantSerializer
 
     def start_async(self, kind, label, category, task, task_kwargs, **log_context):
-        """Mint an Operation row synchronously, enqueue the Celery task that
-        will record steps against it, and hand the caller both ids right
-        away -- this is what makes a 202 response pollable before the task
-        has even started running."""
         operation_id = ActivityLogger(actor=self.actor()).start_operation(
             kind, label, category=category, **log_context
         )
@@ -48,11 +44,6 @@ class TenantListView(TenantBaseView):
     """/api/v1/tenants -- collection."""
 
     def get(self):
-        """List tenants.
-
-        ?status=active&node_id=<uuid>&plan_tier=launch&user_id=<cuid>
-        &subscription_id=<cuid>
-        """
         limit, offset = self.pagination()
         with self.session() as session:
             rows, total = self.controller(session).list(
@@ -68,15 +59,6 @@ class TenantListView(TenantBaseView):
         return self.ok(body, HTTP_200_OK)
 
     def post(self):
-        """Create a pending tenant and assign it a node.
-
-        Minimum body: {"tenant_slug": "store1", "subscription_id": "<cuid>"} --
-        the customer and plan are read from the subscription. A tenant with no
-        subscription yet is allowed if it names its owner some other way
-        ({"user_id": ...} or {"customer_email": ...}).
-
-        Subdomain and database credentials are generated when omitted.
-        """
         payload = self.json_body()
         with self.session() as session:
             tenant = self.controller(session).create(payload)
@@ -134,11 +116,6 @@ class TenantStatusView(TenantBaseView):
 
 
 class TenantProvisionView(TenantBaseView):
-    """/api/v1/tenants/<id>/provision -- first-time: create DB + container.
-
-    Runs on Celery -- returns 202 with {operation_id, task_id} immediately;
-    poll GET /api/v1/logs/operations/<operation_id> for progress.
-    """
 
     def post(self, tenant_id):
         with self.session() as session:
@@ -159,12 +136,6 @@ class TenantProvisionView(TenantBaseView):
 
 
 class TenantRedeployView(TenantBaseView):
-    """/api/v1/tenants/<id>/redeploy -- recreate the container in place.
-
-    Body (all optional): {"pull": true, "image": "ghcr.io/...:tag"}. Falls
-    through to the provision task if the tenant was never deployed, so this
-    action always does the sensible thing. Runs on Celery -- 202 response.
-    """
 
     def post(self, tenant_id):
         payload = request.get_json(silent=True) or {}
@@ -196,11 +167,6 @@ class TenantRedeployView(TenantBaseView):
 
 
 class TenantDbMigrateView(TenantBaseView):
-    """/api/v1/tenants/<id>/db-migrate -- create/upgrade the tenant schema.
-
-    Distinct from /migrate, which moves the container to another node.
-    Runs on Celery -- 202 response.
-    """
 
     def post(self, tenant_id):
         with self.session() as session:
@@ -221,11 +187,6 @@ class TenantDbMigrateView(TenantBaseView):
 
 
 class TenantStoreAdminView(TenantBaseView):
-    """/api/v1/tenants/<id>/store-admin -- seed a storefront login.
-
-    Body: {"email": "...", "password": "...", "name": "optional"}. Runs on
-    Celery -- 202 response.
-    """
 
     def post(self, tenant_id):
         payload = self.json_body()
@@ -315,12 +276,6 @@ class TenantLogsView(TenantBaseView):
 
 
 class TenantMigrateView(TenantBaseView):
-    """/api/v1/tenants/<id>/migrate -- move the container to another node.
-
-    Runs on Celery -- 202 response. The target node is resolved and checked
-    synchronously (cheap, DB-only) so an obviously-doomed request still fails
-    fast instead of becoming a 202 that immediately fails in the worker.
-    """
 
     def post(self, tenant_id):
         payload = self.json_body()
@@ -352,13 +307,6 @@ class TenantMigrateView(TenantBaseView):
 
 
 class TenantDatabaseMigrateView(TenantBaseView):
-    """/api/v1/tenants/<id>/migrate-database -- move data to another cluster.
-
-    Distinct from /migrate (which moves the container between nodes and copies
-    nothing) and from /db-migrate (which runs schema migrations in place).
-    Runs on Celery -- 202 response -- since it dumps and restores the whole
-    tenant database.
-    """
 
     def post(self, tenant_id):
         payload = self.json_body()
@@ -369,8 +317,6 @@ class TenantDatabaseMigrateView(TenantBaseView):
         with self.session() as session:
             controller = self.controller(session)
             tenant = controller.get(tenant_id)
-            # Resolved synchronously so an invalid or non-cluster target fails
-            # fast with a 4xx instead of becoming a 202 that dies in the worker.
             target = controller._require_cluster(payload["target_connection_id"])
             if tenant.database_connection_id == target.id:
                 raise ConflictError(f"Tenant is already on cluster '{target.name}'")
@@ -428,8 +374,6 @@ class TenantBackupListView(TenantBaseView):
         return self.ok(body, HTTP_200_OK)
 
     def post(self, tenant_id):
-        """Trigger a pg_dump backup now. No request body required. Runs on
-        Celery -- 202 response."""
         with self.session() as session:
             controller = self.controller(session)
             tenant = controller.get(tenant_id)
@@ -455,9 +399,6 @@ class TenantBackupDetailView(TenantBaseView):
 
 
 class TenantBackupRestoreView(TenantBaseView):
-    """/api/v1/tenants/<id>/backups/<backup_id>/restore -- runs on Celery,
-    202 response. The backup is looked up and checked synchronously (cheap,
-    DB-only) so restoring a failed/missing backup fails fast."""
 
     def post(self, tenant_id, backup_id):
         with self.session() as session:

@@ -1,10 +1,6 @@
 import 'dotenv/config';
 import { defineConfig } from 'drizzle-kit';
 
-/**
- * Drizzle owns the website's tables (the PascalCase ones Prisma used to own). The controller's
- * snake_case tables belong to Alembic, so they are excluded: a Drizzle migration must never touch them.
- */
 export default defineConfig({
     dialect: 'postgresql',
     schema: './db/schema.ts',

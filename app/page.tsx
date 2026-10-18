@@ -9,16 +9,13 @@ import { Contact } from '@/components/website/contact-section';
 
 import { Toaster } from 'react-hot-toast';
 
-// Plans are read per request, so an edit in /admin/plans shows here without a
-// rebuild rather than being baked into a static page.
 export const dynamic = 'force-dynamic';
 
 export default function Index() {
     return (
         <div className="min-h-screen">
             <Header />
-            {/* The hero is the page's primary content, so it belongs inside
-                <main> — it used to sit outside the landmark. */}
+            {}
             <main>
                 <HeroSection />
                 <Services />

@@ -1,8 +1,3 @@
-"""Deployment lifecycle: port allocation, container spec, deploy, teardown.
-
-Owns everything about *running* a tenant's application on a node. Knows nothing
-about domains or the edge proxy -- that lands in Phase 2.
-"""
 
 import shlex
 import uuid
@@ -18,6 +13,7 @@ from app.services import cluster_resolver
 from app.models.deployment import Deployment
 from app.models.server import ServerNode
 from app.services.docker_service import DockerService
+from app.services.port_allocator import allocate_port
 from app.services.ssh_service import SSHService
 
 
@@ -27,8 +23,6 @@ class DeploymentController(BaseController):
     STATUSES = Deployment.STATUSES
     ACTIVE_STATUSES = Deployment.ACTIVE_STATUSES
 
-    # Deployments are created by the provisioning pipeline, never from a raw
-    # API payload, so there is no writable field set.
     writable_fields = ()
 
     def clean(self, data, partial):  # pragma: no cover - not API-writable
@@ -36,13 +30,7 @@ class DeploymentController(BaseController):
             "Deployments are created by the provisioning pipeline, not directly"
         )
 
-    # ------------------------------------------------------------------
-    # queries
-    # ------------------------------------------------------------------
     def base_query(self):
-        # `server` is eager-loaded everywhere: templates and serializers read
-        # deployment.upstream (which needs the node) after the request session
-        # has closed, and a lazy load there raises DetachedInstanceError.
         return select(Deployment).options(joinedload(Deployment.server))
 
     def live_for(self, tenant):
@@ -60,11 +48,6 @@ class DeploymentController(BaseController):
         return deployment
 
     def current_for(self, tenant):
-        """The tenant's current slot -- live OR stopped.
-
-        `live_for` is for "is it serving traffic"; this is for "does it still
-        own a container and a port", which is what start/resize need.
-        """
         return self.session.scalars(
             self.base_query()
             .where(
@@ -106,64 +89,16 @@ class DeploymentController(BaseController):
             raise NotFoundError(f"Server '{deployment.server_id}' not found")
         return node
 
-    # ------------------------------------------------------------------
-    # port allocation
-    # ------------------------------------------------------------------
-    def taken_ports(self, server):
-        """Ports on `server` that must not be handed out.
-
-        Covers both live allocations and ports released recently enough that a
-        client could still hold a connection to the old container.
-        """
-        cutoff = datetime.now(timezone.utc) - timedelta(
-            seconds=self.settings.port_reuse_cooldown_seconds
-        )
-        rows = self.session.scalars(
-            select(Deployment.port).where(
-                Deployment.server_id == server.id,
-                Deployment.status.in_(self.ACTIVE_STATUSES)
-                | (Deployment.port_released_at > cutoff),
-            )
-        ).all()
-        return set(rows)
-
     def allocate_port(self, server, probe=True):
-        """Pick a free host port on `server`.
-
-        Serialized per-node with a transaction-scoped advisory lock so two
-        concurrent provisions cannot pick the same port. The
-        UniqueConstraint(server_id, port) is the backstop if anything bypasses
-        this path.
-        """
-        low = self.settings.tenant_port_range_start
-        high = self.settings.tenant_port_range_end
-
-        # Released automatically at commit/rollback -- no leak path.
-        self.session.execute(
-            text("SELECT pg_advisory_xact_lock(hashtext(:key))"),
-            {"key": f"port-alloc:{server.id}"},
+        return allocate_port(
+            self.session,
+            self.settings,
+            server,
+            self.settings.tenant_port_range_start,
+            self.settings.tenant_port_range_end,
+            probe=probe,
         )
 
-        taken = self.taken_ports(server)
-        # A non-Docker process could hold a port we think is free.
-        if probe:
-            try:
-                taken |= SSHService(server, self.settings).listening_ports()
-            except NodeUnreachableError:
-                # Allocation shouldn't hard-fail on a probe; the deploy step
-                # will surface an unreachable node with a clearer message.
-                pass
-
-        for port in range(low, high + 1):
-            if port not in taken:
-                return port
-        raise ConflictError(
-            f"No free host port on node '{server.name}' in range {low}-{high}"
-        )
-
-    # ------------------------------------------------------------------
-    # creation
-    # ------------------------------------------------------------------
     def create_for(
         self, tenant, server, recorder=None, image=None, application="storefront"
     ):
@@ -188,8 +123,6 @@ class DeploymentController(BaseController):
             server_id=server.id,
             application=application,
             image=image or self.settings.tenant_image,
-            # Includes the deployment id so a blue/green replacement on the
-            # same node cannot collide with (and force-remove) the live one.
             container_name=f"tenant_{tenant.tenant_slug}_{str(deployment_id)[:8]}",
             port=port,
             container_port=self.settings.tenant_container_port,
@@ -201,8 +134,6 @@ class DeploymentController(BaseController):
         try:
             self.session.flush()
         except IntegrityError as exc:
-            # Whole transaction is poisoned; surface it rather than retrying
-            # here, because BaseController.flush() would roll everything back.
             self.session.rollback()
             raise ConflictError(
                 f"Port {port} on '{server.name}' was taken concurrently"
@@ -221,9 +152,6 @@ class DeploymentController(BaseController):
             )
         return deployment
 
-    # ------------------------------------------------------------------
-    # container spec
-    # ------------------------------------------------------------------
     def tenant_environment(self, tenant, **extra):
         env = {
             "DATABASE_URL": cluster_resolver.tenant_dsn(self.session, tenant, self.settings),
@@ -235,11 +163,6 @@ class DeploymentController(BaseController):
         return env
 
     def container_spec(self, deployment, tenant, server):
-        """Docker parameters for this deployment.
-
-        The published host port is what makes the container reachable from the
-        edge proxy; `bind_ip` keeps it off any public interface.
-        """
         return {
             "name": deployment.container_name,
             "image": deployment.image,
@@ -263,9 +186,6 @@ class DeploymentController(BaseController):
             },
         }
 
-    # ------------------------------------------------------------------
-    # lifecycle
-    # ------------------------------------------------------------------
     def deploy(self, deployment, tenant, recorder=None):
         """Pull the image if needed and start the container."""
         server = self.node_for(deployment)
@@ -329,13 +249,6 @@ class DeploymentController(BaseController):
         return deployment
 
     def redeploy(self, deployment, tenant, recorder=None, pull=True, image=None):
-        """Recreate this deployment's container in place.
-
-        Keeps the same row and host port, so it neither doubles the node's
-        memory usage nor churns the port (which matters once the edge proxy is
-        routing to it). `run_container` force-removes the same-named container
-        first, so this is safe to repeat.
-        """
         server = self.node_for(deployment)
         docker = DockerService(server, self.settings)
 
@@ -351,8 +264,6 @@ class DeploymentController(BaseController):
         deployment.status = "deploying"
         self.session.flush()
 
-        # Always re-pull on redeploy: the usual reason to redeploy is that the
-        # tag now points at a new build.
         if pull:
             if recorder:
                 recorder.started("Pulling image", message=deployment.image)
@@ -402,14 +313,6 @@ class DeploymentController(BaseController):
         return deployment
 
     def run_db_migrations(self, deployment, tenant, recorder=None, server=None):
-        """Create/upgrade the tenant's schema.
-
-        Runs the Dockerfile's `migrate` stage image -- a separate tag from the
-        runtime image, which is a Next.js standalone build containing no
-        scripts/ or drizzle/. Running it as its own job (rather than from an
-        app replica) also means concurrent app starts cannot race for the
-        migration lock.
-        """
         server = server or self.node_for(deployment)
         docker = DockerService(server, self.settings)
         runtime_image = deployment.image
@@ -431,8 +334,6 @@ class DeploymentController(BaseController):
         if recorder:
             recorder.ok("Migrate image ready", message=image)
 
-        # Distinguish "you pushed the runner stage under this tag" from a real
-        # migration failure -- the symptoms are otherwise identical.
         if not docker.file_exists_in_image(image, probe):
             raise ConflictError(
                 f"Image '{image}' has no '{probe}', so it is the runner stage, "
@@ -475,15 +376,6 @@ class DeploymentController(BaseController):
     def create_store_admin(
         self, deployment, tenant, email, password, name=None, recorder=None, server=None
     ):
-        """Seed a storefront admin login for this tenant.
-
-        Runs the migrate-stage image's create-admin script. The schema must
-        already exist, so this belongs after run_db_migrations().
-
-        The password is piped in on stdin rather than passed as an argument:
-        anything in argv is readable from the node's process table while the
-        container runs, and would also land in the activity log.
-        """
         server = server or self.node_for(deployment)
         docker = DockerService(server, self.settings)
         image = self.settings.migrate_image_for(deployment.image)
@@ -507,8 +399,6 @@ class DeploymentController(BaseController):
                 details={"email": email, "name": name},  # never the password
             )
 
-        # `read -r` consumes the piped password; only the email and name are
-        # ever visible as arguments.
         inner = (
             f"read -r ADMIN_PW; exec node {shlex.quote(script)} "
             f'"$ADMIN_EMAIL" "$ADMIN_PW"'
@@ -550,10 +440,6 @@ class DeploymentController(BaseController):
         try:
             self.session.flush()
         except IntegrityError as exc:
-            # uq_deployments_live_per_tenant: only one 'live' row per tenant.
-            # Hitting this means a concurrent provision/migrate for the same
-            # tenant beat this one to it -- translate to the same clean 409
-            # every other write path here gets, instead of a raw 500.
             self.session.rollback()
             raise ConflictError(
                 "Another deployment for this tenant already went live "
@@ -564,11 +450,6 @@ class DeploymentController(BaseController):
         return deployment
 
     def teardown(self, deployment, recorder=None, force=True):
-        """Stop and remove the container, then release the port.
-
-        Order matters: the container must be gone *before* the port leaves the
-        pool, or a reallocation could collide with a lingering container.
-        """
         if deployment.status == "removed":
             return deployment
         server = self.node_for(deployment)
@@ -579,8 +460,6 @@ class DeploymentController(BaseController):
             if recorder:
                 recorder.ok("Container removed", message=deployment.container_name)
         except NodeUnreachableError as exc:
-            # Node gone: the container is unreachable anyway. Record it and
-            # still free the row, otherwise the port leaks forever.
             if recorder:
                 recorder.warn(
                     "Could not remove container",

@@ -50,8 +50,6 @@ export function ProfileForm({
         FormData
     >(updateProfileAction, undefined);
     const [imageError, setImageError] = useState('');
-    // Reads through to localStorage and re-renders on save, so the preview here
-    // and the avatar in the sidebar stay in step without a reload.
     const avatar = useAvatarUrl();
 
     function changeAvatar(event: React.ChangeEvent<HTMLInputElement>) {
@@ -85,8 +83,6 @@ export function ProfileForm({
                     size,
                     size,
                 );
-                // saveAvatarUrl dispatches the change event that useAvatarUrl
-                // subscribes to, so the preview and the sidebar both update from here.
                 saveAvatarUrl(canvas.toDataURL('image/jpeg', 0.82));
             };
             source.onerror = () => setImageError('Unable to read this image.');

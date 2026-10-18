@@ -3,16 +3,6 @@ import { and, desc, eq, ne } from 'drizzle-orm';
 import { db, schema } from '@/lib/db';
 import { controller } from '@/lib/controller-client';
 
-/**
- * The customer/subscription/plan side of a tenant.
- *
- * Tenants live in the controller's `tenants` table (Alembic-owned) while
- * customers, plans and subscriptions live in Prisma's — see
- * controller/README.md. Neither side can join across the boundary in one
- * query, so the two halves are fetched separately and matched here on the
- * subscription id that both carry.
- */
-
 export interface SubscriptionOption {
     id: string;
     customerName: string;
@@ -30,18 +20,8 @@ function displayName(user: { name: string | null; firstName: string | null; last
     return user.name ?? (full || user.email);
 }
 
-/**
- * Every UnityCommerce subscription, marked with whether a tenant already
- * claims it.
- *
- * Claimed ones are returned rather than filtered out so the picker can show
- * them greyed out with the store that holds them — a subscription vanishing
- * from the list with no explanation is the more confusing failure.
- */
 export async function listSubscriptionOptions(): Promise<SubscriptionOption[]> {
     const subscriptions = await db.query.subscription.findMany({
-        // Mirrors UNUSABLE_SUBSCRIPTION_STATUSES in the controller's
-        // account_resolver: a canceled subscription cannot take a new store.
         where: and(eq(schema.subscription.productId, 'unity_commerce'), ne(schema.subscription.status, 'CANCELED')),
         columns: { id: true, status: true, storeName: true },
         with: {
@@ -52,9 +32,6 @@ export async function listSubscriptionOptions(): Promise<SubscriptionOption[]> {
     });
     if (subscriptions.length === 0) return [];
 
-    // A controller outage must not take down the whole page — without this
-    // the "new tenant" form would 500 rather than simply not knowing which
-    // subscriptions are spoken for.
     const claims = new Map<string, string>();
     try {
         for (const tenant of (await controller.tenants.list()).results ?? []) {
@@ -81,6 +58,6 @@ export async function tenantsForUser(userId: string) {
     try {
         return (await controller.tenants.list({ user_id: userId })).results ?? [];
     } catch {
-        return null; // Controller unreachable; the page renders without the section.
+        return null;
     }
 }

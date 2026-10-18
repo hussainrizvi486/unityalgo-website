@@ -1,4 +1,3 @@
-"""Turning query-result cells into values the JSON encoder accepts, for every database engine."""
 
 import uuid
 from datetime import date, datetime, time as time_type, timedelta
@@ -6,13 +5,6 @@ from decimal import Decimal
 
 
 def jsonable(value):
-    """Coerce one query-result cell into something the JSON encoder handles.
-
-    psycopg2 hands back native Python types straight from the wire (Decimal
-    for NUMERIC, memoryview for bytea, UUID, date/time, ...) -- several of
-    which aren't JSON-serializable by default and would otherwise crash the
-    query endpoint with an opaque 500 on the first NUMERIC or bytea column.
-    """
     if value is None or isinstance(value, (str, int, float, bool)):
         return value
     if isinstance(value, Decimal):

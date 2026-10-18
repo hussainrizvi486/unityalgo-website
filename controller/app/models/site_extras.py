@@ -31,7 +31,6 @@ class SiteDomain(Base):
 
 
 class SiteMetric(Base):
-    """One reading of a running site: container CPU and memory, disk use and whether it answered a health check."""
     __tablename__ = 'site_metrics'
     __table_args__ = (Index('ix_site_metrics_site_ts', 'site_id', 'ts'),)
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
@@ -46,7 +45,6 @@ class SiteMetric(Base):
 
 
 class SiteTrial(Base):
-    """A customer's use of the free trial of a plan. It outlives the site, so deleting a trial site does not earn another."""
     __tablename__ = 'site_trials'
     __table_args__ = (UniqueConstraint('user_id', 'plan_id'),)
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
@@ -54,5 +52,4 @@ class SiteTrial(Base):
     plan_id: Mapped[str] = mapped_column(String(64))
     site_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
     started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-    # Set when the trial site first became usable; a trial whose site never got that far is given back.
     activated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

@@ -54,8 +54,6 @@ interface PlanFormProps {
 
 export function PlanForm({ action, defaultValues, submitLabel, products, currencies }: PlanFormProps) {
     const [state, formAction] = useActionState(action, undefined);
-    // Held in state so changing the currency reformats the price immediately,
-    // rather than only after a save and reload.
     const [currencyId, setCurrencyId] = useState(defaultValues?.currencyId ?? '');
     const selectedCurrency = currencies.find((c) => c.id === currencyId);
 
@@ -114,7 +112,12 @@ export function PlanForm({ action, defaultValues, submitLabel, products, currenc
                         <SelectTrigger id="currencyId"><SelectValue placeholder="Select a currency" /></SelectTrigger>
                         <SelectContent>
                             {currencies.map((c) => (
-                                <SelectItem key={c.id} value={c.id}>{c.code} — {c.name}</SelectItem>
+                                <SelectItem key={c.id} value={c.id}>
+                                    <span className="flex items-center gap-2">
+                                        <span className="w-8 shrink-0 text-center font-semibold">{c.symbol}</span>
+                                        {c.code} — {c.name}
+                                    </span>
+                                </SelectItem>
                             ))}
                         </SelectContent>
                     </Select>
@@ -130,8 +133,6 @@ export function PlanForm({ action, defaultValues, submitLabel, products, currenc
                         min={0}
                         defaultValue={defaultValues?.priceAmount}
                         placeholder="49"
-                        // Follows the currency chosen above, so the preview on
-                        // blur is the currency the plan will actually charge.
                         numberFormat={selectedCurrency?.numberFormat}
                         symbol={selectedCurrency?.symbol}
                     />

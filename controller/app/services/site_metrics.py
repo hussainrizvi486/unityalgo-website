@@ -17,10 +17,6 @@ def _round(value, digits=1):
 
 
 def bucketed(rows, span, interval_seconds):
-    """Average readings into at most MAX_POINTS evenly spaced buckets, so a month does not send thousands of points.
-
-    A bucket is `up` for the share of its readings that answered a health check (1 = all of them).
-    """
     width = max(interval_seconds, span.total_seconds() / MAX_POINTS)
     groups = {}
     for row in rows:
@@ -48,7 +44,6 @@ def summarize(rows):
     memory = [r.memory_mb for r in rows if r.memory_mb is not None]
     response = [r.response_ms for r in rows if r.response_ms is not None]
     storage = [r.storage_mb for r in rows if r.storage_mb is not None]
-    # An outage is a run of failed checks, however long: two failures in a row are one outage.
     outages, previous = 0, True
     for row in rows:
         if not row.healthy and previous:

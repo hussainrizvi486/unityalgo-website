@@ -9,7 +9,7 @@ import {
     Store,
     UserRound,
 } from 'lucide-react';
-import type { AddOn, Plan, SubscriptionStatus } from '@/db/types';
+import type { AddOn, Currency, Plan, SubscriptionStatus } from '@/db/types';
 import {
     computeMonthlyTotal,
     formatAddOnPrice,
@@ -28,7 +28,7 @@ interface Profile {
 interface SubscriptionSummary {
     status: SubscriptionStatus;
     currentPeriodEnd: Date | null;
-    plan: Plan;
+    plan: Plan & { currency?: Currency | null };
     addOns: AddOn[];
 }
 
@@ -131,13 +131,7 @@ export function OverviewClient({
                             </span>
                         </div>
                     </div>
-                    {/* <Link
-                        href="/dashboard/settings"
-                        className="mt-6 flex h-8 items-center justify-center gap-2 rounded-full border border-border portal-text-body font-semibold text-foreground/80 hover:bg-muted"
-                    >
-                        Manage profile
-                        <ArrowRight className="h-4 w-4" />
-                    </Link> */}
+                    {}
                     <Button asChild className="mt-6">
                         <Link href="/dashboard/settings">
                             Manage profile
@@ -189,6 +183,7 @@ export function OverviewClient({
                                                     <p className="portal-text-caption text-primary-foreground/35">
                                                         {formatCurrency(
                                                             monthlyTotal,
+                                                            subscription.plan.currency,
                                                         )}
                                                         /mo with add-ons
                                                     </p>

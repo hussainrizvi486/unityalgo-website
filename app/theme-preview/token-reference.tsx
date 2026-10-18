@@ -2,11 +2,6 @@
 
 import * as React from 'react';
 
-/**
- * Live reference for the design tokens. Every value shown is read from the cascade at the point where the
- * swatch is drawn, so it reflects the active scope and any edit to app/globals.css with nothing copied here.
- */
-
 const COLORS = [
     'background', 'foreground', 'card', 'primary', 'primary-foreground', 'secondary', 'secondary-foreground', 'muted',
     'muted-foreground', 'accent', 'border', 'input', 'ring', 'success', 'warning', 'destructive', 'destructive-foreground',
