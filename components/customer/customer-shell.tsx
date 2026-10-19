@@ -9,9 +9,10 @@ import {
     Settings,
     AppWindow,
     Globe,
-    Component,
+    // Component,
 } from 'lucide-react';
 import { NotificationBell } from './notification-bell';
+import { ProductTour } from './product-tour';
 import type { listNotifications } from '@/lib/customer-notifications';
 import { customerLogoutAction } from '@/app/customer/actions';
 import { useAvatarUrl } from '@/lib/use-avatar';
@@ -28,7 +29,7 @@ const pages = [
     { title: 'Subscription', description: 'Your plan, billing and invoices', href: '/dashboard/subscription', icon: CreditCard },
     { title: 'Support', description: 'Ask for help and follow your tickets', href: '/dashboard/support', icon: Headphones },
     { title: 'Settings', description: 'Profile, password and addresses', href: '/dashboard/settings', icon: Settings },
-    { title: 'Components', description: 'Live reference for the portal design system', href: '/dashboard/components', icon: Component },
+    // { title: 'Components', description: 'Live reference for the portal design system', href: '/dashboard/components', icon: Component },
 ];
 
 const groups: SidebarNavGroup[] = [
@@ -47,11 +48,14 @@ export function CustomerShell({
     user,
     notifications,
     initialDark,
+    tourPending,
 }: {
     children: React.ReactNode;
     user: CustomerShellUser;
     notifications: Awaited<ReturnType<typeof listNotifications>>;
     initialDark: boolean;
+    /** True for a customer who has not seen the portal tour yet. */
+    tourPending: boolean;
 }) {
     const pathname = usePathname();
     const avatarUrl = useAvatarUrl();
@@ -84,8 +88,9 @@ export function CustomerShell({
                         </div>
                     </div>
                     <div className="flex items-center gap-1">
-                        <ThemeToggle />
-                        <NotificationBell initial={notifications} />
+                        <ProductTour autoStart={tourPending} />
+                        <span data-tour="theme"><ThemeToggle /></span>
+                        <span data-tour="notifications"><NotificationBell initial={notifications} /></span>
                     </div>
                 </header>
                 <main className="portal-content">{children}</main>

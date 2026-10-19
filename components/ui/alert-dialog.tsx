@@ -103,13 +103,17 @@ function AlertDialogDescription({
 
 function AlertDialogAction({
   className,
+  variant = "default",
+  asChild,
   ...props
-}: React.ComponentProps<typeof AlertDialogPrimitive.Action>) {
+}: React.ComponentProps<typeof AlertDialogPrimitive.Action> & { variant?: "default" | "destructive" }) {
   return (
     <AlertDialogPrimitive.Action
       data-slot="button"
       data-size="default"
-      className={cn(buttonVariants(), className)}
+      asChild={asChild}
+      // With asChild the child Button brings its own variant; adding the default one too would override its text colour.
+      className={cn(asChild ? undefined : buttonVariants({ variant }), className)}
       {...props}
     />
   );

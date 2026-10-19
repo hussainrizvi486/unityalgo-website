@@ -242,6 +242,8 @@ export const user = pgTable("User", {
 	companySize: text(),
 	preferredCurrency: text(),
 	notes: text(),
+	/** When the customer finished or skipped the portal tour; null means it has not been offered yet. */
+	tourCompletedAt: timestamp({ precision: 3, mode: 'date' }),
 }, (table) => [
 	uniqueIndex("User_email_key").using("btree", table.email.asc().nullsLast().op("text_ops")),
 	index("User_role_idx").using("btree", table.role.asc().nullsLast().op("enum_ops")),

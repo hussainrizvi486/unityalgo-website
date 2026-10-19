@@ -205,7 +205,7 @@ export const designTokens = {
     "success": "#4ade80",
     "warning": "#fbbf24",
     "destructive": "#f87171",
-    "destructive-foreground": "#0a0a0a",
+    "destructive-foreground": "#ffffff",
     "scrim": "#000000",
     "on-scrim": "#ffffff",
     "fs-micro": "0.625rem",

@@ -7,12 +7,21 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 
 interface CoverImageFieldProps {
-    name: string;
+    /** When set, the address is also posted under this name. */
+    name?: string;
     defaultValue?: string;
+    /** Controlled use: the parent owns the address. */
+    value?: string;
+    onValueChange?: (value: string) => void;
 }
 
-export function CoverImageField({ name, defaultValue }: CoverImageFieldProps) {
-    const [value, setValue] = useState(defaultValue ?? '');
+export function CoverImageField({ name, defaultValue, value: controlled, onValueChange }: CoverImageFieldProps) {
+    const [inner, setInner] = useState(defaultValue ?? '');
+    const value = controlled ?? inner;
+    const setValue = (next: string) => {
+        setInner(next);
+        onValueChange?.(next);
+    };
     const [uploading, setUploading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -84,11 +93,11 @@ export function CoverImageField({ name, defaultValue }: CoverImageFieldProps) {
             {value && (
                 <div className="mt-3 w-40 aspect-video rounded-md overflow-hidden border border-border/60 bg-muted">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={value} alt="Cover preview" className="w-full h-full object-cover" />
+                    <img src={value} alt="Cover preview" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
                 </div>
             )}
 
-            <input type="hidden" name={name} value={value} readOnly />
+            {name && <input type="hidden" name={name} value={value} readOnly />}
         </div>
     );
 }

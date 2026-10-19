@@ -8,7 +8,7 @@
     "prebuild": "node scripts/sync-tokens.mjs",
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
+    "start": "next start -p 6000",
     "lint": "eslint",
     "lint:tokens": "node scripts/check-tokens.mjs",
     "lint:all": "eslint && tsc --noEmit && node scripts/check-tokens.mjs",

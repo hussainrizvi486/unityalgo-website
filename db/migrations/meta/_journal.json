@@ -43,6 +43,13 @@
       "when": 1792318643338,
       "tag": "0005_rate_limits_and_otp_attempts",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792415542496,
+      "tag": "0006_portal_tour",
+      "breakpoints": true
     }
   ]
 }

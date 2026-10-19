@@ -1,43 +1,72 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# One .gitignore for the whole repository: the Next.js website (root) and the controller (controller/).
 
-# dependencies
-/node_modules
-/.pnp
+# ---------------------------------------------------------------- secrets
+# Environment files at any depth. Only the .env.example templates are committed.
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+id_controller_dev*
+
+# ---------------------------------------------------------------- node / next.js
+node_modules/
+.pnp
 .pnp.*
 .yarn/*
 !.yarn/patches
 !.yarn/plugins
 !.yarn/releases
 !.yarn/versions
-
-# testing
-/coverage
-
-# next.js
 /.next/
 /out/
-
-# production
 /build
-
-# misc
-.DS_Store
-*.pem
-
-# debug
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.pnpm-debug.log*
-
-# env files (can opt-in for committing if needed)
-.env*
-!.env.example
-
-# vercel
-.vercel
-
-# typescript
+/coverage
 *.tsbuildinfo
 next-env.d.ts
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+.pnpm-debug.log*
+.vercel
+
+# Files an admin uploads at runtime (the folder itself is kept).
+/public/uploads/*
+!/public/uploads/.gitkeep
+
+# ---------------------------------------------------------------- python (controller)
+__pycache__/
+*.py[cod]
+*.egg-info/
+/controller/env/
+/controller/venv/
+/controller/.venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Celery Beat's schedule and pid files: written by the running scheduler.
+celerybeat-schedule*
+celerybeat.pid
+
+# Site and tenant backups the controller writes locally.
+/controller/backups/*
+!/controller/backups/.gitkeep
+
+# ---------------------------------------------------------------- logs
+*.log
+
+# ---------------------------------------------------------------- editors / OS / tools
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+# Personal Claude Code settings; the shared .claude/settings.json is committed.
+.claude/settings.local.json
+.claude/*.local.*
+
+# ---------------------------------------------------------------- local notes
 todo.md

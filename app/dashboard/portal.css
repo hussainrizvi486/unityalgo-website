@@ -488,3 +488,23 @@
         animation: none !important;
     }
 }
+
+.dashboard.dark .deploy-step[data-state='failed'] .deploy-face {
+    background: color-mix(in srgb, var(--destructive) 60%, var(--background));
+    border-color: transparent;
+}
+
+/* The blog editor's text follows the theme: the typography plugin's own colours are fixed light-mode greys. */
+.dashboard div.ql-editor {
+    --tw-prose-body: var(--foreground);
+    --tw-prose-headings: var(--foreground);
+    --tw-prose-bold: var(--foreground);
+    --tw-prose-links: var(--primary);
+    --tw-prose-quotes: var(--foreground);
+    --tw-prose-quote-borders: var(--border);
+    --tw-prose-bullets: var(--muted-foreground);
+    --tw-prose-counters: var(--muted-foreground);
+    --tw-prose-hr: var(--border);
+    --tw-prose-code: var(--foreground);
+    --tw-prose-captions: var(--muted-foreground);
+}

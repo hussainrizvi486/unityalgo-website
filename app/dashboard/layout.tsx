@@ -20,6 +20,7 @@ export default async function CustomerPortalLayout({
     return (
         <CustomerShell
             initialDark={dark}
+            tourPending={!user.tourCompletedAt}
             notifications={await listNotifications(user.id)}
             user={{
                 firstName: user.firstName || user.name || 'Customer',

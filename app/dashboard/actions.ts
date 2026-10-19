@@ -20,6 +20,12 @@ export interface PortalActionState {
     success?: string;
 }
 
+/** Records that the portal tour was finished or skipped, so it is not offered again on its own. */
+export async function completeTourAction() {
+    const user = await requireCustomer();
+    await db.update(schema.user).set({ tourCompletedAt: new Date() }).where(eq(schema.user.id, user.id));
+}
+
 export async function revokeSessionAction(formData: FormData) {
     const current = await requireCustomerSession();
     const id = String(formData.get('sessionId') || '');

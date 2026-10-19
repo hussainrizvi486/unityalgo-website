@@ -20,8 +20,11 @@ import {
 import { cn } from '@/utils';
 
 interface QuillEditorProps {
-    name: string;
+    /** When set, the HTML is also posted under this name. */
+    name?: string;
     defaultValue?: string;
+    /** Called with the HTML after every edit. */
+    onChange?: (html: string) => void;
 }
 
 function ToolbarButton({
@@ -55,7 +58,11 @@ function ToolbarButton({
     );
 }
 
-export function QuillEditor({ name, defaultValue }: QuillEditorProps) {
+export function QuillEditor({ name, defaultValue, onChange }: QuillEditorProps) {
+    const onChangeRef = useRef(onChange);
+    useEffect(() => {
+        onChangeRef.current = onChange;
+    });
     const containerRef = useRef<HTMLDivElement>(null);
     const quillRef = useRef<Quill | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -80,16 +87,21 @@ export function QuillEditor({ name, defaultValue }: QuillEditorProps) {
 
         if (defaultValue) {
             quill.clipboard.dangerouslyPasteHTML(defaultValue);
+            quill.history.clear();
         }
 
-        const refreshState = (range?: Range | null) => {
+        const refreshState = (range?: Range | null, source?: string) => {
             setHtml(quill.root.innerHTML);
-            setFormat(quill.getFormat(range ?? quill.getSelection() ?? undefined));
+            // Only what the person typed is reported, so loading a saved post does not count as an edit.
+            if (source === 'user') onChangeRef.current?.(quill.root.innerHTML);
+            // getFormat() with no range focuses the editor, which would pull the cursor back from any other field the moment it is clicked.
+            const selection = range ?? quill.getSelection();
+            setFormat(selection ? quill.getFormat(selection) : {});
             setCanUndo(quill.history.stack.undo.length > 0);
             setCanRedo(quill.history.stack.redo.length > 0);
         };
 
-        quill.on('text-change', () => refreshState());
+        quill.on('text-change', (_delta, _old, source) => refreshState(undefined, source));
         quill.on('selection-change', (range) => refreshState(range));
 
         return () => {
@@ -220,11 +232,11 @@ export function QuillEditor({ name, defaultValue }: QuillEditorProps) {
 
             <div
                 ref={containerRef}
-                className="[&_.ql-editor]:prose [&_.ql-editor]:prose-sm [&_.ql-editor]:max-w-none [&_.ql-editor]:min-h-80 [&_.ql-editor]:px-4 [&_.ql-editor]:py-3 [&_.ql-editor]:outline-none [&_.ql-editor.ql-blank::before]:not-italic [&_.ql-editor.ql-blank::before]:text-muted-foreground"
+                className="[&_.ql-editor]:text-foreground [&_.ql-editor]:prose [&_.ql-editor]:prose-sm [&_.ql-editor]:max-w-none [&_.ql-editor]:min-h-80 [&_.ql-editor]:px-4 [&_.ql-editor]:py-3 [&_.ql-editor]:outline-none [&_.ql-editor.ql-blank::before]:not-italic [&_.ql-editor.ql-blank::before]:text-muted-foreground"
             />
 
             <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
-            <input type="hidden" name={name} value={html} readOnly />
+            {name && <input type="hidden" name={name} value={html} readOnly />}
         </div>
     );
 }
