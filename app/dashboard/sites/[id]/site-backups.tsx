@@ -60,7 +60,6 @@ function Schedule({ site, backups }: { site: CustomerSite; backups: SiteBackups 
                         </SelectContent>
                     </Select>
                 </FormField>
-                <FormField id="retention" label="Keep the latest">
                 <FormField id="retention" label="Keep the latest" help="Older automatic backups are removed.">
                 {/* <FormField id="retention" label="Keep the latest" help=""> */}
                     <Input id="retention" name="retention" type="number" min={1} max={30} value={retention} onChange={(e) => setRetention(e.target.value)} disabled={schedule === 'off'} />
