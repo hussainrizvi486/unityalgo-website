@@ -32,6 +32,13 @@ Celery requires Redis (`REDIS_URL`). Without a worker running, the queued
 operations (provision, redeploy, migrate, backup) will be accepted but never
 progress past `pending`.
 
+For local development, start Redis from the repo root with
+`docker compose up -d redis`. Queue data persists in a named volume.
+On Windows, run `python main.py worker --pool=solo --concurrency=1`
+from `controller/`; restart this process after a reboot. Docker and Compose
+must also be installed on each worker VM, and the node's SSH user must have
+Docker access. Use **Connect & refresh specs** after preparing a worker.
+
 ### Starting everything at once
 
 Because a missing process shows up as a *partial* failure rather than an

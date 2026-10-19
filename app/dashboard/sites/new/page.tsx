@@ -72,9 +72,7 @@ export default async function CreateSitePage({
             )}
             {capabilities?.configured && capabilities.accepting === false && (
                 <Notice tone="warning" className="mt-6">
-                    We are at full capacity right now, so new sites cannot be
-                    created. We are adding servers and will open site creation
-                    again shortly. Please check back soon.
+                    {capabilities.unavailable_reason || 'Site creation is temporarily unavailable. Please contact support.'}
                 </Notice>
             )}
             <SiteForm

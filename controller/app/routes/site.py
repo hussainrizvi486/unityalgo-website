@@ -82,11 +82,9 @@ def build_steps(site):
         result.append({"key": key, "label": label, "state": state})
     return result
 
-
-NO_CAPACITY = (
-    "We're at full capacity right now, so we can't create new sites. We're adding servers and will open "
-    "site creation again shortly. Please check back soon."
-)
+NO_CAPACITY = ("We're at full capacity right now, so we can't create new sites. We're adding servers and will open "
+               "site creation again shortly. Please check back soon.")
+HOSTING_UNAVAILABLE = 'Site hosting is not ready yet. Please contact support.'
 
 
 def fits_site(
@@ -415,15 +413,13 @@ class SitesView(BaseView):
                     break
             if not server:
                 from app.services.activity_logger import ActivityLogger
-
-                ActivityLogger().event(
-                    "deployment",
-                    "site.create",
-                    "No capacity for a new site",
-                    status="warning",
-                    message="No worker could take %d MB RAM, %g vCPU, %d GB storage (full, unhealthy, or at its site limit)."
-                    % (resources["ram_mb"], resources["cpu"], resources["storage_gb"]),
-                )
+                if not candidates:
+                    workers = session.scalars(select(ServerNode).where(ServerNode.role == 'worker')).all()
+                    ActivityLogger().event('deployment', 'site.create', 'No healthy worker for a new site', status='warning',
+                                           message='; '.join(f'{node.name}: status={node.last_check_status or "not checked"}, active={node.is_active}, frappe_enabled={node.frappe_enabled}' for node in workers) or 'No worker servers are registered.')
+                    raise ConflictError(HOSTING_UNAVAILABLE)
+                ActivityLogger().event('deployment', 'site.create', 'No capacity for a new site', status='warning',
+                                       message='No healthy worker could take %d MB RAM, %g vCPU, %d GB storage (full or at its site limit).' % (resources['ram_mb'], resources['cpu'], resources['storage_gb']))
                 raise ConflictError(NO_CAPACITY)
             port = allocate_port(session, self.settings, server, self.settings.frappe_port_start, self.settings.frappe_port_end)
             site = Site(
@@ -1494,25 +1490,22 @@ class AdminQueueStatusView(BaseView):
 
 class SiteCapabilitiesView(BaseView):
     def get(self):
-        return self.ok(
-            {
-                "apps": self.settings.frappe_available_apps,
-                "configured": bool(self.settings.frappe_site_domain),
-                "domain_suffix": self.settings.frappe_site_domain,
-                "accepting": self.accepting_sites(),
-            }
-        )
+        accepting, reason = self.site_availability()
+        return self.ok({'apps': self.settings.frappe_available_apps, 'configured': bool(self.settings.frappe_site_domain),
+                        'domain_suffix': self.settings.frappe_site_domain, 'accepting': accepting,
+                        'unavailable_reason': reason})
 
     def accepting_sites(self):
+        return self.site_availability()[0]
+
+    def site_availability(self):
+        """Can any server take another site? Health, container slots and the per-server site limit only: whether
+        a particular plan fits is checked when the site is created."""
         with self.session() as session:
-            nodes = session.scalars(
-                select(ServerNode).where(
-                    ServerNode.is_active.is_(True),
-                    ServerNode.role == "worker",
-                    ServerNode.frappe_enabled.is_(True),
-                    ServerNode.last_check_status == "ok",
-                )
-            ).all()
+            nodes = session.scalars(select(ServerNode).where(ServerNode.is_active.is_(True), ServerNode.role == 'worker',
+                                                             ServerNode.frappe_enabled.is_(True), ServerNode.last_check_status == 'ok')).all()
+            if not nodes:
+                return False, HOSTING_UNAVAILABLE
             load = ServerController(session, self.settings).node_load()
             for node in nodes:
                 row = session.execute(
@@ -1529,8 +1522,8 @@ class SiteCapabilitiesView(BaseView):
                     )
                 )
                 if fits_site(node, slots, used, reserved, self.settings):
-                    return True
-        return False
+                    return True, None
+        return False, NO_CAPACITY
 
 
 class SiteSlugCheckView(BaseView):

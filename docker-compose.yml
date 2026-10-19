@@ -1,4 +1,14 @@
 services:
+  redis:
+    image: redis:7-alpine
+    container_name: unityalgo-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - unityalgo_redis_data:/data
+
   postgres:
     image: postgres:16
     container_name: unityalgo-db
@@ -13,4 +23,5 @@ services:
       - unityalgo_cloud_data:/var/lib/postgresql/data
 
 volumes:
+  unityalgo_redis_data:
   unityalgo_cloud_data:

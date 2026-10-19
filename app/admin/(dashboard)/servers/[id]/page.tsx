@@ -85,7 +85,7 @@ export default async function ServerDetailPage({ params, searchParams }: PagePro
 
             {/* --- specs --- */}
             <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                <Spec icon={Cpu} label="CPU cores" value={server.cpu_cores ? String(server.cpu_cores) : '—'} />
+                <Spec icon={Cpu} label="CPU cores" value={server.specs.cpu_cores ? String(server.specs.cpu_cores) : '—'} />
                 <Spec
                     icon={MemoryStick}
                     label="Memory"
@@ -94,17 +94,17 @@ export default async function ServerDetailPage({ params, searchParams }: PagePro
                 <Spec
                     icon={HardDrive}
                     label="Disk"
-                    value={server.disk_total_gb ? `${server.disk_used_gb ?? 0} / ${server.disk_total_gb} GB` : '—'}
+                    value={server.specs.disk_total_gb ? `${server.specs.disk_used_gb ?? 0} / ${server.specs.disk_total_gb} GB` : '—'}
                 />
                 <Spec icon={Network} label="Containers" value={`${server.active_containers ?? 0}${server.max_containers ? ` / ${server.max_containers}` : ''}`} />
                 {server.frappe_enabled && <Spec icon={Globe} label="Max sites" value={server.max_sites != null ? String(server.max_sites) : 'No limit'} />}
             </div>
 
             <div className="mt-3 rounded-xl border border-border/60 bg-card p-4 portal-text-body text-foreground/70">
-                <span className="text-muted-foreground">OS:</span> {server.os_name ?? 'not collected'}
-                {server.kernel_version ? <> · <span className="text-muted-foreground">kernel</span> {server.kernel_version}</> : null}
-                {server.architecture ? <> · <span className="text-muted-foreground">arch</span> {server.architecture}</> : null}
-                {server.docker_version ? <> · <span className="text-muted-foreground">Docker</span> {server.docker_version}</> : null}
+                <span className="text-muted-foreground">OS:</span> {server.specs.os_name ?? 'not collected'}
+                {server.specs.kernel_version ? <> · <span className="text-muted-foreground">kernel</span> {server.specs.kernel_version}</> : null}
+                {server.specs.architecture ? <> · <span className="text-muted-foreground">arch</span> {server.specs.architecture}</> : null}
+                {server.specs.docker_version ? <> · <span className="text-muted-foreground">Docker</span> {server.specs.docker_version}</> : null}
                 {server.last_checked_at ? (
                     <div className="mt-1 portal-text-caption text-muted-foreground">
                         Last checked {new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(server.last_checked_at))}

@@ -30,8 +30,8 @@ export default async function AdminServersPage({ searchParams }: ServersPageProp
         id: server.id,
         name: server.name,
         specs:
-            (server.os_name ?? 'specs not collected')
-            + (server.docker_version ? ` · Docker ${server.docker_version}` : ''),
+            (server.specs.os_name ?? 'specs not collected')
+            + (server.specs.docker_version ? ` · Docker ${server.specs.docker_version}` : ''),
         ipAddress: server.ip_address,
         privateIp: server.private_ip,
         role: server.role,
