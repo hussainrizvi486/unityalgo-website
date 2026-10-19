@@ -1,0 +1,19 @@
+[Unit]
+Description=UnityAlgo controller Celery worker (site provisioning, backups, app installs)
+After=network.target postgresql.service redis-server.service
+Wants=redis-server.service
+
+[Service]
+User=frappe
+Group=frappe
+WorkingDirectory=/home/frappe/unityalgo/unityalgo-website/controller
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/home/frappe/unityalgo/unityalgo-website/controller/.venv/bin/python main.py worker
+Restart=always
+RestartSec=5
+# A provisioning task can run for many minutes: let it finish on a normal stop.
+KillSignal=SIGTERM
+TimeoutStopSec=300
+
+[Install]
+WantedBy=multi-user.target

@@ -1,6 +1,11 @@
-"cd /home/frappe/products/controller-server
+"cd /home/frappe/unityalgo/unityalgo-website
 git pull
 
+# The website's migrations come first: the controller's tables link to them.
+npm ci && npm run db:migrate
+
+cd controller
 .venv/bin/pip install -r requirements.txt
-cd admin-ui && npm install && npm run build && cd ..
-sudo systemctl restart controller.service controller-worker.service"
+.venv/bin/python main.py migrate
+
+sudo systemctl restart controller.service controller-worker.service controller-beat.service controller-terminal.service"

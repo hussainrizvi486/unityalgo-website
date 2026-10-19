@@ -1,0 +1,17 @@
+[Unit]
+Description=UnityAlgo controller Celery beat (scheduler)
+After=network.target redis-server.service
+Wants=redis-server.service
+
+[Service]
+User=frappe
+Group=frappe
+WorkingDirectory=/home/frappe/unityalgo/unityalgo-website/controller
+Environment=PYTHONUNBUFFERED=1
+# Exactly one beat may run. It keeps its schedule file in the working directory.
+ExecStart=/home/frappe/unityalgo/unityalgo-website/controller/.venv/bin/python main.py beat
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

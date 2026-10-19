@@ -1,0 +1,20 @@
+[Unit]
+Description=UnityAlgo controller API (gunicorn)
+After=network.target postgresql.service redis-server.service
+Wants=redis-server.service
+
+[Service]
+User=frappe
+Group=frappe
+WorkingDirectory=/home/frappe/unityalgo/unityalgo-website/controller
+Environment=PYTHONUNBUFFERED=1
+Environment=GUNICORN_BIND=127.0.0.1:8100
+RuntimeDirectory=controller-server
+RuntimeDirectoryMode=0750
+ExecStart=/home/frappe/unityalgo/unityalgo-website/controller/.venv/bin/gunicorn -c gunicorn.conf.py "app.router:create_app()"
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

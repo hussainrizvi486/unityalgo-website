@@ -1,0 +1,15 @@
+[Unit]
+Description=UnityAlgo controller WebSocket service (admin terminal and live streams)
+After=network.target postgresql.service
+
+[Service]
+User=frappe
+Group=frappe
+WorkingDirectory=/home/frappe/unityalgo/unityalgo-website/controller
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/home/frappe/unityalgo/unityalgo-website/controller/.venv/bin/python ws_terminal_main.py
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
