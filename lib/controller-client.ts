@@ -412,6 +412,16 @@ export interface SiteTrialInfo {
     plan_id: string | null;
 }
 
+export interface SystemStatus {
+    redis: { ok: boolean; latency_ms: number | null; version: string | null; memory: string | null; clients: number | null; uptime_seconds: number | null; error: string | null };
+    queues: { name: string; waiting: number | null }[];
+    workers: { name: string; pid: number | null; concurrency: number | null; processes: number; processed: number; running: { id: string; name: string; started_at: number | null }[]; reserved: number }[];
+    worker_error: string | null;
+    beat: { alive: boolean; last_seen_seconds: number | null; interval_seconds: number };
+    sites: { id: string; slug: string; status: string; message: string; age_seconds: number; stuck: boolean }[];
+    checked_at: string;
+}
+
 export interface CustomerSite {
     url: string;
     id: string;
@@ -650,6 +660,7 @@ export const controller = {
                 '/api/v1/sites/admin/queue',
                 { timeoutMs: 10_000 },
             ),
+        adminSystem: () => request<SystemStatus>('/api/v1/sites/admin/system', { timeoutMs: 15_000 }),
         adminForceDelete: (id: string) =>
             request<{ queued: boolean }>(
                 `/api/v1/sites/admin/${encodeURIComponent(id)}/force-delete`,

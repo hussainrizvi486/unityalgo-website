@@ -1488,6 +1488,14 @@ class AdminQueueStatusView(BaseView):
         )
 
 
+class AdminSystemStatusView(BaseView):
+    def get(self):
+        from app.services.system_status import collect
+
+        with self.session() as session:
+            return self.ok(collect(self.settings, session))
+
+
 class SiteCapabilitiesView(BaseView):
     def get(self):
         accepting, reason = self.site_availability()
@@ -1567,6 +1575,7 @@ class SiteRoutes:
             ("/<site_id>/reset-password", SiteResetPasswordView, "reset_password"),
             ("/admin", AdminSitesView, "admin_list"),
             ("/admin/queue", AdminQueueStatusView, "admin_queue"),
+            ("/admin/system", AdminSystemStatusView, "admin_system"),
             (
                 "/admin/<site_id>/force-delete",
                 AdminSiteForceDeleteView,

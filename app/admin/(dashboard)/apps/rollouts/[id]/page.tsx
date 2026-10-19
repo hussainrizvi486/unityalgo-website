@@ -13,7 +13,7 @@ import { ControllerOffline } from '@/components/admin/controller-offline';
 import { AdminPageError, AdminPageNotice } from '@/components/admin/page-header';
 import { formatDateTime } from '@/lib/admin-format';
 import { ISOLATION_NOTE, rolloutBadge, rolloutSiteBadge, shortSha, versionLabel } from '@/lib/app-store';
-import { AutoRefresh } from './auto-refresh';
+import { AutoRefresh } from '@/components/admin/auto-refresh';
 
 export const metadata = { title: 'Rollout' };
 

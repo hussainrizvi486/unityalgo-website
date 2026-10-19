@@ -1,6 +1,6 @@
 
 from celery import Celery
-from celery.signals import worker_process_init
+from celery.signals import before_task_publish, worker_process_init
 
 from app.config import settings
 
@@ -16,8 +16,13 @@ celery_app = Celery(
         "app.tasks.app_tasks",
         "app.tasks.metrics_tasks",
         "app.tasks.trial_tasks",
+        "app.tasks.system_tasks",
     ],
 )
+
+HEARTBEAT_SECONDS = 30
+BEAT_KEY = "controller:beat:last"
+
 
 def _beat_schedule():
     schedule = {
@@ -25,6 +30,10 @@ def _beat_schedule():
             "task": "app.tasks.health_tasks.health_check_sweep",
             "schedule": settings.health_check_interval_seconds,
         },
+    }
+    schedule["system-heartbeat"] = {
+        "task": "system.heartbeat",
+        "schedule": HEARTBEAT_SECONDS,
     }
     schedule["site-scheduled-backups"] = {
         "task": "site.scheduled_backups",
@@ -72,3 +81,19 @@ def _fresh_database_connections(**_kwargs):
     from app.db import database
 
     database.engine.dispose(close=False)
+
+
+@before_task_publish.connect
+def _note_beat_alive(headers=None, **_kwargs):
+    """Runs in the process that publishes a task. Only Beat publishes the heartbeat, so this records that Beat is alive."""
+    if (headers or {}).get("task") != "system.heartbeat":
+        return
+    import time
+
+    import redis
+
+    try:
+        client = redis.Redis.from_url(settings.celery_broker_url or settings.redis_url, socket_timeout=2, socket_connect_timeout=2)
+        client.set(BEAT_KEY, str(time.time()), ex=600)
+    except Exception:
+        pass
