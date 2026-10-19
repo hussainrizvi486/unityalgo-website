@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/select';
 import { StepIndicator } from '@/components/customer/step-indicator';
 import { CountrySelect } from '@/components/ui/country-select';
+import { Autocomplete } from '@/components/ui/autocomplete';
 import { currencyOfCountry, findCountry, guessCountry } from '@/lib/countries';
 import {
     COA_TYPES,
@@ -88,6 +89,12 @@ export function SiteForm({
         const code = currencyOfCountry(country);
         return code && currencies.some((currency) => currency.code === code) ? code : '';
     };
+    const currencyOptions = currencies.map((currency) => ({
+        value: currency.code,
+        label: `${currency.code} — ${currency.name}`,
+        icon: <span className="w-8 shrink-0 text-center font-semibold">{currency.symbol}</span>,
+        keywords: [currency.symbol, currency.name],
+    }));
     const startCountry = findCountry(defaultCountry) ?? '';
     const [values, setValues] = useState<SiteWizardValues>({
         slug: '',
@@ -320,27 +327,19 @@ export function SiteForm({
                         />
                     </FormField>
                     <FormField id="currency" label="Currency" error={errors.currency}>
-                        <Select
+                        <Autocomplete
+                            id="currency"
                             value={values.currency}
+                            invalid={Boolean(errors.currency)}
+                            options={currencyOptions}
+                            placeholder="Select a currency"
+                            searchPlaceholder="Search currencies…"
+                            emptyMessage="No currency matches that."
                             onValueChange={(value) => {
                                 currencyChosen.current = true;
                                 set('currency', value);
                             }}
-                        >
-                            <SelectTrigger id="currency" aria-invalid={Boolean(errors.currency)}>
-                                <SelectValue placeholder="Select a currency" />
-                            </SelectTrigger>
-                            <SelectContent className="max-h-72">
-                                {currencies.map((currency) => (
-                                    <SelectItem key={currency.code} value={currency.code}>
-                                        <span className="flex items-center gap-2">
-                                            <span className="w-8 shrink-0 text-center font-semibold">{currency.symbol}</span>
-                                            {currency.code} — {currency.name}
-                                        </span>
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                        />
                     </FormField>
                     <FormField
                         id="coaType"

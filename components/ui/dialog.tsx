@@ -40,7 +40,7 @@ const DialogContent = React.forwardRef<
       ref={ref}
       className={cn(
 
-        "bg-background data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-1/2 left-1/2 z-50 grid w-full max-w-[calc(100%-2*var(--gap))] -translate-x-1/2 -translate-y-1/2 gap-2 rounded-md border p-4 shadow-lg duration-200 sm:max-w-md overflow-y-auto",
+        "bg-background text-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-1/2 left-1/2 z-50 grid w-full max-w-[calc(100%-2*var(--gap))] -translate-x-1/2 -translate-y-1/2 gap-2 rounded-md border p-4 shadow-lg duration-200 sm:max-w-md overflow-y-auto",
         themeScope,
         className || ""
       )}

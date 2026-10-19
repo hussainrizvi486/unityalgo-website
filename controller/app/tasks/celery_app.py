@@ -1,5 +1,6 @@
 
 from celery import Celery
+from celery.signals import worker_process_init
 
 from app.config import settings
 
@@ -63,3 +64,11 @@ celery_app.conf.update(
     worker_hijack_root_logger=False,
     beat_schedule=_beat_schedule(),
 )
+
+
+@worker_process_init.connect
+def _fresh_database_connections(**_kwargs):
+    """Each forked worker opens its own connections; sharing the parent's corrupts the protocol and crashes tasks."""
+    from app.db import database
+
+    database.engine.dispose(close=False)

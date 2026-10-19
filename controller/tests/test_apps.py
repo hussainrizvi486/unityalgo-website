@@ -146,7 +146,7 @@ class RolloutTestCase(unittest.TestCase):
             session.execute(delete(ServerNode).where(ServerNode.id == self.server))
             session.execute(text('DELETE FROM "User" WHERE id=:id'), {'id': self.customer})
 
-    def make_site(self, slug, status='ready', installed=None, activity=None, image='frappe/erpnext:v16.50.0'):
+    def make_site(self, slug, status='ready', installed=None, activity=None, image='frappe/erpnext:v15.123.0'):
         with database.session() as session:
             site = Site(user_id=self.customer, request_key=str(uuid.uuid4()), name=slug, slug=slug, domain=slug + '.example.test', server_id=self.server,
                         port=30000 + len(self.sites), image=image, app_names=['erpnext'], status=status, activity=activity, admin_password='x', db_password='x')
@@ -362,7 +362,7 @@ class RolloutTaskTests(RolloutTestCase):
             session.flush()
             self.row_id, self.rollout_id = str(row.id), rollout.id
         state = {'shop': {'version': '15.0.0', 'commit': SHA_OLD, 'branch': 'version-15'}} if installed else {}
-        self.service = FakeService('frappe/erpnext:v16.50.0', state, fail_at)
+        self.service = FakeService('frappe/erpnext:v15.123.0', state, fail_at)
         self.patches = [patch('app.tasks.app_tasks.build_service', return_value=self.service),
                         patch('app.tasks.app_tasks.run_backup', return_value=('ok', ['20260101_000000'])),
                         patch('app.tasks.app_tasks.time.sleep')]
@@ -445,7 +445,7 @@ class RolloutTaskTests(RolloutTestCase):
             self.run_task()
         row, site = self.row(), self.site(site_id)
         self.assertEqual((row.status, row.rolled_back), ('failed', False))
-        self.assertEqual((site.status, site.image), ('ready', 'frappe/erpnext:v16.50.0'))
+        self.assertEqual((site.status, site.image), ('ready', 'frappe/erpnext:v15.123.0'))
         self.assertFalse([c for c in self.service.calls if c.startswith(('use_image', 'run:'))])
         self.assertNotIn('hunter2', row.error)             # secrets never reach the stored error
         self.assertEqual(self.rollout().status, 'failed')
@@ -456,10 +456,10 @@ class RolloutTaskTests(RolloutTestCase):
             self.run_task()
         row, site = self.row(), self.site(site_id)
         self.assertEqual((row.status, row.rolled_back), ('failed', True))
-        self.assertEqual((site.status, site.image), ('ready', 'frappe/erpnext:v16.50.0'))
+        self.assertEqual((site.status, site.image), ('ready', 'frappe/erpnext:v15.123.0'))
         self.assertIn('restore:20260101_000000', self.service.calls)
-        self.assertIn('use_image:frappe/erpnext:v16.50.0', self.service.calls)
-        self.assertEqual(self.service.discarded[-1], 'frappe/erpnext:v16.50.0')      # the failed image is removed
+        self.assertIn('use_image:frappe/erpnext:v15.123.0', self.service.calls)
+        self.assertEqual(self.service.discarded[-1], 'frappe/erpnext:v15.123.0')      # the failed image is removed
 
     def test_a_site_that_cannot_be_recovered_is_stopped_and_says_so(self):
         site_id = self.prepare(fail_at='apply:update')
@@ -639,7 +639,7 @@ class PrivateRepositoryTests(unittest.TestCase):
             def run(self, command, timeout=None):
                 self.commands.append(command)
                 return SimpleNamespace(ok=True, exit_code=0, stdout='', stderr='')
-        site = SimpleNamespace(id='00000000-0000-0000-0000-0000000000aa', image='frappe/erpnext:v16.50.0', db_password='b', admin_password='a', domain='e.example.test', port=30010, app_names=['erpnext'])
+        site = SimpleNamespace(id='00000000-0000-0000-0000-0000000000aa', image='frappe/erpnext:v15.123.0', db_password='b', admin_password='a', domain='e.example.test', port=30010, app_names=['erpnext'])
         with patch('app.services.frappe_service.SSHService'):
             service = FrappeService(site, SimpleNamespace(dial_host='h'), SimpleNamespace())
         service.ssh = recorder = Recorder()

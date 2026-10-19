@@ -40,7 +40,7 @@ Configuration:
 
 ```dotenv
 FRAPPE_SITE_DOMAIN=<your-dedicated-site-domain>
-FRAPPE_IMAGE=frappe/erpnext:v16.50.0
+FRAPPE_IMAGE=frappe/erpnext:v15.123.0
 FRAPPE_AVAILABLE_APPS=erpnext
 FRAPPE_PORT_START=30000
 FRAPPE_PORT_END=31999

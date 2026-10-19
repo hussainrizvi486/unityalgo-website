@@ -41,6 +41,11 @@ class StartupCheckTests(unittest.TestCase):
         self.assertTrue(ok, lines)
         self.assertIn('Database connection OK', lines[0])
 
+    def test_no_connection_is_left_open_for_forked_workers(self):
+        from app.db import database
+        database.startup_check()
+        self.assertEqual(database.engine.pool.checkedin(), 0)
+
     def test_the_password_is_never_printed(self):
         with patch('app.db.CONNECT_BACKOFF_SECONDS', (0.0,)):
             ok, lines = unreachable().startup_check()

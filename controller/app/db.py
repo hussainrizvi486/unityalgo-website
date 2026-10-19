@@ -96,7 +96,8 @@ class Database:
             pool_size=self.settings.db_pool_size,
             max_overflow=self.settings.db_max_overflow,
             pool_recycle=self.settings.db_pool_recycle,
-            connect_args={"connect_timeout": self.settings.postgres_connect_timeout},
+            # gssencmode: libpq probes Kerberos first, which crashes a forked worker on macOS (SIGSEGV).
+            connect_args={"connect_timeout": self.settings.postgres_connect_timeout, "gssencmode": "disable"},
         )
         self._install_connect_retry()
         self.session_factory = sessionmaker(bind=self.engine, expire_on_commit=False)
@@ -146,7 +147,10 @@ class Database:
             with self.engine.connect() as connection:
                 connection.execute(text("SELECT 1"))
                 current = MigrationContext.configure(connection).get_current_revision()
+            # A connection left open here would be inherited by every worker process forked afterwards.
+            self.engine.dispose()
         except Exception as exc:  # any driver error: the point is to explain it
+            self.engine.dispose()
             detail = str(getattr(exc, "orig", None) or exc).strip().splitlines()
             return False, [
                 f"Database connection FAILED: {target}",

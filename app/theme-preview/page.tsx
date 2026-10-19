@@ -37,6 +37,8 @@ import { Notice } from '@/components/ui/notice';
 import { FormField } from '@/components/ui/form-field';
 import { Switch } from '@/components/ui/switch';
 import { Autocomplete } from '@/components/ui/autocomplete';
+
+const largeOptions = Array.from({ length: 5000 }, (_, i) => ({ value: `item-${i + 1}`, label: `Item ${i + 1}` }));
 import {
     DropdownMenu, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
@@ -863,7 +865,7 @@ function ThemePreviewPage() {
 
                         <SubHeading
                             label="Autocomplete"
-                            description="components/ui/autocomplete.tsx — type to filter, ↑/↓ to move, Enter to choose, Esc to close. Posts the option's value on a hidden input, exactly like SmartInput, so a form receives 'pk' rather than the 'Pakistan' that was read."
+                            description="components/ui/autocomplete.tsx — a Select with search. Click or start typing, ↑/↓, Page Up/Down, Home/End to move, Enter to choose, Esc to close. Only the rows in view are rendered, so thousands of options stay fast. Posts the option's value on a hidden input, so a form receives 'pk' rather than the 'Pakistan' that was read."
                         />
                         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                             <Spec label="Empty" hint="try typing 'pak'">
@@ -883,6 +885,9 @@ function ThemePreviewPage() {
                             </Spec>
                             <Spec label="Disabled">
                                 <Autocomplete name="tp-ac-6" options={countryOptions} defaultValue="pk" disabled />
+                            </Spec>
+                            <Spec label="Large list" hint="5,000 options, clearable">
+                                <Autocomplete name="tp-ac-7" options={largeOptions} clearable searchPlaceholder="Search 5,000 items…" />
                             </Spec>
                         </div>
                     </section>

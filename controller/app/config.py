@@ -104,7 +104,7 @@ class Settings:
         self.tenant_port_range_end = self._int("TENANT_PORT_RANGE_END", 29999)
         self.port_reuse_cooldown_seconds = self._int("PORT_REUSE_COOLDOWN_SECONDS", 300)
         self.node_memory_reserve_mb = self._int("NODE_MEMORY_RESERVE_MB", 1024)
-        self.frappe_image = self._str("FRAPPE_IMAGE", "frappe/erpnext:v16.50.0")
+        self.frappe_image = self._str("FRAPPE_IMAGE", "frappe/erpnext:v15.123.0")
         self.frappe_site_domain = self._str("FRAPPE_SITE_DOMAIN", "").strip().lower()
         self.frappe_site_links = self._str("FRAPPE_SITE_LINKS", "auto").strip().lower()
         self.frappe_available_apps = [app.strip() for app in self._str("FRAPPE_AVAILABLE_APPS", "erpnext").split(",") if app.strip()]

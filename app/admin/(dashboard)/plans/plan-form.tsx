@@ -9,6 +9,7 @@ import { SmartInput } from '@/components/ui/smart-input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Autocomplete } from '@/components/ui/autocomplete';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import type { PlanFormState } from '@/app/admin/actions';
 
@@ -108,19 +109,21 @@ export function PlanForm({ action, defaultValues, submitLabel, products, currenc
                 </div>
                 <div>
                     <Label htmlFor="currencyId" className="portal-text-body text-foreground/80 mb-1.5">Currency</Label>
-                    <Select name="currencyId" value={currencyId} onValueChange={setCurrencyId}>
-                        <SelectTrigger id="currencyId"><SelectValue placeholder="Select a currency" /></SelectTrigger>
-                        <SelectContent>
-                            {currencies.map((c) => (
-                                <SelectItem key={c.id} value={c.id}>
-                                    <span className="flex items-center gap-2">
-                                        <span className="w-8 shrink-0 text-center font-semibold">{c.symbol}</span>
-                                        {c.code} — {c.name}
-                                    </span>
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
+                    <Autocomplete
+                        id="currencyId"
+                        name="currencyId"
+                        value={currencyId}
+                        onValueChange={setCurrencyId}
+                        placeholder="Select a currency"
+                        searchPlaceholder="Search currencies…"
+                        emptyMessage="No currency matches that."
+                        options={currencies.map((c) => ({
+                            value: c.id,
+                            label: `${c.code} — ${c.name}`,
+                            icon: <span className="w-8 shrink-0 text-center font-semibold">{c.symbol}</span>,
+                            keywords: [c.symbol, c.name],
+                        }))}
+                    />
                 </div>
                 <div>
                     <Label htmlFor="priceAmount" className="portal-text-body text-foreground/80 mb-1.5">

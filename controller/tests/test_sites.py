@@ -53,7 +53,7 @@ class SiteProvisioningTests(unittest.TestCase):
                 self.assertFalse(fits_site(self.node, 0, 0, 0, self.settings))
 
     def test_external_mariadb_replaces_bundled_database(self):
-        site = SimpleNamespace(id='00000000-0000-0000-0000-000000000002', image='frappe/erpnext:v16.50.0', db_password='bundled-secret', admin_password='a', domain='two.sites.example.test', port=30001, app_names=['erpnext'])
+        site = SimpleNamespace(id='00000000-0000-0000-0000-000000000002', image='frappe/erpnext:v15.123.0', db_password='bundled-secret', admin_password='a', domain='two.sites.example.test', port=30001, app_names=['erpnext'])
         server = SimpleNamespace(dial_host='10.0.0.2')
         external = {'host': '192.168.252.1', 'port': 3306, 'user': 'frappe_admin', 'password': 'ext-$ecret'}
         with patch('app.services.frappe_service.SSHService'):
@@ -343,7 +343,7 @@ class SiteProvisioningTests(unittest.TestCase):
             owned_site(session, 'bad-id', 'customer-a')
 
     def test_compose_isolates_data_and_credentials(self):
-        site = SimpleNamespace(id='00000000-0000-0000-0000-000000000001', image='frappe/erpnext:v16.50.0', db_password='test-db-secret', admin_password='test-admin-secret', domain='one.sites.example.test', port=30000, app_names=['erpnext'])
+        site = SimpleNamespace(id='00000000-0000-0000-0000-000000000001', image='frappe/erpnext:v15.123.0', db_password='test-db-secret', admin_password='test-admin-secret', domain='one.sites.example.test', port=30000, app_names=['erpnext'])
         server = SimpleNamespace(dial_host='10.0.0.2')
         compose = FrappeService(site, server, self.settings).compose()
         services = compose['services']
