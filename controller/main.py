@@ -44,7 +44,13 @@ class ControllerCLI:
         ApiRouter(self.settings, self.db).run()
 
     def migrate(self, *_args):
-        self.db.migrate()
+        from app.db import MigrationOrderError
+
+        try:
+            self.db.migrate()
+        except MigrationOrderError as error:
+            print(f"migrate: {error}", file=sys.stderr)
+            return 1
 
     def rollback(self, *args):
         self.db.rollback(args[0] if args else "-1")

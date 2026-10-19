@@ -34,6 +34,31 @@ class DiagnosisTests(unittest.TestCase):
         self.assertIn('does not recognise', diagnose_connection_error(Exception('something odd')))
 
 
+class MigrationOrderTests(unittest.TestCase):
+    def test_controller_migrations_wait_for_the_website_tables(self):
+        from unittest.mock import patch
+        from app.db import Database, MigrationOrderError
+        database = Database(copy.copy(settings))
+        with patch.object(Database, 'missing_website_tables', return_value=['User']), patch('app.db.command.upgrade') as upgrade:
+            with self.assertRaises(MigrationOrderError) as caught:
+                database.migrate()
+        self.assertIn('npm run db:migrate', str(caught.exception))
+        upgrade.assert_not_called()
+
+    def test_the_cli_explains_instead_of_a_traceback(self):
+        from unittest.mock import patch
+        from app.db import MigrationOrderError
+        cli = ControllerCLI(db=unreachable())
+        err = io.StringIO()
+        with patch.object(cli.db, 'migrate', side_effect=MigrationOrderError('run the website migrations first')), redirect_stderr(err):
+            self.assertEqual(cli.migrate(), 1)
+        self.assertIn('website migrations first', err.getvalue())
+
+    def test_the_local_database_has_the_website_tables(self):
+        from app.db import database
+        self.assertEqual(database.missing_website_tables(), [])
+
+
 class StartupCheckTests(unittest.TestCase):
     def test_a_reachable_database_passes(self):
         from app.db import database

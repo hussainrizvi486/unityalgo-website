@@ -1,6 +1,3 @@
--- Current sql file was generated after introspecting the database
--- If you want to run this migration please uncomment this code before executing migrations
-/*
 CREATE TYPE "public"."AddOnPricingType" AS ENUM('FLAT_MONTHLY', 'ONE_TIME');--> statement-breakpoint
 CREATE TYPE "public"."BillingStatus" AS ENUM('DRAFT', 'PENDING', 'PAID', 'OVERDUE', 'REFUNDED', 'CANCELLED');--> statement-breakpoint
 CREATE TYPE "public"."EmailPurpose" AS ENUM('TRANSACTIONAL', 'SUPPORT', 'BILLING', 'MARKETING');--> statement-breakpoint
@@ -330,51 +327,50 @@ ALTER TABLE "LoginSession" ADD CONSTRAINT "LoginSession_userId_fkey" FOREIGN KEY
 ALTER TABLE "Notification" ADD CONSTRAINT "Notification_userId_fkey" FOREIGN KEY ("userId") REFERENCES "public"."User"("id") ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
 ALTER TABLE "Plan" ADD CONSTRAINT "Plan_productId_fkey" FOREIGN KEY ("productId") REFERENCES "public"."Product"("id") ON DELETE restrict ON UPDATE cascade;--> statement-breakpoint
 ALTER TABLE "Plan" ADD CONSTRAINT "Plan_currencyId_fkey" FOREIGN KEY ("currencyId") REFERENCES "public"."Currency"("id") ON DELETE set null ON UPDATE cascade;--> statement-breakpoint
-CREATE INDEX "contact_list_createdAt_idx" ON "contact_list" USING btree ("createdAt" timestamp_ops);--> statement-breakpoint
-CREATE INDEX "EmailVerification_email_purpose_idx" ON "EmailVerification" USING btree ("email" text_ops,"purpose" text_ops);--> statement-breakpoint
-CREATE INDEX "Post_published_publishedAt_idx" ON "Post" USING btree ("published" timestamp_ops,"publishedAt" timestamp_ops);--> statement-breakpoint
-CREATE UNIQUE INDEX "Post_slug_key" ON "Post" USING btree ("slug" text_ops);--> statement-breakpoint
-CREATE INDEX "SupportTicket_status_idx" ON "SupportTicket" USING btree ("status" enum_ops);--> statement-breakpoint
-CREATE INDEX "SupportTicket_userId_idx" ON "SupportTicket" USING btree ("userId" text_ops);--> statement-breakpoint
-CREATE INDEX "Comment_authorId_idx" ON "Comment" USING btree ("authorId" text_ops);--> statement-breakpoint
-CREATE INDEX "Comment_entityType_entityId_idx" ON "Comment" USING btree ("entityType" text_ops,"entityId" text_ops);--> statement-breakpoint
-CREATE INDEX "SubscriptionAddOn_addOnId_idx" ON "SubscriptionAddOn" USING btree ("addOnId" text_ops);--> statement-breakpoint
-CREATE UNIQUE INDEX "SubscriptionAddOn_subscriptionId_addOnId_key" ON "SubscriptionAddOn" USING btree ("subscriptionId" text_ops,"addOnId" text_ops);--> statement-breakpoint
-CREATE INDEX "AddOn_productId_isActive_idx" ON "AddOn" USING btree ("productId" text_ops,"isActive" text_ops);--> statement-breakpoint
-CREATE UNIQUE INDEX "AddOn_productId_slug_key" ON "AddOn" USING btree ("productId" text_ops,"slug" text_ops);--> statement-breakpoint
-CREATE UNIQUE INDEX "Subscription_paddleSubscriptionId_key" ON "Subscription" USING btree ("paddleSubscriptionId" text_ops);--> statement-breakpoint
-CREATE INDEX "Subscription_planId_idx" ON "Subscription" USING btree ("planId" text_ops);--> statement-breakpoint
-CREATE INDEX "Subscription_productId_idx" ON "Subscription" USING btree ("productId" text_ops);--> statement-breakpoint
-CREATE UNIQUE INDEX "Subscription_userId_productId_key" ON "Subscription" USING btree ("userId" text_ops,"productId" text_ops);--> statement-breakpoint
-CREATE INDEX "Address_userId_idx" ON "Address" USING btree ("userId" text_ops);--> statement-breakpoint
-CREATE INDEX "Product_isActive_sortOrder_idx" ON "Product" USING btree ("isActive" int4_ops,"sortOrder" int4_ops);--> statement-breakpoint
-CREATE UNIQUE INDEX "Product_slug_key" ON "Product" USING btree ("slug" text_ops);--> statement-breakpoint
-CREATE UNIQUE INDEX "User_email_key" ON "User" USING btree ("email" text_ops);--> statement-breakpoint
-CREATE INDEX "User_role_idx" ON "User" USING btree ("role" enum_ops);--> statement-breakpoint
-CREATE UNIQUE INDEX "User_username_key" ON "User" USING btree ("username" text_ops);--> statement-breakpoint
-CREATE UNIQUE INDEX "BillingRecord_invoiceNumber_key" ON "BillingRecord" USING btree ("invoiceNumber" text_ops);--> statement-breakpoint
-CREATE INDEX "BillingRecord_status_idx" ON "BillingRecord" USING btree ("status" enum_ops);--> statement-breakpoint
-CREATE INDEX "BillingRecord_subscriptionId_idx" ON "BillingRecord" USING btree ("subscriptionId" text_ops);--> statement-breakpoint
-CREATE INDEX "BillingRecord_tenantId_idx" ON "BillingRecord" USING btree ("tenantId" uuid_ops);--> statement-breakpoint
-CREATE INDEX "BillingRecord_userId_idx" ON "BillingRecord" USING btree ("userId" text_ops);--> statement-breakpoint
-CREATE UNIQUE INDEX "EmailAccount_address_key" ON "EmailAccount" USING btree ("address" text_ops);--> statement-breakpoint
-CREATE UNIQUE INDEX "EmailAccount_one_default_idx" ON "EmailAccount" USING btree ("isDefault" bool_ops) WHERE "isDefault";--> statement-breakpoint
-CREATE INDEX "EmailAccount_purpose_isActive_idx" ON "EmailAccount" USING btree ("purpose" bool_ops,"isActive" bool_ops);--> statement-breakpoint
-CREATE UNIQUE INDEX "Currency_code_key" ON "Currency" USING btree ("code" text_ops);--> statement-breakpoint
-CREATE INDEX "Currency_isActive_sortOrder_idx" ON "Currency" USING btree ("isActive" int4_ops,"sortOrder" int4_ops);--> statement-breakpoint
-CREATE INDEX "leads_email_idx" ON "leads" USING btree ("email" text_ops);--> statement-breakpoint
-CREATE INDEX "leads_status_createdAt_idx" ON "leads" USING btree ("status" enum_ops,"createdAt" enum_ops);--> statement-breakpoint
-CREATE INDEX "leads_userId_idx" ON "leads" USING btree ("userId" text_ops);--> statement-breakpoint
-CREATE INDEX "PaddleEvent_eventType_receivedAt_idx" ON "PaddleEvent" USING btree ("eventType" text_ops,"receivedAt" timestamp_ops);--> statement-breakpoint
-CREATE INDEX "PaddleEvent_status_receivedAt_idx" ON "PaddleEvent" USING btree ("status" timestamp_ops,"receivedAt" timestamp_ops);--> statement-breakpoint
-CREATE INDEX "AppCatalog_isActive_sortOrder_idx" ON "AppCatalog" USING btree ("isActive" int4_ops,"sortOrder" int4_ops);--> statement-breakpoint
-CREATE UNIQUE INDEX "AppCatalog_slug_key" ON "AppCatalog" USING btree ("slug" text_ops);--> statement-breakpoint
-CREATE INDEX "LoginSession_userId_revokedAt_expiresAt_idx" ON "LoginSession" USING btree ("userId" text_ops,"revokedAt" timestamp_ops,"expiresAt" text_ops);--> statement-breakpoint
-CREATE UNIQUE INDEX "Notification_userId_eventKey_key" ON "Notification" USING btree ("userId" text_ops,"eventKey" text_ops);--> statement-breakpoint
-CREATE INDEX "Notification_userId_readAt_createdAt_idx" ON "Notification" USING btree ("userId" timestamp_ops,"readAt" text_ops,"createdAt" timestamp_ops);--> statement-breakpoint
-CREATE UNIQUE INDEX "SiteEmailEvent_siteId_eventKey_key" ON "SiteEmailEvent" USING btree ("siteId" text_ops,"eventKey" text_ops);--> statement-breakpoint
-CREATE INDEX "Plan_currencyId_idx" ON "Plan" USING btree ("currencyId" text_ops);--> statement-breakpoint
-CREATE UNIQUE INDEX "Plan_paddlePriceId_key" ON "Plan" USING btree ("paddlePriceId" text_ops);--> statement-breakpoint
-CREATE INDEX "Plan_productId_isActive_idx" ON "Plan" USING btree ("productId" text_ops,"isActive" text_ops);--> statement-breakpoint
-CREATE UNIQUE INDEX "Plan_productId_slug_key" ON "Plan" USING btree ("productId" text_ops,"slug" text_ops);
-*/
+CREATE INDEX "contact_list_createdAt_idx" ON "contact_list" USING btree ("createdAt");--> statement-breakpoint
+CREATE INDEX "EmailVerification_email_purpose_idx" ON "EmailVerification" USING btree ("email","purpose");--> statement-breakpoint
+CREATE INDEX "Post_published_publishedAt_idx" ON "Post" USING btree ("published","publishedAt");--> statement-breakpoint
+CREATE UNIQUE INDEX "Post_slug_key" ON "Post" USING btree ("slug");--> statement-breakpoint
+CREATE INDEX "SupportTicket_status_idx" ON "SupportTicket" USING btree ("status");--> statement-breakpoint
+CREATE INDEX "SupportTicket_userId_idx" ON "SupportTicket" USING btree ("userId");--> statement-breakpoint
+CREATE INDEX "Comment_authorId_idx" ON "Comment" USING btree ("authorId");--> statement-breakpoint
+CREATE INDEX "Comment_entityType_entityId_idx" ON "Comment" USING btree ("entityType","entityId");--> statement-breakpoint
+CREATE INDEX "SubscriptionAddOn_addOnId_idx" ON "SubscriptionAddOn" USING btree ("addOnId");--> statement-breakpoint
+CREATE UNIQUE INDEX "SubscriptionAddOn_subscriptionId_addOnId_key" ON "SubscriptionAddOn" USING btree ("subscriptionId","addOnId");--> statement-breakpoint
+CREATE INDEX "AddOn_productId_isActive_idx" ON "AddOn" USING btree ("productId","isActive");--> statement-breakpoint
+CREATE UNIQUE INDEX "AddOn_productId_slug_key" ON "AddOn" USING btree ("productId","slug");--> statement-breakpoint
+CREATE UNIQUE INDEX "Subscription_paddleSubscriptionId_key" ON "Subscription" USING btree ("paddleSubscriptionId");--> statement-breakpoint
+CREATE INDEX "Subscription_planId_idx" ON "Subscription" USING btree ("planId");--> statement-breakpoint
+CREATE INDEX "Subscription_productId_idx" ON "Subscription" USING btree ("productId");--> statement-breakpoint
+CREATE UNIQUE INDEX "Subscription_userId_productId_key" ON "Subscription" USING btree ("userId","productId");--> statement-breakpoint
+CREATE INDEX "Address_userId_idx" ON "Address" USING btree ("userId");--> statement-breakpoint
+CREATE INDEX "Product_isActive_sortOrder_idx" ON "Product" USING btree ("isActive","sortOrder");--> statement-breakpoint
+CREATE UNIQUE INDEX "Product_slug_key" ON "Product" USING btree ("slug");--> statement-breakpoint
+CREATE UNIQUE INDEX "User_email_key" ON "User" USING btree ("email");--> statement-breakpoint
+CREATE INDEX "User_role_idx" ON "User" USING btree ("role");--> statement-breakpoint
+CREATE UNIQUE INDEX "User_username_key" ON "User" USING btree ("username");--> statement-breakpoint
+CREATE UNIQUE INDEX "BillingRecord_invoiceNumber_key" ON "BillingRecord" USING btree ("invoiceNumber");--> statement-breakpoint
+CREATE INDEX "BillingRecord_status_idx" ON "BillingRecord" USING btree ("status");--> statement-breakpoint
+CREATE INDEX "BillingRecord_subscriptionId_idx" ON "BillingRecord" USING btree ("subscriptionId");--> statement-breakpoint
+CREATE INDEX "BillingRecord_tenantId_idx" ON "BillingRecord" USING btree ("tenantId");--> statement-breakpoint
+CREATE INDEX "BillingRecord_userId_idx" ON "BillingRecord" USING btree ("userId");--> statement-breakpoint
+CREATE UNIQUE INDEX "EmailAccount_address_key" ON "EmailAccount" USING btree ("address");--> statement-breakpoint
+CREATE UNIQUE INDEX "EmailAccount_one_default_idx" ON "EmailAccount" USING btree ("isDefault") WHERE "isDefault";--> statement-breakpoint
+CREATE INDEX "EmailAccount_purpose_isActive_idx" ON "EmailAccount" USING btree ("purpose","isActive");--> statement-breakpoint
+CREATE UNIQUE INDEX "Currency_code_key" ON "Currency" USING btree ("code");--> statement-breakpoint
+CREATE INDEX "Currency_isActive_sortOrder_idx" ON "Currency" USING btree ("isActive","sortOrder");--> statement-breakpoint
+CREATE INDEX "leads_email_idx" ON "leads" USING btree ("email");--> statement-breakpoint
+CREATE INDEX "leads_status_createdAt_idx" ON "leads" USING btree ("status","createdAt");--> statement-breakpoint
+CREATE INDEX "leads_userId_idx" ON "leads" USING btree ("userId");--> statement-breakpoint
+CREATE INDEX "PaddleEvent_eventType_receivedAt_idx" ON "PaddleEvent" USING btree ("eventType","receivedAt");--> statement-breakpoint
+CREATE INDEX "PaddleEvent_status_receivedAt_idx" ON "PaddleEvent" USING btree ("status","receivedAt");--> statement-breakpoint
+CREATE INDEX "AppCatalog_isActive_sortOrder_idx" ON "AppCatalog" USING btree ("isActive","sortOrder");--> statement-breakpoint
+CREATE UNIQUE INDEX "AppCatalog_slug_key" ON "AppCatalog" USING btree ("slug");--> statement-breakpoint
+CREATE INDEX "LoginSession_userId_revokedAt_expiresAt_idx" ON "LoginSession" USING btree ("userId","revokedAt","expiresAt");--> statement-breakpoint
+CREATE UNIQUE INDEX "Notification_userId_eventKey_key" ON "Notification" USING btree ("userId","eventKey");--> statement-breakpoint
+CREATE INDEX "Notification_userId_readAt_createdAt_idx" ON "Notification" USING btree ("userId","readAt","createdAt");--> statement-breakpoint
+CREATE UNIQUE INDEX "SiteEmailEvent_siteId_eventKey_key" ON "SiteEmailEvent" USING btree ("siteId","eventKey");--> statement-breakpoint
+CREATE INDEX "Plan_currencyId_idx" ON "Plan" USING btree ("currencyId");--> statement-breakpoint
+CREATE UNIQUE INDEX "Plan_paddlePriceId_key" ON "Plan" USING btree ("paddlePriceId");--> statement-breakpoint
+CREATE INDEX "Plan_productId_isActive_idx" ON "Plan" USING btree ("productId","isActive");--> statement-breakpoint
+CREATE UNIQUE INDEX "Plan_productId_slug_key" ON "Plan" USING btree ("productId","slug");

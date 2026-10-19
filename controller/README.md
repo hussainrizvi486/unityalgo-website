@@ -121,7 +121,9 @@ async-first API to a deliberately sync service, and a Node build step, all for
 what amounted to two queries.
 
 `drizzle.__drizzle_migrations` and `alembic_version` coexist as separate ledgers. Run
-both on deploy:
+both on deploy, **website first**: the controller's tables have foreign keys to the website's
+`User` and `Subscription`, so on a new database the website's migrations must create them
+before `python main.py migrate` (which stops with an explanation if they are missing):
 
 ```bash
 npm run db:migrate                    # from the repo root

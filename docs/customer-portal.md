@@ -20,11 +20,13 @@ The website (Drizzle) owns `AppCatalog`, `LoginSession`, and `Notification`. Ale
 Apply both migrations:
 
 ```sh
-npm run db:baseline   # once, on a database that predates Drizzle
-npm run db:migrate
+npm run db:baseline   # only on a database that predates Drizzle and already has the website tables
+npm run db:migrate    # the website's tables first: on a new database this creates them all
 cd controller
-python main.py migrate
+python main.py migrate   # then the controller's, which link to the website's User and Subscription
 ```
+
+The order matters. On a new database, running the controller's migration first stops with a message to run `npm run db:migrate`.
 
 Restart Next.js, the controller API, and the Celery worker after deployment. Existing customer cookies without a tracked session id require a fresh sign-in. Admin authentication is unchanged. Customer session checks include database revocation and expiration, and every customer action uses the shared guard. Password changes revoke other sessions; password resets revoke all sessions.
 

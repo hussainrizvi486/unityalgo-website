@@ -80,6 +80,10 @@ def diagnose_connection_error(exc):
     return "The connection failed for a reason this check does not recognise. The database error is shown above."
 
 
+class MigrationOrderError(RuntimeError):
+    """The controller's migrations were run before the website's."""
+
+
 def is_transient_connection_error(exc):
     message = str(exc).lower()
     return any(signature in message for signature in TRANSIENT_CONNECT_ERRORS)
@@ -175,7 +179,21 @@ class Database:
         config.set_main_option("script_location", str(self.settings.base_dir / "alembic"))
         return config
 
+    def missing_website_tables(self):
+        """Tables owned by the website's Drizzle migrations that the controller's tables point at (foreign keys)."""
+        with self.engine.connect() as connection:
+            return [
+                name for name in ("User", "Subscription")
+                if connection.execute(text("SELECT to_regclass(:name)"), {"name": f'public."{name}"'}).scalar() is None
+            ]
+
     def migrate(self, revision="head"):
+        missing = self.missing_website_tables()
+        if missing:
+            raise MigrationOrderError(
+                f"The website's tables ({', '.join(missing)}) do not exist yet, and the controller's migrations link to them. "
+                "Run the website's migrations first, from the repository root: `npm run db:migrate`. Then run this again."
+            )
         command.upgrade(self.alembic_config(), revision)
 
     def rollback(self, revision="-1"):
