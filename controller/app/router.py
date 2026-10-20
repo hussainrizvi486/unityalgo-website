@@ -83,7 +83,6 @@ class ApiRouter:
 
 
 def create_app(config=None, db=None):
-    """WSGI entrypoint: `gunicorn 'app.router:create_app()'`"""
     return ApiRouter(config=config, db=db).app
 
 

@@ -163,6 +163,12 @@ class Settings:
         self.platform_domain = self._str("PLATFORM_DOMAIN", self.base_domain)
         self.proxy_admin_port_default = self._int("PROXY_ADMIN_PORT_DEFAULT", 2019)
         self.proxy_enable_tls = self._bool("PROXY_ENABLE_TLS", False)
+        # The platform's own pages, served by the same Caddy as the customer sites (the proxy replaces its whole config on
+        # every sync, so anything it must keep serving has to be listed here rather than in a Caddyfile).
+        self.proxy_platform_hosts = [host.strip().lower() for host in self._str("PROXY_PLATFORM_HOSTS", "").split(",") if host.strip()]
+        self.proxy_platform_upstream = self._str("PROXY_PLATFORM_UPSTREAM", "").strip()
+        self.proxy_platform_ws_upstream = self._str("PROXY_PLATFORM_WS_UPSTREAM", "").strip()
+        self.proxy_acme_email = self._str("PROXY_ACME_EMAIL", "").strip()
         self.proxy_health_check_timeout_seconds = self._int(
             "PROXY_HEALTH_CHECK_TIMEOUT_SECONDS", 5
         )

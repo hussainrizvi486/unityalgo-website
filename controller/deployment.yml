@@ -1,4 +1,4 @@
-"cd /home/frappe/unityalgo/unityalgo-website
+unix:/run/controller-server/gunicorn.sock"cd /home/frappe/unityalgo/unityalgo-website
 git pull
 
 # The website's migrations come first: the controller's tables link to them.

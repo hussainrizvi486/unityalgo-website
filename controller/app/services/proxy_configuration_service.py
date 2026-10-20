@@ -36,8 +36,9 @@ class ProxyConfigurationService:
                 '@id': f'site-{site.id}', 'match': [{'host': hosts}],
                 'handle': [{'handler': 'reverse_proxy', 'upstreams': [{'dial': f'{site.server.dial_host}:{site.port}'}]}],
             })
+        routes = self.platform_routes() + routes
         listen = [":443"] if self.settings.proxy_enable_tls else [":80"]
-        return {
+        document = {
             "admin": {"listen": "127.0.0.1:2019"},
             "apps": {
                 "http": {
@@ -50,6 +51,37 @@ class ProxyConfigurationService:
                 }
             },
         }
+        if self.settings.proxy_acme_email:
+            document["apps"]["tls"] = {"automation": {"policies": [{"issuers": [{"module": "acme", "email": self.settings.proxy_acme_email}]}]}}
+        return document
+
+    def platform_routes(self):
+        """The platform's own website (and its WebSocket service) on the platform host names."""
+        hosts = self.settings.proxy_platform_hosts
+        if not hosts:
+            return []
+        routes = []
+        if self.settings.proxy_platform_ws_upstream:
+            routes.append({
+                "@id": "platform-ws",
+                "match": [{"host": hosts, "path": ["/ws/*"]}],
+                # No read timeout: a terminal or log stream stays open for as long as it is used.
+                "handle": [{
+                    "handler": "reverse_proxy",
+                    "upstreams": [{"dial": self.settings.proxy_platform_ws_upstream}],
+                    "transport": {"protocol": "http", "read_timeout": 0},
+                }],
+            })
+        if self.settings.proxy_platform_upstream:
+            routes.append({
+                "@id": "platform-web",
+                "match": [{"host": hosts}],
+                "handle": [
+                    {"handler": "encode", "encodings": {"zstd": {}, "gzip": {}}, "prefer": ["zstd", "gzip"]},
+                    {"handler": "reverse_proxy", "upstreams": [{"dial": self.settings.proxy_platform_upstream}]},
+                ],
+            })
+        return routes
 
     def sync_all(self, session, recorder=None):
         from app.controller.server import ServerController

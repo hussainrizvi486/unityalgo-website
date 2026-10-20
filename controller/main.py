@@ -64,32 +64,6 @@ class ControllerCLI:
     def revision(self, *_args):
         self.db.current_revision()
 
-    def sshcheck(self, *args):
-        if not args:
-            print("usage: python main.py sshcheck <ip> [user] [password]")
-            return 1
-        from app.errors import ApiError
-        from app.models.server import ServerNode
-        from app.services import SSHService
-
-        node = ServerNode(
-            name=args[0],
-            ip_address=args[0],
-            ssh_port=self.settings.ssh_port,
-            ssh_user=args[1] if len(args) > 1 else self.settings.ssh_user,
-            ssh_password=args[2] if len(args) > 2 else self.settings.ssh_password,
-            ssh_key_path=self.settings.ssh_key_path,
-        )
-        try:
-            report = SSHService(node, self.settings).check()
-        except ApiError as exc:
-            print(f"{args[0]}: {exc.message}")
-            return 1
-        for key in ("host", "port", "auth_method", "user", "hostname", "os",
-                    "docker_installed", "docker_version", "docker_error"):
-            if report.get(key) is not None:
-                print(f"  {key:<17} {report[key]}")
-        return 0
 
     def worker(self, *args):
         failed = self.check_database("worker")
@@ -127,7 +101,6 @@ class ControllerCLI:
         "rollback": "rollback",
         "makemigration": "makemigration",
         "revision": "revision",
-        "sshcheck": "sshcheck",
         "worker": "worker",
         "beat": "beat",
         "routes": "routes",

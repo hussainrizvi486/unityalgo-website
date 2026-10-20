@@ -8,7 +8,7 @@
     --panel-padding: var(--card-pad);
     --portal-page-width: var(--max-w);
     --portal-detail-width: var(--content-detail);
-    --portal-form-width: var(--content-form);
+    --portal-form-width: 100%;
     --portal-form-narrow-width: var(--content-narrow);
     --portal-page-padding: var(--page-pad);
     --portal-section-gap: calc(var(--gap) * 1.5);

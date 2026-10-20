@@ -69,12 +69,20 @@ def _check_proxy_and_domains(session, activity):
 
 
 def _check_proxy_sync(session, activity):
-    result = ProxyConfigurationService(settings).verify(session)
+    service = ProxyConfigurationService(settings)
+    result = service.verify(session)
     if result["in_sync"] is False:
+        # Typically Caddy restarted and came back with only its bootstrap config: load the routes again.
+        try:
+            service.sync_all(session)
+            repaired = True
+        except Exception as exc:  # the sweep must go on if the proxy is unreachable
+            repaired = False
+            result["repair_error"] = str(exc)[:300]
         activity.event(
-            "health", "health.proxy_drift", "Proxy routes out of sync",
-            status="warning",
-            details={"missing": result["missing"], "extra": result["extra"]},
+            "health", "health.proxy_drift", "Proxy routes out of sync" + (": reloaded" if repaired else ""),
+            status="warning" if repaired else "failed",
+            details={"missing": result["missing"], "extra": result["extra"], "repaired": repaired, "error": result.get("repair_error")},
         )
 
 
