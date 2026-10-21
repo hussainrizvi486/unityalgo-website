@@ -4,6 +4,7 @@ import { ADMIN_LIST_LIMIT } from '@/lib/pagination';
 import { formatDate } from '@/lib/admin-format';
 import { AdminPageHeader } from '@/components/admin/page-header';
 import { LEAD_SOURCE_LABEL, LEAD_STATUS_BADGE_VARIANT, LEAD_STATUS_LABEL } from '@/lib/leads';
+import { SpreadsheetActions } from '@/components/admin/spreadsheet-actions';
 import { LeadsList, type LeadRow } from './leads-list';
 
 export default async function AdminLeadsPage() {
@@ -38,7 +39,9 @@ export default async function AdminLeadsPage() {
                         ? `Showing the ${rows.length} most recent of ${totalCount}`
                         : `${totalCount} total`
                 }
-            />
+            >
+                <SpreadsheetActions entity="leads" />
+            </AdminPageHeader>
             <LeadsList rows={rows} />
         </div>
     );

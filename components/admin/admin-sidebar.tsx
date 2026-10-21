@@ -2,7 +2,7 @@
 
 import {
     Activity, Inbox, AtSign, Boxes, Globe, Coins, CreditCard, Database, FileText, Layers, Mail, MailOpen,
-    MessageSquareText, PackagePlus, Server, Users, Workflow,
+    MessageSquareText, Package, PackagePlus, Server, Users, Workflow,
 } from 'lucide-react';
 import { AppSidebar, type SidebarNavGroup, type SidebarUser } from '@/components/ui/app-sidebar';
 import { logoutAction } from '@/app/admin/actions';
@@ -12,6 +12,7 @@ const navGroups: SidebarNavGroup[] = [
         label: 'Platform',
         items: [
             { title: 'Blogs', href: '/admin/blogs', icon: FileText },
+            { title: 'Products', href: '/admin/products', icon: Package },
             { title: 'Plans', href: '/admin/plans', icon: Layers },
             { title: 'Add-ons', href: '/admin/addons', icon: PackagePlus },
             {

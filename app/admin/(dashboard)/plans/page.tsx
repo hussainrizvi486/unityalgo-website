@@ -4,6 +4,7 @@ import { ADMIN_LIST_LIMIT } from '@/lib/pagination';
 import { formatPlanPrice } from '@/lib/pricing';
 import { AdminPageHeader, AdminPageError, AdminPageNotice } from '@/components/admin/page-header';
 import { deletePlanAction, togglePlanActiveAction, syncPlanWithPaddleAction } from '@/app/admin/actions';
+import { SpreadsheetActions } from '@/components/admin/spreadsheet-actions';
 import { PlansList, type PlanRow } from './plans-list';
 
 interface PlansPageProps {
@@ -48,7 +49,9 @@ export default async function AdminPlansPage({ searchParams }: PlansPageProps) {
                         : `${totalCount} total`
                 }
                 action={{ label: 'New Plan', href: '/admin/plans/new' }}
-            />
+            >
+                <SpreadsheetActions entity="plans" note="Prices changed by import are not pushed to Paddle automatically: use Sync with Paddle on each changed plan." />
+            </AdminPageHeader>
             {params.error && <AdminPageError message={params.error} />}
             {params.syncError && <AdminPageError message={params.syncError} />}
             {params.synced && <AdminPageNotice message={`${params.synced} is up to date in Paddle.`} />}

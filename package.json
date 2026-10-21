@@ -31,6 +31,7 @@
     "test:dbcheck": "tsx scripts/test-db-check.mts",
     "test:emails": "NODE_OPTIONS=--conditions=react-server tsx scripts/test-email-templates.mts",
     "test:ratelimits": "NODE_OPTIONS=--conditions=react-server tsx scripts/test-rate-limits.mts",
+    "test:spreadsheet": "NODE_OPTIONS=--conditions=react-server tsx scripts/test-spreadsheet.mts",
     "test:billing": "NODE_OPTIONS=--conditions=react-server tsx scripts/test-app-billing.mts"
   },
   "dependencies": {
@@ -57,6 +58,7 @@
     "clsx": "^2.1.1",
     "dotenv": "^17.4.2",
     "drizzle-orm": "^0.45.4",
+    "exceljs": "^4.4.0",
     "flag-icons": "^7.6.0",
     "input-otp": "^1.5.0",
     "jose": "^6.2.3",

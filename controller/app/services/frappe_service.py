@@ -207,6 +207,24 @@ class FrappeService:
             for name, weight in weights.items()
         }
 
+    SETUP_MIN_MB = 1536
+    SETUP_MIN_CPUS = 2.0
+
+    def setup_resources(self, allocation):
+        """Memory and CPU for the one-off configurator and create-site containers.
+
+        They run before the application services start, when only the database and Redis are up, so they can use
+        the whole plan rather than the backend's few-percent share. Installing ERPNext on a fraction of a core
+        takes far longer than the provisioning time budget.
+        """
+        idle = [value for name, value in allocation.items() if name not in ("db", "redis-cache", "redis-queue")]
+        memory = max(self.SETUP_MIN_MB, sum(mb for mb, _ in idle))
+        cpus = max(self.SETUP_MIN_CPUS, sum(cpu for _, cpu in idle))
+        cores = getattr(self.server, "cpu_cores", None)
+        if isinstance(cores, int) and cores > 0:
+            cpus = min(cpus, float(cores))
+        return int(memory), round(cpus, 2)
+
     def compose(self):
         volumes = [
             "sites:/home/frappe/frappe-bench/sites",
@@ -324,10 +342,11 @@ class FrappeService:
         services["redis-cache"]["command"][2] = (
             f"{int(allocation['redis-cache'][0] * 0.7)}mb"
         )
+        setup_mb, setup_cpus = self.setup_resources(allocation)
         for name in ("configurator", "create-site"):
             services[name]["mem_limit"], services[name]["cpus"] = (
-                f"{allocation['backend'][0]}m",
-                allocation["backend"][1],
+                f"{setup_mb}m",
+                setup_cpus,
             )
         services["configurator"].update(
             {"entrypoint": ["bash", "-c"], "restart": "no", "profiles": ["setup"]}

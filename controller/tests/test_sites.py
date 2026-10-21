@@ -130,6 +130,18 @@ class SiteProvisioningTests(unittest.TestCase):
         cache_limit = int(small['redis-cache']['mem_limit'][:-1])
         self.assertLess(int(small['redis-cache']['command'][2][:-2]), cache_limit)
 
+    def test_setup_containers_get_the_whole_plan_not_the_backend_share(self):
+        def compose(memory_mb, cpu, cores=None):
+            site = SimpleNamespace(id='00000000-0000-0000-0000-000000000008', image='i', db_password='b', admin_password='a', domain='s.example.test', port=30008, app_names=['erpnext'], memory_limit_mb=memory_mb, cpu_limit=cpu)
+            with patch('app.services.frappe_service.SSHService'):
+                return FrappeService(site, SimpleNamespace(dial_host='h', cpu_cores=cores), SimpleNamespace(), None, None).compose()['services']
+        starter = compose(2048, 1.0)
+        for name in ('configurator', 'create-site'):
+            self.assertGreaterEqual(int(starter[name]['mem_limit'][:-1]), 1536)
+            self.assertGreaterEqual(starter[name]['cpus'], 2.0)
+        self.assertLess(starter['backend']['cpus'], 0.5)   # the running backend keeps its plan share
+        self.assertLessEqual(compose(2048, 1.0, cores=1)['create-site']['cpus'], 1.0)
+
     def service_with(self, listing):
         site = SimpleNamespace(id='00000000-0000-0000-0000-000000000007', image='i', db_password='b', admin_password='a', domain='b.example.test', port=30007, app_names=['erpnext'])
         with patch('app.services.frappe_service.SSHService'):

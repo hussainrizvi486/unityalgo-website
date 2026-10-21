@@ -36,7 +36,7 @@ def update(site_id, status, progress, message, **extra):
             from app.controller.server import ServerController
             ServerController(session, settings).refresh_capacity(session.get(ServerNode, site.server_id))
 
-@celery_app.task(bind=True, base=SiteTask, name='site.provision', soft_time_limit=2300, time_limit=2400)
+@celery_app.task(bind=True, base=SiteTask, name='site.provision', soft_time_limit=3300, time_limit=3400)
 def provision_site_task(self, site_id, setup=None):
     with database.session() as session:
         site = session.scalar(select(Site).where(Site.id == uuid.UUID(site_id)).with_for_update())
@@ -67,7 +67,7 @@ def provision_site_task(self, site_id, setup=None):
             service.run(['run','--rm','configurator'])
             step('installing', 55, 'Creating your site and installing the selected applications.')
             op.ok('installing', message='Creating your site and installing the selected applications.')
-            service.run(['run','--rm','create-site'])
+            service.run(['run','--rm','create-site'], timeout=2700)
             step('starting', 80, 'Starting the application and checking its health.')
             op.ok('starting', message='Starting the application and checking its health.')
             service.run(['up','-d','backend','frontend','websocket','queue-short','queue-long','scheduler'])
