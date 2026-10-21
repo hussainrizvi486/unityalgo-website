@@ -302,12 +302,15 @@ class SitesView(BaseView):
             raise ValidationError("Choose a country.")
         if not CURRENCY.fullmatch(setup["currency"]):
             raise ValidationError("Choose a currency.")
+        
         if setup["coa_type"] not in COA_TYPES:
             raise ValidationError("Chart of accounts must be standard or numbered.")
+        
         if not EMAIL.fullmatch(setup["owner_email"]) or len(setup["owner_email"]) > 254:
             raise ValidationError("Enter a valid email address for the site owner.")
         if len(setup["owner_password"]) < 12 or len(setup["owner_password"]) > 128:
             raise ValidationError("Password must be 12–128 characters.")
+        
         resources = self.plan_resources(data)
         plan_id, plan_name = (
             str(data.get("plan_id", "")).strip(),
@@ -395,6 +398,7 @@ class SitesView(BaseView):
                         Site.server_id == node.id, Site.status.in_(Site.ACTIVE_STATUSES)
                     )
                 )
+                
                 if fits_site(
                     node,
                     slots,

@@ -6,7 +6,7 @@ from app.services.frappe_service import FrappeService
 from app.services.ssh_service import SSHService
 
 SITE_FIELDS = ['id', 'slug', 'domain', 'port', 'image', 'app_names', 'admin_password', 'db_password', 'memory_limit_mb', 'cpu_limit', 'storage_limit_gb', 'user_limit']
-SERVER_FIELDS = ['id', 'name', 'ip_address', 'private_ip', 'ssh_port', 'ssh_user', 'ssh_key_path', 'ssh_key_encrypted', 'ssh_password', 'ssh_auth_method']
+SERVER_FIELDS = ['id', 'name', 'cpu_cores', 'ip_address', 'private_ip', 'ssh_port', 'ssh_user', 'ssh_key_path', 'ssh_key_encrypted', 'ssh_password', 'ssh_auth_method']
 
 
 def build_service(session, site, setup=None):
