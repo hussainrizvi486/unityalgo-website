@@ -928,11 +928,12 @@ export const controller = {
             request<Paginated<ControllerOperation>>(
                 `/api/v1/logs/operations${toQuery(params)}`,
             ),
-        operation: (id: string) =>
-            request<{
-                operation: ControllerOperation;
-                steps: ControllerActivityLog[];
-            }>(`/api/v1/logs/operations/${id}`),
+        operation: async (id: string) => {
+            const { steps, ...operation } = await request<
+                ControllerOperation & { steps?: ControllerActivityLog[] }
+            >(`/api/v1/logs/operations/${id}`);
+            return { operation: operation as ControllerOperation, steps: steps ?? [] };
+        },
     },
 
     apps: {

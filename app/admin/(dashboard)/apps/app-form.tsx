@@ -7,12 +7,14 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Notice } from '@/components/ui/notice';
+import { CoverImageField } from '@/components/admin/cover-image-field';
 type App = {
     id: string;
     name: string;
     slug: string;
     description: string;
     category: string;
+    iconUrl: string | null;
     frappeAppName: string | null;
     isActive: boolean;
     isInstallable: boolean;
@@ -54,6 +56,13 @@ export function AppCatalogForm({ app, github = false }: { app?: App; github?: bo
                         />
                     </div>
                 ))}
+            </div>
+            <div>
+                <Label>Icon</Label>
+                <p className="portal-text-caption text-muted-foreground">Shown on the App Store card. Square images work best.</p>
+                <div className="mt-2">
+                    <CoverImageField name="iconUrl" defaultValue={app?.iconUrl ?? ''} />
+                </div>
             </div>
             <div>
                 <Label htmlFor={`${prefix}-description`}>Description</Label>

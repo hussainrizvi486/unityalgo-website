@@ -43,6 +43,8 @@ export interface SidebarNavItem {
     exact?: boolean;
     /** Sub-pages; the item becomes a collapsible group. */
     items?: SidebarNavChild[];
+    /** Start expanded even when none of its sub-pages is the current page. */
+    defaultOpen?: boolean;
 }
 
 export interface SidebarNavGroup {
@@ -136,7 +138,7 @@ function NavItem({ item, pathname }: { item: SidebarNavItem; pathname: string })
     const { state } = useSidebar();
     const active = isCurrent(pathname, item);
     const childActive = item.items?.some((child) => isCurrent(pathname, child)) ?? false;
-    const [open, setOpen] = React.useState(active || childActive);
+    const [open, setOpen] = React.useState(active || childActive || Boolean(item.defaultOpen));
 
     if (!item.items?.length) {
         return (

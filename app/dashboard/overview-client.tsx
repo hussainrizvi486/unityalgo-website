@@ -1,13 +1,15 @@
 import Link from 'next/link';
 import {
     ArrowRight,
+    Bell,
     CalendarDays,
-    CheckCircle2,
     CreditCard,
-    Mail,
+    Globe,
+    LifeBuoy,
     Package,
+    Plus,
     Store,
-    UserRound,
+    Wallet,
 } from 'lucide-react';
 import type { AddOn, Currency, Plan, SubscriptionStatus } from '@/db/types';
 import {
@@ -18,6 +20,7 @@ import {
     formatProductName,
 } from '@/lib/pricing';
 import { Button } from '@/components/ui/button';
+import { formatPrice } from '@/lib/admin-format';
 
 interface Profile {
     firstName: string;
@@ -36,16 +39,15 @@ export function OverviewClient({
     profile,
     subscriptions,
     siteStats,
-    appCount,
+    monthlySpend,
+    notifications,
 }: {
     profile: Profile;
     subscriptions: SubscriptionSummary[];
     siteStats: { total: number; ready: number; provisioning: number } | null;
-    appCount: number;
+    monthlySpend: Array<{ currency: string; amount: number }>;
+    notifications: { total: number; unread: number };
 }) {
-    const initials =
-        `${profile.firstName.charAt(0)}${profile.lastName.charAt(0)}`.toUpperCase() ||
-        profile.email.charAt(0).toUpperCase();
     const allAddOns = subscriptions.flatMap((subscription) =>
         subscription.addOns.map((addOn) => ({
             addOn,
@@ -53,93 +55,96 @@ export function OverviewClient({
         })),
     );
 
+    const today = new Intl.DateTimeFormat('en-US', { dateStyle: 'full' }).format(new Date());
+
+    const stats = [
+        {
+            label: 'AlgoSuite Sites',
+            value: siteStats ? siteStats.total.toLocaleString('en-US') : 'Unavailable',
+            hint: siteStats
+                ? siteStats.total === 0
+                    ? 'No sites yet'
+                    : `${siteStats.ready} ready${siteStats.provisioning ? ` · ${siteStats.provisioning} installing` : ''}`
+                : 'Hosting is offline',
+            href: '/dashboard/sites',
+            icon: Globe,
+            tone: 'bg-primary/10 text-primary',
+        },
+        {
+            label: 'Monthly Spend',
+            value: monthlySpend.length ? monthlySpend.map((row) => formatPrice(row.amount, row.currency)).join(' + ') : formatPrice(0),
+            hint: monthlySpend.length ? 'Plans, add-ons and paid apps' : 'No active billing',
+            href: '/dashboard/subscription',
+            icon: Wallet,
+            tone: 'bg-success/10 text-success',
+        },
+        {
+            label: 'Notifications',
+            value: notifications.total.toLocaleString('en-US'),
+            hint: notifications.unread ? `${notifications.unread} unread` : 'All caught up',
+            href: null,
+            icon: Bell,
+            tone: 'bg-warning/10 text-warning',
+        },
+    ];
+
     return (
         <div className="mx-auto portal-page">
-            <div className="mb-8">
-                <p className="portal-text-caption font-bold uppercase tracking-eyebrow text-primary">
-                    Dashboard
-                </p>
-                <h1 className="portal-page-title mt-2">
-                    Welcome back, {profile.firstName}.
-                </h1>
-                <p className="mt-2 portal-text-body text-muted-foreground">
-                    Your account and subscriptions at a glance.
-                </p>
-            </div>
+            <section className="relative overflow-hidden rounded-2xl border border-border bg-linear-to-br from-primary/10 via-card to-card p-5 sm:p-8">
+                <div className="pointer-events-none absolute -right-16 -top-16 size-56 rounded-full bg-primary/10 blur-3xl" />
+                <div className="relative">
+                    <p className="inline-flex items-center gap-2 portal-text-caption font-semibold text-muted-foreground">
+                        <CalendarDays className="size-4" />
+                        {today}
+                    </p>
+                    <h1 className="portal-page-title mt-3">Welcome aboard!</h1>
+                    <p className="mt-2 max-w-xl portal-text-body text-muted-foreground">
+                        Hi {profile.firstName}, here is what is happening with your account today.
+                    </p>
+                    <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+                        <Button asChild>
+                            <Link href="/dashboard/sites/new">
+                                <Plus className="size-4" />
+                                Create a New Site
+                            </Link>
+                        </Button>
+                        <Button asChild variant="outline">
+                            <Link href="/dashboard/support/new">
+                                <LifeBuoy className="size-4" />
+                                Create a New Ticket
+                            </Link>
+                        </Button>
+                    </div>
+                </div>
+            </section>
 
-            <div className="mb-4 grid gap-gap sm:grid-cols-2 lg:grid-cols-4">
-                {[
-                    {
-                        label: 'Your sites',
-                        value: siteStats?.total ?? 'Unavailable',
-                        href: '/dashboard/sites',
-                    },
-                    {
-                        label: 'Ready to use',
-                        value: siteStats?.ready ?? '—',
-                        href: '/dashboard/sites',
-                    },
-                    {
-                        label: 'Being installed',
-                        value: siteStats?.provisioning ?? '—',
-                        href: '/dashboard/sites',
-                    },
-                    {
-                        label: 'Applications',
-                        value: appCount,
-                        href: '/dashboard/app-store',
-                    },
-                ].map((item) => (
-                    <Link
-                        key={item.label}
-                        href={item.href}
-                        className="p-4 transition-colors hover:border-input portal-surface"
-                    >
-                        <p className="portal-text-body text-muted-foreground">{item.label}</p>
-                        <p className="mt-2 text-2xl font-semibold">
-                            {item.value}
-                        </p>
-                        <span className="mt-2 inline-flex items-center gap-1 portal-text-caption text-primary">
-                            View details <ArrowRight className="size-2" />
-                        </span>
-                    </Link>
-                ))}
-            </div>
-            <div className="grid gap-gap-lg xl:grid-cols-[.78fr_1.22fr]">
-                <section className="p-4 sm:p-6 portal-surface">
-                    <div className="flex items-center justify-between">
-                        <h2 className=" text-foreground">
-                            Customer profile
-                        </h2>
-                        <UserRound className="size-4 text-muted-foreground/50" />
-                    </div>
-                    <div className="mt-6 flex flex-col items-start gap-gap sm:flex-row sm:items-center">
-                        <span className="flex h-18 w-18 items-center justify-center rounded-xl bg-primary text-xl font-bold text-primary-foreground">
-                            {initials}
-                        </span>
-                        <div className="min-w-0">
-                            <p className="truncate text-xl font-bold text-foreground">
-                                {profile.firstName} {profile.lastName}
-                            </p>
-                            <p className="mt-1 flex items-center gap-2 break-all portal-text-body text-muted-foreground">
-                                <Mail className="size-4 shrink-0" />
-                                {profile.email}
-                            </p>
-                            <span className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-success/10 px-2.5 py-1 portal-text-small font-semibold text-success">
-                                <CheckCircle2 className="size-3.5" />
-                                Email verified
-                            </span>
-                        </div>
-                    </div>
-                    {}
-                    <Button asChild className="mt-6">
-                        <Link href="/dashboard/settings">
-                            Manage profile
-                            <ArrowRight className="size-4" />
+            <div className="mt-gap grid gap-gap sm:grid-cols-2 lg:grid-cols-3">
+                {stats.map((item) => {
+                    const body = (
+                        <>
+                            <div className="flex items-start justify-between gap-3">
+                                <p className="portal-text-body font-medium text-muted-foreground">{item.label}</p>
+                                <span className={`flex size-10 shrink-0 items-center justify-center rounded-xl ${item.tone}`}>
+                                    <item.icon className="size-5" />
+                                </span>
+                            </div>
+                            <p className="mt-4 truncate text-3xl font-semibold tracking-tight text-foreground">{item.value}</p>
+                            <p className="mt-1 portal-text-caption text-muted-foreground">{item.hint}</p>
+                        </>
+                    );
+                    return item.href ? (
+                        <Link key={item.label} href={item.href} className="p-5 transition-all hover:-translate-y-0.5 hover:border-input hover:shadow-sm portal-surface">
+                            {body}
                         </Link>
-                    </Button>
-                </section>
+                    ) : (
+                        <div key={item.label} className="p-5 portal-surface">
+                            {body}
+                        </div>
+                    );
+                })}
+            </div>
 
+            <div className="mt-gap grid gap-gap">
                 {subscriptions.length > 0 ? (
                     <div className="space-y-gap">
                         {subscriptions.map((subscription) => {

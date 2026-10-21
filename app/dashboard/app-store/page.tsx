@@ -16,6 +16,7 @@ export default async function AppStorePage() {
             slug: schema.appCatalog.slug,
             description: schema.appCatalog.description,
             category: schema.appCatalog.category,
+            iconUrl: schema.appCatalog.iconUrl,
             frappeAppName: schema.appCatalog.frappeAppName,
             publisher: schema.appCatalog.publisher,
             source: schema.appCatalog.source,

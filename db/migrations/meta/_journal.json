@@ -50,6 +50,13 @@
       "when": 1792415542496,
       "tag": "0006_portal_tour",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1792591337501,
+      "tag": "0007_app_icon",
+      "breakpoints": true
     }
   ]
 }

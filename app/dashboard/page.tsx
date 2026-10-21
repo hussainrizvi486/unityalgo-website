@@ -2,15 +2,30 @@ import { getSubscriptions } from '@/app/customer/actions';
 import { requireCustomer } from '@/lib/customer-session';
 import { OverviewClient } from './overview-client';
 import { controller } from '@/lib/controller-client';
-import { eq } from 'drizzle-orm';
+import { and, eq, isNull } from 'drizzle-orm';
 import { db, schema } from '@/lib/db';
+import { computeMonthlyTotal } from '@/lib/pricing';
 
 export const metadata = { title: 'Dashboard' };
 
 export default async function CustomerOverviewPage() {
     const user = await requireCustomer();
     const subscriptions = await getSubscriptions(user.id);
-    const apps = await db.$count(schema.appCatalog, eq(schema.appCatalog.isActive, true));
+    const [notificationTotal, unreadNotifications, appPurchases] = await Promise.all([
+        db.$count(schema.notification, eq(schema.notification.userId, user.id)),
+        db.$count(schema.notification, and(eq(schema.notification.userId, user.id), isNull(schema.notification.readAt))),
+        db.query.appPurchase.findMany({
+            where: and(eq(schema.appPurchase.userId, user.id), eq(schema.appPurchase.status, 'ACTIVE')),
+        }),
+    ]);
+    const spend = new Map<string, number>();
+    const charge = (code: string, amount: number) => spend.set(code, (spend.get(code) ?? 0) + amount);
+    for (const subscription of subscriptions) {
+        if (subscription.status !== 'ACTIVE' && subscription.status !== 'PAST_DUE') continue;
+        const total = computeMonthlyTotal(subscription.plan, subscription.addOns.map((row) => row.addOn));
+        if (total) charge(subscription.plan.currency?.code ?? 'USD', total);
+    }
+    for (const purchase of appPurchases) charge(purchase.currency, purchase.priceAmount);
     let siteStats = null;
     try {
         const sites = (await controller.sites.list(user.id)).results;
@@ -31,7 +46,8 @@ export default async function CustomerOverviewPage() {
     return (
         <OverviewClient
             siteStats={siteStats}
-            appCount={apps}
+            monthlySpend={[...spend].map(([currency, amount]) => ({ currency, amount }))}
+            notifications={{ total: notificationTotal, unread: unreadNotifications }}
             profile={{
                 firstName: user.firstName || user.name || 'Customer',
                 lastName: user.lastName || '',

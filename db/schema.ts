@@ -408,6 +408,7 @@ export const appCatalog = pgTable("AppCatalog", {
 	name: text().notNull(),
 	description: text().notNull(),
 	category: text().notNull(),
+	iconUrl: text(),
 	frappeAppName: text(),
 	isInstallable: boolean().default(false).notNull(),
 	isActive: boolean().default(true).notNull(),

@@ -9,6 +9,7 @@ import {
     Settings,
     AppWindow,
     Globe,
+    Boxes,
     // Component,
 } from 'lucide-react';
 import { NotificationBell } from './notification-bell';
@@ -32,9 +33,26 @@ const pages = [
     // { title: 'Components', description: 'Live reference for the portal design system', href: '/dashboard/components', icon: Component },
 ];
 
+const [dashboardPage, sitesPage, appStorePage, ...accountPages] = pages;
+
 const groups: SidebarNavGroup[] = [
-    { label: 'Workspace', items: pages.slice(0, 3) },
-    { label: 'Account', items: pages.slice(3) },
+    {
+        label: 'Workspace',
+        items: [
+            dashboardPage,
+            {
+                title: 'AlgoSuite',
+                href: '/dashboard/algosuite',
+                icon: Boxes,
+                defaultOpen: true,
+                items: [
+                    { title: 'ERP sites', href: sitesPage.href },
+                    { title: 'App Catalogs', href: appStorePage.href },
+                ],
+            },
+        ],
+    },
+    { label: 'Account', items: accountPages },
 ];
 
 interface CustomerShellUser {

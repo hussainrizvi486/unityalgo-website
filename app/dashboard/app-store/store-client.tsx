@@ -14,6 +14,7 @@ type App = {
     slug: string;
     description: string;
     category: string;
+    iconUrl: string | null;
     publisher: string | null;
     frappeAppName: string | null;
     priceAmount: number | null;
@@ -65,8 +66,13 @@ export function AppStoreClient({ apps, sites }: { apps: App[]; sites: InstallSit
 
                             <div className="flex items-center justify-between gap-gap-sm">
                                 <div className="flex items-center gap-2">
-                                    <span className="flex size-11 items-center justify-center rounded-xl bg-muted text-sm font-semibold text-muted-foreground">
-                                        {initials(app.name)}
+                                    <span className="flex size-11 items-center justify-center overflow-hidden rounded-xl bg-muted text-sm font-semibold text-muted-foreground">
+                                        {app.iconUrl ? (
+                                            // eslint-disable-next-line @next/next/no-img-element
+                                            <img src={app.iconUrl} alt="" referrerPolicy="no-referrer" loading="lazy" className="size-full object-cover" />
+                                        ) : (
+                                            initials(app.name)
+                                        )}
                                     </span>
                                     <div>
                                         <h2 className="text-base">{app.name}</h2>
