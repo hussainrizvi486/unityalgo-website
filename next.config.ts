@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import path from "node:path";
 import { IMAGE_HOSTS } from "./lib/image-hosts";
 
 const isDev = process.env.NODE_ENV !== "production";
@@ -35,6 +36,8 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  outputFileTracingRoot: path.resolve(__dirname),
+  turbopack: { root: path.resolve(__dirname) },
   images: {
     remotePatterns: IMAGE_HOSTS.map((hostname) => ({ protocol: 'https' as const, hostname })),
   },

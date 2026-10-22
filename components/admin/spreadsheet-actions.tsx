@@ -84,11 +84,11 @@ export function SpreadsheetActions({ entity, exportQuery = '', note }: {
                     <DialogHeader>
                         <DialogTitle>{error ? 'Import failed' : 'Import finished'}</DialogTitle>
                         <DialogDescription>
-                            {error ?? (
+                            {error ?? (report ? (
                                 <>
-                                    {report!.total} row{report!.total === 1 ? '' : 's'} read from the file.
+                                    {report.total} row{report.total === 1 ? '' : 's'} read from the file.
                                 </>
-                            )}
+                            ) : null)}
                         </DialogDescription>
                     </DialogHeader>
                     {report && (
