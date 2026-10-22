@@ -32,7 +32,8 @@ const { reserveCustomerCredits, releaseCustomerCredits, settleCustomerCredits, g
 const { previewPlanChange, commitPlanChange } = await import('../lib/subscription-billing');
 const { prepareRenewalCredits, cancelRenewalCredits, maintainCreditRedemptions } = await import('../lib/credit-billing');
 const { purchaseApp, cancelPurchase } = await import('../lib/app-billing');
-const { createPlanCheckout, cancelPendingCheckout } = await import('../lib/checkout-billing');
+const { CheckoutError } = await import('../lib/billing-errors');
+const { createPlanCheckout, cancelPendingCheckout, ensurePaddleCustomer } = await import('../lib/checkout-billing');
 const { processPaddleEvent, reconcilePaddleSubscription, recoverStalledBillingOperations } = await import('../lib/paddle-sync');
 const { saveSiteOrder, startSiteOrderPayment, confirmSiteOrderPayment, provisionSiteOrder, drainSiteOrders, cancelSiteOrder, expireSiteOrders } = await import('../lib/site-orders');
 const { syncSiteBilling, assertSiteBillingAccess } = await import('../lib/site-billing-lifecycle');
@@ -46,6 +47,8 @@ let sitePlanChanges = 0, siteDeactivations = 0, siteReactivations = 0;
 const siteFixtures = new Map<string, { id: string; name: string; status: string; activity: string | null; plan_id: string }>();
 const createdSites = new Map<string, { id: string; name: string }>();
 let failPayment = false, timeoutPayment = false;
+let rejectCheckout = false, timeoutCheckout = false;
+let customerConflict = false, conflictHint = true, customerEmail = 'customer@test.invalid', customerStatus = 'active', customerCreates = 0, customerRestores = 0;
 let current = {
     id: 'sub_test', customer_id: 'ctm_test', status: 'active', updated_at: '2026-10-01T00:00:00Z',
     current_billing_period: { starts_at: '2026-10-01T00:00:00Z', ends_at: '2026-11-01T00:00:00Z' },
@@ -132,9 +135,11 @@ globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
     if (path.endsWith('/credit-balances')) return response([{ currency_code: 'USD', balance: { available: '500', reserved: '0', used: '0' } }]);
     if (path === '/transactions' && method === 'POST') {
         transactionCreates++;
+        if (rejectCheckout) return Response.json({ error: { detail: 'Invalid request.', code: 'invalid_field', errors: [{ field: 'items', message: 'Invalid price.' }] }, meta: { request_id: 'test-checkout-request' } }, { status: 400 });
         const body = JSON.parse(String(init?.body));
         const data = { id: `txn_checkout${transactionCreates}`, status: 'draft', ...body };
         transactions.set(data.id, data);
+        if (timeoutCheckout) throw new Error('Provider response lost after accepting the transaction.');
         return response(data);
     }
     if (path.startsWith('/transactions/')) {
@@ -144,6 +149,16 @@ globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
         return response(data);
     }
     if (path.startsWith('/adjustments/')) return response(adjustments.get(path.split('/').at(-1)!));
+    if (path === '/customers' && method === 'POST') {
+        customerCreates++;
+        if (customerConflict) return Response.json({ error: { code: 'customer_already_exists', detail: conflictHint ? 'customer email conflicts with customer of id ctm_existing1' : 'customer email conflicts with an existing customer' } }, { status: 409 });
+        return response({ id: 'ctm_created1' });
+    }
+    if (path === '/customers' && method === 'GET') return response([{ id: 'ctm_existing1', email: customerEmail, status: customerStatus }]);
+    if (path === '/customers/ctm_existing1') {
+        if (method === 'PATCH') { customerRestores++; customerStatus = 'active'; }
+        return response({ id: 'ctm_existing1', email: customerEmail, status: customerStatus });
+    }
     if (path === '/transactions' || path === '/adjustments') return response([]);
     throw new Error(`Unexpected provider request: ${method} ${path}`);
 }) as typeof fetch;
@@ -261,6 +276,19 @@ try {
         assert.ok(successful && successful.status === 'fulfilled');
         assert.equal(transactionCreates, 1);
         assert.equal(await createPlanCheckout('customer', 'basic', false), successful.value);
+    });
+    await check('an existing Paddle customer with the same email is reused instead of failing checkout', async () => {
+        assert.equal(await ensurePaddleCustomer('customer', 'customer@test.invalid'), 'ctm_created1');
+        customerConflict = true;
+        assert.equal(await ensurePaddleCustomer('customer', 'customer@test.invalid'), 'ctm_existing1');
+        conflictHint = false;
+        assert.equal(await ensurePaddleCustomer('customer', 'customer@test.invalid'), 'ctm_existing1');
+        customerEmail = 'someone-else@test.invalid';
+        await assert.rejects(ensurePaddleCustomer('customer', 'customer@test.invalid'), /conflicts/);
+        customerEmail = 'customer@test.invalid'; customerStatus = 'archived';
+        assert.equal(await ensurePaddleCustomer('customer', 'customer@test.invalid'), 'ctm_existing1');
+        assert.equal(customerRestores, 1);
+        customerConflict = false; conflictHint = true; customerStatus = 'active';
     });
     await check('initial subscription ownership follows server-created transaction linkage', async () => {
         const checkout = transactions.get('txn_checkout1')!;
@@ -595,6 +623,25 @@ try {
         await provisionSiteOrder(order.id);
         assert.equal(transactionCreates, before);
         assert.equal((await db.query.siteOrder.findFirst({ where: eq(schema.siteOrder.id, order.id) }))?.status, 'PROVISIONED');
+    });
+    await check('rejected checkout setup exposes a safe reference and records provider failure', async () => {
+        await creditCustomer('checkout-rejected', 100);
+        rejectCheckout = true;
+        try { await assert.rejects(createPlanCheckout('checkout-rejected', 'basic', false), (error: unknown) => error instanceof CheckoutError && !!error.reference && /Paddle could not accept/.test(error.message)); }
+        finally { rejectCheckout = false; }
+        const operation = await db.query.billingOperation.findFirst({ where: eq(schema.billingOperation.userId, 'checkout-rejected') });
+        assert.equal(operation?.status, 'FAILED');
+        assert.equal(await db.query.billingProviderRecord.findFirst({ where: eq(schema.billingProviderRecord.id, 'checkout:checkout-rejected:product') }), undefined);
+    });
+    await check('an uncertain checkout never invites or creates another payment', async () => {
+        await creditCustomer('checkout-uncertain', 100);
+        timeoutCheckout = true;
+        try { await assert.rejects(createPlanCheckout('checkout-uncertain', 'basic', false), (error: unknown) => error instanceof CheckoutError && !!error.reference && /before submitting another payment/.test(error.message)); }
+        finally { timeoutCheckout = false; }
+        const before = transactionCreates;
+        await assert.rejects(createPlanCheckout('checkout-uncertain', 'basic', false), (error: unknown) => error instanceof CheckoutError && /previous checkout is being checked/.test(error.message));
+        assert.equal(transactionCreates, before);
+        assert.equal((await db.query.billingOperation.findFirst({ where: eq(schema.billingOperation.userId, 'checkout-uncertain') }))?.status, 'UNKNOWN');
     });
     console.log(`\n${passed} integration checks passed; migrations applied successfully.`);
 } finally {

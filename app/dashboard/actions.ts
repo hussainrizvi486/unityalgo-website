@@ -1,5 +1,6 @@
 'use server';
 import { assertSiteBillingAccess } from '@/lib/site-billing-lifecycle';
+import { CheckoutError, reportBillingFailure } from '@/lib/billing-errors';
 import { cancelSiteOrder } from '@/lib/site-orders';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
@@ -79,7 +80,12 @@ export async function startSitePaymentAction(orderId: string, useCredits = true)
         const result = await startSiteOrderPayment(session.userId, orderId, useCredits === true);
         if (result.authorized) await provisionSiteOrder(orderId);
         return { ok: true as const, ...result };
-    } catch (error) { return { ok: false as const, error: error instanceof ControllerError ? 'Site hosting is temporarily unavailable. Your details are saved; please retry.' : error instanceof SiteOrderError ? error.message : 'Payment could not be started. Your setup is saved; please try again.' }; }
+    } catch (error) {
+        if (error instanceof ControllerError) return { ok: false as const, error: 'Site hosting is temporarily unavailable. Your details are saved; please retry.' };
+        if (error instanceof SiteOrderError || error instanceof CheckoutError) return { ok: false as const, error: error.message };
+        const failure = reportBillingFailure(error, { action: 'start_site_payment', orderId });
+        return { ok: false as const, error: failure.message };
+    }
 }
 
 export async function sitePaymentStatusAction(orderId: string, verify = false) {

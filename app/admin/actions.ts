@@ -9,7 +9,7 @@ import { db, schema } from '@/lib/db';
 import { SESSION_COOKIE } from '@/lib/auth';
 import { CommentEntityType, createComment } from '@/lib/comments';
 import { getCurrentAdminEmail, requireAdmin } from '@/lib/admin-session';
-import { syncPlanToPaddle } from '@/lib/paddle-catalog';
+import { PaddleApiError, syncPlanToPaddle } from '@/lib/paddle-catalog';
 
 export async function logoutAction() {
     const cookieStore = await cookies();
@@ -631,6 +631,11 @@ export async function syncPlanWithPaddleAction(formData: FormData) {
             await db.update(schema.plan).set({ paddlePriceId: priceId }).where(eq(schema.plan.id, id));
         }
     } catch (error) {
+        if (error instanceof PaddleApiError) {
+            console.error('[paddle] Plan catalog sync failed', {
+                planId: id, status: error.status, code: error.code, requestId: error.requestId,
+            });
+        }
         fail(error instanceof Error ? error.message : 'Paddle rejected the sync.');
         return;
     }

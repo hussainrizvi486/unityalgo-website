@@ -9,7 +9,7 @@ import { sealSiteSetup, openSiteSetup } from '@/lib/site-order-secrets';
 import { createPlanCheckout } from '@/lib/checkout-billing';
 import { asRecord, asString } from '@/lib/paddle-data';
 
-export class SiteOrderError extends Error {}
+export class SiteOrderError extends Error { }
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
@@ -32,10 +32,12 @@ export async function saveSiteOrder(userId: string, requestKey: string, values: 
         ensureHosting(values.slug),
     ]);
     if (!plan || !currency) throw new SiteOrderError('The selected plan or currency is unavailable.');
-    const apps = values.apps.length ? await db.query.appCatalog.findMany({ where: and(
-        inArray(schema.appCatalog.id, values.apps), eq(schema.appCatalog.isActive, true), eq(schema.appCatalog.isInstallable, true),
-        eq(schema.appCatalog.source, 'image'), or(isNull(schema.appCatalog.priceAmount), eq(schema.appCatalog.priceAmount, 0)), isNotNull(schema.appCatalog.frappeAppName),
-    ) }) : [];
+    const apps = values.apps.length ? await db.query.appCatalog.findMany({
+        where: and(
+            inArray(schema.appCatalog.id, values.apps), eq(schema.appCatalog.isActive, true), eq(schema.appCatalog.isInstallable, true),
+            eq(schema.appCatalog.source, 'image'), or(isNull(schema.appCatalog.priceAmount), eq(schema.appCatalog.priceAmount, 0)), isNotNull(schema.appCatalog.frappeAppName),
+        )
+    }) : [];
     if (apps.length !== new Set(values.apps).size || apps.some((app) => !capabilities.apps.includes(app.frappeAppName!))) throw new SiteOrderError('A selected application is unavailable.');
     // Paid plan selection always goes through payment; only an explicitly free trial plan bypasses it.
     const trialDays = plan.priceAmount == null ? trialDaysFor(plan, await trialEligibility(userId)) : 0;

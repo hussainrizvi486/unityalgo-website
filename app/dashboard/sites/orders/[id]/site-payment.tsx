@@ -41,11 +41,13 @@ export function SitePayment({ orderId, trial, initialStatus, transactionId }: { 
             if (!id) throw new Error('Checkout is unavailable. Your details are saved.');
             const token = process.env.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN;
             if (!token) throw new Error('Online payment is not configured. Your details are saved.');
-            paddle.current = await initializePaddle({ token, environment: process.env.NEXT_PUBLIC_PADDLE_ENV === 'production' ? 'production' : 'sandbox', eventCallback(event) {
-                if (event.name === CheckoutEventNames.CHECKOUT_COMPLETED) { verifying.current = true; void check(true); }
-                if (event.name === CheckoutEventNames.CHECKOUT_ERROR) setError('Checkout could not be completed. Your setup is saved; check payment status before retrying.');
-                if (event.name === CheckoutEventNames.CHECKOUT_CLOSED) setBusy(false);
-            } });
+            paddle.current = await initializePaddle({
+                token, environment: process.env.NEXT_PUBLIC_PADDLE_ENV === 'production' ? 'production' : 'sandbox', eventCallback(event) {
+                    if (event.name === CheckoutEventNames.CHECKOUT_COMPLETED) { verifying.current = true; void check(true); }
+                    if (event.name === CheckoutEventNames.CHECKOUT_ERROR) setError('Checkout could not be completed. Your setup is saved; check payment status before retrying.');
+                    if (event.name === CheckoutEventNames.CHECKOUT_CLOSED) setBusy(false);
+                }
+            });
             if (!paddle.current) throw new Error('Checkout could not be opened.');
             setStatus('AWAITING_PAYMENT');
             paddle.current.Checkout.open({ transactionId: id, settings: { displayMode: 'overlay', variant: 'one-page', theme: 'light', allowLogout: false, showAddDiscounts: false } });

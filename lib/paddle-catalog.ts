@@ -2,7 +2,10 @@ import 'server-only';
 import { moneyToMinor } from '@/lib/billing-rules';
 
 export class PaddleApiError extends Error {
-    constructor(message: string, public readonly status: number) { super(message); }
+    constructor(message: string, public readonly status: number, public readonly code?: string, public readonly requestId?: string, public readonly validationFields: readonly string[] = []) {
+        super(message);
+        this.name = 'PaddleApiError';
+    }
 }
 
 function apiBase() {
@@ -21,9 +24,18 @@ export async function paddleRequest(path: string, init?: RequestInit) {
         cache: 'no-store',
         signal: init?.signal ?? AbortSignal.timeout(20_000),
     });
-    const body = await response.json() as { data?: unknown; error?: { detail?: string } };
+    const body = await response.json() as {
+        data?: unknown;
+        error?: { detail?: string; code?: string; errors?: Array<{ field?: string; message?: string }> };
+        meta?: { request_id?: string };
+    };
     if (!response.ok) {
-        throw new PaddleApiError(body.error?.detail ?? `Paddle returned ${response.status}`, response.status);
+        const details = Array.isArray(body.error?.errors) ? body.error.errors
+            .filter((error) => typeof error.message === 'string')
+            .slice(0, 5)
+            .map((error) => `${error.field ? `${error.field}: ` : ''}${error.message}`) : [];
+        const message = [body.error?.detail ?? `Paddle returned ${response.status}`, ...details].join(' ');
+        throw new PaddleApiError(message, response.status, body.error?.code, body.meta?.request_id, Array.isArray(body.error?.errors) ? body.error.errors.flatMap((error) => typeof error.field === 'string' ? [error.field] : []) : []);
     }
     return body.data;
 }
