@@ -1,4 +1,7 @@
 import Link from 'next/link';
+import { and, desc, eq, notInArray } from 'drizzle-orm';
+import { db, schema } from '@/lib/db';
+import { asRecord } from '@/lib/paddle-data';
 import { Plus } from 'lucide-react';
 import { requireCustomer } from '@/lib/customer-session';
 import { controller } from '@/lib/controller-client';
@@ -9,6 +12,7 @@ import { SitesGrid } from './sites-grid';
 export const metadata = { title: 'Sites' };
 export default async function SitesPage() {
     const user = await requireCustomer();
+    const pendingOrders = await db.query.siteOrder.findMany({ where: and(eq(schema.siteOrder.userId, user.id), notInArray(schema.siteOrder.status, ['PROVISIONED', 'CANCELED', 'EXPIRED'])), orderBy: desc(schema.siteOrder.createdAt), limit: 10 });
     let sites;
     try {
         sites = (await controller.sites.list(user.id)).results;
@@ -42,6 +46,13 @@ export default async function SitesPage() {
                     </Button>
                 </div>
             </div>
+            {pendingOrders.length ? <section className="mt-6 space-y-3">
+                <h2>Pending site setups</h2>
+                {pendingOrders.map((order) => <Link className="block rounded-lg border border-border p-4 hover:bg-muted" key={order.id} href={`/dashboard/sites/orders/${order.id}`}>
+                    <span className="font-medium">{String(asRecord(order.summary).slug)}</span>
+                    <span className="ml-3 text-sm text-muted-foreground">{order.status === 'READY' ? 'Payment confirmed · provisioning queued' : 'Continue setup and payment'}</span>
+                </Link>)}
+            </section> : null}
             {sites === null ? (
                 <Notice tone="warning" className="mt-8">
                     Site hosting is temporarily unavailable. Your existing sites

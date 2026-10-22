@@ -1,4 +1,8 @@
 import Link from 'next/link';
+import { randomUUID } from 'node:crypto';
+import { CustomerCreditHistory } from '@/components/customer/customer-credit-history';
+import { CreditGrantForm } from '@/components/customer/credit-grant-form';
+import { currencyDigits } from '@/lib/billing-rules';
 import { notFound } from 'next/navigation';
 import { ArrowLeft, Boxes, CreditCard, Store } from 'lucide-react';
 import { desc, eq } from 'drizzle-orm';
@@ -26,6 +30,7 @@ export default async function AdminUserDetailPage({ params }: { params: Promise<
     });
     if (!user) notFound();
 
+    const credits = await db.query.creditAccount.findMany({ where: eq(schema.creditAccount.userId, user.id) });
     const tenants = await tenantsForUser(user.id);
     const displayName = user.name ?? [user.firstName, user.lastName].filter(Boolean).join(' ').trim() ?? user.email;
 
@@ -53,6 +58,13 @@ export default async function AdminUserDetailPage({ params }: { params: Promise<
                 <Button asChild variant="outline" ><Link href={`/admin/users/${user.id}/edit`}>Edit</Link></Button>
             </div>
 
+            <section className="mt-8 p-5 sm:p-6 portal-surface">
+                <h2>Assigned customer credits</h2>
+                {credits.map((credit) => <p key={credit.id}>{new Intl.NumberFormat('en', { style: 'currency', currency: credit.currency }).format(credit.available / 10 ** currencyDigits(credit.currency))}</p>)}
+                <p className="mt-2 text-sm text-muted-foreground">Non-cash account credits customers can use as discounts on plans, upgrades and renewals.</p>
+                <CreditGrantForm userId={user.id} operationKey={randomUUID()} />
+                <CustomerCreditHistory userId={user.id} admin />
+            </section>
             {/* --- subscriptions --- */}
             <section className="mt-8 p-5 sm:p-6 portal-surface">
                 <h2 className="flex items-center gap-2 text-foreground">

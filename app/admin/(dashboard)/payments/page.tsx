@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { desc, eq } from 'drizzle-orm';
 import { db, schema } from '@/lib/db';
 import { requireAdmin } from '@/lib/admin-session';
@@ -45,7 +46,7 @@ export default async function AdminPaymentsPage() {
             description: record.description,
             customerName: user.name || [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email,
             customerEmail: user.email,
-            plan: plan ?? null,
+            plan: record.paymentMethod === 'Paddle' ? record.description.replace(/ subscription billing$/, '') : plan ?? null,
             amount: record.amount,
             amountLabel: formatPrice(record.amount, record.currency),
             refundedLabel: record.refundedAmount ? formatPrice(record.refundedAmount, record.currency) : null,
@@ -70,6 +71,7 @@ export default async function AdminPaymentsPage() {
                 title="Payments"
                 subtitle={rows.length < totalCount ? `Showing the ${rows.length} most recent of ${totalCount}` : `${totalCount} total`}
             />
+            <Link href="/admin/billing-status" className="mb-4 inline-block text-sm underline">Billing processing status</Link>
             <div className="mb-6 grid gap-gap sm:grid-cols-2 xl:grid-cols-4">
                 {stats.map((stat) => (
                     <div key={stat.label} className="rounded-xl border border-border p-card">

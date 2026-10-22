@@ -36,7 +36,7 @@ export default async function PurchasePlansPage() {
     <div className="">
       <p className="portal-text-caption font-bold uppercase tracking-eyebrow text-primary">Plans</p>
       <h1 className="portal-page-title mt-2">Choose a plan</h1>
-      <p className="mt-2 portal-text-body text-muted-foreground">You can hold one plan per product — pick a plan for each product you want to subscribe to.</p>
+      <p className="mt-2 portal-text-body text-muted-foreground">Choose a plan for a new site. To upgrade an existing site, open that site and choose Change plan.</p>
 
       {[...groups.entries()].map(([product, group]) => {
         const subscriptionForProduct = subscriptionByProduct.get(product);
@@ -45,7 +45,7 @@ export default async function PurchasePlansPage() {
           <h2 className="mb-4 text-lg text-foreground">{group.label}</h2>
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {group.plans.map((plan) => {
-              const isCurrent = subscriptionForProduct?.planId === plan.id;
+              const isCurrent = plan.product.slug !== 'algosuite' && subscriptionForProduct?.planId === plan.id && subscriptionForProduct.status !== 'CANCELED';
               const isAlgoSuite = plan.product.slug === 'algosuite';
               const isTrialOnly = isAlgoSuite && plan.priceAmount == null && Boolean(plan.trialDays);
               const trialDays = isAlgoSuite ? trialDaysFor(plan, eligibility) : 0;
@@ -89,14 +89,13 @@ export default async function PurchasePlansPage() {
                       <Button asChild type="button" variant="outline" className="w-full gap-1.5 rounded-md"><Link href="/#contact">
                           <MessageCircle className="h-4 w-4" />Contact sales
                         </Link></Button>
+                    ) : isAlgoSuite ? (
+                      <Button asChild className="w-full rounded-md"><Link href={`/dashboard/sites/new?plan=${plan.id}`}>Choose plan</Link></Button>
                     ) : (
                       <PlanCheckoutButton
                         planId={plan.id}
-                        label={subscriptionForProduct ? 'Switch to this plan' : 'Choose plan'}
+                        label={subscriptionForProduct && subscriptionForProduct.status !== 'CANCELED' ? 'Switch to this plan' : 'Choose plan'}
                       />
-                    )}
-                    {trialDays > 0 && !isTrialOnly && !isCurrent && !isCustomQuote && (
-                      <Button asChild type="button" variant="ghost" className="mt-2 w-full rounded-md"><Link href={`/dashboard/sites/new?plan=${plan.id}`}>Try free for {trialDays} days</Link></Button>
                     )}
                   </div>
                 </div>

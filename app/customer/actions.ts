@@ -33,6 +33,13 @@ import {
     RESET_VERIFIED_DURATION_SECONDS,
 } from '@/lib/customer-auth';
 import { createTrackedCustomerSession } from '@/lib/login-sessions';
+import { createPlanCheckout, cancelPendingCheckout } from '@/lib/checkout-billing';
+import { asRecord, asString } from '@/lib/paddle-data';
+import { prepareRenewalCredits, cancelRenewalCredits, releaseCreditOperation } from '@/lib/credit-billing';
+import { reconcilePaddleSubscription } from '@/lib/paddle-sync';
+import { syncSiteBilling } from '@/lib/site-billing-lifecycle';
+import { controller } from '@/lib/controller-client';
+import { previewPlanChange, commitPlanChange, customerPortal } from '@/lib/subscription-billing';
 import { requireCustomerSession } from '@/lib/customer-session';
 import {
     isValidEmail,
@@ -383,41 +390,93 @@ async function getSubscriptionForProduct(userId: string, product: string) {
 export interface CheckoutIntent {
     ok: boolean;
     error?: string;
-    priceId?: string;
-    email?: string;
-    customData?: { userId: string; planId: string };
+    transactionId?: string;
+    pendingCheckout?: boolean;
+    change?: { operationId: string; amount: string; currency: string; action: string; creditsApplied: number };
 }
 
-export async function startPlanCheckoutAction(planId: string): Promise<CheckoutIntent> {
+export async function startPlanCheckoutAction(planId: string, useCredits = true, siteId?: string): Promise<CheckoutIntent> {
     const session = await requireCustomerSession();
-    if (!planId) return { ok: false, error: 'No plan selected.' };
-
-    const plan = await db.query.plan.findFirst({ where: eq(schema.plan.id, planId) });
-    if (!plan || !plan.isActive) return { ok: false, error: 'That plan is not available.' };
-    if (plan.priceAmount == null) {
-        return { ok: false, error: 'This plan is quoted individually — please contact sales.' };
+    const plan = await db.query.plan.findFirst({ where: and(eq(schema.plan.id, planId), eq(schema.plan.isActive, true)) });
+    if (!plan?.paddlePriceId || plan.priceAmount == null) return { ok: false, error: 'That plan is not available for online payment.' };
+    try {
+        const matches = await db.query.subscription.findMany({ where: and(eq(schema.subscription.userId, session.userId), eq(schema.subscription.productId, plan.productId), siteId ? eq(schema.subscription.siteId, siteId) : undefined) });
+        if (matches.length > 1) throw new Error('Open the site to change its plan.');
+        let existing = matches[0];
+        if (siteId && !existing) {
+            const site = await controller.sites.get(siteId, session.userId);
+            const candidates = await db.query.subscription.findMany({ where: and(eq(schema.subscription.userId, session.userId), eq(schema.subscription.productId, plan.productId), isNull(schema.subscription.siteId), isNull(schema.subscription.siteOrderId), eq(schema.subscription.planId, site.plan_id ?? ''), eq(schema.subscription.status, 'ACTIVE')) });
+            if (candidates.length !== 1) throw new Error('This site needs its billing subscription linked by support.');
+            const [bound] = await db.update(schema.subscription).set({ siteId, appliedPlanId: site.plan_id, appliedAt: new Date() }).where(and(eq(schema.subscription.id, candidates[0].id), isNull(schema.subscription.siteId))).returning();
+            existing = bound;
+        }
+        if (siteId && !existing?.paddleSubscriptionId) throw new Error('This site has no linked paid subscription. Contact support to link its billing.');
+        if (existing?.paddleSubscriptionId && existing.status !== 'CANCELED') {
+            const quote = await previewPlanChange(session.userId, planId, useCredits === true, existing.paddleSubscriptionId);
+            const preview = asRecord(quote.preview);
+            const immediate = asRecord(preview.immediate_transaction);
+            const totals = asRecord(asRecord(immediate.details).totals);
+            const result = asRecord(asRecord(preview.update_summary).result);
+            const amount = result.action === 'credit' ? asString(result.amount) : asString(totals.balance) ?? asString(totals.grand_total) ?? asString(result.amount);
+            const currency = asString(immediate.currency_code) ?? asString(result.currency_code);
+            if (!amount || !currency) throw new Error('Paddle did not return a complete billing preview.');
+            return { ok: true, change: { operationId: quote.operationId, amount, currency, action: asString(result.action) ?? 'charge', creditsApplied: quote.creditsApplied } };
+        }
+        const transactionId = await createPlanCheckout(session.userId, planId, useCredits === true);
+        return { ok: true, transactionId };
+    } catch (error) {
+        const message = error instanceof Error ? error.message : 'Could not start billing.';
+        return { ok: false, error: message, pendingCheckout: message.startsWith('Finish or cancel') };
     }
-    if (!plan.paddlePriceId) {
-        return {
-            ok: false,
-            error: 'This plan has no Paddle price configured yet. An administrator can add one in the admin plan settings.',
-        };
-    }
-
-    const user = await db.query.user.findFirst({
-        where: eq(schema.user.id, session.userId),
-        columns: { email: true },
-    });
-
-    return {
-        ok: true,
-        priceId: plan.paddlePriceId,
-        email: user?.email,
-        customData: { userId: session.userId, planId: plan.id },
-    };
 }
 
-export async function checkoutSettlementAction(planId: string): Promise<{
+export async function cancelPlanChangeQuoteAction(operationId: string) {
+    const session = await requireCustomerSession();
+    try {
+        const [operation] = await db.update(schema.billingOperation).set({ status: 'FAILED', error: 'Customer canceled the preview.', updatedAt: new Date() })
+            .where(and(eq(schema.billingOperation.id, operationId), eq(schema.billingOperation.userId, session.userId), eq(schema.billingOperation.status, 'QUOTED'))).returning();
+        if (!operation) throw new Error('This billing change has already progressed. Refresh to check its status.');
+        await releaseCreditOperation(operation.id);
+        return { ok: true };
+    } catch (error) { return { ok: false, error: error instanceof Error ? error.message : 'Credits are being returned. Please refresh shortly.' }; }
+}
+
+export async function cancelPendingCheckoutAction(planId: string) {
+    const session = await requireCustomerSession();
+    try { await cancelPendingCheckout(session.userId, planId); return { ok: true }; }
+    catch { return { ok: false, error: 'Checkout could not be canceled. Check your billing history before retrying.' }; }
+}
+
+export async function confirmPlanChangeAction(operationId: string) {
+    const session = await requireCustomerSession();
+    try { await commitPlanChange(session.userId, operationId); return { ok: true }; }
+    catch (error) { return { ok: false, error: error instanceof Error ? error.message : 'Could not change plan.' }; }
+}
+
+export async function scheduleRenewalCreditsAction(subscriptionId: string) {
+    const session = await requireCustomerSession();
+    try {
+        const result = await prepareRenewalCredits(session.userId, subscriptionId);
+        revalidatePath('/dashboard/subscription');
+        return { ok: true, ...result };
+    } catch (error) { return { ok: false, error: error instanceof Error ? error.message : 'Could not schedule credits.' }; }
+}
+
+export async function releaseRenewalCreditsAction(redemptionId: string) {
+    const session = await requireCustomerSession();
+    try {
+        await cancelRenewalCredits(session.userId, redemptionId);
+        revalidatePath('/dashboard/subscription');
+        return { ok: true };
+    } catch (error) { return { ok: false, error: error instanceof Error ? error.message : 'Could not release credits.' }; }
+}
+
+export async function openBillingPortalAction(subscriptionId: string) {
+    const session = await requireCustomerSession();
+    return customerPortal(session.userId, subscriptionId);
+}
+
+export async function checkoutSettlementAction(planId: string, siteId?: string): Promise<{
     settled: boolean;
     status?: string;
 }> {
@@ -430,14 +489,18 @@ export async function checkoutSettlementAction(planId: string): Promise<{
     });
     if (!plan) return { settled: false };
 
-    const subscription = await db.query.subscription.findFirst({
-        where: and(eq(schema.subscription.userId, session.userId), eq(schema.subscription.productId, plan.productId)),
-        columns: { status: true, planId: true },
+    let subscription = await db.query.subscription.findFirst({
+        where: and(eq(schema.subscription.userId, session.userId), eq(schema.subscription.productId, plan.productId), siteId ? eq(schema.subscription.siteId, siteId) : undefined),
     });
     if (!subscription) return { settled: false };
-
+    if (siteId && subscription.paddleSubscriptionId && (subscription.planId !== planId || subscription.appliedPlanId !== planId)) {
+        await reconcilePaddleSubscription(subscription.paddleSubscriptionId);
+        await syncSiteBilling(1, subscription.id);
+        subscription = (await db.query.subscription.findFirst({ where: eq(schema.subscription.id, subscription.id) }))!;
+    }
     const settled = subscription.planId === planId
-        && (subscription.status === 'ACTIVE' || subscription.status === 'TRIAL');
+        && (subscription.status === 'ACTIVE' || subscription.status === 'TRIAL')
+        && (!siteId || subscription.appliedPlanId === planId);
 
     return { settled, status: subscription.status };
 }

@@ -1,4 +1,5 @@
 import 'server-only';
+import { providerStatus } from '@/lib/billing-rules';
 import { createHmac, timingSafeEqual } from 'node:crypto';
 
 /** How long a signed payload stays acceptable, in seconds. */
@@ -61,6 +62,11 @@ export const PADDLE_EVENTS = {
     TRANSACTION_PAYMENT_FAILED: 'transaction.payment_failed',
     /** Paddle has given up retrying for now. */
     TRANSACTION_PAST_DUE: 'transaction.past_due',
+    TRANSACTION_UPDATED: 'transaction.updated',
+    TRANSACTION_BILLED: 'transaction.billed',
+    TRANSACTION_CANCELED: 'transaction.canceled',
+    SUBSCRIPTION_ACTIVATED: 'subscription.activated',
+    SUBSCRIPTION_TRIALING: 'subscription.trialing',
     SUBSCRIPTION_CREATED: 'subscription.created',
     SUBSCRIPTION_UPDATED: 'subscription.updated',
     SUBSCRIPTION_CANCELED: 'subscription.canceled',
@@ -76,31 +82,7 @@ export const HANDLED_PADDLE_EVENTS: ReadonlySet<string> = new Set(
     Object.values(PADDLE_EVENTS),
 );
 
-/** Events that mean "this customer is not currently paying". */
-const LAPSED_PADDLE_EVENTS: ReadonlySet<string> = new Set([
-    PADDLE_EVENTS.TRANSACTION_PAYMENT_FAILED,
-    PADDLE_EVENTS.TRANSACTION_PAST_DUE,
-    PADDLE_EVENTS.SUBSCRIPTION_PAST_DUE,
-    PADDLE_EVENTS.SUBSCRIPTION_PAUSED,
-]);
-
-function toSubscriptionStatus(paddleStatus: unknown) {
-    switch (paddleStatus) {
-        case 'active':
-            return 'ACTIVE' as const;
-        case 'trialing':
-            return 'TRIAL' as const;
-        case 'canceled':
-            return 'CANCELED' as const;
-        default:
-            return 'PAST_DUE' as const;
-    }
-}
-
-export function subscriptionStatusForEvent(eventType: string, data: Record<string, unknown>) {
-    if (eventType === PADDLE_EVENTS.TRANSACTION_COMPLETED) return 'ACTIVE' as const;
-    if (LAPSED_PADDLE_EVENTS.has(eventType)) return 'PAST_DUE' as const;
-    if (eventType === PADDLE_EVENTS.SUBSCRIPTION_CANCELED) return 'CANCELED' as const;
-    if (eventType === PADDLE_EVENTS.SUBSCRIPTION_RESUMED) return 'ACTIVE' as const;
-    return toSubscriptionStatus(data.status);
+/** Compatibility helper; entitlement synchronization uses canonical subscription data. */
+export function subscriptionStatusForEvent(_eventType: string, data: Record<string, unknown>) {
+    return providerStatus(data.status);
 }

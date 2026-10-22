@@ -19,7 +19,7 @@ interface Profile {
   email: string;
 }
 
-export function OnboardingFlow({ profile, planName, planPrice }: {
+export function OnboardingFlow({ planName, planPrice }: {
   profile: Profile;
   /** Resolved server-side from the plan row, so it matches what is charged. */
   planName: string;
@@ -52,8 +52,8 @@ export function OnboardingFlow({ profile, planName, planPrice }: {
     setOpeningCheckout(true);
     try {
       const intent = await startPlanCheckoutBySlugAction(plan);
-      if (!intent.ok || !intent.priceId) {
-        setPaymentError(intent.error ?? 'Could not start checkout.');
+      if (!intent.ok || !intent.transactionId) {
+        setPaymentError(intent.error ?? 'Manage your existing subscription from the Plans page.');
         return;
       }
       const paddle = await initializePaddle({
@@ -65,10 +65,8 @@ export function OnboardingFlow({ profile, planName, planPrice }: {
       });
       if (!paddle) throw new Error('Paddle.js did not initialize.');
       paddle.Checkout.open({
-        items: [{ priceId: intent.priceId, quantity: 1 }],
-        customer: { email: profile.email },
-        customData: { ...intent.customData, store_name: storeData.storeName || 'My Unity Store' },
-        settings: { displayMode: 'overlay', variant: 'one-page', theme: 'light', locale: 'en', allowLogout: false },
+        transactionId: intent.transactionId,
+        settings: { displayMode: 'overlay', variant: 'one-page', theme: 'light', locale: 'en', allowLogout: false, showAddDiscounts: false },
       });
     } catch (error) {
       setPaymentError(error instanceof Error ? error.message : 'Unable to open Paddle checkout.');

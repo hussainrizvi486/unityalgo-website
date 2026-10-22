@@ -1,7 +1,8 @@
 import 'server-only';
 import { desc, eq, inArray, or, sql } from 'drizzle-orm';
 import { db, schema } from '@/lib/db';
-import { asList, asRecord, asString, fromMinorUnits } from '@/lib/paddle-data';
+import { moneyFromMinor } from '@/lib/billing-rules';
+import { asList, asRecord, asString } from '@/lib/paddle-data';
 
 type BadgeVariant = 'neutral' | 'success' | 'info' | 'warning' | 'error';
 
@@ -79,11 +80,13 @@ export async function loadPaymentDetail(id: string) {
         .limit(100);
 
     const transactionEvent = events.find((event) => event.eventType.startsWith('transaction.'));
-    const data = asRecord(asRecord(transactionEvent?.payload).data);
+    const canonical = await db.query.billingProviderRecord.findFirst({ where: eq(schema.billingProviderRecord.id, reference) });
+    const data = asRecord(canonical?.payload ?? asRecord(transactionEvent?.payload).data);
     const details = asRecord(data.details);
     const totals = asRecord(details.totals);
     const currency = asString(totals.currency_code) ?? asString(data.currency_code) ?? record.currency;
 
+    const fromMinorUnits = (value: unknown) => moneyFromMinor(value, currency);
     const adjustments = new Map<string, PaymentAdjustment>();
     for (const event of [...events].reverse()) {
         if (!event.eventType.startsWith('adjustment.')) continue;
@@ -98,6 +101,17 @@ export async function loadPaymentDetail(id: string) {
             amount: fromMinorUnits(asRecord(adjustment.totals).total),
             currency: asString(asRecord(adjustment.totals).currency_code) ?? currency,
             createdAt: asString(adjustment.created_at),
+        });
+    }
+
+    // Canonical snapshots override webhook arrival order and include reconciliation repairs.
+    const providerAdjustments = await db.query.billingProviderRecord.findMany({ where: sql`${schema.billingProviderRecord.kind} = 'ADJUSTMENT' and ${schema.billingProviderRecord.payload}->>'transaction_id' = ${reference}` });
+    for (const item of providerAdjustments) {
+        const adjustment = asRecord(item.payload);
+        adjustments.set(item.id, {
+            id: item.id, action: asString(adjustment.action) ?? 'adjustment', reason: asString(adjustment.reason),
+            status: asString(adjustment.status), amount: fromMinorUnits(asRecord(adjustment.totals).total),
+            currency: asString(adjustment.currency_code) ?? currency, createdAt: asString(adjustment.created_at),
         });
     }
 
@@ -174,8 +188,8 @@ export async function loadPaymentDetail(id: string) {
             discount: fromMinorUnits(totals.discount),
             tax: fromMinorUnits(totals.tax),
             total: fromMinorUnits(totals.grand_total) ?? fromMinorUnits(totals.total),
-            fee: fromMinorUnits(asRecord(details.payout_totals).fee) ?? fromMinorUnits(totals.fee),
-            earnings: fromMinorUnits(asRecord(details.payout_totals).earnings) ?? fromMinorUnits(totals.earnings),
+            fee: moneyFromMinor(asRecord(details.payout_totals).fee, asString(asRecord(details.payout_totals).currency_code) ?? currency) ?? fromMinorUnits(totals.fee),
+            earnings: moneyFromMinor(asRecord(details.payout_totals).earnings, asString(asRecord(details.payout_totals).currency_code) ?? currency) ?? fromMinorUnits(totals.earnings),
         },
         paddle: {
             status: asString(data.status),

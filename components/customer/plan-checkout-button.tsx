@@ -3,8 +3,9 @@
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import { CheckoutEventNames, initializePaddle, type Paddle } from '@paddle/paddle-js';
-import { checkoutSettlementAction, startPlanCheckoutAction } from '@/app/customer/actions';
+import { checkoutSettlementAction, startPlanCheckoutAction, confirmPlanChangeAction, cancelPendingCheckoutAction, cancelPlanChangeQuoteAction } from '@/app/customer/actions';
 import { Button } from '@/components/ui/button';
+import { currencyDigits } from '@/lib/billing-rules';
 import { Notice } from '@/components/ui/notice';
 
 /** Paddle.js is a singleton — initialising twice leaks a second instance. */
@@ -27,10 +28,13 @@ const SETTLE_INTERVAL_MS = 1500;
 
 type Phase = 'idle' | 'opening' | 'open' | 'settling' | 'settled' | 'slow';
 
-export function PlanCheckoutButton({ planId, label }: { planId: string; label: string }) {
+export function PlanCheckoutButton({ planId, label, siteId, onSettled }: { planId: string; label: string; siteId?: string; onSettled?: () => void }) {
     const router = useRouter();
     const [phase, setPhase] = React.useState<Phase>('idle');
     const [error, setError] = React.useState('');
+    const [useCredits, setUseCredits] = React.useState(true);
+    const [pendingCheckout, setPendingCheckout] = React.useState(false);
+    const [quote, setQuote] = React.useState<{ operationId: string; amount: string; currency: string; action: string; creditsApplied: number } | null>(null);
 
     const cancelled = React.useRef(false);
     React.useEffect(() => {
@@ -46,12 +50,13 @@ export function PlanCheckoutButton({ planId, label }: { planId: string; label: s
         for (let attempt = 0; attempt < SETTLE_ATTEMPTS; attempt += 1) {
             if (cancelled.current) return;
             try {
-                const { settled } = await checkoutSettlementAction(planId);
+                const { settled } = await checkoutSettlementAction(planId, siteId);
                 if (cancelled.current) return;
                 if (settled) {
                     setPhase('settled');
                     // Only now is there anything new for the page to show.
                     router.refresh();
+                    onSettled?.();
                     return;
                 }
             } catch {
@@ -62,7 +67,7 @@ export function PlanCheckoutButton({ planId, label }: { planId: string; label: s
             setPhase('slow');
             router.refresh();
         }
-    }, [planId, router]);
+    }, [planId, siteId, router, onSettled]);
 
     async function open() {
         setError('');
@@ -74,13 +79,20 @@ export function PlanCheckoutButton({ planId, label }: { planId: string; label: s
 
         setPhase('opening');
         try {
-            const intent = await startPlanCheckoutAction(planId);
-            if (!intent.ok || !intent.priceId) {
+            const intent = await startPlanCheckoutAction(planId, useCredits, siteId);
+            if (!intent.ok) {
                 setError(intent.error ?? 'Could not start checkout.');
+                setPendingCheckout(Boolean(intent.pendingCheckout));
                 setPhase('idle');
                 return;
             }
 
+            if (intent.change) {
+                setQuote(intent.change);
+                setPhase('idle');
+                return;
+            }
+            if (!intent.transactionId) throw new Error('No checkout transaction was returned.');
             const paddle = await getPaddle(token);
             if (!paddle) throw new Error('Paddle.js did not initialise.');
 
@@ -93,7 +105,7 @@ export function PlanCheckoutButton({ planId, label }: { planId: string; label: s
                         setPhase((current) => (current === 'open' ? 'idle' : current));
                         break;
                     case CheckoutEventNames.CHECKOUT_ERROR:
-                        setError('Checkout could not be completed. No payment was taken.');
+                        setError('Checkout could not be completed. Check billing history before retrying.');
                         setPhase('idle');
                         break;
                     default:
@@ -102,10 +114,8 @@ export function PlanCheckoutButton({ planId, label }: { planId: string; label: s
             };
 
             paddle.Checkout.open({
-                items: [{ priceId: intent.priceId, quantity: 1 }],
-                ...(intent.email ? { customer: { email: intent.email } } : {}),
-                customData: intent.customData,
-                settings: { displayMode: 'overlay', variant: 'one-page', theme: 'light', allowLogout: false },
+                transactionId: intent.transactionId,
+                settings: { displayMode: 'overlay', variant: 'one-page', theme: 'light', allowLogout: false, showAddDiscounts: false },
             });
             setPhase('open');
         } catch (cause) {
@@ -114,25 +124,62 @@ export function PlanCheckoutButton({ planId, label }: { planId: string; label: s
         }
     }
 
+    async function confirm() {
+        if (!quote) return;
+        setError('');
+        setPhase('opening');
+        try {
+            const result = await confirmPlanChangeAction(quote.operationId);
+            if (!result.ok) throw new Error(result.error);
+            setQuote(null);
+            await waitForWebhook();
+        } catch (cause) {
+            setQuote(null);
+            setError(cause instanceof Error ? cause.message : 'Could not change plan.');
+            setPhase('idle');
+        }
+    }
+
     const busy = phase === 'opening' || phase === 'open' || phase === 'settling';
 
     return (
         <div>
+            {!quote ? <label className="mb-3 flex items-center gap-2 text-sm">
+                <input type="checkbox" checked={useCredits} disabled={busy} onChange={(event) => setUseCredits(event.target.checked)} />
+                Use available account credits
+            </label> : null}
             <Button
                 type="button"
-                onClick={open}
+                onClick={quote ? confirm : open}
                 disabled={busy || phase === 'settled'}
                 className="w-full rounded-md"
             >
                 {phase === 'opening' ? 'Opening checkout…'
                     : phase === 'settling' ? 'Activating your plan…'
                         : phase === 'settled' ? 'Plan active'
-                            : label}
+                            : quote ? 'Confirm plan change' : label}
             </Button>
 
+            {quote ? (
+                <Notice tone="info" className="mt-2 portal-text-caption">
+                    {quote.action === 'credit' ? 'Prorated credit' : 'Estimated amount due now'}:{' '}
+                    {new Intl.NumberFormat(undefined, { style: 'currency', currency: quote.currency }).format(Number(quote.amount) / 10 ** currencyDigits(quote.currency))}.
+                    {quote.creditsApplied > 0 ? <> Includes {new Intl.NumberFormat(undefined, { style: 'currency', currency: quote.currency }).format(quote.creditsApplied / 10 ** currencyDigits(quote.currency))} in account credits applied as an invoice discount.</> : null}
+                    {' '}This change takes effect immediately. Paddle calculates the final amount when confirmed.
+                    <button type="button" className="ml-2 underline" disabled={busy} onClick={async () => {
+                        setPhase('opening');
+                        try {
+                            const result = await cancelPlanChangeQuoteAction(quote.operationId);
+                            if (!result.ok) throw new Error(result.error);
+                            setQuote(null);
+                        } catch (cause) { setError(cause instanceof Error ? cause.message : 'Credits are being returned.'); }
+                        finally { setPhase('idle'); }
+                    }}>Cancel</button>
+                </Notice>
+            ) : null}
             {phase === 'settling' ? (
                 <Notice tone="info" className="mt-2 portal-text-caption">
-                    Payment received — activating your plan. This usually takes a few seconds.
+                    Confirming your subscription — activating your plan. This usually takes a few seconds.
                 </Notice>
             ) : null}
             {phase === 'settled' ? (
@@ -142,11 +189,20 @@ export function PlanCheckoutButton({ planId, label }: { planId: string; label: s
             ) : null}
             {phase === 'slow' ? (
                 <Notice tone="warning" className="mt-2 portal-text-caption">
-                    Your payment went through, but activation is taking longer than usual.
+                    Your billing request is still being synchronized.
                     Nothing further is needed — refresh in a minute, and contact support if
                     it still has not appeared.
                 </Notice>
             ) : null}
+            {pendingCheckout ? <Button type="button" variant="outline" className="mt-2" disabled={busy} onClick={async () => {
+                setPhase('opening');
+                try {
+                    const result = await cancelPendingCheckoutAction(planId);
+                    if (!result.ok) throw new Error(result.error);
+                    setPendingCheckout(false); setError('');
+                } catch (cause) { setError(cause instanceof Error ? cause.message : 'Could not cancel checkout.'); }
+                finally { setPhase('idle'); }
+            }}>Cancel unfinished checkout</Button> : null}
             {error ? (
                 <Notice tone="error" className="mt-2 portal-text-caption">{error}</Notice>
             ) : null}

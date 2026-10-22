@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "SiteOrder_pending_slug" ON "SiteOrder" USING btree (("summary"->>'slug')) WHERE "SiteOrder"."status" in ('DRAFT', 'AWAITING_PAYMENT', 'READY');

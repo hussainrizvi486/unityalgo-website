@@ -1,11 +1,13 @@
 import 'server-only';
-import { and, count, eq } from 'drizzle-orm';
+import { and, count, eq, inArray, sql } from 'drizzle-orm';
 import { db, schema } from '@/lib/db';
+import { assertNoPendingSubscriptionCredits } from '@/lib/credit-billing';
 import { paddleRequest } from '@/lib/paddle-catalog';
 
 export type BillingMode = 'paddle' | 'test';
 
 export class BillingError extends Error {}
+type BillingDb = Pick<typeof db, 'query' | 'select' | 'insert' | 'update' | 'delete' | 'execute'>;
 
 type App = typeof schema.appCatalog.$inferSelect;
 export type AppPurchase = typeof schema.appPurchase.$inferSelect;
@@ -17,11 +19,12 @@ export function appBillingMode(): BillingMode | null {
     return process.env.PADDLE_API_KEY ? 'paddle' : null;
 }
 
-export async function billingSubscription(userId: string, planId?: string | null) {
-    const subscriptions = await db.query.subscription.findMany({
-        where: and(eq(schema.subscription.userId, userId), eq(schema.subscription.status, 'ACTIVE')),
+export async function billingSubscription(userId: string, planId?: string | null, client: BillingDb = db, siteId?: string) {
+    const subscriptions = await client.query.subscription.findMany({
+        where: and(eq(schema.subscription.userId, userId), eq(schema.subscription.status, 'ACTIVE'), siteId ? eq(schema.subscription.siteId, siteId) : undefined),
     });
     const paddle = subscriptions.filter((subscription) => subscription.paddleSubscriptionId);
+    if (paddle.length > 1) throw new BillingError('Choose the site subscription before purchasing apps.');
     return paddle.find((subscription) => subscription.planId === planId) ?? paddle[0] ?? null;
 }
 
@@ -30,7 +33,17 @@ interface PaddleSubscription {
     items: Array<{ price: { id: string }; quantity: number }>;
 }
 
-async function setQuantity(paddleSubscriptionId: string, priceId: string, quantity: number) {
+async function setQuantity(paddleSubscriptionId: string, priceId: string, quantity: number, client: BillingDb) {
+    await client.execute(sql`select pg_advisory_xact_lock(hashtextextended(${`subscription:${paddleSubscriptionId}`}, 0))`);
+    await assertNoPendingSubscriptionCredits(client, paddleSubscriptionId);
+    const pending = await client.query.billingOperation.findFirst({ where: and(
+        eq(schema.billingOperation.subscriptionId, paddleSubscriptionId), inArray(schema.billingOperation.status, ['PROCESSING', 'UNKNOWN']),
+    ) });
+    if (pending) throw new BillingError('A subscription change is being checked. Please try again later.');
+    return setQuantityUnlocked(paddleSubscriptionId, priceId, quantity);
+}
+
+async function setQuantityUnlocked(paddleSubscriptionId: string, priceId: string, quantity: number) {
     let current: PaddleSubscription;
     try {
         current = (await paddleRequest(`/subscriptions/${paddleSubscriptionId}`)) as PaddleSubscription;
@@ -43,15 +56,15 @@ async function setQuantity(paddleSubscriptionId: string, priceId: string, quanti
     try {
         await paddleRequest(`/subscriptions/${paddleSubscriptionId}`, {
             method: 'PATCH',
-            body: JSON.stringify({ items, proration_billing_mode: 'prorated_immediately' }),
+            body: JSON.stringify({ items, proration_billing_mode: 'prorated_immediately', on_payment_failure: 'prevent_change' }),
         });
     } catch (error) {
         throw new BillingError(`Paddle did not accept the change: ${(error as Error).message}`);
     }
 }
 
-async function activeCount(userId: string, appId: string, paddleSubscriptionId: string | null) {
-    const rows = await db
+async function activeCount(userId: string, appId: string, paddleSubscriptionId: string | null, client: BillingDb) {
+    const rows = await client
         .select({ n: count() })
         .from(schema.appPurchase)
         .where(and(
@@ -64,54 +77,70 @@ async function activeCount(userId: string, appId: string, paddleSubscriptionId: 
     return rows[0]?.n ?? 0;
 }
 
-export async function purchaseApp(input: { userId: string; app: App; siteId: string; planId?: string | null }): Promise<AppPurchase> {
+async function purchaseAppUnlocked(input: { userId: string; app: App; siteId: string; planId?: string | null }, client: BillingDb): Promise<AppPurchase> {
     const { userId, app, siteId } = input;
     if (!isPaidApp(app)) throw new BillingError('This application is free.');
     const mode = appBillingMode();
     if (!mode) throw new BillingError('Paid apps cannot be installed right now because billing is not available. Please try again later or contact support.');
 
-    const existing = await db.query.appPurchase.findFirst({
+    const existing = await client.query.appPurchase.findFirst({
         where: and(eq(schema.appPurchase.siteId, siteId), eq(schema.appPurchase.appId, app.id), eq(schema.appPurchase.status, 'ACTIVE')),
     });
     if (existing) return existing;      // already bought for this site: never charge twice
 
     let paddleSubscriptionId: string | null = null;
     if (mode === 'paddle') {
-        const subscription = await billingSubscription(userId, input.planId);
+        const subscription = await billingSubscription(userId, input.planId, client, siteId);
         if (!subscription?.paddleSubscriptionId) throw new BillingError('Subscribe to a plan before adding paid apps, so there is a subscription to bill them to.');
         if (!app.paddlePriceId) throw new BillingError('This application has not been set up for billing yet. Please contact support.');
         paddleSubscriptionId = subscription.paddleSubscriptionId;
-        const quantity = (await activeCount(userId, app.id, paddleSubscriptionId)) + 1;
-        await setQuantity(paddleSubscriptionId, app.paddlePriceId, quantity);
+        const quantity = (await activeCount(userId, app.id, paddleSubscriptionId, client)) + 1;
+        await setQuantity(paddleSubscriptionId, app.paddlePriceId, quantity, client);
     }
     try {
-        const [created] = await db.insert(schema.appPurchase).values({
+        const [created] = await client.insert(schema.appPurchase).values({
             userId, appId: app.id, siteId, priceAmount: app.priceAmount!, currency: app.priceCurrency, billingMode: mode, paddleSubscriptionId,
         }).returning();
         return created;
     } catch (error) {
         if (mode === 'paddle' && paddleSubscriptionId && app.paddlePriceId) {
-            await setQuantity(paddleSubscriptionId, app.paddlePriceId, await activeCount(userId, app.id, paddleSubscriptionId)).catch(() => undefined);
+            await setQuantity(paddleSubscriptionId, app.paddlePriceId, await activeCount(userId, app.id, paddleSubscriptionId, client), client).catch(() => undefined);
         }
         throw error;
     }
 }
 
-export async function cancelPurchase(purchase: AppPurchase): Promise<void> {
-    const claimed = await db.update(schema.appPurchase)
+async function cancelPurchaseUnlocked(purchase: AppPurchase, client: BillingDb): Promise<void> {
+    const claimed = await client.update(schema.appPurchase)
         .set({ status: 'CANCELED', canceledAt: new Date() })
         .where(and(eq(schema.appPurchase.id, purchase.id), eq(schema.appPurchase.status, 'ACTIVE')))
         .returning({ id: schema.appPurchase.id });
     if (!claimed.length) return;       // already cancelled by something else
     if (purchase.billingMode !== 'paddle' || !purchase.paddleSubscriptionId) return;
-    const app = await db.query.appCatalog.findFirst({ where: eq(schema.appCatalog.id, purchase.appId), columns: { paddlePriceId: true } });
+    const app = await client.query.appCatalog.findFirst({ where: eq(schema.appCatalog.id, purchase.appId), columns: { paddlePriceId: true } });
     if (!app?.paddlePriceId) return;
     try {
-        await setQuantity(purchase.paddleSubscriptionId, app.paddlePriceId, await activeCount(purchase.userId, purchase.appId, purchase.paddleSubscriptionId));
+        await setQuantity(purchase.paddleSubscriptionId, app.paddlePriceId, await activeCount(purchase.userId, purchase.appId, purchase.paddleSubscriptionId, client), client);
     } catch (error) {
-        await db.update(schema.appPurchase).set({ status: 'ACTIVE', canceledAt: null }).where(eq(schema.appPurchase.id, purchase.id));
+        await client.update(schema.appPurchase).set({ status: 'ACTIVE', canceledAt: null }).where(eq(schema.appPurchase.id, purchase.id));
         throw error;
     }
+}
+
+// Serialize app counts and ownership checks as well as provider item mutations.
+// Reject competing requests promptly rather than exhausting database connections waiting on locks.
+async function withAppMutation<T>(userId: string, action: (client: BillingDb) => Promise<T>): Promise<T> {
+    return db.transaction(async (tx) => {
+        const result = await tx.execute(sql`select pg_try_advisory_xact_lock(hashtextextended(${`app-billing:${userId}`}, 0)) as locked`);
+        if (!result.rows[0]?.locked) throw new BillingError('Another app billing change is in progress. Please try again.');
+        return action(tx);
+    });
+}
+export async function purchaseApp(input: { userId: string; app: App; siteId: string; planId?: string | null }): Promise<AppPurchase> {
+    return withAppMutation(input.userId, (tx) => purchaseAppUnlocked(input, tx));
+}
+export async function cancelPurchase(purchase: AppPurchase): Promise<void> {
+    return withAppMutation(purchase.userId, (tx) => cancelPurchaseUnlocked(purchase, tx));
 }
 
 export async function activePurchase(siteId: string, appId: string) {

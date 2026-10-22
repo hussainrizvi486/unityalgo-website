@@ -11,7 +11,7 @@ export const leadStatus = pgEnum("LeadStatus", ['NEW', 'CONTACTED', 'QUALIFIED',
 export const paddleEventStatus = pgEnum("PaddleEventStatus", ['PENDING', 'PROCESSED', 'IGNORED', 'FAILED'])
 export const priceUnit = pgEnum("PriceUnit", ['PER_USER_MONTHLY', 'FLAT_MONTHLY'])
 export const role = pgEnum("Role", ['ADMIN', 'CUSTOMER'])
-export const subscriptionStatus = pgEnum("SubscriptionStatus", ['ACTIVE', 'TRIAL', 'PAST_DUE', 'CANCELED'])
+export const subscriptionStatus = pgEnum("SubscriptionStatus", ['ACTIVE', 'TRIAL', 'PAST_DUE', 'CANCELED', 'PAUSED'])
 export const ticketStatus = pgEnum("TicketStatus", ['OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED'])
 export const verificationPurpose = pgEnum("VerificationPurpose", ['REGISTRATION', 'PASSWORD_RESET'])
 
@@ -159,13 +159,23 @@ export const subscription = pgTable("Subscription", {
 	productId: text().notNull(),
 	paddleSubscriptionId: text(),
 	paddleCustomerId: text(),
+	paddleUpdatedAt: timestamp({ precision: 3, mode: 'date' }),
+	paddleSnapshot: jsonb(),
+	siteOrderId: text(),
+	siteId: text(),
+	appliedPlanId: text(),
+	appliedAt: timestamp({ precision: 3, mode: 'date' }),
+	billingSuspended: boolean().default(false).notNull(),
+	graceEndsAt: timestamp({ precision: 3, mode: 'date' }),
 	canceledAt: timestamp({ precision: 3, mode: 'date' }),
 	cancelAtPeriodEnd: boolean().default(false).notNull(),
 }, (table) => [
 	uniqueIndex("Subscription_paddleSubscriptionId_key").using("btree", table.paddleSubscriptionId.asc().nullsLast().op("text_ops")),
 	index("Subscription_planId_idx").using("btree", table.planId.asc().nullsLast().op("text_ops")),
 	index("Subscription_productId_idx").using("btree", table.productId.asc().nullsLast().op("text_ops")),
-	uniqueIndex("Subscription_userId_productId_key").using("btree", table.userId.asc().nullsLast().op("text_ops"), table.productId.asc().nullsLast().op("text_ops")),
+	uniqueIndex("Subscription_userId_productId_key").using("btree", table.userId.asc().nullsLast().op("text_ops"), table.productId.asc().nullsLast().op("text_ops")).where(sql`${table.siteOrderId} is null`),
+	uniqueIndex("Subscription_siteOrderId_key").on(table.siteOrderId),
+	uniqueIndex("Subscription_siteId_key").on(table.siteId),
 	foreignKey({
 			columns: [table.userId],
 			foreignColumns: [user.id],
@@ -537,4 +547,120 @@ export const appPurchase = pgTable("AppPurchase", {
 }, (table) => [
 	index("AppPurchase_userId_status_idx").using("btree", table.userId.asc().nullsLast().op("text_ops"), table.status.asc().nullsLast().op("text_ops")),
 	uniqueIndex("AppPurchase_site_app_active_key").using("btree", table.siteId.asc().nullsLast().op("text_ops"), table.appId.asc().nullsLast().op("text_ops")).where(sql`status = 'ACTIVE'`),
+]);
+
+// Provider snapshots retain integer monetary strings exactly as supplied by Paddle.
+export const billingProviderRecord = pgTable("BillingProviderRecord", {
+    id: text().primaryKey().notNull(),
+    kind: text().notNull(),
+    userId: text().references(() => user.id, { onDelete: 'restrict' }),
+    subscriptionId: text(),
+    payload: jsonb().notNull(),
+    providerUpdatedAt: timestamp({ precision: 3, mode: 'date' }).notNull(),
+    syncedAt: timestamp({ precision: 3, mode: 'date' }).default(sql`timezone('UTC', now())`).notNull(),
+});
+
+export const billingOperation = pgTable("BillingOperation", {
+    id: text().primaryKey().notNull().$defaultFn(() => createId()),
+    userId: text().notNull().references(() => user.id, { onDelete: 'restrict' }),
+    subscriptionId: text().notNull(),
+    planId: text().notNull().references(() => plan.id, { onDelete: 'restrict' }),
+    status: text().default('QUOTED').notNull(),
+    request: jsonb().notNull(),
+    preview: jsonb().notNull(),
+    expectedUpdatedAt: text().notNull(),
+    expiresAt: timestamp({ precision: 3, mode: 'date' }).notNull(),
+    error: text(),
+    createdAt: timestamp({ precision: 3, mode: 'date' }).default(sql`timezone('UTC', now())`).notNull(),
+    updatedAt: timestamp({ precision: 3, mode: 'date' }).default(sql`timezone('UTC', now())`).notNull(),
+}, (t) => [
+    // An uncertain request must be reconciled before another mutation is allowed.
+    uniqueIndex('BillingOperation_pending_subscription').on(t.subscriptionId).where(sql`${t.status} in ('PROCESSING', 'UNKNOWN')`),
+    check('BillingOperation_status', sql`${t.status} in ('QUOTED', 'PROCESSING', 'UNKNOWN', 'SUCCEEDED', 'FAILED')`),
+]);
+
+export const creditAccount = pgTable("CreditAccount", {
+    id: text().primaryKey().notNull().$defaultFn(() => createId()),
+    userId: text().notNull().references(() => user.id, { onDelete: 'restrict' }),
+    currency: text().notNull(),
+    available: integer().default(0).notNull(),
+    reserved: integer().default(0).notNull(),
+}, (t) => [
+    uniqueIndex('CreditAccount_user_currency').on(t.userId, t.currency),
+    check('CreditAccount_nonnegative', sql`${t.available} >= 0 and ${t.reserved} >= 0`),
+    check('CreditAccount_currency', sql`${t.currency} ~ '^[A-Z]{3}$'`),
+]);
+
+export const creditEntry = pgTable("CreditEntry", {
+    id: text().primaryKey().notNull().$defaultFn(() => createId()),
+    accountId: text().notNull().references(() => creditAccount.id, { onDelete: 'restrict' }),
+    operationKey: text().notNull().unique(),
+    kind: text().notNull(),
+    amount: integer().notNull(),
+    actorId: text().notNull().references(() => user.id, { onDelete: 'restrict' }),
+    reason: text().notNull(),
+    createdAt: timestamp({ precision: 3, mode: 'date' }).default(sql`timezone('UTC', now())`).notNull(),
+}, (t) => [
+    check('CreditEntry_positive', sql`${t.amount} > 0`),
+    check('CreditEntry_kind', sql`${t.kind} in ('GRANT', 'RESERVE', 'CONSUME', 'RELEASE', 'REVERSE')`),
+]);
+
+export const billingFulfillment = pgTable('BillingFulfillment', {
+    id: text().primaryKey().notNull(),
+    userId: text().notNull().references(() => user.id, { onDelete: 'restrict' }),
+    planId: text().notNull().references(() => plan.id, { onDelete: 'restrict' }),
+    subscriptionId: text().notNull(),
+    processedAt: timestamp({ precision: 3, mode: 'date' }),
+    attempts: integer().default(0).notNull(),
+    createdAt: timestamp({ precision: 3, mode: 'date' }).default(sql`timezone('UTC', now())`).notNull(),
+});
+
+export const creditRedemption = pgTable('CreditRedemption', {
+    id: text().primaryKey().notNull().$defaultFn(() => createId()),
+    operationId: text().notNull().unique().references(() => billingOperation.id, { onDelete: 'restrict' }),
+    accountId: text().notNull().references(() => creditAccount.id, { onDelete: 'restrict' }),
+    userId: text().notNull().references(() => user.id, { onDelete: 'restrict' }),
+    kind: text().notNull(),
+    currency: text().notNull(),
+    reservedAmount: integer().notNull(),
+    consumedAmount: integer().default(0).notNull(),
+    status: text().default('RESERVED').notNull(),
+    paddleDiscountId: text().unique(),
+    paddleTransactionId: text().unique(),
+    paddleSubscriptionId: text(),
+    cleanupRequired: boolean().default(false).notNull(),
+    createdAt: timestamp({ precision: 3, mode: 'date' }).default(sql`timezone('UTC', now())`).notNull(),
+    updatedAt: timestamp({ precision: 3, mode: 'date' }).default(sql`timezone('UTC', now())`).notNull(),
+}, (t) => [
+    check('CreditRedemption_amounts', sql`${t.reservedAmount} > 0 and ${t.consumedAmount} >= 0 and ${t.consumedAmount} <= ${t.reservedAmount}`),
+    check('CreditRedemption_status', sql`${t.status} in ('RESERVED', 'SETTLED', 'RELEASED')`),
+    check('CreditRedemption_kind', sql`${t.kind} in ('CHECKOUT', 'UPGRADE', 'RENEWAL')`),
+    index('CreditRedemption_user_status').on(t.userId, t.status),
+    index('CreditRedemption_subscription').on(t.paddleSubscriptionId),
+]);
+
+// Durable site setup: credentials are encrypted until provisioning succeeds.
+export const siteOrder = pgTable('SiteOrder', {
+    id: text().primaryKey().notNull().$defaultFn(() => createId()),
+    userId: text().notNull().references(() => user.id, { onDelete: 'restrict' }),
+    requestKey: text().notNull(),
+    planId: text().notNull().references(() => plan.id, { onDelete: 'restrict' }),
+    priceId: text(),
+    summary: jsonb().notNull(),
+    encryptedSetup: text(),
+    trialDays: integer().default(0).notNull(),
+    status: text().default('DRAFT').notNull(),
+    paddleTransactionId: text().unique(),
+    paidAt: timestamp({ precision: 3, mode: 'date' }),
+    siteId: text(),
+    attempts: integer().default(0).notNull(),
+    nextAttemptAt: timestamp({ precision: 3, mode: 'date' }),
+    error: text(),
+    createdAt: timestamp({ precision: 3, mode: 'date' }).default(sql`timezone('UTC', now())`).notNull(),
+    updatedAt: timestamp({ precision: 3, mode: 'date' }).default(sql`timezone('UTC', now())`).notNull(),
+}, (t) => [
+    uniqueIndex('SiteOrder_user_request').on(t.userId, t.requestKey),
+    index('SiteOrder_status_retry').on(t.status, t.nextAttemptAt),
+    uniqueIndex('SiteOrder_pending_slug').on(sql`(${t.summary}->>'slug')`).where(sql`${t.status} in ('DRAFT', 'AWAITING_PAYMENT', 'READY')`),
+    check('SiteOrder_status', sql`${t.status} in ('DRAFT', 'AWAITING_PAYMENT', 'READY', 'PROVISIONED', 'CANCELED', 'EXPIRED')`),
 ]);

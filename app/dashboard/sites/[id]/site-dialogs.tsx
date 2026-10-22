@@ -3,7 +3,8 @@ import { useActionState, useEffect, useRef, useState } from 'react';
 import { useFormStatus } from 'react-dom';
 import { ArrowRightLeft, KeyRound, LoaderCircle } from 'lucide-react';
 import type { CustomerSite } from '@/lib/controller-client';
-import { changePlanAction, resetSitePasswordAction } from '../../actions';
+import { PlanCheckoutButton } from '@/components/customer/plan-checkout-button';
+import { resetSitePasswordAction } from '../../actions';
 import { Button } from '@/components/ui/button';
 import { Notice } from '@/components/ui/notice';
 import { PasswordInput } from '@/components/ui/password-input';
@@ -54,10 +55,8 @@ const specs = (plan: PlanChoice) =>
     ].filter(Boolean).join(' · ');
 
 export function ChangePlan({ site, plans, onDone }: { site: CustomerSite; plans: PlanChoice[]; onDone: () => void }) {
-    const [state, action] = useActionState(changePlanAction, undefined);
     const [open, setOpen] = useState(false);
     const [planId, setPlanId] = useState('');
-    useDone(state, () => { setOpen(false); onDone(); });
     const others = plans.filter((plan) => plan.id !== site.plan_id);
     return (
         <AlertDialog open={open} onOpenChange={setOpen}>
@@ -67,9 +66,7 @@ export function ChangePlan({ site, plans, onDone }: { site: CustomerSite; plans:
                 </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
-                <form action={action}>
-                    <input type="hidden" name="siteId" value={site.id} />
-                    <input type="hidden" name="planId" value={planId} />
+                <div>
                     <AlertDialogHeader>
                         <AlertDialogTitle>Change plan</AlertDialogTitle>
                         <AlertDialogDescription>
@@ -89,12 +86,11 @@ export function ChangePlan({ site, plans, onDone }: { site: CustomerSite; plans:
                             </button>
                         ))}
                     </div>
-                    {state?.error && <Notice tone="error" className="mt-3">{state.error}</Notice>}
                     <AlertDialogFooter className="mt-5">
                         <AlertDialogCancel type="button">Cancel</AlertDialogCancel>
-                        <Go label="Switch plan" icon={<ArrowRightLeft className="size-4" />} enabled={Boolean(planId)} />
+                        {planId && <PlanCheckoutButton planId={planId} siteId={site.id} onSettled={() => { setOpen(false); onDone(); }} label="Review prorated payment" />}
                     </AlertDialogFooter>
-                </form>
+                </div>
             </AlertDialogContent>
         </AlertDialog>
     );
@@ -138,8 +134,7 @@ export function ResetPassword({ site, onDone }: { site: CustomerSite; onDone: ()
                                     <PasswordInput id="confirmPassword" name="confirmPassword" value={confirm} onChange={(e) => setConfirm(e.target.value)} autoComplete="new-password" maxLength={128} />
                                 </FormField>
                             </div>
-                            {state?.error && <Notice tone="error" className="mt-3">{state.error}</Notice>}
-                            <AlertDialogFooter className="mt-5">
+                                    <AlertDialogFooter className="mt-5">
                                 <AlertDialogCancel type="button">Cancel</AlertDialogCancel>
                                 <Go label="Reset password" icon={<KeyRound className="size-4" />} enabled={valid} />
                             </AlertDialogFooter>

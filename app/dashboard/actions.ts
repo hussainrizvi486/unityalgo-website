@@ -1,18 +1,19 @@
 'use server';
+import { assertSiteBillingAccess } from '@/lib/site-billing-lifecycle';
+import { cancelSiteOrder } from '@/lib/site-orders';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
-import { and, eq, inArray, isNotNull, isNull, or } from 'drizzle-orm';
+import { and, eq, isNull } from 'drizzle-orm';
 import { db, schema } from '@/lib/db';
-import { findAlgoSuitePlan } from '@/lib/products';
 import {
     requireCustomer,
     requireCustomerSession,
 } from '@/lib/customer-session';
 import { CUSTOMER_SESSION_COOKIE } from '@/lib/customer-auth';
 import { controller, ControllerError } from '@/lib/controller-client';
-import { trialDaysFor, trialEligibility } from '@/lib/site-trials';
-import { sendSiteEmail } from '@/lib/site-emails';
+import { saveSiteOrder, startSiteOrderPayment, provisionSiteOrder, SiteOrderError } from '@/lib/site-orders';
+import { reconcilePaddleTransaction } from '@/lib/paddle-sync';
 import { validateSiteWizard, type SiteWizardValues } from '@/lib/site-wizard';
 
 export interface PortalActionState {
@@ -66,80 +67,31 @@ export async function createSiteAction(
     };
     const problems = Object.values(validateSiteWizard(values));
     if (problems.length) return { error: problems[0] };
-    const [plan, currency, apps] = await Promise.all([
-        findAlgoSuitePlan(values.planId),
-        db.query.currency.findFirst({
-            where: and(eq(schema.currency.code, values.currency), eq(schema.currency.isActive, true)),
-            columns: { code: true },
-        }),
-        values.apps.length
-            ? db.query.appCatalog.findMany({
-                  where: and(
-                      inArray(schema.appCatalog.id, values.apps),
-                      eq(schema.appCatalog.isActive, true),
-                      eq(schema.appCatalog.isInstallable, true),
-                      eq(schema.appCatalog.source, 'image'),
-                      or(isNull(schema.appCatalog.priceAmount), eq(schema.appCatalog.priceAmount, 0)),
-                      isNotNull(schema.appCatalog.frappeAppName),
-                  ),
-              })
-            : Promise.resolve([]),
-    ]);
-    if (!plan) return { error: 'The selected plan is no longer available.' };
-    if (!currency) return { error: 'The selected currency is not available.' };
-    if (apps.length !== new Set(values.apps).size)
-        return { error: 'One of the selected applications is unavailable.' };
-    const trialDays = trialDaysFor(plan, await trialEligibility(user.id));
-    if (plan.priceAmount == null && plan.trialDays && !trialDays)
-        return { error: 'You have already used the free trial. Choose a paid plan to create another site.' };
-    let site;
+    let order;
+    try { order = await saveSiteOrder(user.id, text('requestKey'), values); }
+    catch (error) { return { error: error instanceof ControllerError ? 'Site hosting is temporarily unavailable. Try again before paying.' : error instanceof SiteOrderError ? error.message : 'Site setup could not be saved. The site name may already be reserved; please try again.' }; }
+    redirect(`/dashboard/sites/orders/${order.id}`);
+}
+
+export async function startSitePaymentAction(orderId: string, useCredits = true) {
+    const session = await requireCustomerSession();
     try {
-        site = await controller.sites.create({
-            ...(trialDays ? { trial_days: trialDays } : {}),
-            user_id: user.id,
-            name: values.slug,
-            slug: values.slug,
-            request_key: text('requestKey'),
-            app_names: apps.map((app) => app.frappeAppName),
-            plan_id: plan.id,
-            plan_name: plan.name,
-            plan_vcpu: plan.vcpu,
-            plan_ram_mb: plan.ramMb,
-            plan_storage_gb: plan.storageGb,
-            plan_user_limit: plan.userLimit,
-            // Handed to Frappe's setup wizard; the controller does not store these.
-            company_name: values.companyName,
-            country: values.country,
-            currency: currency.code,
-            coa_type: values.coaType,
-            owner_email: values.email,
-            owner_password: values.password,
-        });
-    } catch (error) {
-        return {
-            error:
-                error instanceof ControllerError && error.status < 500
-                    ? error.message
-                    : 'Site hosting is temporarily unavailable. Please try again or contact support.',
-        };
+        const result = await startSiteOrderPayment(session.userId, orderId, useCredits === true);
+        if (result.authorized) await provisionSiteOrder(orderId);
+        return { ok: true as const, ...result };
+    } catch (error) { return { ok: false as const, error: error instanceof ControllerError ? 'Site hosting is temporarily unavailable. Your details are saved; please retry.' : error instanceof SiteOrderError ? error.message : 'Payment could not be started. Your setup is saved; please try again.' }; }
+}
+
+export async function sitePaymentStatusAction(orderId: string, verify = false) {
+    const session = await requireCustomerSession();
+    let order = await db.query.siteOrder.findFirst({ where: and(eq(schema.siteOrder.id, orderId), eq(schema.siteOrder.userId, session.userId)) });
+    if (!order) throw new Error('Site setup not found.');
+    if (verify && order.paddleTransactionId && order.status === 'AWAITING_PAYMENT') {
+        await reconcilePaddleTransaction(order.paddleTransactionId);
     }
-    await db
-        .insert(schema.notification)
-        .values({
-            userId: user.id,
-            eventKey: `site:${site.id}:created`,
-            title: 'Site creation requested',
-            body: `${site.name} has been added. You can follow its installation progress.`,
-            href: `/dashboard/sites/${site.id}`,
-        })
-        .onConflictDoNothing({ target: [schema.notification.userId, schema.notification.eventKey] });
-    try {
-        await sendSiteEmail('initiated', site, user.email);
-    } catch {
-        // Email trouble must not undo a site that is already being created.
-    }
-    revalidatePath('/dashboard', 'layout');
-    redirect(`/dashboard/sites/${site.id}`);
+    await provisionSiteOrder(order.id);
+    order = await db.query.siteOrder.findFirst({ where: eq(schema.siteOrder.id, order.id) });
+    return { status: order!.status, siteId: order!.siteId, error: order!.error };
 }
 
 const SITE_ACTIONS = ['stop', 'start', 'restart', 'backup', 'deactivate', 'reactivate'] as const;
@@ -160,6 +112,7 @@ export async function siteActionAction(
     const action = String(data.get('action') || '') as (typeof SITE_ACTIONS)[number];
     if (!SITE_ACTIONS.includes(action)) return { error: 'Unknown action.' };
     try {
+        if (['start', 'reactivate', 'restart'].includes(String(data.get('action')))) await assertSiteBillingAccess(user.id, String(data.get('siteId') || ''));
         await controller.sites.action(String(data.get('siteId') || ''), user.id, action);
     } catch (error) {
         return {
@@ -200,28 +153,9 @@ export async function changePlanAction(
     _previous: PortalActionState | undefined,
     data: FormData,
 ): Promise<PortalActionState> {
-    const user = await requireCustomer();
-    const plan = await findAlgoSuitePlan(String(data.get('planId') || ''));
-    if (!plan) return { error: 'That plan is not available.' };
-    try {
-        await controller.sites.changePlan(String(data.get('siteId') || ''), user.id, {
-            plan_id: plan.id,
-            plan_name: plan.name,
-            plan_vcpu: plan.vcpu,
-            plan_ram_mb: plan.ramMb,
-            plan_storage_gb: plan.storageGb,
-            plan_user_limit: plan.userLimit,
-        });
-    } catch (error) {
-        return {
-            error:
-                error instanceof ControllerError && error.status < 500
-                    ? error.message
-                    : 'Site hosting is temporarily unavailable. Please try again.',
-        };
-    }
-    revalidatePath('/dashboard/sites');
-    return { success: `Switching to ${plan.name}…` };
+    await requireCustomer();
+    void data;
+    return { error: 'Use Review prorated payment on the site to confirm a paid plan change.' };
 }
 
 export async function resetSitePasswordAction(
@@ -356,6 +290,7 @@ export async function retrySiteAction(
 ): Promise<PortalActionState> {
     const user = await requireCustomer();
     try {
+        await assertSiteBillingAccess(user.id, String(data.get('siteId') || ''));
         await controller.sites.retry(String(data.get('siteId') || ''), user.id);
     } catch (error) {
         return {
@@ -367,4 +302,10 @@ export async function retrySiteAction(
     }
     revalidatePath('/dashboard/sites');
     return { success: 'Provisioning has been queued again.' };
+}
+
+export async function cancelSiteSetupAction(orderId: string) {
+    const session = await requireCustomerSession();
+    try { await cancelSiteOrder(session.userId, orderId); return { ok: true as const }; }
+    catch { return { ok: false as const, error: 'Setup cannot be canceled until its payment status is resolved.' }; }
 }

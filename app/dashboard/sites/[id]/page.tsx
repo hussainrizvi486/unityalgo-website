@@ -84,7 +84,7 @@ export default async function SiteDetailPage({
             initial={site}
             installable={installable}
             known={known}
-            plans={plans.map((plan) => ({
+            plans={plans.filter((plan) => plan.priceAmount != null && !!plan.paddlePriceId).map((plan) => ({
                 id: plan.id,
                 name: plan.name,
                 price: formatPlanPrice(plan),

@@ -275,6 +275,7 @@ class SitesView(BaseView):
         data = self.json_body()
         if not isinstance(data, dict):
             raise ValidationError("Request body must be an object.")
+        
         name, slug = (
             str(data.get("name", "")).strip(),
             str(data.get("slug", "")).strip().lower(),
@@ -300,6 +301,7 @@ class SitesView(BaseView):
             raise ValidationError("Enter a company name of up to 100 characters.")
         if not setup["country"] or len(setup["country"]) > 100:
             raise ValidationError("Choose a country.")
+        
         if not CURRENCY.fullmatch(setup["currency"]):
             raise ValidationError("Choose a currency.")
         
@@ -318,6 +320,7 @@ class SitesView(BaseView):
         )
         if not plan_id or len(plan_id) > 64 or not plan_name or len(plan_name) > 100:
             raise ValidationError("Choose a plan.")
+        
         trial_days = data.get("trial_days")
         if trial_days not in (None, ""):
             if (
@@ -360,6 +363,7 @@ class SitesView(BaseView):
             )
             if existing:
                 return self.ok(serialize(existing))
+            
             user = session.get(PlatformUser, data.get("user_id"))
             if not user or user.role != "CUSTOMER":
                 raise ValidationError("Customer not found.")
@@ -398,7 +402,7 @@ class SitesView(BaseView):
                         Site.server_id == node.id, Site.status.in_(Site.ACTIVE_STATUSES)
                     )
                 )
-                
+
                 if fits_site(
                     node,
                     slots,
@@ -415,6 +419,7 @@ class SitesView(BaseView):
                 ):
                     server = node
                     break
+
             if not server:
                 from app.services.activity_logger import ActivityLogger
                 if not candidates:
@@ -425,6 +430,7 @@ class SitesView(BaseView):
                 ActivityLogger().event('deployment', 'site.create', 'No capacity for a new site', status='warning',
                                        message='No healthy worker could take %d MB RAM, %g vCPU, %d GB storage (full or at its site limit).' % (resources['ram_mb'], resources['cpu'], resources['storage_gb']))
                 raise ConflictError(NO_CAPACITY)
+            
             port = allocate_port(session, self.settings, server, self.settings.frappe_port_start, self.settings.frappe_port_end)
             site = Site(
                 db_server_id=db_server.id if db_server else None,
@@ -454,6 +460,7 @@ class SitesView(BaseView):
             session.flush()
             if trial_days:
                 begin_trial(session, site, trial_days)
+                
             ServerController(session, self.settings).refresh_capacity(server)
             identifier = str(site.id)
         # Commit the reservation before the worker can consume the job.
@@ -839,6 +846,8 @@ class SiteChangePlanView(BaseView):
                 raise ConflictError(
                     f"The server does not have room for {plan_name} right now. Please try again later or contact support."
                 )
+            if data.get("dry_run") is True:
+                return self.ok({"eligible": True})
             site.status, site.message, site.error = (
                 "restarting",
                 f"Applying {plan_name}…",

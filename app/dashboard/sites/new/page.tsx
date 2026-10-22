@@ -61,8 +61,7 @@ export default async function CreateSitePage({
                 Create an AlgoSuite site
             </h1>
             <p className="mt-3 portal-text-body leading-7 text-foreground/70">
-                Answer a few questions and we will deploy your ERP on an
-                eligible server automatically.
+                Enter your site details, then complete payment. We will start provisioning your ERP after payment is confirmed.
             </p>
             {!capabilities?.configured && (
                 <Notice tone="warning" className="mt-6">
@@ -93,8 +92,8 @@ export default async function CreateSitePage({
                     vcpu: plan.vcpu,
                     ramMb: plan.ramMb,
                     storageGb: plan.storageGb,
-                    trialDays: trialDaysFor(plan, eligibility),
-                    trialUsed: Boolean(plan.trialDays) && eligibility.used.has(plan.id) && !eligibility.subscribed.has(plan.id),
+                    trialDays: plan.priceAmount == null ? trialDaysFor(plan, eligibility) : 0,
+                    trialUsed: plan.priceAmount == null && Boolean(plan.trialDays) && eligibility.used.has(plan.id) && !eligibility.subscribed.has(plan.id),
                     // A plan that is only a free trial cannot be chosen again once the trial is used.
                     unavailable: plan.priceAmount == null && Boolean(plan.trialDays) && trialDaysFor(plan, eligibility) === 0,
                 }))}

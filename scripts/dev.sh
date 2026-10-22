@@ -5,7 +5,7 @@
 #   npm run dev:all
 #
 # The platform is not a single server: the Next.js app, the Python controller
-# API, its Celery worker and the WebSocket terminal are four separate
+# API, its Celery worker, billing worker and WebSocket terminal are separate
 # processes. Forgetting one produces a confusing partial failure — a missing
 # terminal service, for instance, only shows up as "Connect" doing nothing on
 # the server page — so this starts them together and stops them together.
@@ -108,12 +108,13 @@ fi
 log "starting next(:3000) controller(:8000) terminal(:8765)$([[ $REDIS_OK == 1 ]] && printf ' worker beat')"
 
 run "next"       "$BLUE"    npx next dev
-run "controller" "$GREEN"   bash -c "cd controller && source env/bin/activate && exec python main.py serve"
-run "terminal"   "$MAGENTA" bash -c "cd controller && source env/bin/activate && exec python ws_terminal_main.py"
-[[ $REDIS_OK == 1 ]] && run "worker" "$YELLOW" bash -c "cd controller && source env/bin/activate && exec python main.py worker"
+run "controller" "$GREEN"   node scripts/controller-local.mjs main.py serve
+run "terminal"   "$MAGENTA" node scripts/controller-local.mjs ws_terminal_main.py
+[[ $REDIS_OK == 1 ]] && run "worker" "$YELLOW" node scripts/controller-local.mjs main.py worker
+run "billing" "$GREEN" npm run billing:worker -- --watch
 # Beat is what fires the periodic jobs: scheduled site backups, the seat/storage audit and the health sweep.
 # Exactly one scheduler may run, so it is started here and nowhere else.
-[[ $REDIS_OK == 1 ]] && run "beat"   "$RED"    bash -c "cd controller && source env/bin/activate && exec python main.py beat"
+[[ $REDIS_OK == 1 ]] && run "beat"   "$RED"    node scripts/controller-local.mjs main.py beat
 
 log "Ctrl-C to stop all of them"
 wait

@@ -1,4 +1,9 @@
 import 'server-only';
+import { moneyToMinor } from '@/lib/billing-rules';
+
+export class PaddleApiError extends Error {
+    constructor(message: string, public readonly status: number) { super(message); }
+}
 
 function apiBase() {
     return process.env.NEXT_PUBLIC_PADDLE_ENV === 'production'
@@ -12,12 +17,13 @@ export async function paddleRequest(path: string, init?: RequestInit) {
 
     const response = await fetch(`${apiBase()}${path}`, {
         ...init,
-        headers: { Authorization: `Bearer ${key}`, 'content-type': 'application/json', ...(init?.headers ?? {}) },
+        headers: { Authorization: `Bearer ${key}`, 'content-type': 'application/json', 'Paddle-Version': '1', ...(init?.headers ?? {}) },
         cache: 'no-store',
+        signal: init?.signal ?? AbortSignal.timeout(20_000),
     });
     const body = await response.json() as { data?: unknown; error?: { detail?: string } };
     if (!response.ok) {
-        throw new Error(body.error?.detail ?? `Paddle returned ${response.status}`);
+        throw new PaddleApiError(body.error?.detail ?? `Paddle returned ${response.status}`, response.status);
     }
     return body.data;
 }
@@ -33,7 +39,7 @@ interface SyncInput {
 }
 
 export async function syncPlanToPaddle(input: SyncInput): Promise<{ priceId: string; created: boolean }> {
-    const amountMinor = String(Math.round(input.amount * 100));
+    const amountMinor = moneyToMinor(input.amount, input.currencyCode);
 
     if (input.existingPriceId) {
         const current = await paddleRequest(`/prices/${input.existingPriceId}`) as {
@@ -93,7 +99,7 @@ interface AppSyncInput {
 }
 
 export async function syncAppToPaddle(input: AppSyncInput): Promise<{ priceId: string; created: boolean }> {
-    const amountMinor = String(Math.round(input.amount * 100));
+    const amountMinor = moneyToMinor(input.amount, input.currencyCode);
     if (input.existingPriceId) {
         const current = (await paddleRequest(`/prices/${input.existingPriceId}`)) as { unit_price?: { currency_code?: string } };
         const existing = current.unit_price?.currency_code;

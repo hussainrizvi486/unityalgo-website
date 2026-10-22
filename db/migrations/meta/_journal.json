@@ -57,6 +57,55 @@
       "when": 1792591337501,
       "tag": "0007_app_icon",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1792615177072,
+      "tag": "0008_paddle_billing_foundation",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1792615472733,
+      "tag": "0009_billing_fulfillment_outbox",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1792616451216,
+      "tag": "0010_credit_redemptions",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1792616911260,
+      "tag": "0011_billing_utc_defaults",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1792620767669,
+      "tag": "0012_site_payment_orders",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1792620849822,
+      "tag": "0013_site_order_name_reservations",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1792621964647,
+      "tag": "0014_site_subscription_lifecycle",
+      "breakpoints": true
     }
   ]
 }

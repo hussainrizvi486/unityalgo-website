@@ -331,6 +331,17 @@ class SiteApiTests(unittest.TestCase):
     def get(self,site):
         return self.client.get(f"/api/v1/sites/{site['id']}?user_id={self.customer}").json
 
+    def test_change_plan_preflight_does_not_queue_or_change_limits(self):
+        site = self.make_ready()
+        result = self.change_plan(site, dry_run=True)
+        self.assertEqual(result.status_code, 200)
+        self.assertTrue(result.json['eligible'])
+        unchanged = self.get(site)
+        self.assertEqual(unchanged['status'], 'ready')
+        self.assertEqual(unchanged['plan_id'], 'plan-1')
+        self.assertEqual(self.change_plan(site, dry_run=True, user_id='someone-else').status_code, 404)
+        self.assertEqual(self.change_plan(site, dry_run=True, plan_ram_mb=65536).status_code, 409)
+
     def test_change_plan_rules(self):
         site=self.make_ready()
         self.assertEqual(self.change_plan(site,plan_id='plan-1').status_code,409)            # already on it

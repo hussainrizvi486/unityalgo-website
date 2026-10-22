@@ -18,7 +18,6 @@ def build_service(session, site, setup=None):
                        'user': connection.username, 'password': decrypt(connection.password_encrypted, settings),
                        'controller_host': connection.host, 'sslmode': connection.sslmode}
     service = FrappeService(site, server, settings, setup, external_db)
-    # Snapshot values before the ORM session closes (its commit expires rows).
     service.site = type('SiteSnapshot', (), {key: getattr(site, key) for key in SITE_FIELDS})()
     service.server = type('ServerSnapshot', (), {key: getattr(server, key) for key in SERVER_FIELDS})()
     service.server.dial_host = server.dial_host

@@ -21,7 +21,7 @@
     "test:e2e": "tsx scripts/e2e-test.ts",
     "test:security": "tsx scripts/security-test.ts",
     "dev:all": "bash scripts/dev.sh",
-    "test:paddle": "tsx scripts/test-paddle-webhook.ts",
+    "test:paddle": "node --conditions=react-server --import tsx scripts/test-paddle-billing.mts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:baseline": "tsx scripts/db-baseline.mts",
@@ -32,7 +32,12 @@
     "test:emails": "NODE_OPTIONS=--conditions=react-server tsx scripts/test-email-templates.mts",
     "test:ratelimits": "NODE_OPTIONS=--conditions=react-server tsx scripts/test-rate-limits.mts",
     "test:spreadsheet": "NODE_OPTIONS=--conditions=react-server tsx scripts/test-spreadsheet.mts",
-    "test:billing": "NODE_OPTIONS=--conditions=react-server tsx scripts/test-app-billing.mts"
+    "test:billing": "NODE_OPTIONS=--conditions=react-server tsx scripts/test-app-billing.mts",
+    "billing:worker": "NODE_OPTIONS=--conditions=react-server tsx scripts/paddle-worker.mts",
+    "test:paddle:billing": "node --conditions=react-server --import tsx scripts/test-paddle-billing.mts",
+    "test:paddle:sandbox:credits": "node --import tsx scripts/test-paddle-sandbox-credits.mts",
+    "billing:webhook": "node --conditions=react-server --import tsx scripts/configure-paddle-webhook.mts",
+    "test:paddle:site:sandbox": "node --conditions=react-server --import tsx scripts/test-site-billing-sandbox.mts"
   },
   "dependencies": {
     "@paddle/paddle-js": "^1.6.4",

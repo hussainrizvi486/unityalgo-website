@@ -1,4 +1,9 @@
 import Link from 'next/link';
+import { CustomerCreditHistory } from '@/components/customer/customer-credit-history';
+import { RenewalCreditControls } from '@/components/customer/renewal-credit-controls';
+import { BillingPortalButton } from '@/components/customer/billing-portal-button';
+import { asList, asRecord, asString } from '@/lib/paddle-data';
+import { currencyDigits } from '@/lib/billing-rules';
 import { Notice } from '@/components/ui/notice';
 import { ArrowRight, CalendarDays, Check, Package, PlusCircle, Store, Users, X } from 'lucide-react';
 import { and, asc, eq, inArray } from 'drizzle-orm';
@@ -20,6 +25,9 @@ export default async function SubscriptionPage({ searchParams }: SubscriptionPag
   const session = await requireCustomerSession();
 
   const subscriptions = await getSubscriptions(session.userId);
+  const credits = await db.query.creditAccount.findMany({ where: eq(schema.creditAccount.userId, session.userId) });
+  const nativeSnapshots = await db.query.billingProviderRecord.findMany({ where: and(eq(schema.billingProviderRecord.userId, session.userId), eq(schema.billingProviderRecord.kind, 'NATIVE_CREDITS')) });
+  const nativeCredits = nativeSnapshots.flatMap((snapshot) => asList(snapshot.payload).map(asRecord));
 
   const productIds = [...new Set(subscriptions.map((s) => s.plan.productId))];
   const attachedIds = new Set(subscriptions.flatMap((s) => s.addOns.map((row) => row.addOnId)));
@@ -41,8 +49,23 @@ export default async function SubscriptionPage({ searchParams }: SubscriptionPag
     <div className="mx-auto portal-page">
       <p className="portal-text-caption font-bold uppercase tracking-eyebrow text-primary">Subscription</p>
       <h1 className="portal-page-title mt-2">Plan and billing</h1>
-      <p className="mt-2 portal-text-body text-muted-foreground">Manage your plans and add-ons — you can hold one plan per product at a time.</p>
+      <p className="mt-2 portal-text-body text-muted-foreground">Manage your plans and add-ons — each paid site has its own subscription.</p>
 
+      {nativeCredits.length ? <section className="mt-6 rounded-xl border border-border p-5">
+        <h2>Billing credits</h2>
+        {nativeCredits.map((credit, index) => {
+          const currency = asString(credit.currency_code) ?? 'USD';
+          const available = asString(asRecord(credit.balance).available) ?? '0';
+          return <p key={index}>{new Intl.NumberFormat('en', { style: 'currency', currency }).format(Number(available) / 10 ** currencyDigits(currency))} available</p>;
+        })}
+        <p className="mt-2 text-sm text-muted-foreground">Paddle applies these billing credits automatically to eligible payments in the same currency. Balance reflects the latest billing synchronization.</p>
+      </section> : null}
+      {credits.length ? <section className="mt-6 rounded-xl border border-border p-5">
+        <h2>Assigned credits</h2>
+        {credits.map((credit) => <p key={credit.id}>{new Intl.NumberFormat('en', { style: 'currency', currency: credit.currency }).format(credit.available / 10 ** currencyDigits(credit.currency))} available · {new Intl.NumberFormat('en', { style: 'currency', currency: credit.currency }).format(credit.reserved / 10 ** currencyDigits(credit.currency))} reserved</p>)}
+        <p className="mt-2 text-sm text-muted-foreground">Use these non-cash credits when choosing a plan, upgrading, or scheduling your next renewal. Credits apply as invoice discounts; Paddle calculates tax.</p>
+      </section> : null}
+      <CustomerCreditHistory userId={session.userId} />
       {purchased ? (
         <Notice tone="success" className="mt-6">Your plan is now active.</Notice>
       ) : null}
@@ -88,6 +111,7 @@ function SubscriptionBlock({ subscription, availableAddOns }: { subscription: Su
             <div>
               <span className="inline-flex rounded-full bg-primary px-3 py-1 portal-text-caption font-semibold">{subscription.status === 'ACTIVE' ? 'Active' : subscription.status}</span>
               <h3 className="mt-4 text-3xl ">{subscription.plan.name} plan</h3>
+              {subscription.siteId && <Link href={`/dashboard/sites/${subscription.siteId}`} className="mt-2 block text-sm underline">View linked site</Link>}
               {subscription.plan.tagline ? <p className="mt-1 portal-text-body text-primary-foreground/45">{subscription.plan.tagline}</p> : null}
             </div>
             <div className="sm:text-right">
@@ -115,10 +139,11 @@ function SubscriptionBlock({ subscription, availableAddOns }: { subscription: Su
               ))}
             </div>
           ) : null}
-          <Link href="/dashboard/plans" className="mt-6 inline-flex items-center gap-2 portal-text-body font-semibold text-primary-foreground">Change plan<ArrowRight className="h-4 w-4" /></Link>
+          <Link href={subscription.siteId ? `/dashboard/sites/${subscription.siteId}` : "/dashboard/plans"} className="mt-6 inline-flex items-center gap-2 portal-text-body font-semibold text-primary-foreground">Change plan<ArrowRight className="h-4 w-4" /></Link>
         </div>
       </section>
 
+      {subscription.paddleSubscriptionId ? <><BillingPortalButton subscriptionId={subscription.id} /><RenewalCreditControls subscriptionId={subscription.id} /></> : null}
       <section className="mt-4 overflow-hidden portal-surface">
         <div className="flex items-center gap-3 border-b border-border/60 p-5 sm:p-6">
           <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent text-primary"><Package className="h-4 w-4" /></span>

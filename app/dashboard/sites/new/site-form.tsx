@@ -56,7 +56,7 @@ function CreateButton({ disabled }: { disabled: boolean }) {
     const { pending } = useFormStatus();
     return (
         <Button type="submit" disabled={disabled || pending}>
-            {pending ? 'Starting deployment…' : 'Create site'}
+            {pending ? 'Saving site details…' : 'Continue to payment'}
         </Button>
     );
 }
@@ -243,7 +243,7 @@ export function SiteForm({
                 <input key={id} type="hidden" name="apps" value={id} />
             ))}
 
-            <StepIndicator labels={[...WIZARD_STEPS]} step={step + 1} />
+            <StepIndicator labels={[...WIZARD_STEPS, 'Payment']} step={step + 1} />
 
             {step === 0 && (
                 <div className="space-y-5">
@@ -556,8 +556,7 @@ export function SiteForm({
                 </div>
                 {step === WIZARD_STEPS.length - 1 && (
                     <p className="mt-4 portal-text-caption text-muted-foreground">
-                        Installation runs in the background. You can follow the
-                        progress on your site page and by email.
+                        Your site details are saved before payment. Installation starts only after payment is confirmed. Free trial plans do not require a payment.
                     </p>
                 )}
             </div>
