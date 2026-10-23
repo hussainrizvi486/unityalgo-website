@@ -3,6 +3,8 @@ export interface RegistrationValues {
     firstName: string;
     lastName: string;
     phone: string;
+    /** The customer's company name; it becomes the default for their first site. */
+    company: string;
     password: string;
 }
 
@@ -30,6 +32,12 @@ export function validateField(field: RegistrationField, raw: string): string | n
             if (!NAME_SHAPE.test(value)) return `${label} cannot contain numbers.`;
             return null;
         }
+        case 'company': {
+            if (!value) return 'Company name is required.';
+            if (value.length < 2) return 'Company name must be at least 2 characters.';
+            if (value.length > 100) return 'Company name must be 100 characters or fewer.';
+            return null;
+        }
         case 'phone': {
             if (!value) return 'Phone number is required.';
             const digits = value.replace(/\D/g, '');
@@ -51,7 +59,7 @@ export function validateField(field: RegistrationField, raw: string): string | n
 /** Every field's error, keyed by field name. Empty object means valid. */
 export function validateRegistration(values: RegistrationValues): FieldErrors {
     const errors: FieldErrors = {};
-    for (const field of ['firstName', 'lastName', 'phone', 'password'] as const) {
+    for (const field of ['firstName', 'lastName', 'phone', 'company', 'password'] as const) {
         const message = validateField(field, values[field]);
         if (message) errors[field] = message;
     }

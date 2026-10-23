@@ -189,11 +189,12 @@ export async function createCustomerAction(
     const firstName = String(formData.get('firstName') ?? '').trim();
     const lastName = String(formData.get('lastName') ?? '').trim();
     const phone = String(formData.get('phone') ?? '').trim();
+    const company = String(formData.get('company') ?? '').trim();
     const password = String(formData.get('password') ?? '');
 
-    const values = { firstName, lastName, phone };
+    const values = { firstName, lastName, phone, company };
 
-    const fieldErrors = validateRegistration({ firstName, lastName, phone, password });
+    const fieldErrors = validateRegistration({ firstName, lastName, phone, company, password });
     if (Object.keys(fieldErrors).length > 0) {
         return { fieldErrors, values };
     }
@@ -215,6 +216,7 @@ export async function createCustomerAction(
             firstName,
             lastName,
             phone,
+            company,
             name: `${firstName} ${lastName}`,
             emailVerifiedAt: new Date(),
         }).returning();

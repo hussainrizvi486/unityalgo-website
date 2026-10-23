@@ -214,6 +214,9 @@ export function CustomerInfoStep({ email }: { email: string }) {
                         <Input {...fieldProps('lastName')} autoComplete="family-name" placeholder="Doe" />
                     </FormField>
                 </div>
+                <FormField id="company" label="Company name" error={errorFor('company')} help="We use this as the default for your first site. You can change it later.">
+                    <Input {...fieldProps('company')} autoComplete="organization" placeholder="Acme Trading" />
+                </FormField>
                 <FormField id="phone" label="Phone number" error={errorFor('phone')}>
                     <Input {...fieldProps('phone')} type="tel" autoComplete="tel" placeholder="+92 300 0000000" />
                 </FormField>

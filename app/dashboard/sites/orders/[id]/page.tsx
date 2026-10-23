@@ -15,7 +15,6 @@ export default async function SiteOrderPage({ params, searchParams }: { params: 
     const order = await db.query.siteOrder.findFirst({ where: and(eq(schema.siteOrder.id, id), eq(schema.siteOrder.userId, session.userId)) });
     if (!order) notFound();
     if (order.siteId) redirect(`/dashboard/sites/${order.siteId}`);
-    
     // A plan the customer already pays for with no site on it runs this site: nothing more to pay.
     const covered = order.trialDays === 0 && !order.paddleTransactionId && !order.paidAt && ['DRAFT', 'AWAITING_PAYMENT'].includes(order.status)
         ? (await listIdleSubscriptions(session.userId, order.planId).catch(() => [])).length > 0

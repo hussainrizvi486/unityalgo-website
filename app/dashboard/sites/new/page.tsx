@@ -32,7 +32,7 @@ export default async function CreateSitePage({
         .from(schema.appCatalog)
         .where(eq(schema.appCatalog.isActive, true))
         .orderBy(asc(schema.appCatalog.sortOrder));
-    const [plans, currencies, eligibility, address] = await Promise.all([
+    const [plans, currencies, eligibility, address, profile] = await Promise.all([
         listAlgoSuitePlans(),
         db
             .select({ code: schema.currency.code, name: schema.currency.name, symbol: schema.currency.symbol })
@@ -45,6 +45,7 @@ export default async function CreateSitePage({
             orderBy: [desc(schema.address.isDefault), asc(schema.address.createdAt)],
             columns: { country: true },
         }),
+        db.query.user.findFirst({ where: eq(schema.user.id, user.id), columns: { company: true } }),
     ]);
     // Paid subscriptions with no site (for example after a site was deleted) can run this one without a new payment.
     const idlePlanIds = [...new Set((await listIdleSubscriptions(user.id).catch(() => [])).map((subscription) => subscription.planId))];
@@ -91,6 +92,7 @@ export default async function CreateSitePage({
                 idlePlanIds={idlePlanIds}
                 tiers={tiers}
                 defaultCountry={address?.country}
+                defaultCompany={profile?.company ?? ''}
                 domainSuffix={capabilities?.domain_suffix || ''}
                 available={Boolean(capabilities?.configured && capabilities.accepting !== false)}
                 currencies={currencies}

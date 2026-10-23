@@ -25,6 +25,7 @@ import {
     WIZARD_STEPS,
     validateSiteWizard,
     type SiteWizardValues,
+    slugFromName,
 } from '@/lib/site-wizard';
 import { cn } from '@/utils';
 
@@ -74,6 +75,7 @@ export function SiteForm({
     selectedPlan,
     idlePlanIds = [],
     defaultCountry,
+    defaultCompany = '',
 }: {
     requestKey: string;
     apps: { id: string; name: string; available: boolean; minPlanId: string | null }[];
@@ -88,6 +90,8 @@ export function SiteForm({
     /** Plans the customer already pays for with no site running on them. */
     idlePlanIds?: string[];
     defaultCountry?: string | null;
+    /** The company name given at registration: the starting point for the company and the site name. */
+    defaultCompany?: string;
 }) {
     const [state, action] = useActionState(createSiteAction, undefined);
     const [step, setStep] = useState(0);
@@ -104,8 +108,8 @@ export function SiteForm({
     }));
     const startCountry = findCountry(defaultCountry) ?? '';
     const [values, setValues] = useState<SiteWizardValues>({
-        slug: '',
-        companyName: '',
+        slug: slugFromName(defaultCompany),
+        companyName: defaultCompany,
         country: startCountry,
         currency: currencyFor(startCountry),
         coaType: 'standard',

@@ -1,3 +1,4 @@
+import { isSameOrigin } from '@/lib/request-origin';
 import { getCustomerSession } from '@/lib/customer-session';
 import { listNotifications } from '@/lib/customer-notifications';
 import { and, eq, isNull } from 'drizzle-orm';
@@ -12,11 +13,12 @@ export async function GET() {
     });
 }
 export async function POST(request: Request) {
-    if (request.headers.get('origin') !== new URL(request.url).origin)
+    if (!isSameOrigin(request))
         return Response.json({ error: 'Invalid origin.' }, { status: 403 });
     const session = await getCustomerSession();
     if (!session)
         return Response.json({ error: 'Sign in required.' }, { status: 401 });
+    
     let data;
     try {
         data = await request.json();
