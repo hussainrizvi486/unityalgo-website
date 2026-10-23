@@ -3,6 +3,8 @@ import { asc, eq } from 'drizzle-orm';
 import { db, schema } from '@/lib/db';
 import { controller } from '@/lib/controller-client';
 import { AppStoreClient } from './store-client';
+import { loadPlanTiers } from '@/lib/app-plan-access';
+import { upgradeTarget } from '@/lib/app-compatibility';
 import { reconcilePurchases } from '@/lib/app-billing';
 import type { InstallSite } from '@/components/customer/install-app-dialog';
 
@@ -24,15 +26,19 @@ export default async function AppStorePage() {
             priceAmount: schema.appCatalog.priceAmount,
             priceCurrency: schema.appCatalog.priceCurrency,
             isInstallable: schema.appCatalog.isInstallable,
+            minPlanId: schema.appCatalog.minPlanId,
         })
         .from(schema.appCatalog)
         .where(eq(schema.appCatalog.isActive, true))
         .orderBy(asc(schema.appCatalog.sortOrder), asc(schema.appCatalog.name));
     let available: string[] = [];
     let sites: InstallSite[] = [];
+    let sitePlans = new Map<string, string | null>();
+    const tiers = await loadPlanTiers();
     try {
         available = (await controller.sites.capabilities()).apps;
         const owned = (await controller.sites.list(user.id)).results;
+        sitePlans = new Map(owned.map((site) => [site.id, site.plan_id ?? null]));
         sites = owned
             .filter((site) => !['failed', 'cleanup_required', 'deleting'].includes(site.status))
             .map((site) => ({
@@ -53,6 +59,10 @@ export default async function AppStorePage() {
             sites={sites}
             apps={apps.map(({ source, compatibility, ...app }) => ({
                 ...app,
+                lockedBy: Object.fromEntries(sites.flatMap((site) => {
+                    const needs = upgradeTarget(app, tiers.find((tier) => tier.id === sitePlans.get(site.id)), tiers);
+                    return needs ? [[site.id, { planId: needs.id, planName: needs.name }]] : [];
+                })),
                 available: Boolean(
                     app.isInstallable &&
                     app.frappeAppName &&

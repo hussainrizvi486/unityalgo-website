@@ -8,18 +8,25 @@ import { PlanCheckoutButton } from '@/components/customer/plan-checkout-button';
 import { formatPlanPrice, formatTransactionFee } from '@/lib/pricing';
 import { Button } from '@/components/ui/button';
 import { trialDaysFor, trialEligibility } from '@/lib/site-trials';
+import { listIdleSubscriptions } from '@/lib/subscription-claims';
+import { appPriceLabel, loadCatalogApps, splitAppsForPlan } from '@/lib/plan-apps';
+import { loadPlanTiers } from '@/lib/app-plan-access';
 
 export default async function PurchasePlansPage() {
   const session = await requireCustomerSession();
 
-  const [plans, subscriptions, eligibility] = await Promise.all([
+  const [catalogApps, tiers] = await Promise.all([loadCatalogApps(), loadPlanTiers()]);
+  const [plans, subscriptions, eligibility, idle] = await Promise.all([
     db.query.plan.findMany({
       where: eq(schema.plan.isActive, true),
       with: { product: true, currency: true },
     }).then((rows) => rows.sort((a, b) => a.product.sortOrder - b.product.sortOrder || a.sortOrder - b.sortOrder)),
     getSubscriptions(session.userId),
     trialEligibility(session.userId),
+    listIdleSubscriptions(session.userId).catch(() => []),
   ]);
+  // Plans the customer already pays for with no site on them: a new site on one needs no new payment.
+  const idlePlanIds = new Set(idle.map((subscription) => subscription.planId));
 
   type PlanWithProduct = (typeof plans)[number];
   const groups = new Map<string, { label: string; plans: PlanWithProduct[] }>();
@@ -63,6 +70,7 @@ export default async function PurchasePlansPage() {
                     <span className="text-2xl font-bold text-foreground">{isTrialOnly ? `Free for ${plan.trialDays} days` : formatPlanPrice(plan)}</span>
                   </div>
                   {trialDays > 0 && !isTrialOnly && !isCurrent ? <p className="mt-1 portal-text-caption font-medium text-success">{trialDays}-day free trial when you create a site on this plan</p> : null}
+                  {idlePlanIds.has(plan.id) ? <p className="mt-1 portal-text-caption font-medium text-success">Included in your subscription: no payment needed for a new site</p> : null}
                   {transactionFee ? <p className="mt-1 portal-text-caption text-muted-foreground">+ {transactionFee}</p> : null}
                   <p className="mt-1 portal-text-caption text-muted-foreground">{plan.userLimit == null ? 'Unlimited seats' : `Up to ${plan.userLimit} seat${plan.userLimit === 1 ? "" : "s"}`}</p>
 
@@ -73,6 +81,26 @@ export default async function PurchasePlansPage() {
                       ))}
                     </ul>
                   ) : null}
+
+                  {isAlgoSuite && catalogApps.length > 0 ? (() => {
+                    const tier = tiers.find((candidate) => candidate.id === plan.id);
+                    if (!tier) return null;
+                    const { compatible, locked } = splitAppsForPlan(catalogApps, tier, tiers);
+                    return (
+                      <div className="mt-5 border-t border-border/60 pt-4">
+                        <p className="portal-text-caption font-semibold text-foreground">Compatible apps</p>
+                        {compatible.length === 0 ? <p className="mt-1 portal-text-caption text-muted-foreground">No add-on apps yet.</p> : (
+                          <ul className="mt-2 flex flex-wrap gap-1.5">
+                            {compatible.slice(0, 8).map((app) => (
+                              <li key={app.id} className="rounded-full border border-border bg-muted/40 px-2.5 py-0.5 portal-text-caption" title={appPriceLabel(app)}>{app.name}</li>
+                            ))}
+                            {compatible.length > 8 ? <li className="px-1 py-0.5 portal-text-caption text-muted-foreground">+{compatible.length - 8} more</li> : null}
+                          </ul>
+                        )}
+                        {locked.length > 0 ? <p className="mt-2 portal-text-caption text-muted-foreground">{locked.length} more {locked.length === 1 ? 'app needs' : 'apps need'} a higher plan: {locked.slice(0, 3).map((app) => `${app.name} (${app.requiredPlanName})`).join(', ')}{locked.length > 3 ? '…' : ''}</p> : null}
+                      </div>
+                    );
+                  })() : null}
 
                   <div className="mt-6">
                     {isCurrent ? (
@@ -90,7 +118,7 @@ export default async function PurchasePlansPage() {
                           <MessageCircle className="h-4 w-4" />Contact sales
                         </Link></Button>
                     ) : isAlgoSuite ? (
-                      <Button asChild className="w-full rounded-md"><Link href={`/dashboard/sites/new?plan=${plan.id}`}>Choose plan</Link></Button>
+                      <Button asChild className="w-full rounded-md"><Link href={`/dashboard/sites/new?plan=${plan.id}`}>{idlePlanIds.has(plan.id) ? 'Create a site with this plan' : 'Choose plan'}</Link></Button>
                     ) : (
                       <PlanCheckoutButton
                         planId={plan.id}

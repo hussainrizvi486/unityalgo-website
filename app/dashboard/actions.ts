@@ -1,4 +1,5 @@
 'use server';
+import { wantsCredits } from '@/lib/billing-features';
 import { assertSiteBillingAccess } from '@/lib/site-billing-lifecycle';
 import { CheckoutError, reportBillingFailure } from '@/lib/billing-errors';
 import { cancelSiteOrder } from '@/lib/site-orders';
@@ -13,7 +14,7 @@ import {
 } from '@/lib/customer-session';
 import { CUSTOMER_SESSION_COOKIE } from '@/lib/customer-auth';
 import { controller, ControllerError } from '@/lib/controller-client';
-import { saveSiteOrder, startSiteOrderPayment, provisionSiteOrder, SiteOrderError } from '@/lib/site-orders';
+import { findResumableOrder, saveSiteOrder, startSiteOrderPayment, provisionSiteOrder, SiteOrderError } from '@/lib/site-orders';
 import { reconcilePaddleTransaction } from '@/lib/paddle-sync';
 import { validateSiteWizard, type SiteWizardValues } from '@/lib/site-wizard';
 
@@ -70,14 +71,19 @@ export async function createSiteAction(
     if (problems.length) return { error: problems[0] };
     let order;
     try { order = await saveSiteOrder(user.id, text('requestKey'), values); }
-    catch (error) { return { error: error instanceof ControllerError ? 'Site hosting is temporarily unavailable. Try again before paying.' : error instanceof SiteOrderError ? error.message : 'Site setup could not be saved. The site name may already be reserved; please try again.' }; }
+    catch (error) {
+        // The name is held by this customer's own unfinished setup (for example after pressing Back): continue it.
+        const resumable = values.slug ? await findResumableOrder(user.id, values.slug).catch(() => undefined) : undefined;
+        if (resumable) redirect(`/dashboard/sites/orders/${resumable.id}`);
+        return { error: error instanceof ControllerError ? 'Site hosting is temporarily unavailable. Try again before paying.' : error instanceof SiteOrderError ? error.message : 'Site setup could not be saved. The site name may already be reserved; please try again.' };
+    }
     redirect(`/dashboard/sites/orders/${order.id}`);
 }
 
 export async function startSitePaymentAction(orderId: string, useCredits = true) {
     const session = await requireCustomerSession();
     try {
-        const result = await startSiteOrderPayment(session.userId, orderId, useCredits === true);
+        const result = await startSiteOrderPayment(session.userId, orderId, wantsCredits(useCredits));
         if (result.authorized) await provisionSiteOrder(orderId);
         return { ok: true as const, ...result };
     } catch (error) {

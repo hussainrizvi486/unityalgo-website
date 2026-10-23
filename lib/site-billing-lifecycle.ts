@@ -18,9 +18,14 @@ export async function syncSiteBilling(limit = 25, subscriptionId?: string) {
                 let site;
                 try { site = await controller.sites.get(sub.siteId, sub.userId); }
                 catch (error) {
-                    if (error instanceof ControllerError && error.status === 404 && sub.status === 'CANCELED') {
-                        // The order retains historical site identity after a canceled site's deletion.
-                        await tx.update(schema.subscription).set({ siteId: null, billingSuspended: false }).where(eq(schema.subscription.id, sub.id));
+                    if (error instanceof ControllerError && error.status === 404) {
+                        // The site was deleted. A paid subscription stays valid: release it so a new site can use it,
+                        // and a canceled one stops pointing at a site that no longer exists.
+                        await tx.update(schema.subscription).set({ siteId: null, appliedPlanId: null, appliedAt: null, billingSuspended: false }).where(eq(schema.subscription.id, sub.id));
+                        if (sub.status === 'ACTIVE') await tx.insert(schema.notification).values({
+                            userId: sub.userId, eventKey: `idle:${sub.id}:${sub.siteId}`, title: `Your ${sub.plan.name} subscription has no site`,
+                            body: 'It keeps renewing. Create a new site with it at no extra cost, or cancel it.', href: '/dashboard/subscription',
+                        }).onConflictDoNothing();
                         return;
                     }
                     throw error;

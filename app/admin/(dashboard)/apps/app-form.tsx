@@ -15,6 +15,7 @@ type App = {
     description: string;
     category: string;
     iconUrl: string | null;
+    minPlanId: string | null;
     frappeAppName: string | null;
     isActive: boolean;
     isInstallable: boolean;
@@ -27,7 +28,7 @@ function Save() {
         </Button>
     );
 }
-export function AppCatalogForm({ app, github = false }: { app?: App; github?: boolean }) {
+export function AppCatalogForm({ app, github = false, plans = [] }: { app?: App; github?: boolean; plans?: { id: string; name: string }[] }) {
     const [state, action] = useActionState(saveAppCatalogAction, undefined);
     const prefix = app?.id || 'new';
     return (
@@ -63,6 +64,17 @@ export function AppCatalogForm({ app, github = false }: { app?: App; github?: bo
                 <div className="mt-2">
                     <CoverImageField name="iconUrl" defaultValue={app?.iconUrl ?? ''} />
                 </div>
+            </div>
+            <div>
+                <Label htmlFor={`${prefix}-minPlanId`}>Works on plans from</Label>
+                <p className="portal-text-caption text-muted-foreground">The lowest plan that supports this app. Customers on a lower plan are asked to upgrade first.</p>
+                <select
+                    id={`${prefix}-minPlanId`} name="minPlanId" defaultValue={app?.minPlanId ?? ''}
+                    className="mt-2 h-10 w-full rounded-lg border border-input bg-background px-3 portal-text-body"
+                >
+                    <option value="">Every plan</option>
+                    {plans.map((plan) => <option key={plan.id} value={plan.id}>{plan.name} and above</option>)}
+                </select>
             </div>
             <div>
                 <Label htmlFor={`${prefix}-description`}>Description</Label>

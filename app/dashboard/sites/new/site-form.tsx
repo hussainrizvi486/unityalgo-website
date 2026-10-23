@@ -15,6 +15,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { isCompatible, upgradeTarget, type PlanTier } from '@/lib/app-compatibility';
 import { StepIndicator } from '@/components/customer/step-indicator';
 import { CountrySelect } from '@/components/ui/country-select';
 import { Autocomplete } from '@/components/ui/autocomplete';
@@ -52,11 +53,11 @@ type Availability =
     | { state: 'unavailable'; reason: string }
     | { state: 'error' };
 
-function CreateButton({ disabled }: { disabled: boolean }) {
+function CreateButton({ disabled, covered }: { disabled: boolean; covered: boolean }) {
     const { pending } = useFormStatus();
     return (
         <Button type="submit" disabled={disabled || pending}>
-            {pending ? 'Saving site details…' : 'Continue to payment'}
+            {pending ? 'Saving site details…' : covered ? 'Create site' : 'Continue to payment'}
         </Button>
     );
 }
@@ -64,22 +65,28 @@ function CreateButton({ disabled }: { disabled: boolean }) {
 export function SiteForm({
     requestKey,
     apps,
+    tiers,
     plans,
     currencies,
     available,
     domainSuffix,
     selectedApp,
     selectedPlan,
+    idlePlanIds = [],
     defaultCountry,
 }: {
     requestKey: string;
-    apps: { id: string; name: string; available: boolean }[];
+    apps: { id: string; name: string; available: boolean; minPlanId: string | null }[];
+    /** Every plan's tier, so an app can say which plan it needs. */
+    tiers: PlanTier[];
     plans: PlanOption[];
     currencies: { code: string; name: string; symbol: string }[];
     available: boolean;
     domainSuffix: string;
     selectedApp?: string;
     selectedPlan?: string;
+    /** Plans the customer already pays for with no site running on them. */
+    idlePlanIds?: string[];
     defaultCountry?: string | null;
 }) {
     const [state, action] = useActionState(createSiteAction, undefined);
@@ -104,12 +111,16 @@ export function SiteForm({
         coaType: 'standard',
         planId: plans.find((plan) => plan.id === selectedPlan && !plan.unavailable)?.id ?? '',
         apps: apps
-            .filter((app) => app.available && app.id === selectedApp)
+            .filter((app) => app.available && app.id === selectedApp && isCompatible(app, tiers.find((tier) => tier.id === selectedPlan), tiers))
             .map((app) => app.id),
         email: '',
         password: '',
         confirmPassword: '',
     });
+    // A plan chosen before the wizard (pricing page, plans page, or an unused subscription) is kept: the plan step is
+    // skipped unless the customer asks to change it.
+    const [planLocked, setPlanLocked] = useState(Boolean(values.planId));
+    const planIsCovered = idlePlanIds.includes(values.planId);
     const [errors, setErrors] = useState<
         Partial<Record<keyof SiteWizardValues, string>>
     >({});
@@ -193,7 +204,7 @@ export function SiteForm({
         }
         if (Object.keys(found).length) return setErrors(found);
         setErrors({});
-        setStep(step + 1);
+        setStep(planLocked && step === 1 ? 3 : step + 1);
     }
 
     function onSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -244,6 +255,20 @@ export function SiteForm({
             ))}
 
             <StepIndicator labels={[...WIZARD_STEPS, 'Payment']} step={step + 1} />
+
+            {planLocked && step !== 2 && planName && (
+                <div className="flex items-center justify-between gap-3 rounded-lg border border-border bg-muted/40 p-3">
+                    <div className="min-w-0">
+                        <p className="portal-text-caption text-muted-foreground">Selected plan</p>
+                        <p className="font-semibold">
+                            {planName}
+                            {plans.find((plan) => plan.id === values.planId)?.price ? <span className="font-normal text-muted-foreground"> · {plans.find((plan) => plan.id === values.planId)?.price}</span> : null}
+                        </p>
+                        {planIsCovered && <p className="portal-text-caption text-success">You already pay for this plan, so this site needs no new payment.</p>}
+                    </div>
+                    <Button type="button" variant="ghost" size="sm" onClick={() => { setPlanLocked(false); setStep(2); }}>Change</Button>
+                </div>
+            )}
 
             {step === 0 && (
                 <div className="space-y-5">
@@ -382,7 +407,17 @@ export function SiteForm({
                                 type="button"
                                 aria-pressed={values.planId === plan.id}
                                 disabled={plan.unavailable}
-                                onClick={() => set('planId', plan.id)}
+                                onClick={() => {
+                                    setValues((current) => ({
+                                        ...current,
+                                        planId: plan.id,
+                                        apps: current.apps.filter((id) => {
+                                            const app = apps.find((candidate) => candidate.id === id);
+                                            return !app || isCompatible(app, tiers.find((tier) => tier.id === plan.id), tiers);
+                                        }),
+                                    }));
+                                    setErrors((current) => ({ ...current, planId: undefined }));
+                                }}
                                 className={cn(
                                     'rounded-lg border p-4 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-60',
                                     values.planId === plan.id
@@ -397,6 +432,9 @@ export function SiteForm({
                                 <span className="mt-1 block portal-text-body text-foreground/70">
                                     {plan.price}
                                 </span>
+                                {idlePlanIds.includes(plan.id) && (
+                                    <span className="mt-1 block portal-text-caption font-medium text-success">Already included in your subscription</span>
+                                )}
                                 {plan.trialDays > 0 && (
                                     <span className="mt-2 inline-block rounded-full bg-success/10 px-2 py-0.5 portal-text-caption font-semibold text-success">
                                         {plan.trialDays}-day free trial
@@ -445,33 +483,42 @@ export function SiteForm({
                         applications to install.
                     </p>
                     <div className="mt-4 space-y-3">
-                        {apps.map((app) => (
-                            <label
-                                key={app.id}
-                                className={`flex items-center justify-between gap-3 rounded-lg border border-border p-4 portal-text-body ${app.available ? '' : 'text-muted-foreground'}`}
-                            >
-                                <span className="flex items-center gap-3">
-                                    <input
-                                        type="checkbox"
-                                        disabled={!app.available}
-                                        checked={values.apps.includes(app.id)}
-                                        onChange={(event) =>
-                                            set(
-                                                'apps',
-                                                event.target.checked
-                                                    ? [...values.apps, app.id]
-                                                    : values.apps.filter((id) => id !== app.id),
-                                            )
-                                        }
-                                        className="size-4 accent-foreground"
-                                    />
-                                    {app.name}
-                                </span>
-                                {!app.available && (
-                                    <span className="portal-text-caption">Requires setup</span>
-                                )}
-                            </label>
-                        ))}
+                        {apps.map((app) => {
+                            const needed = upgradeTarget(app, tiers.find((tier) => tier.id === values.planId), tiers);
+                            const disabled = !app.available || Boolean(needed);
+                            return (
+                                <label
+                                    key={app.id}
+                                    className={`flex items-center justify-between gap-3 rounded-lg border border-border p-4 portal-text-body ${disabled ? 'text-muted-foreground' : ''}`}
+                                >
+                                    <span className="flex items-center gap-3">
+                                        <input
+                                            type="checkbox"
+                                            disabled={disabled}
+                                            checked={values.apps.includes(app.id)}
+                                            onChange={(event) =>
+                                                set(
+                                                    'apps',
+                                                    event.target.checked
+                                                        ? [...values.apps, app.id]
+                                                        : values.apps.filter((id) => id !== app.id),
+                                                )
+                                            }
+                                            className="size-4 accent-foreground"
+                                        />
+                                        {app.name}
+                                    </span>
+                                    {!app.available ? (
+                                        <span className="portal-text-caption">Requires setup</span>
+                                    ) : needed ? (
+                                        <span className="flex items-center gap-2 portal-text-caption">
+                                            Needs {needed.name} or higher
+                                            <button type="button" className="font-semibold text-primary underline" onClick={() => { setPlanLocked(false); setStep(2); }}>Change plan</button>
+                                        </span>
+                                    ) : null}
+                                </label>
+                            );
+                        })}
                     </div>
                 </fieldset>
             )}
@@ -541,7 +588,7 @@ export function SiteForm({
                     <Button
                         type="button"
                         variant="outline"
-                        onClick={() => setStep(step - 1)}
+                        onClick={() => setStep(planLocked && step === 3 ? 1 : step - 1)}
                         className={step === 0 ? 'invisible' : undefined}
                     >
                         <ArrowLeft className="size-4" /> Back
@@ -551,7 +598,7 @@ export function SiteForm({
                             Next <ArrowRight className="size-4" />
                         </Button>
                     ) : (
-                        <CreateButton disabled={!available} />
+                        <CreateButton disabled={!available} covered={planIsCovered} />
                     )}
                 </div>
                 {step === WIZARD_STEPS.length - 1 && (

@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { installAppAction } from '@/app/dashboard/app-store/actions';
+import { installAppAction, previewInstallAction, type InstallPreview } from '@/app/dashboard/app-store/actions';
 import { Button } from '@/components/ui/button';
 import { Notice } from '@/components/ui/notice';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -29,7 +29,11 @@ export interface InstallableApp {
     frappeAppName: string;
     priceAmount: number | null;
     priceCurrency: string;
+    /** Sites whose plan is too low for this app, with the plan that would make it work. */
+    lockedBy?: Record<string, { planId: string; planName: string }>;
 }
+
+const money = (amount: number, currency: string) => new Intl.NumberFormat('en', { style: 'currency', currency }).format(amount);
 
 export function InstallAppDialog({
     app,
@@ -47,11 +51,27 @@ export function InstallAppDialog({
     const router = useRouter();
     const choices = fixedSiteId ? sites.filter((site) => site.id === fixedSiteId) : sites;
     const paid = (app.priceAmount ?? 0) > 0;
-    const first = choices.find((site) => !site.unavailable && !site.apps.includes(app.frappeAppName) && !(paid && site.trial));
+    const first = choices.find((site) => !site.unavailable && !site.apps.includes(app.frappeAppName) && !(paid && site.trial) && !app.lockedBy?.[site.id]);
     const [siteId, setSiteId] = React.useState(first?.id ?? '');
     const [error, setError] = React.useState('');
     const [pending, startTransition] = React.useTransition();
     const price = paid ? formatPrice(app.priceAmount!, app.priceCurrency) : null;
+    const selectedLocked = Boolean(siteId && app.lockedBy?.[siteId]);
+
+    // A paid install shows the exact prorated amount Paddle will charge, before the customer agrees to it.
+    const needsPreview = paid && Boolean(siteId) && !selectedLocked;
+    const previewKey = `${app.id}:${siteId}`;
+    const [loaded, setLoaded] = React.useState<{ key: string; value: InstallPreview } | null>(null);
+    const preview = needsPreview && loaded?.key === previewKey ? loaded.value : null;
+    const previewing = needsPreview && !preview;
+    React.useEffect(() => {
+        if (!needsPreview) return;
+        let current = true;
+        previewInstallAction({ appId: app.id, siteId })
+            .then((value) => { if (current) setLoaded({ key: previewKey, value }); })
+            .catch(() => { if (current) setLoaded({ key: previewKey, value: { error: 'The price could not be calculated. Please try again.' } }); });
+        return () => { current = false; };
+    }, [needsPreview, previewKey, app.id, siteId]);
 
     function submit() {
         setError('');
@@ -83,7 +103,8 @@ export function InstallAppDialog({
                         {choices.map((site) => {
                             const installed = site.apps.includes(app.frappeAppName);
                             const trialBlocked = paid && Boolean(site.trial);
-                            const blocked = Boolean(site.unavailable) || installed || trialBlocked;
+                            const needs = app.lockedBy?.[site.id];
+                            const blocked = Boolean(site.unavailable) || installed || trialBlocked || Boolean(needs);
                             return (
                                 <label
                                     key={site.id}
@@ -93,7 +114,7 @@ export function InstallAppDialog({
                                     <span className="min-w-0">
                                         <span className="block font-medium text-foreground">{site.name}</span>
                                         <span className="block truncate portal-text-caption text-muted-foreground">
-                                            {installed ? 'Already installed' : trialBlocked ? 'Free trial: subscribe to the plan to add paid apps' : site.unavailable ?? site.domain}
+                                            {installed ? 'Already installed' : needs ? <>Needs the {needs.planName} plan or higher. <Link href="/dashboard/subscription" className="font-medium underline">Upgrade</Link></> : trialBlocked ? 'Free trial: subscribe to the plan to add paid apps' : site.unavailable ?? site.domain}
                                         </span>
                                     </span>
                                 </label>
@@ -102,18 +123,26 @@ export function InstallAppDialog({
                     </fieldset>
                 )}
 
-                {paid && (
+                {paid && !selectedLocked && (
                     <Notice tone="warning">
-                        {app.name} costs <strong>{price}</strong> a month for each site it is installed on. It is added to your subscription and the
-                        remaining part of this billing period is charged now. If the install fails you are not charged.
+                        {previewing || (!preview && siteId) ? 'Calculating the price for this site…' : preview?.ok && preview.chargeNow != null && preview.currency ? (
+                            <>
+                                {app.name} costs <strong>{price}</strong> a month for each site it is installed on. It is added to this site&apos;s subscription, so it renews with your plan.
+                                You are charged <strong>{money(preview.chargeNow, preview.currency)}</strong> today for the rest of this billing period
+                                {preview.nextTotal != null && preview.nextBilledAt ? <>, and your subscription is <strong>{money(preview.nextTotal, preview.currency)}</strong> a month from {new Date(preview.nextBilledAt).toLocaleDateString('en-US', { dateStyle: 'long' })}</> : null}.
+                                If the install fails you are not charged.
+                            </>
+                        ) : preview?.error ? preview.error : (
+                            <>{app.name} costs <strong>{price}</strong> a month for each site it is installed on. Choose a site to see today&apos;s charge.</>
+                        )}
                     </Notice>
                 )}
                 {error && <Notice tone="error">{error}</Notice>}
 
                 <DialogFooter>
                     <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={pending}>Cancel</Button>
-                    <Button type="button" onClick={submit} disabled={pending || !siteId || choices.length === 0}>
-                        {pending ? 'Installing…' : paid ? `Pay ${price}/mo and install` : 'Install'}
+                    <Button type="button" onClick={submit} disabled={pending || !siteId || choices.length === 0 || selectedLocked || (paid && !preview?.ok)}>
+                        {pending ? 'Installing…' : paid ? (preview?.ok && preview.chargeNow != null && preview.currency ? `Pay ${money(preview.chargeNow, preview.currency)} and install` : 'Pay and install') : 'Install'}
                     </Button>
                 </DialogFooter>
             </DialogContent>

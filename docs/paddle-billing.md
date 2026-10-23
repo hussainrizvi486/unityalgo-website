@@ -39,6 +39,8 @@ Choose one scheduler:
 - Run `npm run billing:worker` each minute from the deployed application directory, with server environment loaded.
 - Or send an authenticated POST to `/api/internal/billing` each minute with `Authorization: Bearer <BILLING_WORKER_SECRET>`.
 
+On a systemd server use `deploy/billing-worker.service` and `deploy/billing-worker.timer` (a one-minute timer that POSTs to the endpoint with curl). Set `BILLING_WORKER_SECRET` and `PUBLIC_APP_URL` in the website `.env` first. `PUBLIC_APP_URL` only clears the "No public webhook URL" warning on the status page; the webhook destination itself is configured in Paddle > Developer tools > Notifications.
+
 Use one scheduler; jobs use database locks and are duplicate-safe. The HTTP worker is bounded for hosted execution. Monitor backlog size and increase worker capacity if arrival volume exceeds processing capacity. Credit maintenance releases expired/rejected reservations and removes completed temporary discounts. Failed events/outbox actions stop automatic retries at 20 attempts and require operational investigation; unresolved ownership must never be acknowledged as processed. Retry count alone is not a resolution.
 
 A targeted repair is available as `npm run billing:worker -- sub_<id>`. It reads the canonical subscription and paginates its transactions and adjustments. It also repairs native credit snapshots and queues trial conversion. Schedule `npm run billing:worker -- --reconcile-all` daily. It reconciles known subscriptions and discovers missed initial payments through server-owned customer mappings. A transaction can also be repaired directly with `npm run billing:worker -- txn_<id>`.
@@ -103,3 +105,29 @@ The opt-in `npm run test:paddle:site:sandbox -- setup` creates a disposable loca
 ## Diagnosing payment startup failures
 
 Expected checkout conditions (such as another pending checkout) are returned as customer-safe messages. Unexpected failures receive a reference shared between the response and the `[billing] Payment setup failed` server log. Logs include the checkout stage, Paddle status/code/request ID and validation field names, or PostgreSQL schema error codes. Original exception objects, SQL parameters, credentials and provider bodies are deliberately excluded. Schema errors such as 42703/42P01 require applying the committed migrations from the website root; do not use schema push on the shared controller database. An uncertain transaction remains UNKNOWN and blocks another checkout until reconciliation. Never clear that record merely to make a retry possible.
+
+
+## Subscriptions after a site is deleted, cancellation and invoices
+
+- **Deleting a site never cancels what was paid for.** The billing worker detaches a subscription from a site the controller no longer has (`syncSiteBilling`). A paid, active subscription with no running site is "idle".
+- **New sites reuse an idle subscription of the same plan.** `startSiteOrderPayment` calls `claimIdleSubscription` before creating any checkout: the subscription moves to the new order, the order becomes READY and the site provisions with no new charge. This is enforced on the server, so a stale page or a second tab cannot charge twice. A subscription whose order is still being set up, is past due, suspended or canceled is never claimed. Different plans are billed normally.
+- **Plan choice survives the journey.** Pricing buttons link to `/register?plan=<id>`. `PlanIntent` keeps it in a one-hour cookie through registration and login, and the wizard skips the plan step when a plan is already chosen (with a Change button). Signed-in customers go straight to the wizard.
+- **Cancel and resume** (`lib/subscription-lifecycle.ts`): cancel schedules the end of the paid period in Paddle (`effective_from: next_billing_period`), the customer keeps access until then, and a scheduled cancellation can be undone before it takes effect. Both are idempotent and owner-checked.
+- **Subscription page** states come from `lib/subscription-view.ts` (active, trial, canceling, past due, paused, canceled, confirming renewal). Upgrade shows Paddle's prorated preview and only offers higher plans in the same currency.
+- **Invoices:** `/dashboard/subscription/invoices/<id>` is private to the customer (admin-only fields are not exposed). The PDF route fetches a short-lived Paddle invoice link only for settled transactions the customer owns.
+- **Account credits are hidden** from customers. Set `NEXT_PUBLIC_CREDITS_ENABLED=true` and rebuild to show them again; server actions ignore a credits request while the flag is off.
+- The legacy local-only `AddOn` list was removed from the customer subscription page because it never billed anything.
+
+## How apps are billed, and which plans can use them
+
+**Decision: a paid app is another line on the site's own subscription, never a separate subscription.** Example: a $10 plan plus two $5 apps is one $20/month subscription. Fifteen days into the month the customer adds a third app:
+
+- Paddle bills the new line `prorated_immediately`: about $2.50 today for the rest of the period (15 of 30 days), and the subscription is $25/month from the next renewal.
+- One renewal date, one invoice, one place to cancel. A separate subscription per app would mean several renewal dates and invoices per site, several payments that can each fail, and a cancellation that has to find and stop each one.
+- The customer sees Paddle's own preview (`lib/app-preview.ts`, `PATCH /subscriptions/{id}/preview`) in the install dialog and agrees to that exact amount first. The charge uses `on_payment_failure: prevent_change`, so a declined card adds nothing, and a failed install after payment removes the line again (`cancelPurchase`).
+- Removing an app lowers the quantity the same way; Paddle credits the unused part against the next invoice.
+- The charge goes to the subscription of the site the app is installed on (`billingSubscription` with the site id), under the existing per-user lock that is shared with plan changes.
+
+**Known limit:** paid apps cannot be picked in the create-site wizard yet. The wizard lists free apps, and a paid app is added from the site afterwards using the flow above. Bundling a paid app into the first checkout needs a multi-item checkout and is a separate piece of work.
+
+**Compatibility.** `AppCatalog.minPlanId` names the lowest plan that supports an app (admin: Apps, Works on plans from). Every plan at or above it in the same product, by plan sort order, can use the app; empty means every plan. It is enforced on the server when ordering a site, when installing, and when downgrading (a plan that cannot run an installed app is refused and the apps are named). Customers see compatible apps on each plan card and on their subscription, and an app that needs a higher plan offers an upgrade straight to that plan. Run `npm run db:migrate` to add the column; until an app is given a minimum nothing changes.

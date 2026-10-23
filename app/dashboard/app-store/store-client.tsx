@@ -20,6 +20,8 @@ type App = {
     priceAmount: number | null;
     priceCurrency: string;
     available: boolean;
+    /** Sites whose plan is too low for this app, with the plan it needs. */
+    lockedBy?: Record<string, { planId: string; planName: string }>;
 };
 
 const ALL = 'All';
@@ -100,7 +102,9 @@ export function AppStoreClient({ apps, sites }: { apps: App[]; sites: InstallSit
                                 sites.length > 0 && sites.every((site) => site.apps.includes(app.frappeAppName!)) ? (
                                     <span className="text-sm font-medium text-success">Installed</span>
                                 ) : (
-                                    <Button size="sm" onClick={() => setInstalling(app)}>Install</Button>
+                                    sites.length > 0 && sites.every((site) => app.lockedBy?.[site.id])
+                                        ? <Button size="sm" variant="outline" onClick={() => setInstalling(app)}>Needs {Object.values(app.lockedBy ?? {})[0]?.planName ?? 'a higher plan'}</Button>
+                                        : <Button size="sm" onClick={() => setInstalling(app)}>Install</Button>
                                 )
                             ) : (
                                 <Button asChild size="sm" variant="outline">
@@ -117,7 +121,7 @@ export function AppStoreClient({ apps, sites }: { apps: App[]; sites: InstallSit
                     open
                     onOpenChange={(open) => !open && setInstalling(null)}
                     sites={sites}
-                    app={{ id: installing.id, name: installing.name, frappeAppName: installing.frappeAppName, priceAmount: installing.priceAmount, priceCurrency: installing.priceCurrency }}
+                    app={{ id: installing.id, name: installing.name, frappeAppName: installing.frappeAppName, priceAmount: installing.priceAmount, priceCurrency: installing.priceCurrency, lockedBy: installing.lockedBy }}
                 />
             )}
             {!visible.length && (

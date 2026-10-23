@@ -383,10 +383,12 @@ class ServerController(BaseController):
             "server.firewall_lockdown", f"Firewall lockdown: {server.name}",
             category="server", **self.log_context(server),
         ) as op:
+            # Legacy tenant containers and Frappe sites publish on different ranges; both must be closed.
+            low = min(self.settings.tenant_port_range_start, self.settings.frappe_port_start)
+            high = max(self.settings.tenant_port_range_end, self.settings.frappe_port_end)
             op.ok(
                 "Lockdown started",
-                message=f"Restricting ports {self.settings.tenant_port_range_start}-"
-                f"{self.settings.tenant_port_range_end} to {proxy.ip_address}",
+                message=f"Restricting ports {low}-{high} to {proxy.ip_address}",
             )
 
             def on_step(label, result):
@@ -400,8 +402,8 @@ class ServerController(BaseController):
 
             results = self.ssh(server).apply_tenant_port_firewall(
                 proxy.ip_address,
-                self.settings.tenant_port_range_start,
-                self.settings.tenant_port_range_end,
+                low,
+                high,
                 on_step=on_step,
             )
             ok = all(r.ok for r in results)

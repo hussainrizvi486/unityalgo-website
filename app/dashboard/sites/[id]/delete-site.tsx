@@ -55,6 +55,10 @@ export function DeleteSite({ site, onDone }: { site: CustomerSite; onDone: () =>
                                 Everyone loses access immediately and the data is erased. Download any backups you want to keep first.
                                 Type <strong>{site.slug}</strong> to confirm.
                             </AlertDialogDescription>
+                            <p className="mt-2 portal-text-caption text-muted-foreground">
+                                Deleting the site does not cancel what you paid for. Your subscription stays active, so you can create a new site with it at no extra cost, or cancel it from the{' '}
+                                <a href="/dashboard/subscription" className="font-medium underline">Subscription page</a>.
+                            </p>
                         </AlertDialogHeader>
                         <Input
                             name="confirm" value={typed} onChange={(event) => setTyped(event.target.value)}

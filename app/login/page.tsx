@@ -1,6 +1,7 @@
 import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import { CustomerAuthForm } from '@/components/customer/auth-form';
+import { PlanIntent } from '@/components/customer/plan-intent';
 
 export const metadata: Metadata = {
     title: 'Sign in | UnityAlgo',
@@ -12,6 +13,7 @@ export default function LoginPage() {
     // Suspense: the form reads `next` and `reset` from the query string.
     return (
         <Suspense>
+            <PlanIntent />
             <CustomerAuthForm />
         </Suspense>
     );

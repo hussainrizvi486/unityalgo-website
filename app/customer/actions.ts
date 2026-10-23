@@ -34,6 +34,10 @@ import {
 } from '@/lib/customer-auth';
 import { createTrackedCustomerSession } from '@/lib/login-sessions';
 import { createPlanCheckout, cancelPendingCheckout } from '@/lib/checkout-billing';
+import { CREDITS_ENABLED, wantsCredits } from '@/lib/billing-features';
+import { assertSiteAppsFitPlan, PlanAccessError } from '@/lib/app-plan-access';
+import { takePlanIntent } from '@/lib/plan-intent';
+import { cancelAtPeriodEnd, resumeScheduledCancellation, SubscriptionActionError } from '@/lib/subscription-lifecycle';
 import { asRecord, asString } from '@/lib/paddle-data';
 import { prepareRenewalCredits, cancelRenewalCredits, releaseCreditOperation } from '@/lib/credit-billing';
 import { reconcilePaddleSubscription } from '@/lib/paddle-sync';
@@ -221,7 +225,7 @@ export async function createCustomerAction(
     const sessionToken = await createTrackedCustomerSession(user);
     cookieStore.set(CUSTOMER_SESSION_COOKIE, sessionToken, { ...COOKIE_BASE, maxAge: CUSTOMER_SESSION_DURATION_SECONDS });
 
-    redirect('/dashboard');
+    redirect((await takePlanIntent()) ?? '/dashboard');
 }
 
 export async function restartRegistrationAction() {
@@ -395,12 +399,12 @@ export interface CheckoutIntent {
     change?: { operationId: string; amount: string; currency: string; action: string; creditsApplied: number };
 }
 
-export async function startPlanCheckoutAction(planId: string, useCredits = true, siteId?: string): Promise<CheckoutIntent> {
+export async function startPlanCheckoutAction(planId: string, useCredits = true, siteId?: string, subscriptionId?: string): Promise<CheckoutIntent> {
     const session = await requireCustomerSession();
     const plan = await db.query.plan.findFirst({ where: and(eq(schema.plan.id, planId), eq(schema.plan.isActive, true)) });
     if (!plan?.paddlePriceId || plan.priceAmount == null) return { ok: false, error: 'That plan is not available for online payment.' };
     try {
-        const matches = await db.query.subscription.findMany({ where: and(eq(schema.subscription.userId, session.userId), eq(schema.subscription.productId, plan.productId), siteId ? eq(schema.subscription.siteId, siteId) : undefined) });
+        const matches = await db.query.subscription.findMany({ where: and(eq(schema.subscription.userId, session.userId), eq(schema.subscription.productId, plan.productId), siteId ? eq(schema.subscription.siteId, siteId) : undefined, subscriptionId ? eq(schema.subscription.id, subscriptionId) : undefined) });
         if (matches.length > 1) throw new Error('Open the site to change its plan.');
         let existing = matches[0];
         if (siteId && !existing) {
@@ -412,7 +416,13 @@ export async function startPlanCheckoutAction(planId: string, useCredits = true,
         }
         if (siteId && !existing?.paddleSubscriptionId) throw new Error('This site has no linked paid subscription. Contact support to link its billing.');
         if (existing?.paddleSubscriptionId && existing.status !== 'CANCELED') {
-            const quote = await previewPlanChange(session.userId, planId, useCredits === true, existing.paddleSubscriptionId);
+            // A lower plan must still be able to run every app already on the site.
+            if (existing.siteId) {
+                const site = await controller.sites.get(existing.siteId, session.userId).catch(() => null);
+                try { await assertSiteAppsFitPlan(site?.apps ?? [], planId); }
+                catch (error) { if (error instanceof PlanAccessError) throw new Error(error.message); throw error; }
+            }
+            const quote = await previewPlanChange(session.userId, planId, wantsCredits(useCredits), existing.paddleSubscriptionId);
             const preview = asRecord(quote.preview);
             const immediate = asRecord(preview.immediate_transaction);
             const totals = asRecord(asRecord(immediate.details).totals);
@@ -422,7 +432,7 @@ export async function startPlanCheckoutAction(planId: string, useCredits = true,
             if (!amount || !currency) throw new Error('Paddle did not return a complete billing preview.');
             return { ok: true, change: { operationId: quote.operationId, amount, currency, action: asString(result.action) ?? 'charge', creditsApplied: quote.creditsApplied } };
         }
-        const transactionId = await createPlanCheckout(session.userId, planId, useCredits === true);
+        const transactionId = await createPlanCheckout(session.userId, planId, wantsCredits(useCredits));
         return { ok: true, transactionId };
     } catch (error) {
         const message = error instanceof Error ? error.message : 'Could not start billing.';
@@ -455,6 +465,7 @@ export async function confirmPlanChangeAction(operationId: string) {
 
 export async function scheduleRenewalCreditsAction(subscriptionId: string) {
     const session = await requireCustomerSession();
+    if (!CREDITS_ENABLED) return { ok: false, error: 'Account credits are not available yet.' };
     try {
         const result = await prepareRenewalCredits(session.userId, subscriptionId);
         revalidatePath('/dashboard/subscription');
@@ -476,7 +487,7 @@ export async function openBillingPortalAction(subscriptionId: string) {
     return customerPortal(session.userId, subscriptionId);
 }
 
-export async function checkoutSettlementAction(planId: string, siteId?: string): Promise<{
+export async function checkoutSettlementAction(planId: string, siteId?: string, subscriptionId?: string): Promise<{
     settled: boolean;
     status?: string;
 }> {
@@ -490,7 +501,7 @@ export async function checkoutSettlementAction(planId: string, siteId?: string):
     if (!plan) return { settled: false };
 
     let subscription = await db.query.subscription.findFirst({
-        where: and(eq(schema.subscription.userId, session.userId), eq(schema.subscription.productId, plan.productId), siteId ? eq(schema.subscription.siteId, siteId) : undefined),
+        where: and(eq(schema.subscription.userId, session.userId), eq(schema.subscription.productId, plan.productId), siteId ? eq(schema.subscription.siteId, siteId) : undefined, subscriptionId ? eq(schema.subscription.id, subscriptionId) : undefined),
     });
     if (!subscription) return { settled: false };
     if (siteId && subscription.paddleSubscriptionId && (subscription.planId !== planId || subscription.appliedPlanId !== planId)) {
@@ -798,4 +809,21 @@ export async function addTicketCommentAction(formData: FormData) {
     await createComment(CommentEntityType.SUPPORT_TICKET, ticketId, session.userId, body);
 
     revalidatePath(`/dashboard/support/${ticketId}`);
+}
+
+export async function cancelSubscriptionAction(subscriptionId: string): Promise<{ ok: boolean; error?: string; immediate?: boolean }> {
+    const session = await requireCustomerSession();
+    let immediate = false;
+    try { immediate = (await cancelAtPeriodEnd(session.userId, subscriptionId)).immediate; }
+    catch (error) { return { ok: false, error: error instanceof SubscriptionActionError ? error.message : 'The subscription could not be canceled. Please try again or contact support.' }; }
+    revalidatePath('/dashboard/subscription');
+    return { ok: true, immediate };
+}
+
+export async function resumeSubscriptionAction(subscriptionId: string): Promise<{ ok: boolean; error?: string }> {
+    const session = await requireCustomerSession();
+    try { await resumeScheduledCancellation(session.userId, subscriptionId); }
+    catch (error) { return { ok: false, error: error instanceof SubscriptionActionError ? error.message : 'The cancellation could not be undone. Please try again or contact support.' }; }
+    revalidatePath('/dashboard/subscription');
+    return { ok: true };
 }

@@ -6,9 +6,14 @@ import { db, schema } from '@/lib/db';
 import { requireCustomer } from '@/lib/customer-session';
 import { controller, ControllerError } from '@/lib/controller-client';
 import { BillingError, cancelPurchase, isPaidApp, purchaseApp } from '@/lib/app-billing';
+import { previewAppPurchase } from '@/lib/app-preview';
+import { upgradeTarget } from '@/lib/app-compatibility';
+import { loadPlanTiers } from '@/lib/app-plan-access';
 
 export interface InstallResult {
     error?: string;
+    /** The plan that would make the app work, when the site's plan is too low. */
+    upgradeToPlanId?: string;
     ok?: boolean;
     charged?: boolean;
 }
@@ -30,6 +35,9 @@ export async function installAppAction(input: { appId: string; siteId: string })
     }
     if (site.apps.includes(app.frappeAppName)) return { error: 'This application is already installed on that site.' };
     if (site.status !== 'ready' || site.activity) return { error: 'Your site is busy or not running. Try again once it is idle and running.' };
+    const tiers = await loadPlanTiers();
+    const needed = upgradeTarget(app, tiers.find((tier) => tier.id === site.plan_id), tiers);
+    if (needed) return { error: `${app.name} needs the ${needed.name} plan or higher. Upgrade this site's plan first, then install it.`, upgradeToPlanId: needed.id };
 
     let purchase;
     if (isPaidApp(app)) {
@@ -70,4 +78,29 @@ export async function removeAppAction(input: { appId: string; siteId: string }):
     }
     revalidatePath(`/dashboard/sites/${input.siteId}`);
     return { ok: true };
+}
+
+export interface InstallPreview {
+    error?: string;
+    ok?: boolean;
+    chargeNow?: number;
+    currency?: string;
+    nextTotal?: number | null;
+    nextBilledAt?: string | null;
+}
+
+/** The exact prorated amount a paid install would charge today, so the customer agrees before paying. */
+export async function previewInstallAction(input: { appId: string; siteId: string }): Promise<InstallPreview> {
+    const user = await requireCustomer();
+    const app = await db.query.appCatalog.findFirst({ where: and(eq(schema.appCatalog.id, input.appId), eq(schema.appCatalog.isActive, true)) });
+    if (!app || !isPaidApp(app)) return { error: 'This application is free.' };
+    let site;
+    try { site = await controller.sites.get(input.siteId, user.id); }
+    catch { return { error: 'That site could not be found.' }; }
+    if (site.trial) return { error: 'Paid apps can be added once you subscribe to this site\'s plan.' };
+    try {
+        return { ok: true, ...(await previewAppPurchase({ userId: user.id, app, siteId: site.id, planId: site.plan_id })) };
+    } catch (error) {
+        return { error: error instanceof BillingError ? error.message : 'The price could not be calculated. Please try again.' };
+    }
 }

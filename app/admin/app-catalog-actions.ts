@@ -22,6 +22,7 @@ export async function saveAppCatalogAction(
     const frappeAppName =
         String(data.get('frappeAppName') || '').trim() || null;
     const iconUrl = String(data.get('iconUrl') || '').trim() || null;
+    const minPlanId = String(data.get('minPlanId') || '').trim() || null;
     const isInstallable = data.get('isInstallable') === 'on';
     if (
         !name ||
@@ -37,6 +38,8 @@ export async function saveAppCatalogAction(
         };
     if (iconUrl && (iconUrl.length > 500 || !/^(https?:\/\/|\/(?!\/))/i.test(iconUrl)))
         return { error: 'The icon must be an uploaded image or an http(s) address.' };
+    if (minPlanId && !(await db.query.plan.findFirst({ where: eq(schema.plan.id, minPlanId), columns: { id: true } })))
+        return { error: 'Choose one of the listed plans.' };
     if (frappeAppName && !/^[a-z][a-z0-9_]{0,100}$/.test(frappeAppName))
         return {
             error: 'Frappe application names use lowercase letters, numbers and underscores.',
@@ -51,6 +54,7 @@ export async function saveAppCatalogAction(
         description,
         category,
         iconUrl,
+        minPlanId,
         frappeAppName,
         isInstallable,
         isActive: data.get('isActive') === 'on',

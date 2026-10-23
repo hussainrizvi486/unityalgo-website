@@ -26,7 +26,7 @@ export async function POST(request: Request) {
             id, eventType: type, payload: event, status: handled ? 'PENDING' : 'IGNORED',
             ...(handled ? {} : { processedAt: new Date() }),
         }).onConflictDoNothing();
-        // A separately scheduled worker processes this durable inbox; no provider calls here.
+
         return NextResponse.json({ ok: true });
     } catch {
         return NextResponse.json({ error: 'Could not persist event' }, { status: 503 });

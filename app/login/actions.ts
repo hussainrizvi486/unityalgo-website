@@ -2,6 +2,7 @@
 
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { takePlanIntent } from '@/lib/plan-intent';
 import bcrypt from 'bcryptjs';
 import { eq } from 'drizzle-orm';
 import { db, schema } from '@/lib/db';
@@ -77,5 +78,8 @@ export async function loginAction(
         );
     }
 
-    redirect(safeDestination(next, user.role));
+    // A customer who came from a pricing button continues to site creation with that plan.
+    // The remembered plan is always used up, so it cannot send a later login somewhere unexpected.
+    const planDestination = user.role === 'CUSTOMER' ? await takePlanIntent() : null;
+    redirect((!next && planDestination) || safeDestination(next, user.role));
 }

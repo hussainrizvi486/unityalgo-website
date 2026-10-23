@@ -1,3 +1,5 @@
+import { loadPlanTiers } from '@/lib/app-plan-access';
+import { upgradeTarget } from '@/lib/app-compatibility';
 import { notFound } from 'next/navigation';
 import { requireCustomer } from '@/lib/customer-session';
 import { controller, ControllerError } from '@/lib/controller-client';
@@ -54,6 +56,7 @@ export default async function SiteDetailPage({
             compatibility: schema.appCatalog.compatibility,
             priceAmount: schema.appCatalog.priceAmount,
             priceCurrency: schema.appCatalog.priceCurrency,
+            minPlanId: schema.appCatalog.minPlanId,
         })
         .from(schema.appCatalog)
         .where(and(eq(schema.appCatalog.isActive, true), isNotNull(schema.appCatalog.frappeAppName)))
@@ -67,6 +70,8 @@ export default async function SiteDetailPage({
     const known = Object.fromEntries(
         catalogue.map((app) => [app.frappeAppName!, { id: app.id, name: app.name, priceAmount: app.priceAmount, priceCurrency: app.priceCurrency }]),
     );
+    const tiers = await loadPlanTiers();
+    const sitePlan = tiers.find((tier) => tier.id === site.plan_id);
     const installable = catalogue
         .filter((app) => app.isInstallable)
         .filter((app) => (app.source === 'github' ? app.compatibility === 'compatible' : shipped.includes(app.frappeAppName!)))
@@ -77,6 +82,8 @@ export default async function SiteDetailPage({
             frappeAppName: app.frappeAppName!,
             priceAmount: app.priceAmount,
             priceCurrency: app.priceCurrency,
+            // A site on a plan below the app's minimum is asked to upgrade instead of installing.
+            lockedBy: (() => { const needs = upgradeTarget(app, sitePlan, tiers); return needs ? { [site.id]: { planId: needs.id, planName: needs.name } } : undefined; })(),
         }));
     const plans = await listAlgoSuitePlans();
     return (

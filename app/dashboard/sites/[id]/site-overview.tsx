@@ -384,7 +384,11 @@ export function SiteOverview({ site, applicationNames, plans, installable, known
                                                     <span className="portal-text-body font-semibold">
                                                         {(app.priceAmount ?? 0) > 0 ? <>{formatPrice(app.priceAmount!, app.priceCurrency)}<span className="font-normal text-muted-foreground">/mo</span></> : 'Free'}
                                                     </span>
-                                                    <Button size="sm" onClick={() => setInstalling(app)}>Install</Button>
+                                                    {app.lockedBy?.[site.id] ? (
+                                                        <Button asChild size="sm" variant="outline"><a href="/dashboard/subscription">Needs {app.lockedBy[site.id].planName}: upgrade</a></Button>
+                                                    ) : (
+                                                        <Button size="sm" onClick={() => setInstalling(app)}>Install</Button>
+                                                    )}
                                                 </div>
                                             </li>
                                         ))}

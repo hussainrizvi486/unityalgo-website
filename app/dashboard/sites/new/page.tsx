@@ -8,6 +8,8 @@ import { controller } from '@/lib/controller-client';
 import { Notice } from '@/components/ui/notice';
 import { formatPlanPrice } from '@/lib/pricing';
 import { listAlgoSuitePlans } from '@/lib/products';
+import { listIdleSubscriptions } from '@/lib/subscription-claims';
+import { loadPlanTiers } from '@/lib/app-plan-access';
 import { SiteForm } from './site-form';
 export const metadata = { title: 'Create a site' };
 export default async function CreateSitePage({
@@ -25,6 +27,7 @@ export default async function CreateSitePage({
             frappeAppName: schema.appCatalog.frappeAppName,
             source: schema.appCatalog.source,
             priceAmount: schema.appCatalog.priceAmount,
+            minPlanId: schema.appCatalog.minPlanId,
         })
         .from(schema.appCatalog)
         .where(eq(schema.appCatalog.isActive, true))
@@ -43,6 +46,13 @@ export default async function CreateSitePage({
             columns: { country: true },
         }),
     ]);
+    // Paid subscriptions with no site (for example after a site was deleted) can run this one without a new payment.
+    const idlePlanIds = [...new Set((await listIdleSubscriptions(user.id).catch(() => [])).map((subscription) => subscription.planId))];
+    // The link may carry a plan id, slug or name (pricing page, plans page, marketing site).
+    const wanted = (selectedPlan ?? '').trim().toLowerCase();
+    const requested = wanted ? plans.find((plan) => plan.id === selectedPlan || plan.slug.toLowerCase() === wanted || plan.name.toLowerCase() === wanted) : undefined;
+    const preselectedPlan = requested?.id ?? (idlePlanIds.length === 1 ? idlePlanIds[0] : undefined);
+    const tiers = await loadPlanTiers();
     let capabilities;
     try {
         capabilities = await controller.sites.capabilities();
@@ -77,7 +87,9 @@ export default async function CreateSitePage({
             <SiteForm
                 requestKey={randomUUID()}
                 selectedApp={app}
-                selectedPlan={selectedPlan}
+                selectedPlan={preselectedPlan}
+                idlePlanIds={idlePlanIds}
+                tiers={tiers}
                 defaultCountry={address?.country}
                 domainSuffix={capabilities?.domain_suffix || ''}
                 available={Boolean(capabilities?.configured && capabilities.accepting !== false)}
@@ -100,6 +112,7 @@ export default async function CreateSitePage({
                 apps={catalog.filter((item) => item.source === 'image' && !((item.priceAmount ?? 0) > 0)).map((item) => ({
                     id: item.id,
                     name: item.name,
+                    minPlanId: item.minPlanId,
                     available: Boolean(
                         item.isInstallable &&
                         item.frappeAppName &&

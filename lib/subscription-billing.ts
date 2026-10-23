@@ -5,6 +5,7 @@ import { db, schema } from '@/lib/db';
 import { paddleRequest, PaddleApiError } from '@/lib/paddle-catalog';
 import { asRecord, asString } from '@/lib/paddle-data';
 import { prepareCreditDiscount, releaseCreditOperation, detachCreditDiscount, assertNoPendingSubscriptionCredits, creditAmount } from '@/lib/credit-billing';
+import { assertSiteAppsFitPlan } from '@/lib/app-plan-access';
 import { planChangeItems, type ProviderSubscription } from '@/lib/billing-rules';
 
 async function target(userId: string, planId: string, subscriptionId?: string) {
@@ -110,6 +111,10 @@ export async function commitPlanChange(userId: string, operationId: string) {
             const current = await paddleRequest(`/subscriptions/${operation.subscriptionId}`) as ProviderSubscription;
             if (current.updated_at !== operation.expectedUpdatedAt || current.status !== 'active' || current.scheduled_change) {
                 throw new Error('Your subscription changed after this preview. Preview it again.');
+            }
+            if (subscription.siteId) {
+                const installed = await controller.sites.get(subscription.siteId, userId).then((site) => site.apps ?? []).catch(() => [] as string[]);
+                await assertSiteAppsFitPlan(installed, plan.id);
             }
             if (subscription.siteId) await controller.sites.changePlan(subscription.siteId, userId, {
                 dry_run: true, plan_id: plan.id, plan_name: plan.name, plan_vcpu: plan.vcpu,

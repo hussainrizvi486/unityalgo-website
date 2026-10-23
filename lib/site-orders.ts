@@ -7,6 +7,9 @@ import { trialDaysFor, trialEligibility } from '@/lib/site-trials';
 import { validateSiteWizard, type SiteWizardValues } from '@/lib/site-wizard';
 import { sealSiteSetup, openSiteSetup } from '@/lib/site-order-secrets';
 import { createPlanCheckout } from '@/lib/checkout-billing';
+import { claimIdleSubscription } from '@/lib/subscription-claims';
+import { upgradeTarget } from '@/lib/app-compatibility';
+import { loadPlanTiers } from '@/lib/app-plan-access';
 import { asRecord, asString } from '@/lib/paddle-data';
 
 export class SiteOrderError extends Error { }
@@ -22,6 +25,13 @@ async function ensureHosting(slug?: string) {
 
 export async function saveSiteOrder(userId: string, requestKey: string, values: SiteWizardValues) {
     if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(requestKey)) throw new SiteOrderError('Refresh the form and try again.');
+    // Going Back from the payment page and submitting again carries a new request key but the same site name. An unpaid
+    // draft takes the new details; a setup already in payment is never replaced (its name stays reserved), and the caller
+    // sends the customer to resume it with `findResumableOrder`.
+    const draftSameName = values.slug
+        ? await db.query.siteOrder.findFirst({ where: and(eq(schema.siteOrder.userId, userId), sql`${schema.siteOrder.summary}->>'slug' = ${values.slug}`, eq(schema.siteOrder.status, 'DRAFT')) })
+        : undefined;
+    if (draftSameName) requestKey = draftSameName.requestKey;
     const saved = await db.query.siteOrder.findFirst({ where: and(eq(schema.siteOrder.userId, userId), eq(schema.siteOrder.requestKey, requestKey)) });
     if (saved && saved.status !== 'DRAFT') return saved;
     const problems = Object.values(validateSiteWizard(values));
@@ -39,6 +49,12 @@ export async function saveSiteOrder(userId: string, requestKey: string, values: 
         )
     }) : [];
     if (apps.length !== new Set(values.apps).size || apps.some((app) => !capabilities.apps.includes(app.frappeAppName!))) throw new SiteOrderError('A selected application is unavailable.');
+    const tiers = await loadPlanTiers();
+    const chosen = tiers.find((tier) => tier.id === plan.id);
+    for (const app of apps) {
+        const needed = upgradeTarget(app, chosen, tiers);
+        if (needed) throw new SiteOrderError(`${app.name} needs the ${needed.name} plan or higher. Choose that plan or remove the app.`);
+    }
     // Paid plan selection always goes through payment; only an explicitly free trial plan bypasses it.
     const trialDays = plan.priceAmount == null ? trialDaysFor(plan, await trialEligibility(userId)) : 0;
     if (!trialDays && (plan.priceAmount == null || !plan.paddlePriceId)) throw new SiteOrderError('This plan is not available for online purchase.');
@@ -57,6 +73,11 @@ export async function saveSiteOrder(userId: string, requestKey: string, values: 
         if (existing) return (await tx.update(schema.siteOrder).set(data).where(eq(schema.siteOrder.id, existing.id)).returning())[0];
         return (await tx.insert(schema.siteOrder).values({ userId, requestKey, ...data }).returning())[0];
     });
+}
+
+/** The customer's own setup that is holding this site name, so they can be sent back to finish it. */
+export async function findResumableOrder(userId: string, slug: string) {
+    return db.query.siteOrder.findFirst({ where: and(eq(schema.siteOrder.userId, userId), sql`${schema.siteOrder.summary}->>'slug' = ${slug}`, inArray(schema.siteOrder.status, ['DRAFT', 'AWAITING_PAYMENT', 'READY'])) });
 }
 
 export async function startSiteOrderPayment(userId: string, orderId: string, useCredits: boolean) {
@@ -79,6 +100,8 @@ export async function startSiteOrderPayment(userId: string, orderId: string, use
     }
     const plan = await findAlgoSuitePlan(order.planId);
     if (!plan?.paddlePriceId || plan.paddlePriceId !== order.priceId) throw new SiteOrderError('Plan pricing changed. Return to site setup before paying.');
+    // A subscription the customer already pays for (for example after deleting a site) runs the new site: never charge twice.
+    if (!order.paddleTransactionId && await claimIdleSubscription(userId, order)) return { authorized: true, claimed: true };
     const transactionId = await createPlanCheckout(userId, order.planId, useCredits, order.id);
     await db.update(schema.siteOrder).set({ status: 'AWAITING_PAYMENT', paddleTransactionId: transactionId, updatedAt: new Date() })
         .where(and(eq(schema.siteOrder.id, order.id), inArray(schema.siteOrder.status, ['DRAFT', 'AWAITING_PAYMENT'])));

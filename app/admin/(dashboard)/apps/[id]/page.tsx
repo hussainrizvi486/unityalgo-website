@@ -14,6 +14,7 @@ import { Notice } from '@/components/ui/notice';
 import { formatDateTime } from '@/lib/admin-format';
 import { ISOLATION_NOTE, compatibilityBadge, repoPath, rolloutBadge, shortSha } from '@/lib/app-store';
 import { AppCatalogForm } from '../app-form';
+import { listAlgoSuitePlans } from '@/lib/products';
 import { BranchPicker } from './branch-picker';
 import { RolloutPanel } from './rollout-panel';
 import { PricingForm } from './pricing-form';
@@ -206,7 +207,7 @@ export default async function AppDetailPage({
 
             <section className="mt-8 rounded-xl border border-border p-card">
                 <h2 className="">Details</h2>
-                <AppCatalogForm app={app} github={github} />
+                <AppCatalogForm app={app} github={github} plans={await listAlgoSuitePlans()} />
             </section>
 
             <section className="mt-4 flex flex-wrap items-center justify-between gap-gap rounded-xl border border-border p-card">

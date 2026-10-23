@@ -111,7 +111,7 @@ export async function PlansSection() {
                                                             ? 'bg-card text-foreground hover:bg-secondary'
                                                             : 'bg-primary text-primary-foreground hover:bg-primary/90',
                                                     )}
-                                                ><Link href="/register" className="block">
+                                                ><Link href={plan.priceAmount == null ? '/register' : `/register?plan=${encodeURIComponent(plan.id)}`} className="block">
                                                     {plan.priceAmount == null ? 'Talk to us' : `Start with ${plan.name}`}
                                                 </Link></Button>
                                         </div>

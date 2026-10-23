@@ -1,0 +1,1 @@
+ALTER TABLE "AppCatalog" ADD COLUMN "minPlanId" text;

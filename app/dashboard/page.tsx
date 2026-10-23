@@ -15,7 +15,7 @@ export default async function CustomerOverviewPage() {
         db.$count(schema.notification, eq(schema.notification.userId, user.id)),
         db.$count(schema.notification, and(eq(schema.notification.userId, user.id), isNull(schema.notification.readAt))),
         db.query.appPurchase.findMany({
-            where: and(eq(schema.appPurchase.userId, user.id), eq(schema.appPurchase.status, 'ACTIVE')),
+            where: and(eq(schema.appPurchase.userId, user.id), eq(schema.appPurchase.status, 'ACTIVE'), eq(schema.appPurchase.billingMode, 'paddle')),
         }),
     ]);
     const spend = new Map<string, number>();

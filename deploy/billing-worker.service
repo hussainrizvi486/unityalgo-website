@@ -1,0 +1,11 @@
+# Install: sudo cp deploy/billing-worker.* /etc/systemd/system/ && sudo systemctl daemon-reload \
+#          && sudo systemctl enable --now billing-worker.timer
+[Unit]
+Description=Billing worker (single pass)
+After=network-online.target
+
+[Service]
+Type=oneshot
+EnvironmentFile=/home/frappe/unityalgo/unityalgo-website/.env
+ExecStart=/usr/bin/curl --fail --silent --show-error --max-time 290 -X ps \
+    -H "Authorization: Bearer ${BILLING_WORKER_SECRET}" http://127.0.0.1:2424/api/internal/billing

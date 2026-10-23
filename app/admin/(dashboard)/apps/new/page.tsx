@@ -4,6 +4,7 @@ import { requireAdmin } from '@/lib/admin-session';
 import { db } from '@/lib/db';
 import { controller } from '@/lib/controller-client';
 import { AppCatalogForm } from '../app-form';
+import { listAlgoSuitePlans } from '@/lib/products';
 import { GithubAppForm } from './github-form';
 
 export const metadata = { title: 'Add application' };
@@ -31,7 +32,7 @@ export default async function NewApplicationPage({ searchParams }: { searchParam
                     <p className="portal-text-body text-muted-foreground">
                         For apps already inside the platform&rsquo;s Frappe image. They are installed when a site is created and updated with the image.
                     </p>
-                    <AppCatalogForm />
+                    <AppCatalogForm plans={await listAlgoSuitePlans()} />
                 </div>
             ) : (
                 <GithubAppForm categories={categories} connected={github.connected} repositories={github.results} />

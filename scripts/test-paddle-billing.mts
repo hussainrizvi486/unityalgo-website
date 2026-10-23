@@ -35,25 +35,45 @@ const { purchaseApp, cancelPurchase } = await import('../lib/app-billing');
 const { CheckoutError } = await import('../lib/billing-errors');
 const { createPlanCheckout, cancelPendingCheckout, ensurePaddleCustomer } = await import('../lib/checkout-billing');
 const { processPaddleEvent, reconcilePaddleSubscription, recoverStalledBillingOperations } = await import('../lib/paddle-sync');
-const { saveSiteOrder, startSiteOrderPayment, confirmSiteOrderPayment, provisionSiteOrder, drainSiteOrders, cancelSiteOrder, expireSiteOrders } = await import('../lib/site-orders');
+const { findResumableOrder, saveSiteOrder, startSiteOrderPayment, confirmSiteOrderPayment, provisionSiteOrder, drainSiteOrders, cancelSiteOrder, expireSiteOrders } = await import('../lib/site-orders');
 const { syncSiteBilling, assertSiteBillingAccess } = await import('../lib/site-billing-lifecycle');
 const { sealSiteSetup, openSiteSetup } = await import('../lib/site-order-secrets');
+const { assertSiteAppsFitPlan, PlanAccessError } = await import('../lib/app-plan-access');
+const { previewAppPurchase, parseAppPreview, itemsWithQuantity } = await import('../lib/app-preview');
+const { asRecord } = await import('../lib/paddle-data');
+const { listIdleSubscriptions } = await import('../lib/subscription-claims');
+const { cancelAtPeriodEnd, resumeScheduledCancellation, SubscriptionActionError } = await import('../lib/subscription-lifecycle');
+const { listCustomerTransactions, getCustomerInvoice, customerInvoicePdfUrl } = await import('../lib/customer-billing');
 const { POST } = await import('../app/api/paddle/webhook/route');
 const { GET: billingHealth, POST: runWorkerRoute } = await import('../app/api/internal/billing/route');
 const realFetch = globalThis.fetch;
 let patches = 0, transactionCreates = 0;
 let hostingReady = true, hostingFailure = false, siteCreateCalls = 0;
 let sitePlanChanges = 0, siteDeactivations = 0, siteReactivations = 0;
-const siteFixtures = new Map<string, { id: string; name: string; status: string; activity: string | null; plan_id: string }>();
+const siteFixtures = new Map<string, { id: string; name: string; status: string; activity: string | null; plan_id: string; owner?: string }>();
+let hostingListFails = false;
 const createdSites = new Map<string, { id: string; name: string }>();
 let failPayment = false, timeoutPayment = false;
 let rejectCheckout = false, timeoutCheckout = false;
-let customerConflict = false, conflictHint = true, customerEmail = 'customer@test.invalid', customerStatus = 'active', customerCreates = 0, customerRestores = 0;
+let customerConflict = false, conflictHint = true, customerEmail = 'customer@test.invalid', customerStatus = 'active', customerRestores = 0;
 let current = {
     id: 'sub_test', customer_id: 'ctm_test', status: 'active', updated_at: '2026-10-01T00:00:00Z',
     current_billing_period: { starts_at: '2026-10-01T00:00:00Z', ends_at: '2026-11-01T00:00:00Z' },
     scheduled_change: null, currency_code: 'USD', next_billed_at: '2099-11-01T00:00:00Z', discount: null as null | { id: string }, custom_data: { userId: 'customer', planId: 'basic' },
     items: [{ price: { id: 'pri_basic' }, quantity: 2 }, { price: { id: 'pri_addon' }, quantity: 3 }],
+};
+const cancelCalls: Array<{ effective_from?: string }> = [];
+let resumeCalls = 0;
+let lastPreviewBody: { items?: Array<{ price_id: string; quantity: number }>; proration_billing_mode?: string; on_payment_failure?: string } | null = null;
+const cancelSub: Record<string, unknown> & { updated_at: string; scheduled_change: null | { action: string } } = {
+    id: 'sub_cancel1', customer_id: 'ctm_cancel', status: 'active', updated_at: '2026-10-01T00:00:00Z', scheduled_change: null, currency_code: 'USD',
+    current_billing_period: { starts_at: '2026-10-01T00:00:00Z', ends_at: '2026-11-01T00:00:00Z' }, next_billed_at: '2099-11-01T00:00:00Z', discount: null,
+    custom_data: { userId: 'canceler', planId: 'basic' }, items: [{ price: { id: 'pri_basic' }, quantity: 1 }],
+};
+const pastDueSub: Record<string, unknown> & { updated_at: string; status: string } = {
+    id: 'sub_pastdue1', customer_id: 'ctm_pastdue', status: 'past_due', updated_at: '2026-10-01T00:00:00Z', scheduled_change: null, currency_code: 'USD',
+    current_billing_period: { starts_at: '2026-10-01T00:00:00Z', ends_at: '2026-11-01T00:00:00Z' }, next_billed_at: '2099-11-01T00:00:00Z', discount: null,
+    custom_data: { userId: 'pastdue', planId: 'basic' }, items: [{ price: { id: 'pri_basic' }, quantity: 1 }],
 };
 const discounts = new Map<string, { id: string; amount: string; status?: string }>();
 let discountCreates = 0;
@@ -64,9 +84,14 @@ function response(data: unknown, status = 200) { return new Response(JSON.string
 globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
     const path = new URL(String(input)).pathname;
     const method = init?.method ?? 'GET';
-    if (path === '/api/v1/sites/capabilities') return Response.json({ configured: hostingReady, accepting: hostingReady, apps: [], domain_suffix: 'test.invalid' });
+    if (path === '/api/v1/sites/capabilities') return Response.json({ configured: hostingReady, accepting: hostingReady, apps: ['pro_tool'], domain_suffix: 'test.invalid' });
     if (path === '/api/v1/sites/check-slug') return Response.json({ available: true });
     if (path === '/api/v1/sites/trials') return Response.json({ used_plan_ids: [] });
+    if (path === '/api/v1/sites' && method === 'GET') {
+        if (hostingListFails) return Response.json({ error: 'Hosting offline' }, { status: 503 });
+        const owner = new URL(String(input)).searchParams.get('user_id');
+        return Response.json({ results: [...siteFixtures.values()].filter((fixture) => fixture.owner === owner) });
+    }
     if (path === '/api/v1/sites' && method === 'POST') {
         siteCreateCalls++;
         if (hostingFailure) return Response.json({ error: 'Hosting offline' }, { status: 503 });
@@ -80,6 +105,7 @@ globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
     if (path.startsWith('/api/v1/sites/')) {
         if (hostingFailure) return Response.json({ error: 'Hosting offline' }, { status: 503 });
         const id = path.split('/')[4];
+        if (id.startsWith('gone-')) return Response.json({ error: 'Site not found.' }, { status: 404 });
         const site = siteFixtures.get(id)!;
         if (!site) throw new Error(`Missing site fixture ${id}`);
         if (method === 'GET') return Response.json(site);
@@ -108,6 +134,7 @@ globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
     }
     if (path === `/subscriptions/${current.id}/preview`) {
         const body = JSON.parse(String(init?.body));
+        lastPreviewBody = body;
         const discount = discounts.get(body.discount?.id);
         const renewal = body.discount?.effective_from === 'next_billing_period';
         const applied = discount ? Math.floor(Number(discount.amount) * (renewal ? 1 : 0.5)) : 0;
@@ -132,6 +159,18 @@ globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
         };
         return response(current);
     }
+    if (path.endsWith('/invoice')) return response({ url: 'https://invoices.example.test/invoice.pdf' });
+    if (path === '/subscriptions/sub_pastdue1' || path === '/subscriptions/sub_pastdue1/cancel') {
+        if (path.endsWith('/cancel')) { cancelCalls.push(JSON.parse(String(init?.body))); pastDueSub.status = 'canceled'; }
+        pastDueSub.updated_at = new Date(Date.parse(pastDueSub.updated_at) + 1000).toISOString();
+        return response(pastDueSub);
+    }
+    if (path === '/subscriptions/sub_cancel1' || path === '/subscriptions/sub_cancel1/cancel') {
+        if (path.endsWith('/cancel')) { cancelCalls.push(JSON.parse(String(init?.body))); cancelSub.scheduled_change = { action: 'cancel' }; }
+        else if (method === 'PATCH') { const body = JSON.parse(String(init?.body)); assert.equal(body.scheduled_change, null); resumeCalls++; cancelSub.scheduled_change = null; }
+        cancelSub.updated_at = new Date(Date.parse(cancelSub.updated_at) + 1000).toISOString();
+        return response(cancelSub);
+    }
     if (path.endsWith('/credit-balances')) return response([{ currency_code: 'USD', balance: { available: '500', reserved: '0', used: '0' } }]);
     if (path === '/transactions' && method === 'POST') {
         transactionCreates++;
@@ -150,7 +189,6 @@ globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
     }
     if (path.startsWith('/adjustments/')) return response(adjustments.get(path.split('/').at(-1)!));
     if (path === '/customers' && method === 'POST') {
-        customerCreates++;
         if (customerConflict) return Response.json({ error: { code: 'customer_already_exists', detail: conflictHint ? 'customer email conflicts with customer of id ctm_existing1' : 'customer email conflicts with an existing customer' } }, { status: 409 });
         return response({ id: 'ctm_created1' });
     }
@@ -642,6 +680,190 @@ try {
         await assert.rejects(createPlanCheckout('checkout-uncertain', 'basic', false), (error: unknown) => error instanceof CheckoutError && /previous checkout is being checked/.test(error.message));
         assert.equal(transactionCreates, before);
         assert.equal((await db.query.billingOperation.findFirst({ where: eq(schema.billingOperation.userId, 'checkout-uncertain') }))?.status, 'UNKNOWN');
+    });
+
+    // ---- Subscription lifecycle, reuse after site deletion, cancellation and invoices ----
+    const mkUser = (id: string) => db.insert(schema.user).values({ id, email: `${id}@test.invalid`, role: 'CUSTOMER', passwordHash: 'x' });
+    const idleValues = (slug: string, who: string) => ({ ...setupValues, slug, email: `${who}@example.com` });
+    await check('a paid subscription whose site was deleted runs the next site without charging again', async () => {
+        await mkUser('claimer');
+        const [old] = await db.insert(schema.siteOrder).values({ userId: 'claimer', requestKey: randomUUID(), planId: 'basic', summary: { slug: 'old-site' }, status: 'PROVISIONED', siteId: 'gone-1', paidAt: new Date() }).returning();
+        await db.insert(schema.subscription).values({ userId: 'claimer', planId: 'basic', productId: 'product', status: 'ACTIVE', paddleSubscriptionId: 'sub_claim1', paddleCustomerId: 'ctm_claim', siteOrderId: old.id, siteId: 'gone-1', appliedPlanId: 'basic' });
+        assert.equal((await listIdleSubscriptions('claimer', 'basic')).length, 1);
+        const order = await saveSiteOrder('claimer', randomUUID(), idleValues('claimed-site', 'claimer'));
+        const charges = transactionCreates;
+        const result = await startSiteOrderPayment('claimer', order.id, false);
+        assert.equal(result.authorized, true); assert.equal((result as { claimed?: boolean }).claimed, true);
+        assert.equal(transactionCreates, charges, 'no second checkout was created');
+        const ready = (await db.query.siteOrder.findFirst({ where: eq(schema.siteOrder.id, order.id) }))!;
+        assert.equal(ready.status, 'READY'); assert.ok(ready.paidAt);
+        let sub = (await db.query.subscription.findFirst({ where: eq(schema.subscription.paddleSubscriptionId, 'sub_claim1') }))!;
+        assert.equal(sub.siteOrderId, order.id); assert.equal(sub.siteId, null);
+        await provisionSiteOrder(order.id);
+        sub = (await db.query.subscription.findFirst({ where: eq(schema.subscription.paddleSubscriptionId, 'sub_claim1') }))!;
+        assert.ok(sub.siteId && sub.siteId !== 'gone-1'); assert.equal(sub.appliedPlanId, 'basic');
+        assert.equal((await db.query.siteOrder.findFirst({ where: eq(schema.siteOrder.id, order.id) }))?.status, 'PROVISIONED');
+        assert.equal((await startSiteOrderPayment('claimer', order.id, false)).authorized, true);
+        assert.equal(transactionCreates, charges);
+        assert.equal((await listIdleSubscriptions('claimer')).length, 0, 'it is busy again');
+    });
+    await check('a subscription that is running a site is not claimed, so another site is billed normally', async () => {
+        await mkUser('busy');
+        siteFixtures.set('live-1', { id: 'live-1', name: 'live', status: 'ready', activity: null, plan_id: 'basic' });
+        await db.insert(schema.subscription).values({ userId: 'busy', planId: 'basic', productId: 'product', status: 'ACTIVE', paddleSubscriptionId: 'sub_busy1', paddleCustomerId: 'ctm_busy', siteId: 'live-1' });
+        assert.equal((await listIdleSubscriptions('busy')).length, 0);
+        const order = await saveSiteOrder('busy', randomUUID(), idleValues('busy-second', 'busy'));
+        const charges = transactionCreates;
+        const result = await startSiteOrderPayment('busy', order.id, false);
+        assert.ok(result.transactionId); assert.equal(transactionCreates, charges + 1);
+    });
+    await check('a paid order still being set up is never mistaken for a free subscription', async () => {
+        await mkUser('settling');
+        const [pending] = await db.insert(schema.siteOrder).values({ userId: 'settling', requestKey: randomUUID(), planId: 'basic', summary: { slug: 'settling-site' }, status: 'READY', paidAt: new Date() }).returning();
+        await db.insert(schema.subscription).values({ userId: 'settling', planId: 'basic', productId: 'product', status: 'ACTIVE', paddleSubscriptionId: 'sub_settle1', paddleCustomerId: 'ctm_settle', siteOrderId: pending.id });
+        assert.equal((await listIdleSubscriptions('settling')).length, 0);
+    });
+    await check('a canceled, suspended or unpaid subscription is not offered for reuse', async () => {
+        await mkUser('lapsed');
+        await db.insert(schema.subscription).values({ userId: 'lapsed', planId: 'basic', productId: 'product', status: 'PAST_DUE', paddleSubscriptionId: 'sub_lapsed1', paddleCustomerId: 'ctm_lapsed' });
+        assert.equal((await listIdleSubscriptions('lapsed')).length, 0);
+    });
+    await check('the billing worker releases a subscription from a deleted site', async () => {
+        await mkUser('released');
+        await db.insert(schema.subscription).values({ userId: 'released', planId: 'basic', productId: 'product', status: 'ACTIVE', paddleSubscriptionId: 'sub_release1', paddleCustomerId: 'ctm_release', siteId: 'gone-9', appliedPlanId: 'basic' });
+        await syncSiteBilling(200);
+        const sub = (await db.query.subscription.findFirst({ where: eq(schema.subscription.paddleSubscriptionId, 'sub_release1') }))!;
+        assert.equal(sub.siteId, null); assert.equal(sub.status, 'ACTIVE');
+        assert.equal((await listIdleSubscriptions('released')).length, 1);
+    });
+    await check('cancel keeps access to the period end, can be undone, and only works on your own subscription', async () => {
+        await mkUser('canceler'); await mkUser('stranger');
+        await db.insert(schema.subscription).values({ userId: 'canceler', planId: 'basic', productId: 'product', status: 'ACTIVE', paddleSubscriptionId: 'sub_cancel1', paddleCustomerId: 'ctm_cancel', currentPeriodEnd: new Date('2026-11-01T00:00:00Z') });
+        const row = async () => (await db.query.subscription.findFirst({ where: eq(schema.subscription.paddleSubscriptionId, 'sub_cancel1') }))!;
+        await assert.rejects(cancelAtPeriodEnd('stranger', (await row()).id), SubscriptionActionError);
+        assert.equal(cancelCalls.length, 0);
+        await cancelAtPeriodEnd('canceler', (await row()).id);
+        assert.deepEqual(cancelCalls, [{ effective_from: 'next_billing_period' }]);
+        let sub = await row(); assert.equal(sub.cancelAtPeriodEnd, true); assert.equal(sub.status, 'ACTIVE');
+        await cancelAtPeriodEnd('canceler', sub.id); assert.equal(cancelCalls.length, 1, 'canceling twice never sends a second request');
+        await assert.rejects(resumeScheduledCancellation('stranger', sub.id), SubscriptionActionError);
+        await resumeScheduledCancellation('canceler', sub.id);
+        assert.equal(resumeCalls, 1); sub = await row(); assert.equal(sub.cancelAtPeriodEnd, false);
+        await assert.rejects(resumeScheduledCancellation('canceler', sub.id), /not set to cancel/);
+    });
+    await check('billing history and invoices are private to the customer and handle every payment state', async () => {
+        const base = { subscriptionId: null, description: 'Basic plan', currency: 'USD', issuedAt: new Date('2026-10-01T00:00:00Z'), paymentMethod: 'Paddle' };
+        const [paid] = await db.insert(schema.billingRecord).values({ ...base, userId: 'canceler', invoiceNumber: 'txn_inv_paid', amount: 30, status: 'PAID', paidAt: new Date('2026-10-01T00:00:00Z'), paymentReference: 'txn_inv_paid' }).returning();
+        await db.insert(schema.billingRecord).values({ ...base, userId: 'canceler', invoiceNumber: 'txn_inv_failed', amount: 30, status: 'OVERDUE', paymentReference: 'txn_inv_failed' });
+        await db.insert(schema.billingRecord).values({ ...base, userId: 'canceler', invoiceNumber: 'txn_inv_refund', amount: 30, status: 'REFUNDED', paidAt: new Date(), refundedAmount: 30, paymentReference: 'txn_inv_refund' });
+        await db.insert(schema.billingRecord).values({ ...base, userId: 'canceler', invoiceNumber: 'txn_inv_pending', amount: 30, status: 'PENDING', paymentReference: 'txn_inv_pending' });
+        const [others] = await db.insert(schema.billingRecord).values({ ...base, userId: 'stranger', invoiceNumber: 'txn_inv_other', amount: 99, status: 'PAID', paidAt: new Date(), paymentReference: 'txn_inv_other' }).returning();
+        const rows = await listCustomerTransactions('canceler');
+        assert.deepEqual(rows.map((row) => row.state).sort(), ['failed', 'paid', 'pending', 'refunded']);
+        assert.ok(rows.every((row) => row.reference !== 'txn_inv_other'));
+        assert.ok(await getCustomerInvoice('canceler', paid.id)); assert.equal(await getCustomerInvoice('stranger', paid.id), null);
+        assert.equal(await getCustomerInvoice('canceler', others.id), null);
+        assert.match((await customerInvoicePdfUrl('canceler', paid.id)) ?? '', /^https:\/\/invoices\.example\.test\//);
+        assert.equal(await customerInvoicePdfUrl('stranger', paid.id), null);
+        const failed = rows.find((row) => row.state === 'failed')!; const pending = rows.find((row) => row.state === 'pending')!;
+        assert.equal(await customerInvoicePdfUrl('canceler', failed.id), null, 'no PDF for a failed payment');
+        assert.equal(await customerInvoicePdfUrl('canceler', pending.id), null, 'no PDF for a pending payment');
+    });
+
+    // ---- Apps: price preview and plan compatibility ----
+    await check('a paid app is previewed against the site\'s own subscription and nothing is charged', async () => {
+        await mkUser('previewer');
+        const [paidApp] = await db.insert(schema.appCatalog).values({ name: 'Add-on', slug: 'add-on-preview', description: 'x', category: 'x', priceAmount: 5, paddlePriceId: 'pri_addon_prev' }).returning();
+        await db.insert(schema.subscription).values({ userId: 'previewer', planId: 'basic', productId: 'product', status: 'ACTIVE', paddleSubscriptionId: 'sub_prev2', paddleCustomerId: 'ctm_previewer', siteId: 'live-prev2', siteOrderId: 'order-prev2' });
+        await db.insert(schema.subscription).values({ userId: 'previewer', planId: 'basic', productId: 'product', status: 'ACTIVE', paddleSubscriptionId: 'sub_prev1', paddleCustomerId: 'ctm_previewer', siteId: 'live-prev1', siteOrderId: 'order-prev1' });
+        await switchSubscription('previewer', 'sub_prev1');
+        const patchesBefore = patches;
+        const preview = await previewAppPurchase({ userId: 'previewer', app: paidApp, siteId: 'live-prev1', planId: 'basic' });
+        assert.equal(preview.currency, 'USD'); assert.equal(preview.chargeNow, 15);
+        assert.equal(patches, patchesBefore, 'a preview never changes or charges the subscription');
+        assert.deepEqual(lastPreviewBody?.items, [{ price_id: 'pri_basic', quantity: 1 }, { price_id: 'pri_addon_prev', quantity: 1 }]);
+        assert.equal(lastPreviewBody?.proration_billing_mode, 'prorated_immediately');
+        assert.equal(lastPreviewBody?.on_payment_failure, 'prevent_change');
+        await assert.rejects(previewAppPurchase({ userId: 'previewer', app: paidApp, siteId: 'no-such-site', planId: 'basic' }), /Subscribe to a plan/);
+    });
+    await check('app preview helpers keep every other item and refuse an incomplete price', () => {
+        const items = [{ price: { id: 'pri_basic' }, quantity: 1 }, { price: { id: 'pri_a' }, quantity: 2 }];
+        assert.deepEqual(itemsWithQuantity(items, 'pri_a', 3), [{ price_id: 'pri_basic', quantity: 1 }, { price_id: 'pri_a', quantity: 3 }]);
+        assert.deepEqual(itemsWithQuantity(items, 'pri_a', 0), [{ price_id: 'pri_basic', quantity: 1 }]);
+        assert.deepEqual(parseAppPreview({ immediate_transaction: { details: { totals: { balance: '250', currency_code: 'USD' } } }, next_transaction: { details: { totals: { grand_total: '2500' } } }, next_billed_at: '2026-11-10T00:00:00Z' }),
+            { chargeNow: 2.5, currency: 'USD', nextTotal: 25, nextBilledAt: '2026-11-10T00:00:00Z' });
+        assert.throws(() => parseAppPreview({ immediate_transaction: { details: { totals: {} } } }), /complete price/);
+    });
+    await check('an app that needs a higher plan cannot be ordered on a lower one', async () => {
+        await mkUser('compat');
+        await db.update(schema.plan).set({ sortOrder: 1 }).where(eq(schema.plan.id, 'basic'));
+        await db.update(schema.plan).set({ sortOrder: 2 }).where(eq(schema.plan.id, 'pro'));
+        const [proTool] = await db.insert(schema.appCatalog).values({ name: 'Pro tool', slug: 'pro-tool', description: 'x', category: 'x', frappeAppName: 'pro_tool', isInstallable: true, minPlanId: 'pro' }).returning();
+        await assert.rejects(saveSiteOrder('compat', randomUUID(), { ...setupValues, slug: 'compat-low', apps: [proTool.id], planId: 'basic', email: 'compat@example.com' }), /needs the Pro plan or higher/);
+        const order = await saveSiteOrder('compat', randomUUID(), { ...setupValues, slug: 'compat-high', apps: [proTool.id], planId: 'pro', email: 'compat@example.com' });
+        assert.equal(order.planId, 'pro');
+    });
+
+    // ---- Second review pass: edge cases ----
+    await check('a subscription set to cancel is never handed to a new site', async () => {
+        await mkUser('ending');
+        const [old] = await db.insert(schema.siteOrder).values({ userId: 'ending', requestKey: randomUUID(), planId: 'basic', summary: { slug: 'ending-old' }, status: 'PROVISIONED', paidAt: new Date() }).returning();
+        await db.insert(schema.subscription).values({ userId: 'ending', planId: 'basic', productId: 'product', status: 'ACTIVE', paddleSubscriptionId: 'sub_ending1', paddleCustomerId: 'ctm_ending', siteOrderId: old.id, cancelAtPeriodEnd: true });
+        assert.equal((await listIdleSubscriptions('ending')).length, 0);
+        await db.update(schema.subscription).set({ cancelAtPeriodEnd: false }).where(eq(schema.subscription.paddleSubscriptionId, 'sub_ending1'));
+        assert.equal((await listIdleSubscriptions('ending')).length, 1, 'once resumed it is reusable again');
+    });
+    await check('an older product-level subscription is idle only when no unlinked site could be using it', async () => {
+        await mkUser('legacy');
+        await db.insert(schema.subscription).values({ userId: 'legacy', planId: 'basic', productId: 'product', status: 'ACTIVE', paddleSubscriptionId: 'sub_legacy1', paddleCustomerId: 'ctm_legacy' });
+        siteFixtures.set('legacy-site', { id: 'legacy-site', name: 'old site', status: 'ready', activity: null, plan_id: 'basic', owner: 'legacy' });
+        assert.equal((await listIdleSubscriptions('legacy')).length, 0, 'it may be paying for the existing site');
+        siteFixtures.delete('legacy-site');
+        assert.equal((await listIdleSubscriptions('legacy')).length, 1, 'with no site on the plan it is free');
+        hostingListFails = true;
+        assert.equal((await listIdleSubscriptions('legacy')).length, 0, 'unknown hosting state is treated as in use');
+        hostingListFails = false;
+    });
+    await check('canceling a past-due subscription ends it now and never claims the period is kept', async () => {
+        await mkUser('pastdue');
+        await db.insert(schema.subscription).values({ userId: 'pastdue', planId: 'basic', productId: 'product', status: 'PAST_DUE', paddleSubscriptionId: 'sub_pastdue1', paddleCustomerId: 'ctm_pastdue', graceEndsAt: new Date(Date.now() + 86_400_000) });
+        const row = async () => (await db.query.subscription.findFirst({ where: eq(schema.subscription.paddleSubscriptionId, 'sub_pastdue1') }))!;
+        const calls = cancelCalls.length;
+        const result = await cancelAtPeriodEnd('pastdue', (await row()).id);
+        assert.equal(result.immediate, true); assert.deepEqual(cancelCalls.slice(calls), [{ effective_from: 'immediately' }]);
+        const sub = await row(); assert.equal(sub.cancelAtPeriodEnd, false); assert.equal(sub.status, 'CANCELED');
+    });
+    await check('a canceled subscription cannot be canceled or resumed again', async () => {
+        const sub = (await db.query.subscription.findFirst({ where: eq(schema.subscription.paddleSubscriptionId, 'sub_pastdue1') }))!;
+        await assert.rejects(cancelAtPeriodEnd('pastdue', sub.id), SubscriptionActionError);
+        await assert.rejects(resumeScheduledCancellation('pastdue', sub.id), SubscriptionActionError);
+    });
+    await check('a customer is told when deleting a site leaves a paid subscription without one', async () => {
+        await mkUser('notified');
+        await db.insert(schema.subscription).values({ userId: 'notified', planId: 'basic', productId: 'product', status: 'ACTIVE', paddleSubscriptionId: 'sub_notify1', paddleCustomerId: 'ctm_notify', siteId: 'gone-notify' });
+        await syncSiteBilling(300); await syncSiteBilling(300);
+        const notes = await db.query.notification.findMany({ where: eq(schema.notification.userId, 'notified') });
+        assert.equal(notes.length, 1, 'one notice, however many times the worker runs');
+        assert.equal(notes[0].href, '/dashboard/subscription');
+    });
+    await check('a plan that cannot run an installed app is refused, a plan that can is allowed', async () => {
+        await assert.rejects(assertSiteAppsFitPlan(['pro_tool'], 'basic'), PlanAccessError);
+        await assertSiteAppsFitPlan(['pro_tool'], 'pro');
+        await assertSiteAppsFitPlan([], 'basic'); await assertSiteAppsFitPlan(undefined, 'basic'); await assertSiteAppsFitPlan(['not_in_catalog'], 'basic');
+    });
+
+    await check('submitting the wizard again after going Back reuses an unpaid draft and points to a setup already in payment', async () => {
+        await mkUser('backer'); await mkUser('rival');
+        const first = await saveSiteOrder('backer', randomUUID(), { ...idleValues('backed-site', 'backer'), companyName: 'First name' });
+        const second = await saveSiteOrder('backer', randomUUID(), { ...idleValues('backed-site', 'backer'), companyName: 'Corrected name' });
+        assert.equal(second.id, first.id, 'one setup, not two');
+        assert.equal((asRecord(second.summary) as { companyName?: string }).companyName, 'Corrected name', 'an unpaid draft takes the new details');
+        await db.update(schema.siteOrder).set({ status: 'AWAITING_PAYMENT' }).where(eq(schema.siteOrder.id, first.id));
+        await assert.rejects(saveSiteOrder('backer', randomUUID(), idleValues('backed-site', 'backer')), 'a name in payment stays reserved');
+        assert.equal((await findResumableOrder('backer', 'backed-site'))?.id, first.id, 'the customer is sent back to finish it');
+        assert.equal(await findResumableOrder('rival', 'backed-site'), undefined, 'nobody else is pointed at it');
+        assert.equal((await db.query.siteOrder.findMany({ where: eq(schema.siteOrder.userId, 'backer') })).length, 1);
+        await assert.rejects(saveSiteOrder('rival', randomUUID(), idleValues('backed-site', 'rival')), 'another customer cannot take a reserved name');
     });
     console.log(`\n${passed} integration checks passed; migrations applied successfully.`);
 } finally {

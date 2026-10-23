@@ -81,10 +81,10 @@ export const supportTicket = pgTable("SupportTicket", {
 	index("SupportTicket_status_idx").using("btree", table.status.asc().nullsLast().op("enum_ops")),
 	index("SupportTicket_userId_idx").using("btree", table.userId.asc().nullsLast().op("text_ops")),
 	foreignKey({
-			columns: [table.userId],
-			foreignColumns: [user.id],
-			name: "SupportTicket_userId_fkey"
-		}).onUpdate("cascade").onDelete("cascade"),
+		columns: [table.userId],
+		foreignColumns: [user.id],
+		name: "SupportTicket_userId_fkey"
+	}).onUpdate("cascade").onDelete("cascade"),
 ]);
 
 export const comment = pgTable("Comment", {
@@ -98,10 +98,10 @@ export const comment = pgTable("Comment", {
 	index("Comment_authorId_idx").using("btree", table.authorId.asc().nullsLast().op("text_ops")),
 	index("Comment_entityType_entityId_idx").using("btree", table.entityType.asc().nullsLast().op("text_ops"), table.entityId.asc().nullsLast().op("text_ops")),
 	foreignKey({
-			columns: [table.authorId],
-			foreignColumns: [user.id],
-			name: "Comment_authorId_fkey"
-		}).onUpdate("cascade").onDelete("cascade"),
+		columns: [table.authorId],
+		foreignColumns: [user.id],
+		name: "Comment_authorId_fkey"
+	}).onUpdate("cascade").onDelete("cascade"),
 ]);
 
 export const subscriptionAddOn = pgTable("SubscriptionAddOn", {
@@ -113,15 +113,15 @@ export const subscriptionAddOn = pgTable("SubscriptionAddOn", {
 	index("SubscriptionAddOn_addOnId_idx").using("btree", table.addOnId.asc().nullsLast().op("text_ops")),
 	uniqueIndex("SubscriptionAddOn_subscriptionId_addOnId_key").using("btree", table.subscriptionId.asc().nullsLast().op("text_ops"), table.addOnId.asc().nullsLast().op("text_ops")),
 	foreignKey({
-			columns: [table.subscriptionId],
-			foreignColumns: [subscription.id],
-			name: "SubscriptionAddOn_subscriptionId_fkey"
-		}).onUpdate("cascade").onDelete("cascade"),
+		columns: [table.subscriptionId],
+		foreignColumns: [subscription.id],
+		name: "SubscriptionAddOn_subscriptionId_fkey"
+	}).onUpdate("cascade").onDelete("cascade"),
 	foreignKey({
-			columns: [table.addOnId],
-			foreignColumns: [addOn.id],
-			name: "SubscriptionAddOn_addOnId_fkey"
-		}).onUpdate("cascade").onDelete("restrict"),
+		columns: [table.addOnId],
+		foreignColumns: [addOn.id],
+		name: "SubscriptionAddOn_addOnId_fkey"
+	}).onUpdate("cascade").onDelete("restrict"),
 ]);
 
 export const addOn = pgTable("AddOn", {
@@ -140,10 +140,10 @@ export const addOn = pgTable("AddOn", {
 	index("AddOn_productId_isActive_idx").using("btree", table.productId.asc().nullsLast().op("text_ops"), table.isActive.asc().nullsLast().op("text_ops")),
 	uniqueIndex("AddOn_productId_slug_key").using("btree", table.productId.asc().nullsLast().op("text_ops"), table.slug.asc().nullsLast().op("text_ops")),
 	foreignKey({
-			columns: [table.productId],
-			foreignColumns: [product.id],
-			name: "AddOn_productId_fkey"
-		}).onUpdate("cascade").onDelete("restrict"),
+		columns: [table.productId],
+		foreignColumns: [product.id],
+		name: "AddOn_productId_fkey"
+	}).onUpdate("cascade").onDelete("restrict"),
 ]);
 
 export const subscription = pgTable("Subscription", {
@@ -177,20 +177,20 @@ export const subscription = pgTable("Subscription", {
 	uniqueIndex("Subscription_siteOrderId_key").on(table.siteOrderId),
 	uniqueIndex("Subscription_siteId_key").on(table.siteId),
 	foreignKey({
-			columns: [table.userId],
-			foreignColumns: [user.id],
-			name: "Subscription_userId_fkey"
-		}).onUpdate("cascade").onDelete("cascade"),
+		columns: [table.userId],
+		foreignColumns: [user.id],
+		name: "Subscription_userId_fkey"
+	}).onUpdate("cascade").onDelete("cascade"),
 	foreignKey({
-			columns: [table.planId],
-			foreignColumns: [plan.id],
-			name: "Subscription_planId_fkey"
-		}).onUpdate("cascade").onDelete("restrict"),
+		columns: [table.planId],
+		foreignColumns: [plan.id],
+		name: "Subscription_planId_fkey"
+	}).onUpdate("cascade").onDelete("restrict"),
 	foreignKey({
-			columns: [table.productId],
-			foreignColumns: [product.id],
-			name: "Subscription_productId_fkey"
-		}).onUpdate("cascade").onDelete("restrict"),
+		columns: [table.productId],
+		foreignColumns: [product.id],
+		name: "Subscription_productId_fkey"
+	}).onUpdate("cascade").onDelete("restrict"),
 ]);
 
 export const address = pgTable("Address", {
@@ -208,10 +208,10 @@ export const address = pgTable("Address", {
 }, (table) => [
 	index("Address_userId_idx").using("btree", table.userId.asc().nullsLast().op("text_ops")),
 	foreignKey({
-			columns: [table.userId],
-			foreignColumns: [user.id],
-			name: "Address_userId_fkey"
-		}).onUpdate("cascade").onDelete("cascade"),
+		columns: [table.userId],
+		foreignColumns: [user.id],
+		name: "Address_userId_fkey"
+	}).onUpdate("cascade").onDelete("cascade"),
 ]);
 
 export const product = pgTable("Product", {
@@ -289,15 +289,15 @@ export const billingRecord = pgTable("BillingRecord", {
 	index("BillingRecord_tenantId_idx").using("btree", table.tenantId.asc().nullsLast().op("uuid_ops")),
 	index("BillingRecord_userId_idx").using("btree", table.userId.asc().nullsLast().op("text_ops")),
 	foreignKey({
-			columns: [table.userId],
-			foreignColumns: [user.id],
-			name: "BillingRecord_userId_fkey"
-		}).onUpdate("cascade").onDelete("cascade"),
+		columns: [table.userId],
+		foreignColumns: [user.id],
+		name: "BillingRecord_userId_fkey"
+	}).onUpdate("cascade").onDelete("cascade"),
 	foreignKey({
-			columns: [table.subscriptionId],
-			foreignColumns: [subscription.id],
-			name: "BillingRecord_subscriptionId_fkey"
-		}).onUpdate("cascade").onDelete("set null"),
+		columns: [table.subscriptionId],
+		foreignColumns: [subscription.id],
+		name: "BillingRecord_subscriptionId_fkey"
+	}).onUpdate("cascade").onDelete("set null"),
 ]);
 
 export const emailTemplate = pgTable("EmailTemplate", {
@@ -319,10 +319,10 @@ export const emailEvent = pgTable("EmailEvent", {
 	updatedAt: timestamp({ precision: 3, mode: 'date' }).notNull().$defaultFn(() => new Date()).$onUpdate(() => new Date()),
 }, (table) => [
 	foreignKey({
-			columns: [table.templateId],
-			foreignColumns: [emailTemplate.id],
-			name: "EmailEvent_templateId_fkey"
-		}).onUpdate("cascade").onDelete("set null"),
+		columns: [table.templateId],
+		foreignColumns: [emailTemplate.id],
+		name: "EmailEvent_templateId_fkey"
+	}).onUpdate("cascade").onDelete("set null"),
 ]);
 
 export const emailAccount = pgTable("EmailAccount", {
@@ -392,10 +392,10 @@ export const lead = pgTable("leads", {
 	index("leads_status_createdAt_idx").using("btree", table.status.asc().nullsLast().op("enum_ops"), table.createdAt.asc().nullsLast().op("enum_ops")),
 	index("leads_userId_idx").using("btree", table.userId.asc().nullsLast().op("text_ops")),
 	foreignKey({
-			columns: [table.userId],
-			foreignColumns: [user.id],
-			name: "leads_userId_fkey"
-		}).onUpdate("cascade").onDelete("set null"),
+		columns: [table.userId],
+		foreignColumns: [user.id],
+		name: "leads_userId_fkey"
+	}).onUpdate("cascade").onDelete("set null"),
 ]);
 
 export const paddleEvent = pgTable("PaddleEvent", {
@@ -419,6 +419,8 @@ export const appCatalog = pgTable("AppCatalog", {
 	description: text().notNull(),
 	category: text().notNull(),
 	iconUrl: text(),
+	// Lowest plan (by its sort order within the same product) that can use this app. Null: every plan.
+	minPlanId: text(),
 	frappeAppName: text(),
 	isInstallable: boolean().default(false).notNull(),
 	isActive: boolean().default(true).notNull(),
@@ -459,10 +461,10 @@ export const loginSession = pgTable("LoginSession", {
 }, (table) => [
 	index("LoginSession_userId_revokedAt_expiresAt_idx").using("btree", table.userId.asc().nullsLast().op("text_ops"), table.revokedAt.asc().nullsLast().op("timestamp_ops"), table.expiresAt.asc().nullsLast().op("text_ops")),
 	foreignKey({
-			columns: [table.userId],
-			foreignColumns: [user.id],
-			name: "LoginSession_userId_fkey"
-		}).onUpdate("cascade").onDelete("cascade"),
+		columns: [table.userId],
+		foreignColumns: [user.id],
+		name: "LoginSession_userId_fkey"
+	}).onUpdate("cascade").onDelete("cascade"),
 ]);
 
 export const notification = pgTable("Notification", {
@@ -478,10 +480,10 @@ export const notification = pgTable("Notification", {
 	uniqueIndex("Notification_userId_eventKey_key").using("btree", table.userId.asc().nullsLast().op("text_ops"), table.eventKey.asc().nullsLast().op("text_ops")),
 	index("Notification_userId_readAt_createdAt_idx").using("btree", table.userId.asc().nullsLast().op("timestamp_ops"), table.readAt.asc().nullsLast().op("text_ops"), table.createdAt.asc().nullsLast().op("timestamp_ops")),
 	foreignKey({
-			columns: [table.userId],
-			foreignColumns: [user.id],
-			name: "Notification_userId_fkey"
-		}).onUpdate("cascade").onDelete("cascade"),
+		columns: [table.userId],
+		foreignColumns: [user.id],
+		name: "Notification_userId_fkey"
+	}).onUpdate("cascade").onDelete("cascade"),
 ]);
 
 export const siteEmailEvent = pgTable("SiteEmailEvent", {
@@ -521,15 +523,15 @@ export const plan = pgTable("Plan", {
 	index("Plan_productId_isActive_idx").using("btree", table.productId.asc().nullsLast().op("text_ops"), table.isActive.asc().nullsLast().op("text_ops")),
 	uniqueIndex("Plan_productId_slug_key").using("btree", table.productId.asc().nullsLast().op("text_ops"), table.slug.asc().nullsLast().op("text_ops")),
 	foreignKey({
-			columns: [table.productId],
-			foreignColumns: [product.id],
-			name: "Plan_productId_fkey"
-		}).onUpdate("cascade").onDelete("restrict"),
+		columns: [table.productId],
+		foreignColumns: [product.id],
+		name: "Plan_productId_fkey"
+	}).onUpdate("cascade").onDelete("restrict"),
 	foreignKey({
-			columns: [table.currencyId],
-			foreignColumns: [currency.id],
-			name: "Plan_currencyId_fkey"
-		}).onUpdate("cascade").onDelete("set null"),
+		columns: [table.currencyId],
+		foreignColumns: [currency.id],
+		name: "Plan_currencyId_fkey"
+	}).onUpdate("cascade").onDelete("set null"),
 ]);
 
 export const appPurchase = pgTable("AppPurchase", {
@@ -551,116 +553,116 @@ export const appPurchase = pgTable("AppPurchase", {
 
 // Provider snapshots retain integer monetary strings exactly as supplied by Paddle.
 export const billingProviderRecord = pgTable("BillingProviderRecord", {
-    id: text().primaryKey().notNull(),
-    kind: text().notNull(),
-    userId: text().references(() => user.id, { onDelete: 'restrict' }),
-    subscriptionId: text(),
-    payload: jsonb().notNull(),
-    providerUpdatedAt: timestamp({ precision: 3, mode: 'date' }).notNull(),
-    syncedAt: timestamp({ precision: 3, mode: 'date' }).default(sql`timezone('UTC', now())`).notNull(),
+	id: text().primaryKey().notNull(),
+	kind: text().notNull(),
+	userId: text().references(() => user.id, { onDelete: 'restrict' }),
+	subscriptionId: text(),
+	payload: jsonb().notNull(),
+	providerUpdatedAt: timestamp({ precision: 3, mode: 'date' }).notNull(),
+	syncedAt: timestamp({ precision: 3, mode: 'date' }).default(sql`timezone('UTC', now())`).notNull(),
 });
 
 export const billingOperation = pgTable("BillingOperation", {
-    id: text().primaryKey().notNull().$defaultFn(() => createId()),
-    userId: text().notNull().references(() => user.id, { onDelete: 'restrict' }),
-    subscriptionId: text().notNull(),
-    planId: text().notNull().references(() => plan.id, { onDelete: 'restrict' }),
-    status: text().default('QUOTED').notNull(),
-    request: jsonb().notNull(),
-    preview: jsonb().notNull(),
-    expectedUpdatedAt: text().notNull(),
-    expiresAt: timestamp({ precision: 3, mode: 'date' }).notNull(),
-    error: text(),
-    createdAt: timestamp({ precision: 3, mode: 'date' }).default(sql`timezone('UTC', now())`).notNull(),
-    updatedAt: timestamp({ precision: 3, mode: 'date' }).default(sql`timezone('UTC', now())`).notNull(),
+	id: text().primaryKey().notNull().$defaultFn(() => createId()),
+	userId: text().notNull().references(() => user.id, { onDelete: 'restrict' }),
+	subscriptionId: text().notNull(),
+	planId: text().notNull().references(() => plan.id, { onDelete: 'restrict' }),
+	status: text().default('QUOTED').notNull(),
+	request: jsonb().notNull(),
+	preview: jsonb().notNull(),
+	expectedUpdatedAt: text().notNull(),
+	expiresAt: timestamp({ precision: 3, mode: 'date' }).notNull(),
+	error: text(),
+	createdAt: timestamp({ precision: 3, mode: 'date' }).default(sql`timezone('UTC', now())`).notNull(),
+	updatedAt: timestamp({ precision: 3, mode: 'date' }).default(sql`timezone('UTC', now())`).notNull(),
 }, (t) => [
-    // An uncertain request must be reconciled before another mutation is allowed.
-    uniqueIndex('BillingOperation_pending_subscription').on(t.subscriptionId).where(sql`${t.status} in ('PROCESSING', 'UNKNOWN')`),
-    check('BillingOperation_status', sql`${t.status} in ('QUOTED', 'PROCESSING', 'UNKNOWN', 'SUCCEEDED', 'FAILED')`),
+	// An uncertain request must be reconciled before another mutation is allowed.
+	uniqueIndex('BillingOperation_pending_subscription').on(t.subscriptionId).where(sql`${t.status} in ('PROCESSING', 'UNKNOWN')`),
+	check('BillingOperation_status', sql`${t.status} in ('QUOTED', 'PROCESSING', 'UNKNOWN', 'SUCCEEDED', 'FAILED')`),
 ]);
 
 export const creditAccount = pgTable("CreditAccount", {
-    id: text().primaryKey().notNull().$defaultFn(() => createId()),
-    userId: text().notNull().references(() => user.id, { onDelete: 'restrict' }),
-    currency: text().notNull(),
-    available: integer().default(0).notNull(),
-    reserved: integer().default(0).notNull(),
+	id: text().primaryKey().notNull().$defaultFn(() => createId()),
+	userId: text().notNull().references(() => user.id, { onDelete: 'restrict' }),
+	currency: text().notNull(),
+	available: integer().default(0).notNull(),
+	reserved: integer().default(0).notNull(),
 }, (t) => [
-    uniqueIndex('CreditAccount_user_currency').on(t.userId, t.currency),
-    check('CreditAccount_nonnegative', sql`${t.available} >= 0 and ${t.reserved} >= 0`),
-    check('CreditAccount_currency', sql`${t.currency} ~ '^[A-Z]{3}$'`),
+	uniqueIndex('CreditAccount_user_currency').on(t.userId, t.currency),
+	check('CreditAccount_nonnegative', sql`${t.available} >= 0 and ${t.reserved} >= 0`),
+	check('CreditAccount_currency', sql`${t.currency} ~ '^[A-Z]{3}$'`),
 ]);
 
 export const creditEntry = pgTable("CreditEntry", {
-    id: text().primaryKey().notNull().$defaultFn(() => createId()),
-    accountId: text().notNull().references(() => creditAccount.id, { onDelete: 'restrict' }),
-    operationKey: text().notNull().unique(),
-    kind: text().notNull(),
-    amount: integer().notNull(),
-    actorId: text().notNull().references(() => user.id, { onDelete: 'restrict' }),
-    reason: text().notNull(),
-    createdAt: timestamp({ precision: 3, mode: 'date' }).default(sql`timezone('UTC', now())`).notNull(),
+	id: text().primaryKey().notNull().$defaultFn(() => createId()),
+	accountId: text().notNull().references(() => creditAccount.id, { onDelete: 'restrict' }),
+	operationKey: text().notNull().unique(),
+	kind: text().notNull(),
+	amount: integer().notNull(),
+	actorId: text().notNull().references(() => user.id, { onDelete: 'restrict' }),
+	reason: text().notNull(),
+	createdAt: timestamp({ precision: 3, mode: 'date' }).default(sql`timezone('UTC', now())`).notNull(),
 }, (t) => [
-    check('CreditEntry_positive', sql`${t.amount} > 0`),
-    check('CreditEntry_kind', sql`${t.kind} in ('GRANT', 'RESERVE', 'CONSUME', 'RELEASE', 'REVERSE')`),
+	check('CreditEntry_positive', sql`${t.amount} > 0`),
+	check('CreditEntry_kind', sql`${t.kind} in ('GRANT', 'RESERVE', 'CONSUME', 'RELEASE', 'REVERSE')`),
 ]);
 
 export const billingFulfillment = pgTable('BillingFulfillment', {
-    id: text().primaryKey().notNull(),
-    userId: text().notNull().references(() => user.id, { onDelete: 'restrict' }),
-    planId: text().notNull().references(() => plan.id, { onDelete: 'restrict' }),
-    subscriptionId: text().notNull(),
-    processedAt: timestamp({ precision: 3, mode: 'date' }),
-    attempts: integer().default(0).notNull(),
-    createdAt: timestamp({ precision: 3, mode: 'date' }).default(sql`timezone('UTC', now())`).notNull(),
+	id: text().primaryKey().notNull(),
+	userId: text().notNull().references(() => user.id, { onDelete: 'restrict' }),
+	planId: text().notNull().references(() => plan.id, { onDelete: 'restrict' }),
+	subscriptionId: text().notNull(),
+	processedAt: timestamp({ precision: 3, mode: 'date' }),
+	attempts: integer().default(0).notNull(),
+	createdAt: timestamp({ precision: 3, mode: 'date' }).default(sql`timezone('UTC', now())`).notNull(),
 });
 
 export const creditRedemption = pgTable('CreditRedemption', {
-    id: text().primaryKey().notNull().$defaultFn(() => createId()),
-    operationId: text().notNull().unique().references(() => billingOperation.id, { onDelete: 'restrict' }),
-    accountId: text().notNull().references(() => creditAccount.id, { onDelete: 'restrict' }),
-    userId: text().notNull().references(() => user.id, { onDelete: 'restrict' }),
-    kind: text().notNull(),
-    currency: text().notNull(),
-    reservedAmount: integer().notNull(),
-    consumedAmount: integer().default(0).notNull(),
-    status: text().default('RESERVED').notNull(),
-    paddleDiscountId: text().unique(),
-    paddleTransactionId: text().unique(),
-    paddleSubscriptionId: text(),
-    cleanupRequired: boolean().default(false).notNull(),
-    createdAt: timestamp({ precision: 3, mode: 'date' }).default(sql`timezone('UTC', now())`).notNull(),
-    updatedAt: timestamp({ precision: 3, mode: 'date' }).default(sql`timezone('UTC', now())`).notNull(),
+	id: text().primaryKey().notNull().$defaultFn(() => createId()),
+	operationId: text().notNull().unique().references(() => billingOperation.id, { onDelete: 'restrict' }),
+	accountId: text().notNull().references(() => creditAccount.id, { onDelete: 'restrict' }),
+	userId: text().notNull().references(() => user.id, { onDelete: 'restrict' }),
+	kind: text().notNull(),
+	currency: text().notNull(),
+	reservedAmount: integer().notNull(),
+	consumedAmount: integer().default(0).notNull(),
+	status: text().default('RESERVED').notNull(),
+	paddleDiscountId: text().unique(),
+	paddleTransactionId: text().unique(),
+	paddleSubscriptionId: text(),
+	cleanupRequired: boolean().default(false).notNull(),
+	createdAt: timestamp({ precision: 3, mode: 'date' }).default(sql`timezone('UTC', now())`).notNull(),
+	updatedAt: timestamp({ precision: 3, mode: 'date' }).default(sql`timezone('UTC', now())`).notNull(),
 }, (t) => [
-    check('CreditRedemption_amounts', sql`${t.reservedAmount} > 0 and ${t.consumedAmount} >= 0 and ${t.consumedAmount} <= ${t.reservedAmount}`),
-    check('CreditRedemption_status', sql`${t.status} in ('RESERVED', 'SETTLED', 'RELEASED')`),
-    check('CreditRedemption_kind', sql`${t.kind} in ('CHECKOUT', 'UPGRADE', 'RENEWAL')`),
-    index('CreditRedemption_user_status').on(t.userId, t.status),
-    index('CreditRedemption_subscription').on(t.paddleSubscriptionId),
+	check('CreditRedemption_amounts', sql`${t.reservedAmount} > 0 and ${t.consumedAmount} >= 0 and ${t.consumedAmount} <= ${t.reservedAmount}`),
+	check('CreditRedemption_status', sql`${t.status} in ('RESERVED', 'SETTLED', 'RELEASED')`),
+	check('CreditRedemption_kind', sql`${t.kind} in ('CHECKOUT', 'UPGRADE', 'RENEWAL')`),
+	index('CreditRedemption_user_status').on(t.userId, t.status),
+	index('CreditRedemption_subscription').on(t.paddleSubscriptionId),
 ]);
 
 // Durable site setup: credentials are encrypted until provisioning succeeds.
 export const siteOrder = pgTable('SiteOrder', {
-    id: text().primaryKey().notNull().$defaultFn(() => createId()),
-    userId: text().notNull().references(() => user.id, { onDelete: 'restrict' }),
-    requestKey: text().notNull(),
-    planId: text().notNull().references(() => plan.id, { onDelete: 'restrict' }),
-    priceId: text(),
-    summary: jsonb().notNull(),
-    encryptedSetup: text(),
-    trialDays: integer().default(0).notNull(),
-    status: text().default('DRAFT').notNull(),
-    paddleTransactionId: text().unique(),
-    paidAt: timestamp({ precision: 3, mode: 'date' }),
-    siteId: text(),
-    attempts: integer().default(0).notNull(),
-    nextAttemptAt: timestamp({ precision: 3, mode: 'date' }),
-    error: text(),
-    createdAt: timestamp({ precision: 3, mode: 'date' }).default(sql`timezone('UTC', now())`).notNull(),
-    updatedAt: timestamp({ precision: 3, mode: 'date' }).default(sql`timezone('UTC', now())`).notNull(),
+	id: text().primaryKey().notNull().$defaultFn(() => createId()),
+	userId: text().notNull().references(() => user.id, { onDelete: 'restrict' }),
+	requestKey: text().notNull(),
+	planId: text().notNull().references(() => plan.id, { onDelete: 'restrict' }),
+	priceId: text(),
+	summary: jsonb().notNull(),
+	encryptedSetup: text(),
+	trialDays: integer().default(0).notNull(),
+	status: text().default('DRAFT').notNull(),
+	paddleTransactionId: text().unique(),
+	paidAt: timestamp({ precision: 3, mode: 'date' }),
+	siteId: text(),
+	attempts: integer().default(0).notNull(),
+	nextAttemptAt: timestamp({ precision: 3, mode: 'date' }),
+	error: text(),
+	createdAt: timestamp({ precision: 3, mode: 'date' }).default(sql`timezone('UTC', now())`).notNull(),
+	updatedAt: timestamp({ precision: 3, mode: 'date' }).default(sql`timezone('UTC', now())`).notNull(),
 }, (t) => [
-    uniqueIndex('SiteOrder_user_request').on(t.userId, t.requestKey),
-    index('SiteOrder_status_retry').on(t.status, t.nextAttemptAt),
-    uniqueIndex('SiteOrder_pending_slug').on(sql`(${t.summary}->>'slug')`).where(sql`${t.status} in ('DRAFT', 'AWAITING_PAYMENT', 'READY')`),
-    check('SiteOrder_status', sql`${t.status} in ('DRAFT', 'AWAITING_PAYMENT', 'READY', 'PROVISIONED', 'CANCELED', 'EXPIRED')`),
+	uniqueIndex('SiteOrder_user_request').on(t.userId, t.requestKey),
+	index('SiteOrder_status_retry').on(t.status, t.nextAttemptAt),
+	uniqueIndex('SiteOrder_pending_slug').on(sql`(${t.summary}->>'slug')`).where(sql`${t.status} in ('DRAFT', 'AWAITING_PAYMENT', 'READY')`),
+	check('SiteOrder_status', sql`${t.status} in ('DRAFT', 'AWAITING_PAYMENT', 'READY', 'PROVISIONED', 'CANCELED', 'EXPIRED')`),
 ]);

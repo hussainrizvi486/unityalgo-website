@@ -7,6 +7,7 @@ import { checkoutSettlementAction, startPlanCheckoutAction, confirmPlanChangeAct
 import { Button } from '@/components/ui/button';
 import { currencyDigits } from '@/lib/billing-rules';
 import { Notice } from '@/components/ui/notice';
+import { CREDITS_ENABLED } from '@/lib/billing-features';
 
 /** Paddle.js is a singleton — initialising twice leaks a second instance. */
 let paddlePromise: Promise<Paddle | undefined> | null = null;
@@ -28,11 +29,11 @@ const SETTLE_INTERVAL_MS = 1500;
 
 type Phase = 'idle' | 'opening' | 'open' | 'settling' | 'settled' | 'slow';
 
-export function PlanCheckoutButton({ planId, label, siteId, onSettled }: { planId: string; label: string; siteId?: string; onSettled?: () => void }) {
+export function PlanCheckoutButton({ planId, label, siteId, subscriptionId, onSettled }: { planId: string; label: string; siteId?: string; subscriptionId?: string; onSettled?: () => void }) {
     const router = useRouter();
     const [phase, setPhase] = React.useState<Phase>('idle');
     const [error, setError] = React.useState('');
-    const [useCredits, setUseCredits] = React.useState(true);
+    const [useCredits, setUseCredits] = React.useState<boolean>(CREDITS_ENABLED);
     const [pendingCheckout, setPendingCheckout] = React.useState(false);
     const [quote, setQuote] = React.useState<{ operationId: string; amount: string; currency: string; action: string; creditsApplied: number } | null>(null);
 
@@ -50,7 +51,7 @@ export function PlanCheckoutButton({ planId, label, siteId, onSettled }: { planI
         for (let attempt = 0; attempt < SETTLE_ATTEMPTS; attempt += 1) {
             if (cancelled.current) return;
             try {
-                const { settled } = await checkoutSettlementAction(planId, siteId);
+                const { settled } = await checkoutSettlementAction(planId, siteId, subscriptionId);
                 if (cancelled.current) return;
                 if (settled) {
                     setPhase('settled');
@@ -67,7 +68,7 @@ export function PlanCheckoutButton({ planId, label, siteId, onSettled }: { planI
             setPhase('slow');
             router.refresh();
         }
-    }, [planId, siteId, router, onSettled]);
+    }, [planId, siteId, subscriptionId, router, onSettled]);
 
     async function open() {
         setError('');
@@ -79,7 +80,7 @@ export function PlanCheckoutButton({ planId, label, siteId, onSettled }: { planI
 
         setPhase('opening');
         try {
-            const intent = await startPlanCheckoutAction(planId, useCredits, siteId);
+            const intent = await startPlanCheckoutAction(planId, useCredits, siteId, subscriptionId);
             if (!intent.ok) {
                 setError(intent.error ?? 'Could not start checkout.');
                 setPendingCheckout(Boolean(intent.pendingCheckout));
@@ -144,7 +145,7 @@ export function PlanCheckoutButton({ planId, label, siteId, onSettled }: { planI
 
     return (
         <div>
-            {!quote ? <label className="mb-3 flex items-center gap-2 text-sm">
+            {CREDITS_ENABLED && !quote ? <label className="mb-3 flex items-center gap-2 text-sm">
                 <input type="checkbox" checked={useCredits} disabled={busy} onChange={(event) => setUseCredits(event.target.checked)} />
                 Use available account credits
             </label> : null}
