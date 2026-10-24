@@ -908,7 +908,7 @@ class SiteApiTests(unittest.TestCase):
             notify.assert_called_with(site_id, 'ready')
             self.assertEqual([step['state'] for step in result.json['steps']], ['done'] * 5)
             service.return_value.scrub_setup.assert_called_once()
-            service.return_value.run.assert_any_call(['run','--rm','create-site'])
+            service.return_value.run.assert_any_call(['run','--rm','create-site'], timeout=2700)
 
     def test_failed_cleanup_retains_capacity(self):
         response,_=self.create()

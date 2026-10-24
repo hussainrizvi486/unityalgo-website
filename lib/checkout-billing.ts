@@ -134,10 +134,10 @@ export async function cancelPendingCheckout(userId: string, planId: string, site
         await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${key}, 0))`);
         const pending = await tx.query.billingProviderRecord.findFirst({ where: and(eq(schema.billingProviderRecord.id, key), eq(schema.billingProviderRecord.userId, userId)) });
         const id = asString(asRecord(pending?.payload).transactionId);
-        if (!id) throw new Error('This checkout needs billing review before it can be canceled.');
+        if (!id) throw new CheckoutError('This checkout needs billing review before it can be canceled.');
         const current = asRecord(await paddleRequest(`/transactions/${id}`));
         if (current.status === 'canceled') return asString(asRecord(pending?.payload).operationId);
-        if (current.status !== 'draft' && current.status !== 'ready') throw new Error('This checkout has already progressed. Check your billing history.');
+        if (current.status !== 'draft' && current.status !== 'ready') throw new CheckoutError('This checkout has already progressed. Check your billing history.');
         await paddleRequest(`/transactions/${id}`, { method: 'PATCH', body: JSON.stringify({ status: 'canceled' }) });
         return asString(asRecord(pending?.payload).operationId);
     });

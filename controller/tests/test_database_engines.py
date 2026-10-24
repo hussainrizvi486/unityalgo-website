@@ -151,5 +151,15 @@ class EngineDispatchTests(unittest.TestCase):
             self.assertEqual(pg.call_args.kwargs['dbname'], 'shop')
 
 
+
+
+class ConnectionPasswordTests(unittest.TestCase):
+    def test_an_empty_password_is_a_clear_validation_error_not_a_name_conflict(self):
+        from app.controller.database_connection import DatabaseConnectionController
+        controller = DatabaseConnectionController.__new__(DatabaseConnectionController)
+        with self.assertRaisesRegex(ValidationError, 'password is required'):
+            controller.apply_defaults({'name': 'x', 'host': 'h', 'database_name': 'd', 'username': 'u'})
+
+
 if __name__ == '__main__':
     unittest.main()

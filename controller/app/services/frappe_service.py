@@ -23,6 +23,8 @@ run('migrate', ['bench', '--site', site, 'migrate'])
 if os.environ.get('SETUP_JSON'):
     # The image's bare `python` is the system interpreter; frappe lives in the bench virtualenv.
     run('setup wizard', ['env/bin/python', '-c', os.environ['WIZARD_SCRIPT']])
+if os.environ.get('MODULES'):
+    run('modules', ['env/bin/python', '-c', os.environ['DOMAIN_SCRIPT']])
 run('enable-scheduler', ['bench', '--site', site, 'enable-scheduler'])
 """
 
@@ -60,6 +62,34 @@ try:
             for entry in errors:
                 print('Frappe error log (%s):\\n%s' % (entry.method, entry.error))
             raise SystemExit(1)
+finally:
+    frappe.destroy()
+"""
+
+DOMAIN_SCRIPT = """import json, os
+import frappe
+os.chdir('sites')
+frappe.init(site=os.environ['SITE_NAME'], sites_path='.')
+frappe.connect()
+try:
+    modules = json.loads(os.environ.get('MODULES') or '[]')
+    frappe.db.set_value('Module Def', {}, 'restrict_to_domain', '')
+    DEFAULT_DOMAIN = 'Subscription'
+    if not frappe.db.exists('Domain', DEFAULT_DOMAIN):
+        frappe.get_doc({'doctype': 'Domain', 'domain': DEFAULT_DOMAIN}).insert(ignore_permissions=True)
+    missing = []
+    for module in modules:
+        # Setting a module that does not exist changes nothing; report it so the operator can fix the name.
+        if not frappe.db.exists('Module Def', module):
+            missing.append(module)
+            continue
+        frappe.db.set_value('Module Def', module, 'restrict_to_domain', DEFAULT_DOMAIN)
+    settings = frappe.get_doc('Domain Settings')
+    settings.set('active_domains', [])
+    settings.append('active_domains', {'domain': DEFAULT_DOMAIN})
+    settings.save(ignore_permissions=True)
+    frappe.db.commit()
+    print('MODULES_MISSING=' + json.dumps(missing))
 finally:
     frappe.destroy()
 """
@@ -373,6 +403,13 @@ class FrappeService:
                     "WIZARD_SCRIPT": WIZARD_SCRIPT.replace("$", "$$"),
                 }
             )
+            if self.setup.get("modules"):
+                environment.update(
+                    {
+                        "MODULES": json.dumps(self.setup["modules"]).replace("$", "$$"),
+                        "DOMAIN_SCRIPT": DOMAIN_SCRIPT.replace("$", "$$"),
+                    }
+                )
         services["create-site"].update(
             {"restart": "no", "profiles": ["setup"], "environment": environment}
         )
@@ -626,6 +663,14 @@ class FrappeService:
         return self.exec_output(
             ["env", *variables, "env/bin/python", "-c", script], timeout=300
         )
+
+    def apply_modules(self, modules):
+        """Make exactly these modules visible through the site's domain settings. Installs nothing. Returns the unknown names."""
+        output = self._in_site(DOMAIN_SCRIPT, MODULES=json.dumps(list(modules)))
+        line = next((row for row in (output or "").splitlines() if row.startswith("MODULES_MISSING=")), None)
+        if line is None:
+            raise RuntimeError("The modules could not be applied on the site.")
+        return json.loads(line.split("=", 1)[1])
 
     def apply_limits(self, user_limit):
         self.exec_output(["bench", "set-config", "-gp", "server_script_enabled", "1"])

@@ -1,5 +1,5 @@
 'use client';
-import { useActionState } from 'react';
+import { useActionState, useState } from 'react';
 import { useFormStatus } from 'react-dom';
 import { saveAppCatalogAction } from '@/app/admin/app-catalog-actions';
 import { Input } from '@/components/ui/input';
@@ -16,6 +16,8 @@ type App = {
     category: string;
     iconUrl: string | null;
     minPlanId: string | null;
+    appType: string;
+    modules: string[];
     frappeAppName: string | null;
     isActive: boolean;
     isInstallable: boolean;
@@ -31,18 +33,33 @@ function Save() {
 export function AppCatalogForm({ app, github = false, plans = [] }: { app?: App; github?: boolean; plans?: { id: string; name: string }[] }) {
     const [state, action] = useActionState(saveAppCatalogAction, undefined);
     const prefix = app?.id || 'new';
+    const [appType, setAppType] = useState<'application' | 'module'>(app?.appType === 'module' ? 'module' : 'application');
+    const isModule = !github && appType === 'module';
     return (
         <form action={action} className="portal-fields py-5">
             <input type="hidden" name="id" value={app?.id || ''} />
             {github && <input type="hidden" name="frappeAppName" value={app?.frappeAppName || ''} />}
+            {github && <input type="hidden" name="appType" value="application" />}
             {}
             {github && app?.isInstallable && <input type="hidden" name="isInstallable" value="on" />}
+            {!github && (
+                <div>
+                    <Label htmlFor={`${prefix}-appType`}>Application type</Label>
+                    <select
+                        id={`${prefix}-appType`} name="appType" value={appType} onChange={(event) => setAppType(event.target.value as 'application' | 'module')}
+                        className="mt-2 h-10 w-full rounded-lg border border-input bg-background px-3 portal-text-body"
+                    >
+                        <option value="application">Application: installs a Frappe app on the site</option>
+                        <option value="module">Module: switches on modules only, installs nothing</option>
+                    </select>
+                </div>
+            )}
             <div className="grid gap-5 sm:grid-cols-2">
                 {[
                     ['name', 'Name'],
                     ['slug', 'Slug'],
                     ['category', 'Category'],
-                    ...(github ? [] : [['frappeAppName', 'Frappe application name']]),
+                    ...(github || isModule ? [] : [['frappeAppName', 'Frappe application name']]),
                 ].map(([field, label]) => (
                     <div key={field}>
                         <Label htmlFor={`${prefix}-${field}`}>{label}</Label>
@@ -65,6 +82,16 @@ export function AppCatalogForm({ app, github = false, plans = [] }: { app?: App;
                     <CoverImageField name="iconUrl" defaultValue={app?.iconUrl ?? ''} />
                 </div>
             </div>
+            {isModule && (
+                <div>
+                    <Label htmlFor={`${prefix}-modules`}>Modules</Label>
+                    <p className="portal-text-caption text-muted-foreground">
+                        The Frappe module names this entry covers, one per line (for example Manufacturing). Installing it on a site assigns these modules to the
+                        site&apos;s &quot;Subscription&quot; domain and makes that the active domain; no app is installed. A name the site does not have is reported and skipped.
+                    </p>
+                    <Textarea id={`${prefix}-modules`} name="modules" defaultValue={app?.modules?.join('\n') ?? ''} rows={5} className="mt-2 font-mono" />
+                </div>
+            )}
             <div>
                 <Label htmlFor={`${prefix}-minPlanId`}>Works on plans from</Label>
                 <p className="portal-text-caption text-muted-foreground">The lowest plan that supports this app. Customers on a lower plan are asked to upgrade first.</p>
@@ -105,11 +132,13 @@ export function AppCatalogForm({ app, github = false, plans = [] }: { app?: App;
                         />
                         Enable installation
                     </label>
-                    <p className="portal-text-caption leading-6 text-muted-foreground">
-                        Before enabling installation, include this package in
-                        FRAPPE_IMAGE and FRAPPE_AVAILABLE_APPS on the controller. Only
-                        packages in the image can be installed.
-                    </p>
+                    {!isModule && (
+                        <p className="portal-text-caption leading-6 text-muted-foreground">
+                            Before enabling installation, include this package in
+                            FRAPPE_IMAGE and FRAPPE_AVAILABLE_APPS on the controller. Only
+                            packages in the image can be installed.
+                        </p>
+                    )}
                 </>
             )}
             {state?.error && <Notice tone="error">{state.error}</Notice>}

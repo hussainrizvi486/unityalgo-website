@@ -1,6 +1,7 @@
 """Private API for customer Frappe sites. Ownership comes from the Next.js guard."""
 
 import json
+import logging
 import re
 import secrets
 import uuid
@@ -33,6 +34,26 @@ SLUG = re.compile(r"^[a-z][a-z0-9-]{2,47}$")
 EMAIL = re.compile(r"^[^@\s]{1,64}@[^@\s]+\.[^@\s]{2,}$")
 CURRENCY = re.compile(r"^[A-Z]{3,10}$")
 COA_TYPES = ("standard", "numbered")
+MODULE_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9 _&.,'()/-]{0,59}$")
+MAX_MODULES = 100
+
+
+def parse_modules(value):
+    """Frappe module names from a request: a list of plain names, no duplicates, empty when none were sent."""
+    if value in (None, ""):
+        return []
+    if not isinstance(value, list) or len(value) > MAX_MODULES:
+        raise ValidationError(f"Modules must be a list of at most {MAX_MODULES} names.")
+    modules = []
+    for item in value:
+        name = str(item).strip() if isinstance(item, str) else ""
+        if not MODULE_NAME.fullmatch(name):
+            raise ValidationError("A module name is not valid.")
+        if name not in modules:
+            modules.append(name)
+    return modules
+
+
 RESERVED_SLUGS = frozenset(
     "www admin api app apps mail smtp imap ftp ns ns1 ns2 cloud dashboard portal support status billing blog docs help login register root test demo unityalgo erp erpnext frappe caddy proxy".split()
 )
@@ -296,6 +317,7 @@ class SitesView(BaseView):
             "coa_type": str(data.get("coa_type", "")).strip().lower(),
             "owner_email": str(data.get("owner_email", "")).strip().lower(),
             "owner_password": str(data.get("owner_password", "")),
+            "modules": parse_modules(data.get("modules")),
         }
         if not setup["company_name"] or len(setup["company_name"]) > 100:
             raise ValidationError("Enter a company name of up to 100 characters.")
@@ -905,6 +927,39 @@ class SiteResetPasswordView(BaseView):
             tenant_slug=slug,
         )
         return self.ok({"ok": True})
+
+
+class SiteModulesView(BaseView):
+    """POST /<id>/modules. Body: user_id, modules. Makes exactly those modules visible; installs no app."""
+
+    def post(self, site_id):
+        data = self.json_body()
+        if not isinstance(data, dict):
+            raise ValidationError("Request body must be an object.")
+        modules = parse_modules(data.get("modules"))
+        with self.session() as session:
+            site = owned_site(session, site_id, data.get("user_id"))
+            if site.status != "ready" or site.activity:
+                raise ConflictError("The site must be running and idle to change its modules.")
+            service, slug = build_service(session, site), site.slug
+        try:
+            missing = service.apply_modules(modules)
+        except Exception:
+            # The customer sees a plain message; the operator needs the real cause.
+            logging.getLogger(__name__).exception("Applying modules failed for site %s", site_id)
+            raise ConflictError(
+                "The modules could not be applied right now. Check that the site is running and try again."
+            )
+        from app.services.activity_logger import ActivityLogger
+
+        ActivityLogger().event(
+            "deployment",
+            "site.modules",
+            "Modules updated",
+            message=f"{len(modules)} module(s) active" + (f", unknown: {', '.join(missing)}" if missing else ""),
+            tenant_slug=slug,
+        )
+        return self.ok({"ok": True, "missing": missing})
 
 
 def domain_info(row):
@@ -1586,6 +1641,7 @@ class SiteRoutes:
             ("/<site_id>/delete", SiteDeleteView, "delete"),
             ("/<site_id>/change-plan", SiteChangePlanView, "change_plan"),
             ("/<site_id>/reset-password", SiteResetPasswordView, "reset_password"),
+            ("/<site_id>/modules", SiteModulesView, "modules"),
             ("/admin", AdminSitesView, "admin_list"),
             ("/admin/queue", AdminQueueStatusView, "admin_queue"),
             ("/admin/system", AdminSystemStatusView, "admin_system"),

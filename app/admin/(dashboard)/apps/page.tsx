@@ -35,6 +35,8 @@ export default async function ApplicationsPage({ searchParams }: PageProps) {
             slug: app.slug,
             category: app.category,
             frappeAppName: app.frappeAppName,
+            appType: app.appType as 'application' | 'module',
+            modules: app.modules,
             source: app.source === 'github' ? 'github' : 'image',
             repo: app.repoUrl ? app.repoUrl.replace('https://github.com/', '') : null,
             branch: app.branch,

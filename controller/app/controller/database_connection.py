@@ -174,6 +174,10 @@ class DatabaseConnectionController(BaseController):
 
     # ------------------------------------------------------------------
     def apply_defaults(self, values):
+        # An empty password is dropped when coercing, and the database then rejects the row. Say so, instead of reporting
+        # that the name is taken.
+        if "password_encrypted" not in values:
+            raise ValidationError("A password is required.", field="password")
         values = self._engine_defaults(super().apply_defaults(values))
         self._guard_default(values)
         return values

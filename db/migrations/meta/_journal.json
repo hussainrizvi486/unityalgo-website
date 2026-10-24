@@ -113,6 +113,13 @@
       "when": 1792760334495,
       "tag": "0015_app_min_plan",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1792802561154,
+      "tag": "0016_application_type",
+      "breakpoints": true
     }
   ]
 }

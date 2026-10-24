@@ -17,6 +17,9 @@ type App = {
     iconUrl: string | null;
     publisher: string | null;
     frappeAppName: string | null;
+    appType: string;
+    /** How a site records this entry as installed. */
+    installKey: string;
     priceAmount: number | null;
     priceCurrency: string;
     available: boolean;
@@ -98,8 +101,8 @@ export function AppStoreClient({ apps, sites }: { apps: App[]; sites: InstallSit
                                     'Free'
                                 )}
                             </span>
-                            {app.available && app.frappeAppName ? (
-                                sites.length > 0 && sites.every((site) => site.apps.includes(app.frappeAppName!)) ? (
+                            {app.available && app.installKey ? (
+                                sites.length > 0 && sites.every((site) => site.apps.includes(app.installKey)) ? (
                                     <span className="text-sm font-medium text-success">Installed</span>
                                 ) : (
                                     sites.length > 0 && sites.every((site) => app.lockedBy?.[site.id])
@@ -115,13 +118,13 @@ export function AppStoreClient({ apps, sites }: { apps: App[]; sites: InstallSit
                     </article>
                 ))}
             </div>
-            {installing?.frappeAppName && (
+            {installing?.installKey && (
                 <InstallAppDialog
                     key={installing.id}
                     open
                     onOpenChange={(open) => !open && setInstalling(null)}
                     sites={sites}
-                    app={{ id: installing.id, name: installing.name, frappeAppName: installing.frappeAppName, priceAmount: installing.priceAmount, priceCurrency: installing.priceCurrency, lockedBy: installing.lockedBy }}
+                    app={{ id: installing.id, name: installing.name, installKey: installing.installKey, priceAmount: installing.priceAmount, priceCurrency: installing.priceCurrency, lockedBy: installing.lockedBy }}
                 />
             )}
             {!visible.length && (

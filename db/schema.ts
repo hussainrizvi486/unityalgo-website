@@ -421,6 +421,10 @@ export const appCatalog = pgTable("AppCatalog", {
 	iconUrl: text(),
 	// Lowest plan (by its sort order within the same product) that can use this app. Null: every plan.
 	minPlanId: text(),
+	// 'application' installs a Frappe app. 'module' installs nothing: it switches on `modules` through the site's domain settings.
+	appType: text().default('application').notNull(),
+	// Frappe Module Def names a 'module' entry makes visible.
+	modules: text().array().default(sql`ARRAY[]::text[]`).notNull(),
 	frappeAppName: text(),
 	isInstallable: boolean().default(false).notNull(),
 	isActive: boolean().default(true).notNull(),
@@ -448,6 +452,19 @@ export const appCatalog = pgTable("AppCatalog", {
 }, (table) => [
 	index("AppCatalog_isActive_sortOrder_idx").using("btree", table.isActive.asc().nullsLast().op("int4_ops"), table.sortOrder.asc().nullsLast().op("int4_ops")),
 	uniqueIndex("AppCatalog_slug_key").using("btree", table.slug.asc().nullsLast().op("text_ops")),
+	check("AppCatalog_appType", sql`"appType" in ('application', 'module')`),
+]);
+
+/** Which module-type catalog entries a site has switched on. Applications are tracked by the controller; modules are not apps. */
+export const siteModuleApp = pgTable("SiteModuleApp", {
+	id: text().primaryKey().notNull().$defaultFn(() => createId()),
+	siteId: text().notNull(),
+	appId: text().notNull().references(() => appCatalog.id, { onDelete: 'cascade' }),
+	userId: text().notNull().references(() => user.id, { onDelete: 'cascade' }),
+	createdAt: timestamp({ precision: 3, mode: 'date' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
+}, (table) => [
+	uniqueIndex("SiteModuleApp_site_app_key").on(table.siteId, table.appId),
+	index("SiteModuleApp_siteId_idx").on(table.siteId),
 ]);
 
 export const loginSession = pgTable("LoginSession", {

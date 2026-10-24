@@ -212,6 +212,11 @@ export async function deleteAppAction(formData: FormData) {
     const id = String(formData.get('id') ?? '');
     const app = await db.query.appCatalog.findFirst({ where: eq(schema.appCatalog.id, id) });
     if (!app) redirect('/admin/apps');
+    if (app.appType === 'module') {
+        // Deleting the entry would silently drop its record from every site that has it.
+        const installed = await db.$count(schema.siteModuleApp, eq(schema.siteModuleApp.appId, id));
+        if (installed > 0) redirect(`/admin/apps/${id}?error=${encodeURIComponent(`It is switched on for ${installed} site${installed === 1 ? '' : 's'}. Hide it instead.`)}`);
+    }
     if (app.frappeAppName) {
         const summary = await controller.apps.summary().catch(() => null);
         const installed = summary?.results[app.frappeAppName]?.sites ?? 0;
@@ -262,7 +267,8 @@ export async function saveAppPricingAction(_previous: AppFormState | undefined, 
     const app = await db.query.appCatalog.findFirst({ where: eq(schema.appCatalog.id, id) });
     if (!app) return { error: 'Application not found.' };
     const installable = data.get('isInstallable') === 'on';
-    if (installable && !app.frappeAppName) return { error: 'An installable application needs a Frappe application name.' };
+    if (installable && app.appType === 'module' && app.modules.length === 0) return { error: 'An installable module needs at least one module name. Add them in Details.' };
+    if (installable && app.appType !== 'module' && !app.frappeAppName) return { error: 'An installable application needs a Frappe application name.' };
     if (installable && app.source === 'github' && app.compatibility !== 'compatible')
         return { error: 'Only an app verified as compatible with your Frappe version can be offered to customers. Check for updates or choose another branch.' };
     await db.update(schema.appCatalog).set({ priceAmount: amount > 0 ? amount : null, isInstallable: installable }).where(eq(schema.appCatalog.id, id));

@@ -160,8 +160,12 @@ export async function reconcilePurchases(
         where: and(eq(schema.appPurchase.userId, userId), eq(schema.appPurchase.status, 'ACTIVE')),
     });
     if (!purchases.length) return 0;
-    const catalogue = await db.query.appCatalog.findMany({ columns: { id: true, frappeAppName: true } });
+    const catalogue = await db.query.appCatalog.findMany({ columns: { id: true, frappeAppName: true, appType: true } });
     const frappeName = new Map(catalogue.map((app) => [app.id, app.frappeAppName]));
+    // A module entry is not an app on the site: it is installed when the site has its record, not when its name is in the app list.
+    const moduleIds = new Set(catalogue.filter((app) => app.appType === 'module').map((app) => app.id));
+    const moduleRows = new Set((await db.select({ siteId: schema.siteModuleApp.siteId, appId: schema.siteModuleApp.appId }).from(schema.siteModuleApp)
+        .where(inArray(schema.siteModuleApp.siteId, [...new Set(purchases.map((purchase) => purchase.siteId))]))).map((row) => `${row.siteId}:${row.appId}`));
     const bySite = new Map(sites.map((site) => [site.id, site]));
     let cancelled = 0;
     for (const purchase of purchases) {
@@ -170,7 +174,8 @@ export async function reconcilePurchases(
         if (!site && !complete) continue;       // not looking at that site right now
         if (site && (site.status === 'updating' || site.activity)) continue;
         const name = frappeName.get(purchase.appId);
-        if (site && name && site.apps.includes(name)) continue;
+        const installed = moduleIds.has(purchase.appId) ? Boolean(site) && moduleRows.has(`${purchase.siteId}:${purchase.appId}`) : Boolean(site && name && site.apps.includes(name));
+        if (installed) continue;
         try {
             await cancelPurchase(purchase);
             cancelled++;

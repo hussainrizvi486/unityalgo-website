@@ -14,6 +14,8 @@ export interface AppRow {
     slug: string;
     category: string;
     frappeAppName: string | null;
+    appType: 'application' | 'module';
+    modules: string[];
     source: 'github' | 'image';
     repo: string | null;
     branch: string | null;
@@ -50,7 +52,7 @@ export function AppsList({ rows }: { rows: AppRow[] }) {
             minWidth: 230,
             cellRenderer: StackedCell,
             text: (row) => `${row.name} ${row.slug} ${row.frappeAppName ?? ''} ${row.category}`,
-            get: (row) => ({ primary: row.name, secondary: `${row.category}${row.frappeAppName ? ` · ${row.frappeAppName}` : ''}`, href: `/admin/apps/${row.id}` }),
+            get: (row) => ({ primary: row.name, secondary: `${row.category}${row.appType === 'module' ? ` · Module (${row.modules.length})` : row.frappeAppName ? ` · ${row.frappeAppName}` : ''}`, href: `/admin/apps/${row.id}` }),
         }),
         renderedColumn<AppRow, StackedValue>({
             headerName: 'Source',

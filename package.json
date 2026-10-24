@@ -32,6 +32,7 @@
     "test:emails": "NODE_OPTIONS=--conditions=react-server tsx scripts/test-email-templates.mts",
     "test:ratelimits": "NODE_OPTIONS=--conditions=react-server tsx scripts/test-rate-limits.mts",
     "test:onboarding": "node --import tsx scripts/test-onboarding-defaults.mts",
+    "test:modules": "node --import tsx scripts/test-app-modules.mts",
     "test:spreadsheet": "NODE_OPTIONS=--conditions=react-server tsx scripts/test-spreadsheet.mts",
     "test:billing": "NODE_OPTIONS=--conditions=react-server tsx scripts/test-app-billing.mts",
     "billing:worker": "NODE_OPTIONS=--conditions=react-server tsx scripts/paddle-worker.mts",

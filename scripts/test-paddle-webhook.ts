@@ -1,3 +1,6 @@
+// SUPERSEDED: written for the first webhook, which applied every event immediately. The webhook now only verifies and
+// records the event; the billing worker applies it from Paddle's canonical data. Use `npm run test:paddle:billing`, which
+// covers this route (signature, replay window, duplicates) and the worker. Only the signature checks below still hold.
 import 'dotenv/config';
 import { createHmac, randomUUID } from 'node:crypto';
 import { and, eq, sql } from 'drizzle-orm';

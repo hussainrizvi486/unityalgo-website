@@ -1,3 +1,5 @@
+import { installKeyFor } from '@/lib/app-modules';
+import { siteModuleApps } from '@/lib/site-modules';
 import { loadPlanTiers } from '@/lib/app-plan-access';
 import { upgradeTarget } from '@/lib/app-compatibility';
 import { notFound } from 'next/navigation';
@@ -7,7 +9,7 @@ import { recordSiteNotification } from '@/lib/customer-notifications';
 import { Notice } from '@/components/ui/notice';
 import { SiteStatus } from './site-status';
 import { reconcilePurchases } from '@/lib/app-billing';
-import { and, asc, eq, inArray, isNotNull } from 'drizzle-orm';
+import { and, asc, eq, inArray, isNotNull, or } from 'drizzle-orm';
 import { db, schema } from '@/lib/db';
 import { listAlgoSuitePlans } from '@/lib/products';
 import { formatPlanPrice } from '@/lib/pricing';
@@ -52,6 +54,8 @@ export default async function SiteDetailPage({
             name: schema.appCatalog.name,
             description: schema.appCatalog.description,
             frappeAppName: schema.appCatalog.frappeAppName,
+            appType: schema.appCatalog.appType,
+            modules: schema.appCatalog.modules,
             source: schema.appCatalog.source,
             compatibility: schema.appCatalog.compatibility,
             priceAmount: schema.appCatalog.priceAmount,
@@ -59,7 +63,7 @@ export default async function SiteDetailPage({
             minPlanId: schema.appCatalog.minPlanId,
         })
         .from(schema.appCatalog)
-        .where(and(eq(schema.appCatalog.isActive, true), isNotNull(schema.appCatalog.frappeAppName)))
+        .where(and(eq(schema.appCatalog.isActive, true), or(isNotNull(schema.appCatalog.frappeAppName), eq(schema.appCatalog.appType, 'module'))))
         .orderBy(asc(schema.appCatalog.sortOrder), asc(schema.appCatalog.name));
     let shipped: string[] = [];
     try {
@@ -68,18 +72,22 @@ export default async function SiteDetailPage({
         /* the list of installable apps simply stays short */
     }
     const known = Object.fromEntries(
-        catalogue.map((app) => [app.frappeAppName!, { id: app.id, name: app.name, priceAmount: app.priceAmount, priceCurrency: app.priceCurrency }]),
+        catalogue.filter((app) => app.frappeAppName).map((app) => [app.frappeAppName!, { id: app.id, name: app.name, priceAmount: app.priceAmount, priceCurrency: app.priceCurrency }]),
     );
     const tiers = await loadPlanTiers();
     const sitePlan = tiers.find((tier) => tier.id === site.plan_id);
+    const moduleApps = await siteModuleApps(site.id);
+    const installedModuleIds = new Set(moduleApps.map((entry) => entry.id));
     const installable = catalogue
         .filter((app) => app.isInstallable)
-        .filter((app) => (app.source === 'github' ? app.compatibility === 'compatible' : shipped.includes(app.frappeAppName!)))
+        .filter((app) => app.appType === 'module'
+            ? app.modules.length > 0 && !installedModuleIds.has(app.id)
+            : (app.source === 'github' ? app.compatibility === 'compatible' : shipped.includes(app.frappeAppName!)))
         .map((app) => ({
             id: app.id,
             name: app.name,
             description: app.description,
-            frappeAppName: app.frappeAppName!,
+            installKey: installKeyFor(app),
             priceAmount: app.priceAmount,
             priceCurrency: app.priceCurrency,
             // A site on a plan below the app's minimum is asked to upgrade instead of installing.
@@ -90,6 +98,7 @@ export default async function SiteDetailPage({
         <SiteStatus
             initial={site}
             installable={installable}
+            moduleApps={moduleApps.map(({ id, name, priceAmount, priceCurrency }) => ({ id, name, priceAmount, priceCurrency }))}
             known={known}
             plans={plans.filter((plan) => plan.priceAmount != null && !!plan.paddlePriceId).map((plan) => ({
                 id: plan.id,

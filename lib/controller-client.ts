@@ -632,6 +632,12 @@ export const controller = {
                 `/api/v1/sites/${encodeURIComponent(id)}/reset-password`,
                 { method: 'POST', body: { user_id: userId, new_password: newPassword }, timeoutMs: 150_000 },
             ),
+        /** Make exactly these Frappe modules visible on the site. Installs nothing; `missing` lists names the site does not have. */
+        applyModules: (id: string, userId: string, modules: string[]) =>
+            request<{ ok: boolean; missing: string[] }>(
+                `/api/v1/sites/${encodeURIComponent(id)}/modules`,
+                { method: 'POST', body: { user_id: userId, modules }, timeoutMs: 150_000 },
+            ),
         remove: (id: string, userId: string, confirm: string) =>
             request<{ queued: boolean }>(
                 `/api/v1/sites/${encodeURIComponent(id)}/delete`,

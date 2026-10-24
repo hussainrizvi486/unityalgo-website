@@ -22,6 +22,7 @@ export async function syncSiteBilling(limit = 25, subscriptionId?: string) {
                         // The site was deleted. A paid subscription stays valid: release it so a new site can use it,
                         // and a canceled one stops pointing at a site that no longer exists.
                         await tx.update(schema.subscription).set({ siteId: null, appliedPlanId: null, appliedAt: null, billingSuspended: false }).where(eq(schema.subscription.id, sub.id));
+                        await tx.delete(schema.siteModuleApp).where(eq(schema.siteModuleApp.siteId, sub.siteId));
                         if (sub.status === 'ACTIVE') await tx.insert(schema.notification).values({
                             userId: sub.userId, eventKey: `idle:${sub.id}:${sub.siteId}`, title: `Your ${sub.plan.name} subscription has no site`,
                             body: 'It keeps renewing. Create a new site with it at no extra cost, or cancel it.', href: '/dashboard/subscription',

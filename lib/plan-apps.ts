@@ -1,5 +1,5 @@
 import 'server-only';
-import { and, asc, eq, isNotNull } from 'drizzle-orm';
+import { and, asc, eq, isNotNull, or } from 'drizzle-orm';
 import { db, schema } from '@/lib/db';
 import { isCompatible, requiredPlan, type PlanTier } from '@/lib/app-compatibility';
 import { formatPrice } from '@/lib/admin-format';
@@ -17,7 +17,7 @@ export async function loadCatalogApps(): Promise<CatalogApp[]> {
     const rows = await db
         .select({ id: schema.appCatalog.id, name: schema.appCatalog.name, minPlanId: schema.appCatalog.minPlanId, priceAmount: schema.appCatalog.priceAmount, priceCurrency: schema.appCatalog.priceCurrency, source: schema.appCatalog.source, compatibility: schema.appCatalog.compatibility })
         .from(schema.appCatalog)
-        .where(and(eq(schema.appCatalog.isActive, true), eq(schema.appCatalog.isInstallable, true), isNotNull(schema.appCatalog.frappeAppName)))
+        .where(and(eq(schema.appCatalog.isActive, true), eq(schema.appCatalog.isInstallable, true), or(isNotNull(schema.appCatalog.frappeAppName), eq(schema.appCatalog.appType, 'module'))))
         .orderBy(asc(schema.appCatalog.sortOrder), asc(schema.appCatalog.name));
     return rows.filter((row) => row.source !== 'github' || row.compatibility === 'compatible').map(({ source, compatibility, ...app }) => (void source, void compatibility, app));
 }

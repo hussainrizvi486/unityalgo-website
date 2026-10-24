@@ -31,7 +31,10 @@ const { planChangeItems, moneyFromMinor, moneyToMinor, providerStatus } = await 
 const { reserveCustomerCredits, releaseCustomerCredits, settleCustomerCredits, grantCustomerCredit } = await import('../lib/customer-credits');
 const { previewPlanChange, commitPlanChange } = await import('../lib/subscription-billing');
 const { prepareRenewalCredits, cancelRenewalCredits, maintainCreditRedemptions } = await import('../lib/credit-billing');
-const { purchaseApp, cancelPurchase } = await import('../lib/app-billing');
+const { purchaseApp, cancelPurchase, reconcilePurchases } = await import('../lib/app-billing');
+const { typeChangeProblem } = await import('../lib/app-catalog-guards');
+const { installModuleApp, removeModuleApp, siteModuleApps } = await import('../lib/site-modules');
+const { openSiteSetup: openSetup } = await import('../lib/site-order-secrets');
 const { CheckoutError } = await import('../lib/billing-errors');
 const { createPlanCheckout, cancelPendingCheckout, ensurePaddleCustomer } = await import('../lib/checkout-billing');
 const { processPaddleEvent, reconcilePaddleSubscription, recoverStalledBillingOperations } = await import('../lib/paddle-sync');
@@ -52,6 +55,10 @@ let hostingReady = true, hostingFailure = false, siteCreateCalls = 0;
 let sitePlanChanges = 0, siteDeactivations = 0, siteReactivations = 0;
 const siteFixtures = new Map<string, { id: string; name: string; status: string; activity: string | null; plan_id: string; owner?: string }>();
 let hostingListFails = false;
+const moduleCalls: string[][] = [];
+const moduleDelays: number[] = [];
+let appSummary: Record<string, { sites: number }> = {}, summaryFails = false;
+let moduleFailure = false, lastCreateBody: Record<string, unknown> | null = null;
 const createdSites = new Map<string, { id: string; name: string }>();
 let failPayment = false, timeoutPayment = false;
 let rejectCheckout = false, timeoutCheckout = false;
@@ -87,6 +94,7 @@ globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
     if (path === '/api/v1/sites/capabilities') return Response.json({ configured: hostingReady, accepting: hostingReady, apps: ['pro_tool'], domain_suffix: 'test.invalid' });
     if (path === '/api/v1/sites/check-slug') return Response.json({ available: true });
     if (path === '/api/v1/sites/trials') return Response.json({ used_plan_ids: [] });
+    if (path === '/api/v1/apps/summary') return summaryFails ? Response.json({ error: 'down' }, { status: 503 }) : Response.json({ results: appSummary });
     if (path === '/api/v1/sites' && method === 'GET') {
         if (hostingListFails) return Response.json({ error: 'Hosting offline' }, { status: 503 });
         const owner = new URL(String(input)).searchParams.get('user_id');
@@ -97,6 +105,7 @@ globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
         if (hostingFailure) return Response.json({ error: 'Hosting offline' }, { status: 503 });
         const setup = JSON.parse(String(init?.body));
         assert.ok(setup.owner_password);
+        lastCreateBody = setup;
         const site = createdSites.get(setup.request_key) ?? { id: `site-${createdSites.size + 1}`, name: setup.name };
         createdSites.set(setup.request_key, site);
         siteFixtures.set(site.id, { ...site, status: 'ready', activity: null, plan_id: setup.plan_id });
@@ -108,6 +117,14 @@ globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
         if (id.startsWith('gone-')) return Response.json({ error: 'Site not found.' }, { status: 404 });
         const site = siteFixtures.get(id)!;
         if (!site) throw new Error(`Missing site fixture ${id}`);
+        if (path.endsWith('/modules') && method === 'POST') {
+            if (moduleFailure) return Response.json({ error: 'Site not reachable' }, { status: 503 });
+            const modules = JSON.parse(String(init?.body)).modules;
+            const delay = moduleDelays.shift() ?? 0;
+            if (delay) await new Promise((resolve) => setTimeout(resolve, delay));
+            moduleCalls.push(modules);
+            return Response.json({ ok: true, missing: [] });
+        }
         if (method === 'GET') return Response.json(site);
         if (path.endsWith('/change-plan')) {
             const body = JSON.parse(String(init?.body));
@@ -864,6 +881,118 @@ try {
         assert.equal(await findResumableOrder('rival', 'backed-site'), undefined, 'nobody else is pointed at it');
         assert.equal((await db.query.siteOrder.findMany({ where: eq(schema.siteOrder.userId, 'backer') })).length, 1);
         await assert.rejects(saveSiteOrder('rival', randomUUID(), idleValues('backed-site', 'rival')), 'another customer cannot take a reserved name');
+    });
+
+    await check('a setup whose payment never started can be canceled, and one that may be in progress is refused with a reason', async () => {
+        await mkUser('canceller');
+        const never = await saveSiteOrder('canceller', randomUUID(), idleValues('cancel-never-started', 'canceller'));
+        await db.update(schema.siteOrder).set({ status: 'AWAITING_PAYMENT' }).where(eq(schema.siteOrder.id, never.id));
+        await cancelSiteOrder('canceller', never.id);
+        const ended = (await db.query.siteOrder.findFirst({ where: eq(schema.siteOrder.id, never.id) }))!;
+        assert.equal(ended.status, 'CANCELED'); assert.equal(ended.encryptedSetup, null);
+        const maybe = await saveSiteOrder('canceller', randomUUID(), idleValues('cancel-uncertain', 'canceller'));
+        await db.update(schema.siteOrder).set({ status: 'AWAITING_PAYMENT' }).where(eq(schema.siteOrder.id, maybe.id));
+        await db.insert(schema.billingProviderRecord).values({ id: `checkout:canceller:${maybe.id}`, kind: 'CHECKOUT', userId: 'canceller', payload: { operationId: 'unknown-outcome' }, providerUpdatedAt: new Date() });
+        await assert.rejects(cancelSiteOrder('canceller', maybe.id), (error: unknown) => error instanceof CheckoutError && /billing review/.test(error.message));
+        assert.equal((await db.query.siteOrder.findFirst({ where: eq(schema.siteOrder.id, maybe.id) }))?.status, 'AWAITING_PAYMENT', 'still held while money may be involved');
+        await assert.rejects(cancelSiteOrder('stranger', never.id), /not found/);
+    });
+
+    // ---- Module-type entries ----
+    const makeModule = (slug: string, modules: string[], price: number | null = null) =>
+        db.insert(schema.appCatalog).values({ name: `Module ${slug}`, slug, description: 'x', category: 'x', appType: 'module', modules, isInstallable: true, priceAmount: price, paddlePriceId: price ? `pri_${slug}` : null }).returning().then((rows) => rows[0]);
+    await check('a module entry can be chosen at creation without any app in the image, and is switched on after the site exists', async () => {
+        await mkUser('modguy');
+        const free = await makeModule('mod-free', ['Manufacturing', 'Selling']);
+        const order = await saveSiteOrder('modguy', randomUUID(), { ...idleValues('module-site', 'modguy'), apps: [free.id] });
+        const setup = openSetup(`modguy:${order.requestKey}`, order.encryptedSetup!) as Record<string, unknown>;
+        assert.deepEqual(setup.modules, ['Manufacturing', 'Selling']);
+        assert.deepEqual(setup.app_names, [], 'no Frappe app is requested for a module entry');
+        assert.deepEqual(setup.module_app_ids, [free.id]);
+        await db.update(schema.siteOrder).set({ status: 'READY', paidAt: new Date() }).where(eq(schema.siteOrder.id, order.id));
+        await provisionSiteOrder(order.id);
+        assert.deepEqual(lastCreateBody?.modules, ['Manufacturing', 'Selling']);
+        assert.equal('module_app_ids' in (lastCreateBody ?? {}), false, 'internal ids are not sent to hosting');
+        const done = (await db.query.siteOrder.findFirst({ where: eq(schema.siteOrder.id, order.id) }))!;
+        assert.equal(done.status, 'PROVISIONED');
+        assert.deepEqual((await siteModuleApps(done.siteId!)).map((entry) => entry.id), [free.id]);
+    });
+    await check('adding and removing module entries always applies the union of what the site has, and a failure changes nothing', async () => {
+        await mkUser('modsite');
+        siteFixtures.set('mod-site', { id: 'mod-site', name: 'mod', status: 'ready', activity: null, plan_id: 'basic', owner: 'modsite' });
+        const a = await makeModule('union-a', ['Selling']); const b = await makeModule('union-b', ['Stock', 'Selling']); const c = await makeModule('union-c', ['HR']);
+        const calls = () => moduleCalls.splice(0);
+        moduleCalls.length = 0;
+        assert.equal((await installModuleApp({ userId: 'modsite', app: a, siteId: 'mod-site' })).alreadyInstalled, false);
+        assert.deepEqual(calls(), [['Selling']]);
+        await installModuleApp({ userId: 'modsite', app: b, siteId: 'mod-site' });
+        assert.deepEqual(calls(), [['Selling', 'Stock']], 'adding one never switches another off');
+        assert.equal((await installModuleApp({ userId: 'modsite', app: b, siteId: 'mod-site' })).alreadyInstalled, true);
+        assert.deepEqual(calls(), [], 'installing twice sends nothing');
+        assert.equal(await removeModuleApp({ userId: 'stranger', appId: a.id, siteId: 'mod-site' }), false, 'only the owner can remove');
+        await removeModuleApp({ userId: 'modsite', appId: a.id, siteId: 'mod-site' });
+        assert.deepEqual(calls(), [['Stock', 'Selling']], 'what remains stays');
+        moduleFailure = true;
+        await assert.rejects(installModuleApp({ userId: 'modsite', app: c, siteId: 'mod-site' }));
+        assert.deepEqual((await siteModuleApps('mod-site')).map((entry) => entry.id), [b.id], 'a failed install is not recorded');
+        await assert.rejects(removeModuleApp({ userId: 'modsite', appId: b.id, siteId: 'mod-site' }));
+        assert.deepEqual((await siteModuleApps('mod-site')).map((entry) => entry.id), [b.id], 'a failed removal keeps the entry');
+        moduleFailure = false;
+        await removeModuleApp({ userId: 'modsite', appId: b.id, siteId: 'mod-site' });
+        assert.deepEqual(calls(), [[]], 'removing the last one clears the list');
+    });
+    await check('billing never cancels a paid module just because it is not in the site\'s app list', async () => {
+        await mkUser('modpay');
+        siteFixtures.set('pay-site', { id: 'pay-site', name: 'pay', status: 'ready', activity: null, plan_id: 'basic', owner: 'modpay' });
+        const paid = await makeModule('paid-module', ['Projects'], 5);
+        process.env.APP_BILLING_MODE = 'test';
+        const purchase = await purchaseApp({ userId: 'modpay', app: paid, siteId: 'pay-site' });
+        delete process.env.APP_BILLING_MODE;
+        await installModuleApp({ userId: 'modpay', app: paid, siteId: 'pay-site' });
+        await db.update(schema.appPurchase).set({ createdAt: new Date(Date.now() - 3 * 3600_000) }).where(eq(schema.appPurchase.id, purchase.id));
+        const sites = [{ id: 'pay-site', apps: ['frappe', 'erpnext'], status: 'ready', activity: null }];
+        assert.equal(await reconcilePurchases('modpay', sites, true), 0);
+        assert.equal((await db.query.appPurchase.findFirst({ where: eq(schema.appPurchase.id, purchase.id) }))?.status, 'ACTIVE');
+        await removeModuleApp({ userId: 'modpay', appId: paid.id, siteId: 'pay-site' });
+        assert.equal(await reconcilePurchases('modpay', sites, true), 1, 'once the module is gone the charge stops');
+        assert.equal((await db.query.appPurchase.findFirst({ where: eq(schema.appPurchase.id, purchase.id) }))?.status, 'CANCELED');
+    });
+    await check('deleting a site clears the module records it had', async () => {
+        await mkUser('modgone');
+        const m = await makeModule('gone-module', ['CRM']);
+        await db.insert(schema.subscription).values({ userId: 'modgone', planId: 'basic', productId: 'product', status: 'ACTIVE', paddleSubscriptionId: 'sub_modgone', paddleCustomerId: 'ctm_modgone', siteId: 'gone-modsite' });
+        await db.insert(schema.siteModuleApp).values({ siteId: 'gone-modsite', appId: m.id, userId: 'modgone' });
+        await syncSiteBilling(500);
+        assert.equal((await siteModuleApps('gone-modsite')).length, 0);
+    });
+
+    await check('two module installs at the same moment never leave the site with only one of them applied', async () => {
+        await mkUser('racer');
+        siteFixtures.set('race-site', { id: 'race-site', name: 'race', status: 'ready', activity: null, plan_id: 'basic', owner: 'racer' });
+        const first = await makeModule('race-a', ['Selling']); const second = await makeModule('race-b', ['Stock']);
+        moduleCalls.length = 0;
+        moduleDelays.push(250);      // the first request is slow; without one-at-a-time handling it would finish last with a stale list
+        await Promise.all([installModuleApp({ userId: 'racer', app: first, siteId: 'race-site' }), installModuleApp({ userId: 'racer', app: second, siteId: 'race-site' })]);
+        assert.equal(moduleCalls.length, 2);
+        assert.deepEqual([...moduleCalls.at(-1)!].sort(), ['Selling', 'Stock'], 'the last list applied contains both');
+        assert.equal((await siteModuleApps('race-site')).length, 2);
+    });
+    await check('an entry sites already use cannot change type, and an unknown state is refused rather than guessed', async () => {
+        const mod = await makeModule('type-mod', ['CRM']);
+        const modApp = { id: mod.id, appType: 'module', frappeAppName: null };
+        assert.equal(await typeChangeProblem(modApp, 'module'), null, 'no change is always fine');
+        assert.equal(await typeChangeProblem(modApp, 'application'), null, 'a module nobody has can become an application');
+        await db.insert(schema.siteModuleApp).values({ siteId: 'type-site', appId: mod.id, userId: 'modsite' });
+        assert.match((await typeChangeProblem(modApp, 'application')) ?? '', /switched on for 1 site/);
+        await db.delete(schema.siteModuleApp).where(eq(schema.siteModuleApp.siteId, 'type-site'));
+        const app = { id: 'x', appType: 'application', frappeAppName: 'hrms' };
+        appSummary = { hrms: { sites: 2 } };
+        assert.match((await typeChangeProblem(app, 'module')) ?? '', /installed on 2 sites/);
+        appSummary = {};
+        assert.equal(await typeChangeProblem(app, 'module'), null);
+        summaryFails = true;
+        assert.match((await typeChangeProblem(app, 'module')) ?? '', /Could not check/);
+        summaryFails = false;
     });
     console.log(`\n${passed} integration checks passed; migrations applied successfully.`);
 } finally {

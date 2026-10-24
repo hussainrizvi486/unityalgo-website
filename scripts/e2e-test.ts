@@ -308,7 +308,8 @@ async function main() {
                 with: { addOns: { with: { addOn: true } } },
             });
             check('add-on attached to subscription', withAddOn?.addOns.length === 1);
-            await expectRenders('/dashboard/subscription', customerCookie, addOn.name);
+            // The legacy add-on list is no longer shown to customers (it never billed anything); the data model is still checked here.
+            await expectRenders('/dashboard/subscription', customerCookie, 'Transaction history');
 
             let duplicateAddOnRejected = false;
             try {
@@ -466,7 +467,11 @@ async function main() {
         throwawayCustomer.email,
     )}`;
     const foreign = await get(`/dashboard/support/${ticket.id}`, otherCookie);
-    check("another customer cannot open someone else's ticket (404)", foreign.status === 404,
+    // The page streams a loading skeleton first, so a missing ticket can answer 200 with the not-found page. What matters is
+    // that no ticket content is exposed.
+    const foreignBody = foreign.status === 404 ? '' : await (await fetch(`${BASE_URL}/dashboard/support/${ticket.id}`, { headers: { Cookie: otherCookie } })).text();
+    check("another customer cannot open someone else's ticket (not found, nothing leaked)",
+        foreign.status === 404 || (foreign.status === 200 && /could not be found|404/i.test(foreignBody) && !foreignBody.includes(ticket.subject)),
         `status ${foreign.status}`);
 
     // ============================================================ admin flow
@@ -580,8 +585,9 @@ async function main() {
         check('shared DB holds Prisma-owned tables', names.includes('User') && names.includes('Subscription'));
         check('shared DB holds Alembic-owned tables',
             names.includes('server_nodes') && names.includes('tenants') && names.includes('deployments'));
-        check('both migration ledgers coexist',
-            names.includes('_prisma_migrations') && names.includes('alembic_version'));
+        // The website's ledger lives in the `drizzle` schema (it replaced Prisma's `_prisma_migrations`).
+        const { rows: ledger } = await db.execute<{ n: number }>(sql`SELECT count(*)::int AS n FROM information_schema.tables WHERE table_schema = 'drizzle' AND table_name = '__drizzle_migrations'`);
+        check('both migration ledgers coexist', ledger[0]?.n === 1 && names.includes('alembic_version'));
 
         // --- database clusters ---------------------------------------------
         const controllerKey = process.env.CONTROLLER_INTERNAL_API_KEY;

@@ -48,7 +48,13 @@ const [app] = await db.insert(schema.appCatalog).values({
 const [free] = await db.insert(schema.appCatalog).values({ slug: `billing-free-${stamp}`, name: 'Free', description: 'x', category: 'Test' }).returning();
 const created: string[] = [];
 
+/** Apps are billed to the subscription of the site they are on, so the test subscription is pointed at the site being bought for. */
+async function bind(siteId: string) {
+    if (reuse) await db.update(schema.subscription).set({ siteId }).where(eq(schema.subscription.id, reuse.id));
+}
+
 async function purchase(siteId: string) {
+    await bind(siteId);
     const record = await purchaseApp({ userId: user!.id, app, siteId });
     created.push(record.id);
     return record;
@@ -62,7 +68,8 @@ try {
             assert.equal(isPaidApp(app), true);
             assert.equal(isPaidApp(free), false);
             assert.equal(appBillingMode(), 'paddle');
-            assert.equal((await billingSubscription(user.id, plan.id))?.paddleSubscriptionId, subscriptionId);
+            await bind('site-a');
+            assert.equal((await billingSubscription(user.id, plan.id, undefined, 'site-a'))?.paddleSubscriptionId, subscriptionId);
         });
 
         await check('buying it adds one item at quantity 1, charged immediately and prorated, leaving the plan item alone', async () => {
@@ -130,6 +137,7 @@ try {
         await check('an app with no Paddle price cannot be sold', async () => {
             const [unpriced] = await db.insert(schema.appCatalog).values({ slug: `billing-nopr-${stamp}`, name: 'No price', description: 'x', category: 'Test', priceAmount: 3 }).returning();
             try {
+                await bind('site-e');
                 await assert.rejects(purchaseApp({ userId: user.id, app: unpriced, siteId: 'site-e' }), /not been set up for billing/);
             } finally {
                 await db.delete(schema.appCatalog).where(eq(schema.appCatalog.id, unpriced.id));

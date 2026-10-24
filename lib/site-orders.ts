@@ -9,6 +9,7 @@ import { sealSiteSetup, openSiteSetup } from '@/lib/site-order-secrets';
 import { createPlanCheckout } from '@/lib/checkout-billing';
 import { claimIdleSubscription } from '@/lib/subscription-claims';
 import { upgradeTarget } from '@/lib/app-compatibility';
+import { unionModules } from '@/lib/app-modules';
 import { loadPlanTiers } from '@/lib/app-plan-access';
 import { asRecord, asString } from '@/lib/paddle-data';
 
@@ -45,10 +46,14 @@ export async function saveSiteOrder(userId: string, requestKey: string, values: 
     const apps = values.apps.length ? await db.query.appCatalog.findMany({
         where: and(
             inArray(schema.appCatalog.id, values.apps), eq(schema.appCatalog.isActive, true), eq(schema.appCatalog.isInstallable, true),
-            eq(schema.appCatalog.source, 'image'), or(isNull(schema.appCatalog.priceAmount), eq(schema.appCatalog.priceAmount, 0)), isNotNull(schema.appCatalog.frappeAppName),
+            eq(schema.appCatalog.source, 'image'), or(isNull(schema.appCatalog.priceAmount), eq(schema.appCatalog.priceAmount, 0)),
+            or(isNotNull(schema.appCatalog.frappeAppName), eq(schema.appCatalog.appType, 'module')),
         )
     }) : [];
-    if (apps.length !== new Set(values.apps).size || apps.some((app) => !capabilities.apps.includes(app.frappeAppName!))) throw new SiteOrderError('A selected application is unavailable.');
+    // A module entry needs no app in the image, only modules to switch on; an application must be one the hosting ships.
+    const usable = (app: (typeof apps)[number]) => app.appType === 'module' ? app.modules.length > 0 : capabilities.apps.includes(app.frappeAppName!);
+    if (apps.length !== new Set(values.apps).size || apps.some((app) => !usable(app))) throw new SiteOrderError('A selected application is unavailable.');
+    const moduleApps = apps.filter((app) => app.appType === 'module');
     const tiers = await loadPlanTiers();
     const chosen = tiers.find((tier) => tier.id === plan.id);
     for (const app of apps) {
@@ -60,7 +65,9 @@ export async function saveSiteOrder(userId: string, requestKey: string, values: 
     if (!trialDays && (plan.priceAmount == null || !plan.paddlePriceId)) throw new SiteOrderError('This plan is not available for online purchase.');
     const setup = {
         user_id: userId, request_key: requestKey, name: values.slug, slug: values.slug,
-        app_names: apps.map((app) => app.frappeAppName), plan_id: plan.id, plan_name: plan.name,
+        app_names: apps.filter((app) => app.appType !== 'module').map((app) => app.frappeAppName), plan_id: plan.id,
+        // Modules are switched on after the site is set up. The ids stay here to record which entries the site has.
+        modules: unionModules(moduleApps.map((app) => app.modules)), module_app_ids: moduleApps.map((app) => app.id), plan_name: plan.name,
         plan_vcpu: plan.vcpu, plan_ram_mb: plan.ramMb, plan_storage_gb: plan.storageGb, plan_user_limit: plan.userLimit,
         company_name: values.companyName, country: values.country, currency: currency.code, coa_type: values.coaType,
         owner_email: values.email, owner_password: values.password, ...(trialDays ? { trial_days: trialDays } : {}),
@@ -139,8 +146,13 @@ export async function provisionSiteOrder(orderId: string) {
         if (order.nextAttemptAt && order.nextAttemptAt > new Date()) return;
         if (!order.encryptedSetup) throw new SiteOrderError('Site setup details are unavailable.');
         try {
-            const setup = openSiteSetup(`${order.userId}:${order.requestKey}`, order.encryptedSetup);
+            const { module_app_ids: moduleAppIds, ...setup } = openSiteSetup(`${order.userId}:${order.requestKey}`, order.encryptedSetup) as Record<string, unknown> & { module_app_ids?: string[] };
             const site = await controller.sites.create(setup);
+            if (moduleAppIds?.length) {
+                // Record the module entries the site was created with, so removing or adding one later keeps the others.
+                const existing = await tx.select({ id: schema.appCatalog.id }).from(schema.appCatalog).where(inArray(schema.appCatalog.id, moduleAppIds));
+                if (existing.length) await tx.insert(schema.siteModuleApp).values(existing.map((app) => ({ siteId: site.id, appId: app.id, userId: order.userId }))).onConflictDoNothing();
+            }
             await tx.update(schema.siteOrder).set({ status: 'PROVISIONED', siteId: site.id, encryptedSetup: null, error: null, updatedAt: new Date() }).where(eq(schema.siteOrder.id, order.id));
             await tx.update(schema.subscription).set({ siteId: site.id, appliedPlanId: order.planId, appliedAt: new Date() }).where(eq(schema.subscription.siteOrderId, order.id));
             await tx.insert(schema.notification).values({ userId: order.userId, eventKey: `site:${site.id}:created`, title: 'Site creation requested', body: 'Payment is confirmed and your site is being installed.', href: `/dashboard/sites/${site.id}` }).onConflictDoNothing();
@@ -162,9 +174,14 @@ export async function cancelSiteOrder(userId: string, orderId: string, expired =
     if (['CANCELED', 'EXPIRED'].includes(order.status)) return;
     if (!['DRAFT', 'AWAITING_PAYMENT'].includes(order.status)) throw new SiteOrderError('Paid or provisioning sites cannot be canceled here.');
     if (order.status === 'AWAITING_PAYMENT' && !order.trialDays) {
-        const { cancelPendingCheckout } = await import('@/lib/checkout-billing');
-        // Handles unknown outcomes by retaining the order for reconciliation.
-        await cancelPendingCheckout(userId, order.planId, order.id);
+        // A setup frozen for payment whose checkout never got created (the payment could not be started) has nothing to
+        // cancel at Paddle, and the customer must still be able to leave it. A checkout that was created, or one whose
+        // outcome is unknown, goes through the careful path, which refuses when money may be involved.
+        const started = await db.query.billingProviderRecord.findFirst({ where: eq(schema.billingProviderRecord.id, `checkout:${userId}:${order.id}`), columns: { id: true } });
+        if (started || order.paddleTransactionId) {
+            const { cancelPendingCheckout } = await import('@/lib/checkout-billing');
+            await cancelPendingCheckout(userId, order.planId, order.id);
+        }
     }
     const [ended] = await db.update(schema.siteOrder).set({ status: expired ? 'EXPIRED' : 'CANCELED', encryptedSetup: null, updatedAt: new Date() })
         .where(and(eq(schema.siteOrder.id, order.id), eq(schema.siteOrder.status, order.status), isNull(schema.siteOrder.paidAt))).returning();

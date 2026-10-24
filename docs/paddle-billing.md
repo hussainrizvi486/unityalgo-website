@@ -131,3 +131,21 @@ Expected checkout conditions (such as another pending checkout) are returned as 
 **Known limit:** paid apps cannot be picked in the create-site wizard yet. The wizard lists free apps, and a paid app is added from the site afterwards using the flow above. Bundling a paid app into the first checkout needs a multi-item checkout and is a separate piece of work.
 
 **Compatibility.** `AppCatalog.minPlanId` names the lowest plan that supports an app (admin: Apps, Works on plans from). Every plan at or above it in the same product, by plan sort order, can use the app; empty means every plan. It is enforced on the server when ordering a site, when installing, and when downgrading (a plan that cannot run an installed app is refused and the apps are named). Customers see compatible apps on each plan card and on their subscription, and an app that needs a higher plan offers an upgrade straight to that plan. Run `npm run db:migrate` to add the column; until an app is given a minimum nothing changes.
+
+## Application type: Module or Application
+
+Each App Catalog entry has an **Application type** (Admin, Apps, Details):
+
+- **Application** (the default, and every existing entry): installs the Frappe app named in *Frappe application name*, exactly as before.
+- **Module**: installs no app. It lists Frappe **module names** (one per line). Installing it on a site runs the agreed `sync_domain` logic on that site (`DOMAIN_SCRIPT` in `controller/app/services/frappe_service.py`): clear every Module Def's `restrict_to_domain`, make sure the `Subscription` Domain exists, assign the listed modules to it, and make it the only active domain.
+
+How the pieces fit:
+- The site's domain settings are always rebuilt from **all** module entries the site has (`lib/site-modules.ts`), so adding one never switches another off, and removing one keeps the rest. The website records which entries a site has in `SiteModuleApp`, because modules are not apps and the controller does not list them.
+- A module entry can be chosen in the create-site wizard when it is free; the controller applies it right after the setup wizard (`MODULES` in the create-site step). After that it is added or removed from the site's Apps tab or the App Store like any app. Plan compatibility and paid-app billing (preview, proration, one subscription per site) work the same way. Billing treats a module as installed when its `SiteModuleApp` record exists.
+- A module name the site does not have is skipped and reported (`MODULES_MISSING`), so a typo is visible instead of silent.
+- The site must be running and idle, as for installing an app. Deleting a site clears its module records. An entry that is switched on for any site cannot be deleted from the admin (hide it instead).
+- The controller endpoint is `POST /api/v1/sites/<id>/modules` (`user_id`, `modules`). Names are validated on both sides.
+
+**Behaviour to be aware of:** as specified, the logic clears all domain restrictions and then assigns the chosen modules to the active `Subscription` domain. Frappe treats a module with no restriction as visible, so this does not hide modules that are not listed. If the goal is to show only the listed modules, unlisted modules would also have to be restricted to a domain that is not active; that is a one-line change in `DOMAIN_SCRIPT` once decided.
+
+Run `npm run db:migrate` (migration `0016_application_type`) before restarting.

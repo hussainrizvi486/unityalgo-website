@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { Notice } from '@/components/ui/notice';
 import { useActionState, useEffect, useState } from 'react';
 import { useFormStatus } from 'react-dom';
@@ -86,6 +87,7 @@ export function EmailStep() {
             </form>
             <div className="mt-7 flex items-center justify-center gap-2 text-xs text-muted-foreground">
                 <ShieldCheck className="h-4 w-4" />Your details are encrypted and never shared</div>
+            <HaveAccount />
         </AuthFrame>
     );
 }
@@ -162,7 +164,18 @@ export function OtpStep({ email }: { email: string }) {
             {resendNotice ? (
                 <Notice tone="success" className="mt-3">A new verification code has been sent to your email.</Notice>
             ) : null}
+            <HaveAccount />
         </AuthFrame>
+    );
+}
+
+/** People who already registered should not have to hunt for the way in. */
+function HaveAccount() {
+    return (
+        <p className="mt-6 text-center text-sm text-muted-foreground">
+            Already have an account?{' '}
+            <Link href="/login" className="font-semibold text-primary hover:underline">Sign in</Link>
+        </p>
     );
 }
 
@@ -239,6 +252,7 @@ export function CustomerInfoStep({ email }: { email: string }) {
                 <ErrorMessage state={state} />
                 <SubmitButton label="Create account" pendingLabel="Creating account…" />
             </form>
+            <HaveAccount />
         </AuthFrame>
     );
 }

@@ -12,7 +12,7 @@ import {
 import { formatPrice } from '@/lib/admin-format';
 
 export function RemoveAppButton({
-    appId, siteId, name, priceAmount, priceCurrency, disabled,
+    appId, siteId, name, priceAmount, priceCurrency, disabled, kind = 'application',
 }: {
     appId: string;
     siteId: string;
@@ -20,6 +20,8 @@ export function RemoveAppButton({
     priceAmount: number | null;
     priceCurrency: string;
     disabled?: boolean;
+    /** A module entry installs no app: removing it hides modules and deletes nothing. */
+    kind?: 'application' | 'module';
 }) {
     const [error, setError] = React.useState('');
     const [pending, startTransition] = React.useTransition();
@@ -36,10 +38,14 @@ export function RemoveAppButton({
                     <AlertDialogTitle>Remove {name}?</AlertDialogTitle>
                     <AlertDialogDescription asChild>
                         <div className="space-y-2">
-                            <p>
-                                {name}&rsquo;s data on this site is deleted. A backup is taken first and kept, so it can be restored from the Backups tab.
-                                The site is unavailable for a short time.
-                            </p>
+                            {kind === 'module' ? (
+                                <p>{name} is taken off this site: its modules are removed from the site&rsquo;s Subscription domain. Nothing is deleted, and you can add it back at any time.</p>
+                            ) : (
+                                <p>
+                                    {name}&rsquo;s data on this site is deleted. A backup is taken first and kept, so it can be restored from the Backups tab.
+                                    The site is unavailable for a short time.
+                                </p>
+                            )}
                             {paid && <p>You will stop being charged {formatPrice(priceAmount!, priceCurrency)} a month for it once it has been removed.</p>}
                         </div>
                     </AlertDialogDescription>
@@ -64,7 +70,7 @@ export function RemoveAppButton({
                                 });
                             }}
                         >
-                            {pending ? 'Removing…' : 'Remove app'}
+                            {pending ? 'Removing…' : kind === 'module' ? 'Remove modules' : 'Remove app'}
                         </Button>
                     </AlertDialogAction>
                 </AlertDialogFooter>

@@ -120,10 +120,12 @@ function Meter({ label, value, text }: { label: string; value: number; text: str
 }
 
 /** Catalogue details of the apps on a site, by Frappe app name. */
+/** A module entry this site has switched on. */
+export type ModuleEntry = { id: string; name: string; priceAmount: number | null; priceCurrency: string };
 export type KnownApps = Record<string, { id: string; name: string; priceAmount: number | null; priceCurrency: string }>;
 
-export function SiteOverview({ site, applicationNames, plans, installable, known, onChange }: {
-    site: CustomerSite; applicationNames: Record<string, string>; plans: PlanChoice[]; installable: InstallableApp[]; known: KnownApps; onChange: () => void;
+export function SiteOverview({ site, applicationNames, plans, installable, moduleApps, known, onChange }: {
+    site: CustomerSite; applicationNames: Record<string, string>; plans: PlanChoice[]; installable: InstallableApp[]; moduleApps: ModuleEntry[]; known: KnownApps; onChange: () => void;
 }) {
     const [installing, setInstalling] = useState<InstallableApp | null>(null);
     const status = STATUS[site.status] ?? { label: site.status, variant: 'neutral' as const };
@@ -359,9 +361,31 @@ export function SiteOverview({ site, applicationNames, plans, installable, known
                                 );
                             })}
                         </ul>
+                        {moduleApps.length > 0 && (
+                            <>
+                                <h3 className="mt-6 text-sm font-semibold text-foreground">Modules</h3>
+                                <p className="mt-1 portal-text-caption text-muted-foreground">Switched on for this site. They install nothing, and removing one deletes no data.</p>
+                                <ul className="mt-2 divide-y divide-border/60">
+                                    {moduleApps.map((entry) => (
+                                        <li key={entry.id} className="flex flex-wrap items-center justify-between gap-gap py-3 portal-text-body">
+                                            <span>
+                                                {entry.name}
+                                                {(entry.priceAmount ?? 0) > 0 && (
+                                                    <span className="ml-2 portal-text-caption text-muted-foreground">{formatPrice(entry.priceAmount!, entry.priceCurrency)}/mo</span>
+                                                )}
+                                            </span>
+                                            <span className="flex items-center gap-gap">
+                                                <Badge variant="success">Active</Badge>
+                                                <RemoveAppButton appId={entry.id} siteId={site.id} name={entry.name} priceAmount={entry.priceAmount} priceCurrency={entry.priceCurrency} kind="module" disabled={!running || !idle} />
+                                            </span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </>
+                        )}
                     </section>
                     {(() => {
-                        const more = installable.filter((app) => !site.apps.includes(app.frappeAppName));
+                        const more = installable.filter((app) => !site.apps.includes(app.installKey));
                         return (
                             <section className="rounded-xl border border-border p-card">
                                 <h2 className="">Add an application</h2>

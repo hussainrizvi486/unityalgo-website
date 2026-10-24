@@ -14,7 +14,7 @@ export interface InstallSite {
     id: string;
     name: string;
     domain: string;
-    /** Frappe app names already on the site. */
+    /** Frappe app names and `module:<id>` keys already on the site. */
     apps: string[];
     /** Why the site cannot take an install now (stopped, busy…), or null. */
     unavailable: string | null;
@@ -26,7 +26,8 @@ export interface InstallableApp {
     id: string;
     name: string;
     description?: string;
-    frappeAppName: string;
+    /** How the site records it: the Frappe app name, or `module:<id>` for a module entry. */
+    installKey: string;
     priceAmount: number | null;
     priceCurrency: string;
     /** Sites whose plan is too low for this app, with the plan that would make it work. */
@@ -51,9 +52,10 @@ export function InstallAppDialog({
     const router = useRouter();
     const choices = fixedSiteId ? sites.filter((site) => site.id === fixedSiteId) : sites;
     const paid = (app.priceAmount ?? 0) > 0;
-    const first = choices.find((site) => !site.unavailable && !site.apps.includes(app.frappeAppName) && !(paid && site.trial) && !app.lockedBy?.[site.id]);
+    const first = choices.find((site) => !site.unavailable && !site.apps.includes(app.installKey) && !(paid && site.trial) && !app.lockedBy?.[site.id]);
     const [siteId, setSiteId] = React.useState(first?.id ?? '');
     const [error, setError] = React.useState('');
+    const [warning, setWarning] = React.useState('');
     const [pending, startTransition] = React.useTransition();
     const price = paid ? formatPrice(app.priceAmount!, app.priceCurrency) : null;
     const selectedLocked = Boolean(siteId && app.lockedBy?.[siteId]);
@@ -78,6 +80,7 @@ export function InstallAppDialog({
         startTransition(async () => {
             const result = await installAppAction({ appId: app.id, siteId });
             if (result.error) return setError(result.error);
+            if (result.warning) { setWarning(result.warning); router.refresh(); return; }
             onOpenChange(false);
             router.push(`/dashboard/sites/${siteId}`);     // follow the install live on the site's own page
         });
@@ -101,7 +104,7 @@ export function InstallAppDialog({
                     <fieldset className="grid gap-2" disabled={pending}>
                         <legend className="sr-only">Site</legend>
                         {choices.map((site) => {
-                            const installed = site.apps.includes(app.frappeAppName);
+                            const installed = site.apps.includes(app.installKey);
                             const trialBlocked = paid && Boolean(site.trial);
                             const needs = app.lockedBy?.[site.id];
                             const blocked = Boolean(site.unavailable) || installed || trialBlocked || Boolean(needs);
@@ -138,10 +141,11 @@ export function InstallAppDialog({
                     </Notice>
                 )}
                 {error && <Notice tone="error">{error}</Notice>}
+                {warning && <Notice tone="warning">{warning}</Notice>}
 
                 <DialogFooter>
-                    <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={pending}>Cancel</Button>
-                    <Button type="button" onClick={submit} disabled={pending || !siteId || choices.length === 0 || selectedLocked || (paid && !preview?.ok)}>
+                    <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={pending}>{warning ? 'Close' : 'Cancel'}</Button>
+                    <Button type="button" onClick={submit} disabled={pending || Boolean(warning) || !siteId || choices.length === 0 || selectedLocked || (paid && !preview?.ok)}>
                         {pending ? 'Installing…' : paid ? (preview?.ok && preview.chargeNow != null && preview.currency ? `Pay ${money(preview.chargeNow, preview.currency)} and install` : 'Pay and install') : 'Install'}
                     </Button>
                 </DialogFooter>

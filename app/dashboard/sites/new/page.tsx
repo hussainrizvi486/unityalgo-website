@@ -28,6 +28,8 @@ export default async function CreateSitePage({
             source: schema.appCatalog.source,
             priceAmount: schema.appCatalog.priceAmount,
             minPlanId: schema.appCatalog.minPlanId,
+            appType: schema.appCatalog.appType,
+            modules: schema.appCatalog.modules,
         })
         .from(schema.appCatalog)
         .where(eq(schema.appCatalog.isActive, true))
@@ -115,11 +117,13 @@ export default async function CreateSitePage({
                     id: item.id,
                     name: item.name,
                     minPlanId: item.minPlanId,
-                    available: Boolean(
-                        item.isInstallable &&
-                        item.frappeAppName &&
-                        capabilities?.apps.includes(item.frappeAppName),
-                    ),
+                    available: item.appType === 'module'
+                        ? Boolean(item.isInstallable && item.modules.length > 0)
+                        : Boolean(
+                            item.isInstallable &&
+                            item.frappeAppName &&
+                            capabilities?.apps.includes(item.frappeAppName),
+                        ),
                 }))}
             />
         </div>

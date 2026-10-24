@@ -319,5 +319,10 @@ export async function retrySiteAction(
 export async function cancelSiteSetupAction(orderId: string) {
     const session = await requireCustomerSession();
     try { await cancelSiteOrder(session.userId, orderId); return { ok: true as const }; }
-    catch { return { ok: false as const, error: 'Setup cannot be canceled until its payment status is resolved.' }; }
+    catch (error) {
+        // Say why when the reason is safe to show: a payment in progress is different from a temporary failure.
+        if (error instanceof SiteOrderError || error instanceof CheckoutError) return { ok: false as const, error: error.message };
+        reportBillingFailure(error, { action: 'cancel_site_setup', orderId });
+        return { ok: false as const, error: 'The setup could not be canceled right now. Please try again in a moment.' };
+    }
 }

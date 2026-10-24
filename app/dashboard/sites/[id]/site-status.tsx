@@ -7,7 +7,7 @@ import type { CustomerSite } from '@/lib/controller-client';
 import { retrySiteAction } from '../../actions';
 import { Button } from '@/components/ui/button';
 import { Notice } from '@/components/ui/notice';
-import { SiteOverview, type KnownApps, type PlanChoice } from './site-overview';
+import { SiteOverview, type KnownApps, type ModuleEntry, type PlanChoice } from './site-overview';
 import type { InstallableApp } from '@/components/customer/install-app-dialog';
 import { DeleteSite } from './delete-site';
 import { DeployProgress } from '@/components/customer/deploy-progress';
@@ -27,12 +27,14 @@ export function SiteStatus({
     applicationNames,
     plans,
     installable,
+    moduleApps,
     known,
 }: {
     initial: CustomerSite;
     applicationNames: Record<string, string>;
     plans: PlanChoice[];
     installable: InstallableApp[];
+    moduleApps: ModuleEntry[];
     known: KnownApps;
 }) {
     const { site, connection } = useLiveSite(initial);
@@ -66,6 +68,7 @@ export function SiteStatus({
                 applicationNames={applicationNames}
                 plans={plans}
                 installable={installable}
+                moduleApps={moduleApps}
                 known={known}
                 onChange={() => {}}
             />
