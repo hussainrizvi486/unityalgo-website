@@ -27,7 +27,7 @@ function* files(dir) {
 const problems = [];
 for (const top of ['app', 'components', 'lib']) {
     for (const file of files(join(root, top))) {
-        const rel = relative(root, file);
+        const rel = relative(root, file).replaceAll('\\', '/');
         if (ALLOW.has(rel)) continue;
         readFileSync(file, 'utf8').split('\n').forEach((line, index) => {
             if (/^\s*(\/\/|\*|\/\*)/.test(line)) return;                       // comments

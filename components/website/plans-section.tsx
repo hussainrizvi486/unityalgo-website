@@ -1,27 +1,28 @@
 import Link from 'next/link';
-import { Check } from 'lucide-react';
-import { listProductsWithPlans } from '@/lib/products';
+import { ArrowRight, Check } from 'lucide-react';
+import { listProductsWithPlans, listAlgoSuitePlans } from '@/lib/products';
 import { formatPlanPrice, formatTransactionFee } from '@/lib/pricing';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/utils';
+import { PlanComparison } from '@/components/website/plan-comparison';
 
-export async function PlansSection() {
-    const products = await listProductsWithPlans();
-    if (products.length === 0) return null;
+export async function PlansSection({ productSlug }: { productSlug?: 'algosuite' } = {}) {
+    const products = productSlug === 'algosuite'
+        ? [{ id: 'algosuite', slug: 'algosuite', label: 'AlgoSuite', tagline: null, plans: await listAlgoSuitePlans() }]
+        : await listProductsWithPlans();
+    if (!productSlug && products.length === 0) return null;
 
     return (
-        <section id="plans" className="scroll-mt-24 bg-card site-section-spacing">
+        <section id={productSlug ? "pricing" : "plans"} className="scroll-mt-24 bg-card site-section-spacing">
             <div className="site-container site-gutters">
                 <div className="max-w-2xl">
                     <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                        Our products
+                        {productSlug ? 'AlgoSuite pricing' : 'Our products'}
                     </p>
                     <h2 className="mt-3 text-3xl tracking-tight text-foreground md:text-4xl">
-                        Software we build, own and sell
+                        {productSlug ? 'A plan for your next stage of growth' : 'Software we build, own and sell'}
                     </h2>
                     <p className="mt-4 leading-relaxed text-muted-foreground">
-                        We don&apos;t only build for clients — we run our own products. Every plan
-                        below is one we operate and support ourselves.
+                        {productSlug ? 'Compare seats, features, and pricing. Choose the plan that fits your team today, with room to grow.' : 'Explore products we build, operate, and support ourselves.'}
                     </p>
                 </div>
 
@@ -34,91 +35,69 @@ export async function PlansSection() {
                                     <p className="mt-1 text-sm text-muted-foreground">{product.tagline}</p>
                                 )}
                             </div>
-                            <Link
-                                href={`/products/${product.slug}`}
-                                className="text-sm font-semibold text-primary hover:underline"
-                            >
-                                Explore {product.label} →
-                            </Link>
+                            {!productSlug && <Link href={`/products/${product.slug}`} className="text-sm font-semibold text-primary hover:underline">Explore {product.label} &rarr;</Link>}
                         </div>
 
-                        <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                            {product.plans.map((plan, index) => {
-                                const featured = product.plans.length === 3 && index === 1;
-                                const fee = formatTransactionFee(plan.transactionFeePercent);
-                                return (
-                                    <div
-                                        key={plan.id}
-                                        className={cn(
-                                            'flex flex-col rounded-xl border p-card transition-shadow',
-                                            featured
-                                                ? 'border-foreground bg-primary text-primary-foreground shadow-lg'
-                                                : 'border-border bg-card hover:shadow-md',
-                                        )}
-                                    >
-                                        <div className="flex items-baseline justify-between gap-2">
-                                            <h4 className={cn('font-bold', featured ? 'text-primary-foreground' : 'text-foreground')}>
-                                                {plan.name}
-                                            </h4>
-                                            {featured && (
-                                                <span className="rounded-full bg-primary-foreground/15 px-2 py-0.5 text-micro font-semibold uppercase tracking-wide">
-                                                    Popular
-                                                </span>
+                        {product.plans.length === 0 ? <div className="mt-6 plan-card"><h4 className="text-lg font-semibold">Let us find the right fit</h4><p className="mt-2 text-sm text-muted-foreground">Plans are being prepared. Contact our team for pricing and availability.</p><Button asChild className="mt-5 w-fit"><Link href="/#contact">Contact sales</Link></Button></div> : null}
+                        {productSlug ? <div className="pricing-preview-layout"><PlanComparison plans={product.plans} /><Link href="/products/algosuite/pricing" className="pricing-section-arrow" aria-label="Explore AlgoSuite pricing" title="Explore pricing and compare plans"><ArrowRight className="pricing-link-arrow size-5" aria-hidden="true" /></Link></div> : (
+                            <div className="mt-6 plan-grid">
+                                {product.plans.map((plan) => {
+                                    const fee = formatTransactionFee(plan.transactionFeePercent);
+                                    return (
+                                        <div
+                                            key={plan.id}
+                                            className="plan-card transition-shadow hover:shadow-md"
+                                        >
+                                            <div className="flex items-baseline justify-between gap-2">
+                                                <h4 className="font-bold text-foreground">
+                                                    {plan.name}
+                                                </h4>
+
+                                            </div>
+                                            {plan.tagline && (
+                                                <p className="mt-1 text-xs text-muted-foreground">
+                                                    {plan.tagline}
+                                                </p>
                                             )}
-                                        </div>
-                                        {plan.tagline && (
-                                            <p className={cn('mt-1 text-xs', featured ? 'text-primary-foreground/60' : 'text-muted-foreground')}>
-                                                {plan.tagline}
+
+                                            <p className="mt-5 text-2xl font-bold text-foreground">
+                                                {plan.priceAmount == null && plan.trialDays ? `Free for ${plan.trialDays} days` : formatPlanPrice(plan)}
                                             </p>
-                                        )}
-
-                                        <p className={cn('mt-5 text-2xl font-bold', featured ? 'text-primary-foreground' : 'text-foreground')}>
-                                            {formatPlanPrice(plan)}
-                                        </p>
-                                        {fee && (
-                                            <p className={cn('mt-1 text-xs', featured ? 'text-primary-foreground/60' : 'text-muted-foreground')}>
-                                                {fee}
+                                            {fee && (
+                                                <p className="mt-1 text-xs text-muted-foreground">
+                                                    {fee}
+                                                </p>
+                                            )}
+                                            <p className="mt-1 text-xs text-muted-foreground">
+                                                {plan.userLimit == null ? 'Unlimited seats' : `Up to ${plan.userLimit} seats`}
                                             </p>
-                                        )}
-                                        <p className={cn('mt-1 text-xs', featured ? 'text-primary-foreground/60' : 'text-muted-foreground')}>
-                                            {plan.userLimit == null ? 'Unlimited seats' : `Up to ${plan.userLimit} seats`}
-                                        </p>
 
-                                        {plan.features.length > 0 && (
-                                            <ul className="mt-5 space-y-2">
-                                                {plan.features.map((feature) => (
-                                                    <li key={feature} className="flex items-start gap-2 text-sm">
-                                                        <Check
-                                                            className={cn(
-                                                                'mt-0.5 size-3.5 shrink-0',
-                                                                featured ? 'text-primary-foreground/70' : 'text-primary',
-                                                            )}
-                                                            aria-hidden="true"
-                                                        />
-                                                        <span className={featured ? 'text-primary-foreground/80' : 'text-foreground/70'}>
-                                                            {feature}
-                                                        </span>
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                        )}
+                                            {plan.features.length > 0 && (
+                                                <ul className="mt-5 space-y-2">
+                                                    {plan.features.map((feature) => (
+                                                        <li key={feature} className="flex items-start gap-2 text-sm">
+                                                            <Check
+                                                                className="mt-0.5 size-3.5 shrink-0 text-primary"
+                                                                aria-hidden="true"
+                                                            />
+                                                            <span className="text-muted-foreground">
+                                                                {feature}
+                                                            </span>
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            )}
 
-                                        <div className="mt-auto pt-6">
-                                            <Button asChild
-                                                    className={cn(
-                                                        'w-full',
-                                                        featured
-                                                            ? 'bg-card text-foreground hover:bg-secondary'
-                                                            : 'bg-primary text-primary-foreground hover:bg-primary/90',
-                                                    )}
-                                                ><Link href={plan.priceAmount == null ? '/register' : `/register?plan=${encodeURIComponent(plan.id)}`} className="block">
-                                                    {plan.priceAmount == null ? 'Talk to us' : `Start with ${plan.name}`}
+                                            <div className="mt-auto pt-6">
+                                                <Button asChild className="w-full"><Link href={plan.priceAmount == null && !plan.trialDays ? '/#contact' : `/register?plan=${encodeURIComponent(plan.id)}`}>
+                                                    {plan.priceAmount == null && !plan.trialDays ? 'Contact sales' : plan.trialDays ? `Start ${plan.trialDays}-day trial` : `Choose ${plan.name}`}
                                                 </Link></Button>
+                                            </div>
                                         </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
                     </div>
                 ))}
             </div>

@@ -113,7 +113,7 @@
     width: 100%;
     /* max-width: var(--portal-page-width); */
     margin-inline: auto;
-    /* min-width: 0; */
+    min-width: 0;
 }
 
 .dashboard .portal-form {

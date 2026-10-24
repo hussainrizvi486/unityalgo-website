@@ -83,6 +83,11 @@ export function Footer() {
                   AlgoSuite
                 </Link>
               </li>
+              <li>
+                <Link href="/products/algosuite/pricing" className="text-primary-foreground/80 hover:text-primary-foreground transition-colors">
+                  AlgoSuite pricing
+                </Link>
+              </li>
             </ul>
           </div>
 

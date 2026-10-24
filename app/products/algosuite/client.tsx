@@ -146,7 +146,7 @@ const rollout = [
 const questions = [
     {
         question: 'Is AlgoSuite available today?',
-        answer: 'AlgoSuite is currently in development. This page describes the planned direction of the platform; the screenshots show preview dashboards. Contact UnityAlgo to discuss your requirements and ask about availability. We have not announced a public launch date.',
+        answer: "Yes, AlgoSuite is now available! You can set up your own Cloud ERP in just a few simple steps.Create your UnityAlgo account, choose a plan that best fits your business requirements, and launch your Cloud ERP with a single click. The entire setup process takes approximately 15–20 minutes, and your ERP will be ready to use!",
     },
     {
         question: 'Which business functions are planned?',
@@ -158,7 +158,7 @@ const questions = [
     },
     {
         question: 'How much will AlgoSuite cost?',
-        answer: 'Pricing has not been published. The number of users, required workflows, configuration, and implementation support are useful starting points for a conversation. Contact our team to discuss your needs.',
+        answer: 'See the pricing section for current plans, seat limits, and included features. Contact our team to discuss custom requirements or implementation support.',
     },
     {
         question: 'What if we need a solution before AlgoSuite launches?',
@@ -208,7 +208,7 @@ type Area = {
     title: string;
     description: string;
     highlights: string[];
-    shot?: Shot;
+    shot: Shot;
     items: Feature[];
     callout: { title: string; text: string };
 };
@@ -242,6 +242,7 @@ const areas: Area[] = [
     },
     {
         id: 'financial',
+        shot: 'finance',
         label: 'Financial management',
         icon: Landmark,
         title: 'Run the numbers with a calmer month-end.',
@@ -263,6 +264,7 @@ const areas: Area[] = [
     },
     {
         id: 'global',
+        shot: 'workspace',
         label: 'Global business',
         icon: Globe,
         title: 'Work across currencies, companies, and countries.',
@@ -284,6 +286,7 @@ const areas: Area[] = [
     },
     {
         id: 'performance',
+        shot: 'finance',
         label: 'Performance management',
         icon: Target,
         title: 'Measure what matters, from live records.',
@@ -331,6 +334,7 @@ const areas: Area[] = [
     },
     {
         id: 'orders',
+        shot: 'selling',
         label: 'Order management',
         icon: ShoppingBag,
         title: 'From quotation to delivered order without retyping.',
@@ -352,6 +356,7 @@ const areas: Area[] = [
     },
     {
         id: 'supply-chain',
+        shot: 'inventory',
         label: 'Supply chain management',
         icon: Truck,
         title: 'See the whole route from supplier to customer.',
@@ -373,6 +378,7 @@ const areas: Area[] = [
     },
     {
         id: 'warehouse',
+        shot: 'inventory',
         label: 'Warehouse management',
         icon: Warehouse,
         title: 'Give the warehouse a clear next task.',
@@ -394,6 +400,7 @@ const areas: Area[] = [
     },
     {
         id: 'procurement',
+        shot: 'inventory',
         label: 'Procurement',
         icon: ShoppingCart,
         title: 'Buy with approvals and a paper trail.',
@@ -491,7 +498,7 @@ const heading =
 const container = 'site-container';
 const section = 'site-section';
 
-export const MainContent = () => (
+export const MainContent = ({ pricing }: { pricing?: React.ReactNode }) => (
     <main>
         <section
             id="overview"
@@ -517,8 +524,8 @@ export const MainContent = () => (
                         </p>
                         <div className="mt-8 flex flex-wrap gap-3">
                             <Button asChild size="lg" className="py-2 px-6">
-                                <Link href="#contact" className='text-sm'>
-                                    Talk to us{' '}
+                                <Link href="/register" className='text-sm'>
+                                    Get Now{' '}
                                     <ArrowUpRight className="size-4" />
                                 </Link>
                             </Button>
@@ -554,7 +561,7 @@ export const MainContent = () => (
             className="border-y border-border px-4 md:px-6"
         >
             <div
-                className={`${container} flex items-center gap-gap-xl overflow-x-auto py-5 text-sm`}
+                className={`${container} flex items-center gap-gap-lg overflow-x-auto py-5 text-sm`}
             >
                 <span className="hidden shrink-0 border-r border-border pr-8 font-semibold sm:block">
                     AlgoSuite
@@ -563,6 +570,7 @@ export const MainContent = () => (
                     ['Overview', 'overview'],
                     ['What is ERP', 'what-is-erp'],
                     ['Modules', 'modules'],
+                    ['Pricing', 'pricing'],
                     ['By role', 'roles'],
                     ['How it connects', 'workflow'],
                     ['Industries', 'industries'],
@@ -685,7 +693,7 @@ export const MainContent = () => (
                     <h3 className="text-3xl tracking-tight md:text-4xl">Features by area of the business</h3>
                     <p className="mt-4 text-base leading-7 text-foreground/70">Choose an area to see what we are planning to cover. Screenshots come from preview builds and may change.</p>
                 </div>
-                <Tabs defaultValue="accounting" orientation="vertical" className="gap-gap-xl lg:grid lg:grid-cols-[var(--panel-w)_1fr] lg:gap-12">
+                <Tabs defaultValue="accounting" orientation="vertical" className="gap-gap-sm lg:grid lg:grid-cols-[var(--panel-w)_1fr] lg:gap-8">
                     <TabsList
                         aria-label="Feature areas"
                         className="h-auto w-full flex-row justify-start gap-1 overflow-x-auto rounded-none border-b border-border bg-transparent p-0 lg:sticky lg:top-28 lg:flex-col lg:items-stretch lg:gap-0 lg:self-start lg:border-b-0 lg:border-l"
@@ -694,7 +702,7 @@ export const MainContent = () => (
                             <TabsTrigger
                                 key={area.id}
                                 value={area.id}
-                                className="h-auto flex-none justify-start whitespace-nowrap rounded-none border-0 border-b-2 border-transparent px-3 py-3 text-left text-sm font-medium text-foreground/70 hover:bg-secondary hover:text-foreground data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:font-semibold data-[state=active]:text-foreground data-[state=active]:shadow-none lg:-ml-px lg:whitespace-normal lg:border-b-0 lg:border-l-2 lg:px-5 lg:py-3.5"
+                                className="h-auto flex-none justify-start whitespace-nowrap rounded-none border-0 border-b-2 border-transparent px-3 py-3 text-left text-sm font-medium text-foreground/70 hover:bg-secondary hover:text-foreground data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:font-semibold data-[state=active]:text-foreground data-[state=active]:shadow-none lg:-ml-px lg:whitespace-normal lg:border-b-0 lg:border-l-2 lg:px-5 lg:py-2.5"
                             >
                                 {area.label}
                             </TabsTrigger>
@@ -940,6 +948,8 @@ export const MainContent = () => (
             </div>
         </section>
 
+        {pricing}
+
         <section id="faqs" className={`${section} border-t border-border`}>
             <div
                 className={`${container} grid gap-10 lg:grid-cols-[0.7fr_1fr]`}
@@ -998,8 +1008,8 @@ export const MainContent = () => (
                         </Link>
                     </Button>
                     <p className="mt-4 text-xs leading-6 text-muted-foreground">
-                        AlgoSuite is in development. Launch timing and pricing
-                        are to be confirmed.
+                        AlgoSuite is in development. Contact us to confirm availability
+                        and implementation requirements.
                     </p>
                 </div>
             </div>

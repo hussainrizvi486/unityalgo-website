@@ -5,9 +5,9 @@ import {
     CalendarDays,
     CreditCard,
     Globe,
-    LifeBuoy,
     Package,
     Plus,
+    LifeBuoy,
     Store,
     Wallet,
 } from 'lucide-react';
@@ -64,7 +64,7 @@ export function OverviewClient({
             hint: siteStats
                 ? siteStats.total === 0
                     ? 'No sites yet'
-                    : `${siteStats.ready} ready${siteStats.provisioning ? ` · ${siteStats.provisioning} installing` : ''}`
+                    : `${siteStats.ready} ready${siteStats.provisioning ? ` Â· ${siteStats.provisioning} installing` : ''}`
                 : 'Hosting is offline',
             href: '/dashboard/sites',
             icon: Globe,
@@ -97,21 +97,29 @@ export function OverviewClient({
                         <CalendarDays className="size-4" />
                         {today}
                     </p>
-                    <h1 className="portal-page-title mt-3">Welcome aboard!</h1>
+                    <h1 className="portal-page-title mt-3">Welcome back, {profile.firstName}</h1>
                     <p className="mt-2 max-w-xl portal-text-body text-muted-foreground">
-                        Hi {profile.firstName}, here is what is happening with your account today.
+                        Your sites, subscriptions, and next steps, all in one place.
                     </p>
-                    <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-                        <Button asChild>
+                    <div className="mt-5 flex flex-wrap gap-2">
+                        <Button asChild size="sm">
                             <Link href="/dashboard/sites/new">
-                                <Plus className="size-4" />
-                                Create a New Site
+                                <Plus className="size-4" />Create a new site
                             </Link>
                         </Button>
-                        <Button asChild variant="outline">
+                        <Button asChild variant="outline" size="sm">
                             <Link href="/dashboard/support/new">
-                                <LifeBuoy className="size-4" />
-                                Create a New Ticket
+                                <LifeBuoy className="size-4" />Get support
+                            </Link>
+                        </Button>
+                        <Button asChild variant="outline" size="sm">
+                            <Link href="/dashboard/plans">
+                                View plans
+                            </Link>
+                        </Button>
+                        <Button asChild variant="outline" size="sm">
+                            <Link href="/dashboard/app-store">
+                                App catalog
                             </Link>
                         </Button>
                     </div>
@@ -124,11 +132,11 @@ export function OverviewClient({
                         <>
                             <div className="flex items-start justify-between gap-3">
                                 <p className="portal-text-body font-medium text-muted-foreground">{item.label}</p>
-                                <span className={`flex size-10 shrink-0 items-center justify-center rounded-xl ${item.tone}`}>
+                                <span className={`flex size-10 shrink-0 items-center justify-center rounded-full ${item.tone}`}>
                                     <item.icon className="size-5" />
                                 </span>
                             </div>
-                            <p className="mt-4 truncate text-3xl font-semibold tracking-tight text-foreground">{item.value}</p>
+                            <p className="mt-4 break-words text-2xl xl:text-3xl font-semibold tracking-tight text-foreground">{item.value}</p>
                             <p className="mt-1 portal-text-caption text-muted-foreground">{item.hint}</p>
                         </>
                     );
@@ -161,7 +169,7 @@ export function OverviewClient({
                                     <div className="relative">
                                         <div className="flex flex-col gap-gap sm:flex-row sm:items-start sm:justify-between">
                                             <div>
-                                                <span className="inline-flex rounded-full bg-primary px-2 py-1 portal-text-caption font-semibold">
+                                                <span className="inline-flex rounded-full border border-primary-foreground/20 bg-primary-foreground/10 px-2.5 py-1 portal-text-caption font-semibold">
                                                     {subscription.status ===
                                                         'ACTIVE'
                                                         ? 'Active'
@@ -171,7 +179,7 @@ export function OverviewClient({
                                                     {subscription.plan.name}{' '}
                                                     plan
                                                 </h2>
-                                                <p className="mt-1 portal-text-body text-primary-foreground/45">
+                                                <p className="mt-1 portal-text-body text-primary-foreground/80">
                                                     {formatProductName(
                                                         subscription.plan
                                                             .productId,
@@ -185,7 +193,7 @@ export function OverviewClient({
                                                     )}
                                                 </strong>
                                                 {monthlyTotal != null ? (
-                                                    <p className="portal-text-caption text-primary-foreground/35">
+                                                    <p className="portal-text-caption text-primary-foreground/80">
                                                         {formatCurrency(
                                                             monthlyTotal,
                                                             subscription.plan.currency,
@@ -197,8 +205,8 @@ export function OverviewClient({
                                         </div>
                                         <div className="my-4 h-px bg-primary-foreground/10" />
                                         <div className="grid gap-gap sm:grid-cols-2">
-                                            <div className="rounded-lg bg-card/[.06] p-4">
-                                                <p className="flex items-center gap-2 portal-text-caption text-primary-foreground/40">
+                                            <div className="rounded-lg bg-primary-foreground/10 p-4">
+                                                <p className="flex items-center gap-2 portal-text-caption text-primary-foreground/80">
                                                     <Package className="size-4" />
                                                     Add-ons attached
                                                 </p>
@@ -214,8 +222,8 @@ export function OverviewClient({
                                                             .join(', ')}
                                                 </p>
                                             </div>
-                                            <div className="rounded-lg bg-card/[.06] p-4">
-                                                <p className="flex items-center gap-2 portal-text-caption text-primary-foreground/40">
+                                            <div className="rounded-lg bg-primary-foreground/10 p-4">
+                                                <p className="flex items-center gap-2 portal-text-caption text-primary-foreground/80">
                                                     <CalendarDays className="size-4" />
                                                     Next billing date
                                                 </p>
@@ -230,7 +238,7 @@ export function OverviewClient({
                                                         ).format(
                                                             subscription.currentPeriodEnd,
                                                         )
-                                                        : '—'}
+                                                        : 'â€”'}
                                                 </p>
                                             </div>
                                         </div>
@@ -245,13 +253,13 @@ export function OverviewClient({
                                 </section>
                             );
                         })}
-                        <Link
+                        {/* <Link
                             href="/dashboard/plans"
                             className="flex h-11 items-center justify-center gap-2 rounded-xl border border-dashed border-input bg-card portal-text-body font-semibold text-foreground/70 hover:bg-muted"
                         >
                             Add another product
                             <ArrowRight className="size-4" />
-                        </Link>
+                        </Link> */}
                     </div>
                 ) : (
                     <section className="flex min-h-72 flex-col items-center justify-center rounded-xl border border-dashed border-input bg-card p-card text-center">
@@ -262,10 +270,8 @@ export function OverviewClient({
                         <p className="mt-2 max-w-sm portal-text-body text-muted-foreground">
                             Choose a plan to set up your subscription.
                         </p>
-                        <Button asChild className='py-2'>
-                            <Button asChild className="mt-4">
-                                <Link href="/dashboard/plans">View plans<ArrowRight className="size-4" /></Link>
-                            </Button>
+                        <Button asChild className="mt-4">
+                            <Link href="/dashboard/plans">View plans<ArrowRight className="size-4" /></Link>
                         </Button>
                     </section>
                 )}

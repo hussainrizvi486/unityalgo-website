@@ -19,7 +19,7 @@ export default function Index() {
             <main>
                 <HeroSection />
                 <Services />
-                <PlansSection />
+                {/* <PlansSection /> */}
                 <HowWeBuildSection />
                 <Contact />
             </main>

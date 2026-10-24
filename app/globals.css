@@ -546,3 +546,186 @@ h4 {
 .font-display {
   font-family: var(--font-sans);
 }
+/* Shared by public product pricing and the customer plan picker. */
+@layer components {
+  .plan-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, calc(var(--spacing) * 64)), 1fr));
+    gap: var(--gap);
+    align-items: stretch;
+  }
+  .plan-card {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    padding: var(--card-pad);
+    border: var(--border-width) solid var(--border);
+    border-radius: var(--radius-xl);
+    background: var(--card);
+    color: var(--foreground);
+  }
+}
+
+/* Product feature comparison: shared theme, spacing and typography tokens. */
+@layer components {
+  .plan-comparison-scroll {
+    position: relative;
+    max-width: 100%;
+    overflow-x: auto;
+    isolation: isolate;
+    border-radius: var(--radius-xl);
+  }
+  .plan-comparison-scroll:focus-visible {
+    outline: var(--border-width) solid var(--ring);
+    outline-offset: var(--spacing);
+  }
+  .plan-comparison {
+    width: 100%;
+    min-width: calc(var(--spacing) * (64 + var(--plan-count) * 44));
+    border-collapse: separate;
+    border-spacing: 0;
+    table-layout: fixed;
+    font-size: var(--fs-sm);
+    line-height: 1.6;
+  }
+  .plan-comparison :is(th, td) {
+    padding: calc(var(--gap) * 1.25) var(--gap);
+    border-bottom: var(--border-width) solid var(--border);
+    text-align: left;
+    vertical-align: middle;
+    overflow-wrap: anywhere;
+    background: var(--card);
+  }
+  .plan-comparison th { font-weight: 400; }
+  .plan-comparison-heading { min-height: 2.7em; }
+  .plan-comparison thead th {
+    padding-top: var(--gap);
+    padding-bottom: calc(var(--gap) * 2);
+    vertical-align: top;
+  }
+  .plan-comparison .plan-comparison-label { width: calc(var(--spacing) * 64); }
+  .plan-comparison-heading,
+  .plan-comparison-label h3 {
+    font-size: var(--fs-xl);
+    font-weight: var(--heading-weight);
+    line-height: 1.35;
+  }
+  .plan-comparison tbody tr:not(.plan-comparison-group) > th,
+  .plan-comparison-label {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+  }
+  .plan-comparison .plan-comparison-group th {
+    padding-top: calc(var(--gap) * 2.5);
+    padding-bottom: var(--gap);
+    font-size: var(--fs-xl);
+    font-weight: var(--heading-weight);
+  }
+  .plan-comparison tbody tr:not(.plan-comparison-group):hover > * {
+    background: var(--muted);
+  }
+  @media (max-width: 639px) {
+    .plan-comparison { min-width: calc(var(--spacing) * (36 + var(--plan-count) * 44)); }
+    .plan-comparison .plan-comparison-label { width: calc(var(--spacing) * 36); }
+    .plan-comparison :is(th, td) { padding-inline: calc(var(--gap) * 0.75); }
+    .plan-comparison-label h3 { font-size: var(--fs-base); }
+  }
+}
+
+/* Public pricing pages inherit the site's design tokens. */
+@layer components {
+  .pricing-page { padding-top: calc(var(--header-h) + var(--section-gap)); }
+  .pricing-page-intro { padding-block: calc(var(--gap) * 2) var(--section-gap); }
+  .pricing-plan-picker { align-items: start; }
+  .pricing-plan-card {
+    min-width: 0;
+    padding: var(--card-pad);
+    border: var(--border-width) solid var(--border);
+    border-radius: var(--radius-xl);
+    background: var(--card);
+    transition: border-color 180ms ease, box-shadow 180ms ease;
+  }
+  .pricing-plan-card[data-selected='true'] {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 var(--border-width) var(--primary);
+  }
+  .pricing-compare-toolbar,
+  .pricing-help {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--gap);
+    padding: var(--card-pad);
+    border: var(--border-width) solid var(--border);
+    border-radius: var(--radius-xl);
+    background: var(--muted);
+  }
+  .pricing-compare-toolbar { margin-block: calc(var(--gap) * 1.5) var(--section-gap); }
+  .pricing-details { scroll-margin-top: calc(var(--header-h) + var(--gap) * 2); }
+  .pricing-module-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, calc(var(--spacing) * 80)), 1fr));
+    align-items: start;
+    gap: var(--gap);
+    margin-top: calc(var(--gap) * 2);
+  }
+  .pricing-module-card { min-width: 0; padding-inline: var(--card-pad); border-top: var(--border-width) solid var(--border); }
+  .pricing-module-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: calc(var(--spacing) * 10);
+    height: calc(var(--spacing) * 10);
+    border-radius: var(--radius-lg);
+    background: var(--muted);
+  }
+  .pricing-help { margin-block: var(--section-gap); }
+  .pricing-detail-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: calc(var(--gap) * 0.75);
+    align-self: center;
+    color: var(--foreground);
+    font-size: var(--fs-sm);
+    font-weight: var(--heading-weight);
+    text-decoration: none;
+  }
+  .pricing-detail-link:hover { text-decoration: underline; text-underline-offset: var(--spacing); }
+  .pricing-link-arrow { animation: pricing-arrow-nudge 1.8s ease-in-out infinite; }
+}
+@keyframes pricing-arrow-nudge {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(var(--spacing)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pricing-link-arrow { animation: none; }
+}
+
+@layer components {
+  .pricing-preview-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--gap);
+  }
+  .pricing-section-arrow {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: calc(var(--spacing) * 12);
+    height: calc(var(--spacing) * 12);
+    border: var(--border-width) solid var(--border);
+    border-radius: 50%;
+    color: var(--foreground);
+    background: var(--card);
+  }
+  .pricing-section-arrow:hover { border-color: var(--foreground); background: var(--muted); }
+  @media (max-width: 639px) {
+    .pricing-preview-layout { grid-template-columns: minmax(0, 1fr); }
+    .pricing-section-arrow { justify-self: end; }
+  }
+}

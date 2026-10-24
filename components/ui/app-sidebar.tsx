@@ -97,11 +97,11 @@ export function AppSidebar({ brand, groups, user, accountLinks = [], logoutActio
                 <SidebarMenu>
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" asChild tooltip={brand.name}>
-                            <Link href={brand.href}>
+                            <Link href={brand.href} className="group-data-[collapsible=icon]:justify-center">
                                 <span className="flex aspect-square size-8 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-sidebar-accent">
                                     <Image src="/logo.svg" alt="" width={28} height={28} className="size-6" priority />
                                 </span>
-                                <span className="grid min-w-0 flex-1 text-left leading-tight">
+                                <span className="grid min-w-0 flex-1 text-left leading-tight group-data-[collapsible=icon]:hidden">
                                     <span className="truncate font-logo font-semibold">{brand.name}</span>
                                     {brand.tagline && <span className="truncate text-xs text-muted-foreground">{brand.tagline}</span>}
                                 </span>
@@ -215,7 +215,7 @@ function AccountMenu({
                     align="end"
                     className="w-64"
                     trigger={
-                        <SidebarMenuButton size="lg" tooltip={user.name} className="data-[state=open]:bg-sidebar-accent">
+                        <SidebarMenuButton size="lg" tooltip={user.name} className="data-[state=open]:bg-sidebar-accent group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:[&>span:nth-child(2)]:hidden">
                             {identity}
                             <ChevronsUpDown className="ml-auto size-4 group-data-[collapsible=icon]:hidden" />
                         </SidebarMenuButton>

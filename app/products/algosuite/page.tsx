@@ -3,6 +3,7 @@ import Script from 'next/script';
 import { Header, Footer } from '@/components/layouts';
 import { generateBreadcrumbJsonLd, generatePageMetadata } from '@/lib/metadata';
 import { MainContent } from './client';
+import { PlansSection } from '@/components/website/plans-section';
 
 const breadcrumbs = generateBreadcrumbJsonLd([
     { name: 'Home', path: '/' },
@@ -32,7 +33,7 @@ const Page = () => {
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbs) }}
             />
             <Header />
-            <MainContent />
+            <MainContent pricing={<PlansSection productSlug="algosuite" />} />
             <Footer />
         </div>
     );

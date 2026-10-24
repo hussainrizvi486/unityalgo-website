@@ -147,7 +147,7 @@ export function Header() {
               <DesktopNav isScrolled={isScrolled} />
             </div>
             <div className="hidden md:flex items-center gap-gap">
-              <Link href="#contact">
+              <Link href="/register">
                 {}
                 <Button className="py-2 transition-all duration-300 bg-primary hover:bg-primary/90 text-primary-foreground shadow-md">
                   Get Started
@@ -215,7 +215,7 @@ const MobileMenu = () => {
               </Link>
             ))}
 
-          <Button asChild className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground shadow-md" size="sm"><Link href="/#contact" onClick={closeMenu} className="block mt-6">
+          <Button asChild className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground shadow-md" size="sm"><Link href="/register" onClick={closeMenu} className="block mt-6">
               Get Started
             </Link></Button>
         </nav>
