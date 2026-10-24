@@ -109,7 +109,7 @@ export function OverviewClient({
                         </Button>
                         <Button asChild variant="outline" size="sm">
                             <Link href="/dashboard/support/new">
-                                <LifeBuoy className="size-4" />Get support
+                                Get support
                             </Link>
                         </Button>
                         <Button asChild variant="outline" size="sm">
@@ -141,7 +141,7 @@ export function OverviewClient({
                         </>
                     );
                     return item.href ? (
-                        <Link key={item.label} href={item.href} className="p-5 transition-all hover:-translate-y-0.5 hover:border-input hover:shadow-sm portal-surface">
+                        <Link key={item.label} href={item.href} className="p-5 hover:border-input hover:shadow-xs portal-surface">
                             {body}
                         </Link>
                     ) : (

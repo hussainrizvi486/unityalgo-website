@@ -26,8 +26,8 @@ export default async function AlgoSuitePricingPage() {
     return (
         <div className="min-h-screen bg-background text-foreground">
             <Header />
-            <main className="pricing-page site-container site-gutters">
-                <Link href="/products/algosuite" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="size-4" />Back to AlgoSuite</Link>
+            <main className="scroll-mt-24 px-4 py-14 site-container site-gutters">
+                {/* <Link href="/products/algosuite" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="size-4" />Back to AlgoSuite</Link> */}
                 <div className="pricing-page-intro">
                     <p className="text-xs font-semibold uppercase tracking-eyebrow text-muted-foreground">AlgoSuite pricing</p>
                     <h1 className="mt-4 text-4xl font-semibold tracking-tight md:text-5xl">Your team. Your modules.<br />Your next chapter.</h1>

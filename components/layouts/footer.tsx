@@ -1,6 +1,6 @@
 'use client';
 
-import { Facebook, Linkedin } from 'lucide-react';
+import { Facebook, Instagram, Linkedin } from 'lucide-react';
 import { Logo } from '../Logo';
 import Link from 'next/link';
 
@@ -85,7 +85,7 @@ export function Footer() {
               </li>
               <li>
                 <Link href="/products/algosuite/pricing" className="text-primary-foreground/80 hover:text-primary-foreground transition-colors">
-                  AlgoSuite pricing
+                  Pricing
                 </Link>
               </li>
             </ul>
@@ -96,6 +96,14 @@ export function Footer() {
               Connect With Us
             </h4>
             <div className="flex gap-3">
+              <Link
+                href="https://www.instagram.com/unityalgo/"
+                className="w-10 h-10 rounded-full bg-primary-foreground/10 hover:brightness-90 flex items-center justify-center transition-colors"
+                aria-label="Instagram"
+                target='_blank'
+              >
+                <Instagram className="w-5 h-5" />
+              </Link>
               <Link
                 href="https://www.facebook.com/profile.php?id=61583797718151"
                 className="w-10 h-10 rounded-full bg-primary-foreground/10 hover:brightness-90 flex items-center justify-center transition-colors"
