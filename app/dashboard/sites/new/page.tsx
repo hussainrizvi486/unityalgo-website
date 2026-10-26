@@ -10,6 +10,7 @@ import { formatPlanPrice } from '@/lib/pricing';
 import { listAlgoSuitePlans } from '@/lib/products';
 import { listIdleSubscriptions } from '@/lib/subscription-claims';
 import { loadPlanTiers } from '@/lib/app-plan-access';
+import { readPlanMetadata } from '@/lib/plan-metadata';
 import { SiteForm } from './site-form';
 export const metadata = { title: 'Create a site' };
 export default async function CreateSitePage({
@@ -108,6 +109,7 @@ export default async function CreateSitePage({
                     vcpu: plan.vcpu,
                     ramMb: plan.ramMb,
                     storageGb: plan.storageGb,
+                    defaults: readPlanMetadata(plan.metadata).defaults,
                     trialDays: plan.priceAmount == null ? trialDaysFor(plan, eligibility) : 0,
                     trialUsed: plan.priceAmount == null && Boolean(plan.trialDays) && eligibility.used.has(plan.id) && !eligibility.subscribed.has(plan.id),
                     // A plan that is only a free trial cannot be chosen again once the trial is used.

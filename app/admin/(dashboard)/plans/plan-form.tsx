@@ -30,6 +30,7 @@ export interface PlanFormValues {
     storageGb: string;
     trialDays: string;
     features: string;
+    metadata: string;
     isActive: boolean;
     sortOrder: string;
 }
@@ -213,6 +214,25 @@ export function PlanForm({ action, defaultValues, submitLabel, products, currenc
                     Features <span className="text-muted-foreground font-normal">(one per line)</span>
                 </Label>
                 <Textarea id="features" name="features" rows={5} defaultValue={defaultValues?.features} placeholder={'Accounting + HR + Inventory + CRM\nPriority email + chat support'} />
+            </div>
+
+            <div>
+                <Label htmlFor="metadata" className="portal-text-body text-foreground/80 mb-1.5">
+                    Metadata <span className="text-muted-foreground font-normal">(JSON, optional)</span>
+                </Label>
+                <Textarea
+                    id="metadata"
+                    name="metadata"
+                    rows={7}
+                    spellCheck={false}
+                    className="font-mono text-sm"
+                    defaultValue={defaultValues?.metadata}
+                    placeholder={'{\n  "defaults": {\n    "country": "Pakistan",\n    "currency": "PKR",\n    "coaType": "standard"\n  }\n}'}
+                />
+                <p className="mt-1.5 portal-text-caption text-muted-foreground">
+                    <code>defaults</code> pre-fills the create-site form when a customer picks this plan (country, currency, coaType).
+                    Customers can still change the values. Other keys are stored as they are.
+                </p>
             </div>
 
             <Label htmlFor="isActive" className="portal-text-body text-foreground/80">

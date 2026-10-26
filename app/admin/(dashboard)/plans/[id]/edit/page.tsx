@@ -41,6 +41,7 @@ export default async function EditPlanPage({ params }: { params: Promise<{ id: s
                     storageGb: plan.storageGb != null ? String(plan.storageGb) : '',
                     trialDays: plan.trialDays ? String(plan.trialDays) : '',
                     features: plan.features.join('\n'),
+                    metadata: plan.metadata && Object.keys(plan.metadata as object).length ? JSON.stringify(plan.metadata, null, 2) : '',
                     isActive: plan.isActive,
                     sortOrder: String(plan.sortOrder),
                 }}

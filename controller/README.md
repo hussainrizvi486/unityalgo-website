@@ -54,6 +54,27 @@ It refuses to start if a port is already taken, warns and continues without
 the worker if Redis is unreachable, prefixes each process's output, and stops
 everything on Ctrl-C.
 
+For more control there is a Python process manager, `dev.py` in the repo root
+(standard library only, no install step):
+
+```bash
+python3 dev.py                 # start everything and stay attached; type status / restart <name> / logs <name>
+python3 dev.py up -d           # start in the background
+python3 dev.py status          # state, pid, uptime, restarts and port of every service
+python3 dev.py restart web     # or stop / start; `all` works too
+python3 dev.py logs -f         # follow every service (or name one)
+python3 dev.py down            # stop everything
+python3 dev.py doctor          # check Node, the virtualenv, .env, Postgres, Redis and ports, with a fix for each
+python3 dev.py migrate         # website migrations, then the controller's
+```
+
+It restarts a crashed service with a back-off (and gives up loudly after five quick
+crashes), waits for Redis before starting the worker and scheduler, starts a local
+Redis or Postgres (Docker) when one is missing, and stops the child processes that
+`next dev` and Celery leave behind. Its sockets and logs live in
+`~/.local/state/unityalgo-dev/`, deliberately outside the project: inside it, Next.js
+tries to read the control socket and every page fails with a 500.
+
 ## Configuration
 
 Everything loads through `app/config.py`. The ones that matter most:

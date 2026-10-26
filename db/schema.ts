@@ -534,6 +534,8 @@ export const plan = pgTable("Plan", {
 	storageGb: integer(),
 	// Days of free use a new customer gets on this plan; null or 0 = no trial.
 	trialDays: integer(),
+	// Free-form settings the admin keeps as JSON (see lib/plan-metadata.ts); the site wizard reads `defaults` from it.
+	metadata: jsonb().default({}).notNull(),
 }, (table) => [
 	index("Plan_currencyId_idx").using("btree", table.currencyId.asc().nullsLast().op("text_ops")),
 	uniqueIndex("Plan_paddlePriceId_key").using("btree", table.paddlePriceId.asc().nullsLast().op("text_ops")),

@@ -21,6 +21,8 @@
     "test:e2e": "tsx scripts/e2e-test.ts",
     "test:security": "tsx scripts/security-test.ts",
     "dev:all": "bash scripts/dev.sh",
+    "dev:py": "python3 dev.py",
+    "test:dev-script": "python3 scripts/test-dev-script.py",
     "test:paddle": "node --conditions=react-server --import tsx scripts/test-paddle-billing.mts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",

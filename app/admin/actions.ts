@@ -1,5 +1,6 @@
 'use server';
 
+import { parsePlanMetadataText } from '@/lib/plan-metadata';
 import { cookies } from 'next/headers';
 import bcrypt from 'bcryptjs';
 import { redirect } from 'next/navigation';
@@ -348,6 +349,7 @@ function readPlanFields(formData: FormData) {
         // 0 or blank = no trial. Capped so a typo cannot hand out years of free hosting.
         trialDays: (() => { const days = parseOptionalInt(formData.get('trialDays')); return days && days > 0 ? Math.min(days, 365) : null; })(),
         features: parseFeatureLines(formData.get('features')),
+        metadataText: String(formData.get('metadata') ?? ''),
         isActive: formData.get('isActive') === 'on',
         sortOrder: parseOptionalInt(formData.get('sortOrder')) ?? 0,
     };
@@ -359,6 +361,9 @@ export async function createPlanAction(_prevState: PlanFormState | undefined, fo
     if (!fields.product || !fields.name) {
         return { error: 'Product and name are required.' };
     }
+
+    const metadata = parsePlanMetadataText(fields.metadataText);
+    if (!metadata.ok) return { error: metadata.error };
 
     const slug = slugify(fields.slugInput || fields.name);
 
@@ -383,6 +388,7 @@ export async function createPlanAction(_prevState: PlanFormState | undefined, fo
             storageGb: fields.storageGb,
             trialDays: fields.trialDays,
             features: fields.features,
+            metadata: metadata.value,
             isActive: fields.isActive,
             sortOrder: fields.sortOrder,
         });
@@ -402,6 +408,9 @@ export async function updatePlanAction(
     if (!fields.product || !fields.name) {
         return { error: 'Product and name are required.' };
     }
+
+    const metadata = parsePlanMetadataText(fields.metadataText);
+    if (!metadata.ok) return { error: metadata.error };
 
     const slug = slugify(fields.slugInput || fields.name);
 
@@ -426,6 +435,7 @@ export async function updatePlanAction(
             storageGb: fields.storageGb,
             trialDays: fields.trialDays,
             features: fields.features,
+            metadata: metadata.value,
             isActive: fields.isActive,
             sortOrder: fields.sortOrder,
         }).where(eq(schema.plan.id, id));

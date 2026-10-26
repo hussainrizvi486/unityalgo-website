@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { slugFromName, validateSiteWizard } from '../lib/site-wizard';
 import { validateRegistration, validateField } from '../lib/registration-validation';
+import { applyPlanDefaults, parsePlanMetadataText, readPlanMetadata } from '../lib/plan-metadata';
 import { isSameOrigin, publicOrigin } from '../lib/request-origin';
 
 let n = 0; const ok = (name: string, fn: () => void) => { fn(); n++; console.log(`ok ${name}`); };
@@ -54,4 +55,31 @@ ok('redirects are built from the address the visitor used', () => {
     assert.equal(publicOrigin(req({ 'x-forwarded-host': 'cloud.unityalgo.com, internal', 'x-forwarded-proto': 'https, http' })), 'https://cloud.unityalgo.com');
     assert.equal(publicOrigin(req({})), 'http://localhost:2424');
 });
+ok('plan metadata: blank means none, and a good object is kept as written', () => {
+    assert.deepEqual(parsePlanMetadataText('  '), { ok: true, value: {} });
+    const text = '{"defaults":{"country":"Pakistan","currency":"pkr","coaType":"numbered"},"note":"kept"}';
+    const result = parsePlanMetadataText(text);
+    assert.ok(result.ok);
+    assert.deepEqual(result.value, JSON.parse(text));
+});
+ok('plan metadata: mistakes are reported, not ignored', () => {
+    for (const bad of ['{', '[]', '"x"', '{"defaults":[]}', '{"defaults":{"colour":"red"}}', '{"defaults":{"country":"Atlantis"}}', '{"defaults":{"currency":"DOLLARS"}}', '{"defaults":{"coaType":"weird"}}', '{"defaults":{"country":5}}']) {
+        const result = parsePlanMetadataText(bad);
+        assert.equal(result.ok, false, bad);
+    }
+});
+ok('plan metadata: the wizard reads only valid defaults and never throws', () => {
+    assert.deepEqual(readPlanMetadata(null), { defaults: {} });
+    assert.deepEqual(readPlanMetadata({ defaults: { country: 'pakistan', currency: 'pkr', coaType: 'standard' } }), { defaults: { country: 'Pakistan', currency: 'PKR', coaType: 'standard' } });
+    assert.deepEqual(readPlanMetadata({ defaults: { country: 'Atlantis', currency: 12, coaType: 'x' } }), { defaults: {} });
+    assert.deepEqual(readPlanMetadata('nonsense'), { defaults: {} });
+});
+ok('plan defaults fill untouched fields only and skip currencies the shop does not offer', () => {
+    const start = { country: 'India', currency: 'INR', coaType: 'standard' };
+    const defaults = { country: 'Pakistan', currency: 'PKR', coaType: 'numbered' };
+    assert.deepEqual(applyPlanDefaults(start, defaults, { country: false, currency: false, coaType: false }, ['PKR', 'INR']), { country: 'Pakistan', currency: 'PKR', coaType: 'numbered' });
+    assert.deepEqual(applyPlanDefaults(start, defaults, { country: true, currency: true, coaType: true }, ['PKR']), start);
+    assert.equal(applyPlanDefaults(start, defaults, { country: false, currency: false, coaType: false }, ['INR']).currency, 'INR');
+});
+
 console.log(`${n} onboarding and origin checks passed`);
