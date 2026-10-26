@@ -25,6 +25,8 @@ if os.environ.get('SETUP_JSON'):
     run('setup wizard', ['env/bin/python', '-c', os.environ['WIZARD_SCRIPT']])
 if os.environ.get('MODULES'):
     run('modules', ['env/bin/python', '-c', os.environ['DOMAIN_SCRIPT']])
+if os.environ.get('ROLES'):
+    run('roles', ['env/bin/python', '-c', os.environ['ROLES_SCRIPT']])
 run('enable-scheduler', ['bench', '--site', site, 'enable-scheduler'])
 """
 
@@ -90,6 +92,30 @@ try:
     settings.save(ignore_permissions=True)
     frappe.db.commit()
     print('MODULES_MISSING=' + json.dumps(missing))
+finally:
+    frappe.destroy()
+"""
+
+ROLES_SCRIPT = """import json, os
+import frappe
+os.chdir('sites')
+frappe.init(site=os.environ['SITE_NAME'], sites_path='.')
+frappe.connect()
+try:
+    roles = json.loads(os.environ.get('ROLES') or '[]')
+    owner = json.loads(os.environ['SETUP_JSON'])['owner_email']
+    for role in roles:
+        if not frappe.db.exists('Role', role):
+            frappe.get_doc({'doctype': 'Role', 'role_name': role, 'desk_access': 1}).insert(ignore_permissions=True)
+    # The customer's own administrator account gets every role the plan allows; nothing it already has is taken away.
+    user = frappe.get_doc('User', owner)
+    have = {row.role for row in user.roles}
+    for role in roles:
+        if role not in have:
+            user.append('roles', {'role': role})
+    user.save(ignore_permissions=True)
+    frappe.db.commit()
+    print('ROLES_ASSIGNED=' + json.dumps(roles))
 finally:
     frappe.destroy()
 """
@@ -408,6 +434,13 @@ class FrappeService:
                     {
                         "MODULES": json.dumps(self.setup["modules"]).replace("$", "$$"),
                         "DOMAIN_SCRIPT": DOMAIN_SCRIPT.replace("$", "$$"),
+                    }
+                )
+            if self.setup.get("roles"):
+                environment.update(
+                    {
+                        "ROLES": json.dumps(self.setup["roles"]).replace("$", "$$"),
+                        "ROLES_SCRIPT": ROLES_SCRIPT.replace("$", "$$"),
                     }
                 )
         services["create-site"].update(

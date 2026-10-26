@@ -24,9 +24,8 @@ class ProxyInfoView(BaseView):
 
 
 class ProxySyncView(BaseView):
-
     controller_class = ServerController
-
+    
     def post(self):
         with self.session() as session:
             proxy = self.controller(session).proxy_node()

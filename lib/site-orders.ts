@@ -10,6 +10,7 @@ import { createPlanCheckout } from '@/lib/checkout-billing';
 import { claimIdleSubscription } from '@/lib/subscription-claims';
 import { upgradeTarget } from '@/lib/app-compatibility';
 import { unionModules } from '@/lib/app-modules';
+import { readPlanRestrictions } from '@/lib/plan-metadata';
 import { loadPlanTiers } from '@/lib/app-plan-access';
 import { asRecord, asString } from '@/lib/paddle-data';
 
@@ -63,11 +64,13 @@ export async function saveSiteOrder(userId: string, requestKey: string, values: 
     // Paid plan selection always goes through payment; only an explicitly free trial plan bypasses it.
     const trialDays = plan.priceAmount == null ? trialDaysFor(plan, await trialEligibility(userId)) : 0;
     if (!trialDays && (plan.priceAmount == null || !plan.paddlePriceId)) throw new SiteOrderError('This plan is not available for online purchase.');
+    const restrictions = readPlanRestrictions(plan.metadata);
     const setup = {
         user_id: userId, request_key: requestKey, name: values.slug, slug: values.slug,
         app_names: apps.filter((app) => app.appType !== 'module').map((app) => app.frappeAppName), plan_id: plan.id,
-        // Modules are switched on after the site is set up. The ids stay here to record which entries the site has.
-        modules: unionModules(moduleApps.map((app) => app.modules)), module_app_ids: moduleApps.map((app) => app.id), plan_name: plan.name,
+        // The plan's modules and the chosen module entries are switched on after the site is set up, and the plan's roles go to its
+        // administrator. The ids stay here to record which entries the site has.
+        modules: unionModules([restrictions.modules, ...moduleApps.map((app) => app.modules)]), roles: restrictions.roles, module_app_ids: moduleApps.map((app) => app.id), plan_name: plan.name,
         plan_vcpu: plan.vcpu, plan_ram_mb: plan.ramMb, plan_storage_gb: plan.storageGb, plan_user_limit: plan.userLimit,
         company_name: values.companyName, country: values.country, currency: currency.code, coa_type: values.coaType,
         owner_email: values.email, owner_password: values.password, ...(trialDays ? { trial_days: trialDays } : {}),

@@ -941,6 +941,32 @@ try {
         await removeModuleApp({ userId: 'modsite', appId: b.id, siteId: 'mod-site' });
         assert.deepEqual(calls(), [[]], 'removing the last one clears the list');
     });
+    await check('a plan\'s restrictions decide the modules and roles a new site gets, and module entries never switch them off', async () => {
+        await mkUser('planrestrict');
+        await db.insert(schema.plan).values({ id: 'restricted', productId: 'product', name: 'Restricted', slug: 'restricted', priceAmount: 40, paddlePriceId: 'pri_restricted', metadata: { restrictions: { modules: ['Accounting'], roles: ['Accounts User', 'Accounts Manager'] }, note: 'kept' } });
+        const extra = await makeModule('plan-extra', ['Selling']);
+        const order = await saveSiteOrder('planrestrict', randomUUID(), { ...idleValues('restricted-site', 'planrestrict'), planId: 'restricted', apps: [extra.id] });
+        const setup = openSetup(`planrestrict:${order.requestKey}`, order.encryptedSetup!) as Record<string, unknown>;
+        assert.deepEqual(setup.modules, ['Accounting', 'Selling'], 'the plan\'s modules come first, then the chosen entries');
+        assert.deepEqual(setup.roles, ['Accounts User', 'Accounts Manager']);
+        await db.update(schema.siteOrder).set({ status: 'READY', paidAt: new Date() }).where(eq(schema.siteOrder.id, order.id));
+        await provisionSiteOrder(order.id);
+        assert.deepEqual(lastCreateBody?.modules, ['Accounting', 'Selling']);
+        assert.deepEqual(lastCreateBody?.roles, ['Accounts User', 'Accounts Manager']);
+        // A plan with no restrictions sends nothing to restrict.
+        const plain = await saveSiteOrder('planrestrict', randomUUID(), { ...idleValues('plain-plan-site', 'planrestrict'), planId: 'basic' });
+        const plainSetup = openSetup(`planrestrict:${plain.requestKey}`, plain.encryptedSetup!) as Record<string, unknown>;
+        assert.deepEqual([plainSetup.modules, plainSetup.roles], [[], []]);
+        // Later module changes keep the plan's own modules on.
+        siteFixtures.set('restricted-live', { id: 'restricted-live', name: 'r', status: 'ready', activity: null, plan_id: 'restricted', owner: 'planrestrict' });
+        await db.insert(schema.subscription).values({ userId: 'planrestrict', planId: 'restricted', productId: 'product', status: 'ACTIVE', paddleSubscriptionId: 'sub_restricted1', paddleCustomerId: 'ctm_restricted', siteId: 'restricted-live' });
+        const later = await makeModule('plan-later', ['Stock']);
+        moduleCalls.length = 0;
+        await installModuleApp({ userId: 'planrestrict', app: later, siteId: 'restricted-live' });
+        assert.deepEqual(moduleCalls.splice(0), [['Accounting', 'Stock']]);
+        await removeModuleApp({ userId: 'planrestrict', appId: later.id, siteId: 'restricted-live' });
+        assert.deepEqual(moduleCalls.splice(0), [['Accounting']], 'removing the last entry leaves the plan\'s modules');
+    });
     await check('billing never cancels a paid module just because it is not in the site\'s app list', async () => {
         await mkUser('modpay');
         siteFixtures.set('pay-site', { id: 'pay-site', name: 'pay', status: 'ready', activity: null, plan_id: 'basic', owner: 'modpay' });

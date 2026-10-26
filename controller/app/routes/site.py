@@ -54,6 +54,22 @@ def parse_modules(value):
     return modules
 
 
+def parse_roles(value):
+    """Frappe role names from a request: a list of plain names, no duplicates, empty when none were sent."""
+    if value in (None, ""):
+        return []
+    if not isinstance(value, list) or len(value) > MAX_MODULES:
+        raise ValidationError(f"Roles must be a list of at most {MAX_MODULES} names.")
+    roles = []
+    for item in value:
+        name = str(item).strip() if isinstance(item, str) else ""
+        if not MODULE_NAME.fullmatch(name):
+            raise ValidationError("A role name is not valid.")
+        if name not in roles:
+            roles.append(name)
+    return roles
+
+
 RESERVED_SLUGS = frozenset(
     "www admin api app apps mail smtp imap ftp ns ns1 ns2 cloud dashboard portal support status billing blog docs help login register root test demo unityalgo erp erpnext frappe caddy proxy".split()
 )
@@ -318,6 +334,7 @@ class SitesView(BaseView):
             "owner_email": str(data.get("owner_email", "")).strip().lower(),
             "owner_password": str(data.get("owner_password", "")),
             "modules": parse_modules(data.get("modules")),
+            "roles": parse_roles(data.get("roles")),
         }
         if not setup["company_name"] or len(setup["company_name"]) > 100:
             raise ValidationError("Enter a company name of up to 100 characters.")

@@ -27,7 +27,6 @@ import {
     type SiteWizardValues,
     slugFromName,
 } from '@/lib/site-wizard';
-import { applyPlanDefaults, type PlanDefaults } from '@/lib/plan-metadata';
 import { cn } from '@/utils';
 
 interface PlanOption {
@@ -40,8 +39,6 @@ interface PlanOption {
     vcpu: number | null;
     ramMb: number | null;
     storageGb: number | null;
-    /** Values the plan pre-fills in the company step. */
-    defaults: PlanDefaults;
     /** Days of free trial on offer to this customer, 0 for none. */
     trialDays: number;
     /** The plan has a trial but this customer has used it. */
@@ -110,8 +107,7 @@ export function SiteForm({
         keywords: [currency.symbol, currency.name],
     }));
     const startCountry = findCountry(defaultCountry) ?? '';
-    const initialPlan = plans.find((plan) => plan.id === selectedPlan && !plan.unavailable);
-    const [values, setValues] = useState<SiteWizardValues>(() => applyPlanDefaults({
+    const [values, setValues] = useState<SiteWizardValues>({
         slug: slugFromName(defaultCompany),
         companyName: defaultCompany,
         country: startCountry,
@@ -124,9 +120,7 @@ export function SiteForm({
         email: '',
         password: '',
         confirmPassword: '',
-    }, initialPlan?.defaults ?? {}, { country: false, currency: false, coaType: false }, currencies.map((currency) => currency.code)));
-    // Fields the customer has edited: a plan's defaults never overwrite these.
-    const changed = useRef({ country: false, coaType: false });
+    });
     // A plan chosen before the wizard (pricing page, plans page, or an unused subscription) is kept: the plan step is
     // skipped unless the customer asks to change it.
     const [planLocked, setPlanLocked] = useState(Boolean(values.planId));
@@ -355,7 +349,6 @@ export function SiteForm({
                             value={values.country}
                             invalid={Boolean(errors.country)}
                             onValueChange={(value) => {
-                                changed.current.country = true;
                                 set('country', value);
                                 // The currency follows the country until the customer picks one themselves.
                                 if (!currencyChosen.current && currencyFor(value)) set('currency', currencyFor(value));
@@ -384,10 +377,7 @@ export function SiteForm({
                     >
                         <Select
                             value={values.coaType}
-                            onValueChange={(value) => {
-                                changed.current.coaType = true;
-                                set('coaType', value);
-                            }}
+                            onValueChange={(value) => set('coaType', value)}
                         >
                             <SelectTrigger id="coaType">
                                 <SelectValue />
@@ -422,14 +412,14 @@ export function SiteForm({
                                 aria-pressed={values.planId === plan.id}
                                 disabled={plan.unavailable}
                                 onClick={() => {
-                                    setValues((current) => applyPlanDefaults({
+                                    setValues((current) => ({
                                         ...current,
                                         planId: plan.id,
                                         apps: current.apps.filter((id) => {
                                             const app = apps.find((candidate) => candidate.id === id);
                                             return !app || isCompatible(app, tiers.find((tier) => tier.id === plan.id), tiers);
                                         }),
-                                    }, plan.defaults, { ...changed.current, currency: currencyChosen.current }, currencies.map((currency) => currency.code)));
+                                    }));
                                     setErrors((current) => ({ ...current, planId: undefined }));
                                 }}
                                 className={cn(

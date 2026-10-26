@@ -3,6 +3,7 @@ import { and, eq, inArray, sql } from 'drizzle-orm';
 import { db, schema } from '@/lib/db';
 import { controller } from '@/lib/controller-client';
 import { moduleKey, unionModules } from '@/lib/app-modules';
+import { readPlanRestrictions } from '@/lib/plan-metadata';
 
 type App = typeof schema.appCatalog.$inferSelect;
 type Client = Pick<typeof db, 'select' | 'insert' | 'delete' | 'execute'>;
@@ -14,6 +15,17 @@ export async function siteModuleApps(siteId: string, client: Client = db) {
         .from(schema.siteModuleApp)
         .innerJoin(schema.appCatalog, eq(schema.appCatalog.id, schema.siteModuleApp.appId))
         .where(eq(schema.siteModuleApp.siteId, siteId));
+}
+
+/** The modules the site's plan allows, which stay on whichever module entries are added or removed. */
+async function planModules(siteId: string, client: Client) {
+    const [row] = await client
+        .select({ metadata: schema.plan.metadata })
+        .from(schema.subscription)
+        .innerJoin(schema.plan, eq(schema.plan.id, schema.subscription.planId))
+        .where(eq(schema.subscription.siteId, siteId))
+        .limit(1);
+    return readPlanRestrictions(row?.metadata).modules;
 }
 
 /** `module:<appId>` keys per site, so install dialogs can tell what a site already has. */
@@ -35,7 +47,7 @@ async function changeModules<T>(siteId: string, change: (tx: Client) => Promise<
         await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${`site-modules:${siteId}`}, 0))`);
         const outcome = await change(tx);
         if (!outcome.proceed) return { applied: null, result: outcome.result };
-        const modules = unionModules((await siteModuleApps(siteId, tx)).map((entry) => entry.modules));
+        const modules = unionModules([await planModules(siteId, tx), ...(await siteModuleApps(siteId, tx)).map((entry) => entry.modules)]);
         return { applied: await controller.sites.applyModules(siteId, userId, modules), result: outcome.result };
     });
 }

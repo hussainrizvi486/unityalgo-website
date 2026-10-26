@@ -149,3 +149,18 @@ How the pieces fit:
 **Behaviour to be aware of:** as specified, the logic clears all domain restrictions and then assigns the chosen modules to the active `Subscription` domain. Frappe treats a module with no restriction as visible, so this does not hide modules that are not listed. If the goal is to show only the listed modules, unlisted modules would also have to be restricted to a domain that is not active; that is a one-line change in `DOMAIN_SCRIPT` once decided.
 
 Run `npm run db:migrate` (migration `0016_application_type`) before restarting.
+
+## Plan restrictions (modules and roles per plan)
+
+Each plan has an optional **Metadata** JSON (Admin, Plans). Its `restrictions` object is the source of truth for what a new site on that plan gets; nothing is hardcoded:
+
+```json
+{ "restrictions": { "modules": ["Accounting"], "roles": ["Accounts User"] } }
+```
+
+- **Modules** are applied right after the setup wizard with the same `DOMAIN_SCRIPT` as module entries (`MODULES`). The list sent is the plan's modules followed by any module entries chosen at creation. When a customer later adds or removes a module entry, the plan's modules stay in the list (`lib/site-modules.ts`, read from the site's subscription plan).
+- **Roles** run in a second step (`ROLES_SCRIPT`, `ROLES` in the create-site step), after the wizard has made the customer's account: each role is created if missing and added to the customer's administrator account. Roles the account already has are kept.
+- Both steps run only when the plan lists something, so a plan without `restrictions` changes nothing. The saved metadata is validated when the admin saves it; keys other than `restrictions` are stored as they are.
+- The restrictions are read when the site setup is saved (before payment) and sent to the controller as `modules` and `roles`. A plan change on an existing site does not re-apply them.
+
+Run `npm run db:migrate` (migration `0017_plan_metadata`) before restarting.

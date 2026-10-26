@@ -4,8 +4,8 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 from app.errors import ValidationError
-from app.routes.site import parse_modules
-from app.services.frappe_service import DOMAIN_SCRIPT, INSTALL_SCRIPT, FrappeService
+from app.routes.site import parse_modules, parse_roles
+from app.services.frappe_service import DOMAIN_SCRIPT, INSTALL_SCRIPT, ROLES_SCRIPT, FrappeService
 
 
 def service(setup=None):
@@ -60,6 +60,25 @@ class ModuleTests(unittest.TestCase):
         plain = service({**base, 'modules': []}).compose()['services']['create-site']['environment']
         self.assertNotIn('MODULES', plain); self.assertNotIn('DOMAIN_SCRIPT', plain)
         self.assertNotIn('MODULES', service().compose()['services']['create-site']['environment'])
+
+    def test_roles_are_parsed_like_module_names(self):
+        self.assertEqual(parse_roles(None), [])
+        self.assertEqual(parse_roles([' Accounts User ', 'Accounts User', 'Sales User']), ['Accounts User', 'Sales User'])
+        for bad in ('Accounts User', [1], ['$(x)'], [''], ['a'] * 101):
+            with self.assertRaises(ValidationError):
+                parse_roles(bad)
+
+    def test_creation_runs_the_roles_step_only_when_the_plan_names_roles(self):
+        self.assertIn("os.environ.get('ROLES')", INSTALL_SCRIPT)
+        base = {'company_name': 'c', 'country': 'x', 'currency': 'USD', 'coa_type': 'standard', 'owner_email': 'a@b.co', 'owner_password': 'p' * 12}
+        env = service({**base, 'modules': [], 'roles': ['Accounts User']}).compose()['services']['create-site']['environment']
+        self.assertEqual(json.loads(env['ROLES']), ['Accounts User'])
+        self.assertIn("'doctype': 'Role'", env['ROLES_SCRIPT'])
+        self.assertNotIn('MODULES', env)
+        plain = service({**base, 'modules': ['Selling'], 'roles': []}).compose()['services']['create-site']['environment']
+        self.assertNotIn('ROLES', plain); self.assertNotIn('ROLES_SCRIPT', plain)
+        self.assertLess(INSTALL_SCRIPT.index("run('setup wizard'"), INSTALL_SCRIPT.index("run('roles'"))
+        compile(ROLES_SCRIPT, 'roles', 'exec')
 
 
 if __name__ == '__main__':

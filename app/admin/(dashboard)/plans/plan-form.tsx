@@ -227,11 +227,12 @@ export function PlanForm({ action, defaultValues, submitLabel, products, currenc
                     spellCheck={false}
                     className="font-mono text-sm"
                     defaultValue={defaultValues?.metadata}
-                    placeholder={'{\n  "defaults": {\n    "country": "Pakistan",\n    "currency": "PKR",\n    "coaType": "standard"\n  }\n}'}
+                    placeholder={'{\n  "restrictions": {\n    "modules": ["Accounting"],\n    "roles": ["Accounts User"]\n  }\n}'}
                 />
                 <p className="mt-1.5 portal-text-caption text-muted-foreground">
-                    <code>defaults</code> pre-fills the create-site form when a customer picks this plan (country, currency, coaType).
-                    Customers can still change the values. Other keys are stored as they are.
+                    <code>restrictions.modules</code> are the only Frappe modules a new site on this plan shows, and{' '}
+                    <code>restrictions.roles</code> are created and given to the customer&apos;s administrator account.
+                    Leave them out to change nothing. Other keys are stored as they are.
                 </p>
             </div>
 
