@@ -4,6 +4,7 @@ import { listProductsWithPlans, listAlgoSuitePlans } from '@/lib/products';
 import { formatPlanPrice, formatTransactionFee } from '@/lib/pricing';
 import { Button } from '@/components/ui/button';
 import { PlanComparison } from '@/components/website/plan-comparison';
+import { withPlanDetails } from '@/lib/pricing-plans';
 
 export async function PlansSection({ productSlug }: { productSlug?: 'algosuite' } = {}) {
     const products = productSlug === 'algosuite'
@@ -39,7 +40,7 @@ export async function PlansSection({ productSlug }: { productSlug?: 'algosuite' 
                         </div>
 
                         {product.plans.length === 0 ? <div className="mt-6 plan-card"><h4 className="text-lg font-semibold">Let us find the right fit</h4><p className="mt-2 text-sm text-muted-foreground">Plans are being prepared. Contact our team for pricing and availability.</p><Button asChild className="mt-5 w-fit"><Link href="/#contact">Contact sales</Link></Button></div> : null}
-                        {productSlug ? <div className="pricing-preview-layout"><PlanComparison plans={product.plans} /><Link href="/products/algosuite/pricing" className="pricing-section-arrow" aria-label="Explore AlgoSuite pricing" title="Explore pricing and compare plans"><ArrowRight className="pricing-link-arrow size-5" aria-hidden="true" /></Link></div> : (
+                        {productSlug ? <div className="pricing-preview-layout"><PlanComparison plans={product.plans.map(withPlanDetails)} /><Link href="/products/algosuite/pricing" className="pricing-section-arrow" aria-label="Explore AlgoSuite pricing" title="Explore pricing and compare plans"><ArrowRight className="pricing-link-arrow size-5" aria-hidden="true" /></Link></div> : (
                             <div className="mt-6 plan-grid">
                                 {product.plans.map((plan) => {
                                     const fee = formatTransactionFee(plan.transactionFeePercent);

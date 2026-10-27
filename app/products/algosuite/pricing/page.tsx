@@ -1,10 +1,9 @@
 import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
 import { Header, Footer } from '@/components/layouts';
 import { listAlgoSuitePlans } from '@/lib/products';
 import { generatePageMetadata } from '@/lib/metadata';
 import { AlgoSuitePricing } from '@/components/website/algosuite-pricing';
-import type { PricingPlan } from '@/lib/pricing-plans';
+import { readPlanDetails, type PricingPlan } from '@/lib/pricing-plans';
 
 export const metadata = generatePageMetadata({
     title: 'AlgoSuite Pricing | Plans, Modules & Comparison',
@@ -21,6 +20,7 @@ export default async function AlgoSuitePricingPage() {
         transactionFeePercent: plan.transactionFeePercent, userLimit: plan.userLimit,
         features: plan.features, trialDays: plan.trialDays,
         vcpu: plan.vcpu, ramMb: plan.ramMb, storageGb: plan.storageGb,
+        details: readPlanDetails(plan.metadata),
         currency: plan.currency ? { code: plan.currency.code, symbol: plan.currency.symbol, numberFormat: plan.currency.numberFormat } : null,
     }));
     return (

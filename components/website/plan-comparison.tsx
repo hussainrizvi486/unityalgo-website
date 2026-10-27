@@ -1,13 +1,14 @@
 import type { CSSProperties } from 'react';
 import Link from 'next/link';
 import { Check } from 'lucide-react';
-import { planFeatureValues, pricingPlanAction, type PricingPlan } from '@/lib/pricing-plans';
+import { planFeatureValues, planResources, pricingPlanAction, type PricingPlan } from '@/lib/pricing-plans';
 import { formatPlanPrice, formatTransactionFee } from '@/lib/pricing';
 import { Button } from '@/components/ui/button';
 
 export function PlanComparison({ plans }: { plans: PricingPlan[] }) {
     if (!plans.length) return null;
     const features = plans.map(planFeatureValues);
+    const resources = plans.map(planResources);
     const labels = new Map<string, string>();
     for (const values of features) {
         for (const [key, feature] of values) labels.set(key, feature.label);
@@ -61,14 +62,13 @@ export function PlanComparison({ plans }: { plans: PricingPlan[] }) {
                             </tr>
                         ))}
                         
-                        {plans.some((plan) => plan.vcpu != null || plan.ramMb != null || plan.storageGb != null) && <>
+                        {plans.some((plan) => plan.details.support) && (
+                            <tr><th scope="row">Support</th>{plans.map((plan) => <td key={plan.id}>{plan.details.support ?? <NotListed />}</td>)}</tr>
+                        )}
+                        {resources.some((list) => list.length > 0) && <>
                             <tr className="plan-comparison-group"><th colSpan={plans.length + 1} scope="colgroup">Hosting resources</th></tr>
-                            {([
-                                ['vcpu', 'CPU', 'vCPU'],
-                                ['ramMb', 'Memory', 'MB'],
-                                ['storageGb', 'Storage', 'GB'],
-                            ] as const).filter(([key]) => plans.some((plan) => plan[key] != null)).map(([key, label, unit]) => (
-                                <tr key={key}><th scope="row">{label}</th>{plans.map((plan) => <td key={plan.id}>{plan[key] != null ? `${plan[key]} ${unit}` : <NotListed />}</td>)}</tr>
+                            {([['cpu', 'CPU'], ['ram', 'Memory'], ['storage', 'Storage']] as const).filter(([key]) => resources.some((list) => list.some((resource) => resource.key === key))).map(([key, label]) => (
+                                <tr key={key}><th scope="row">{label}</th>{plans.map((plan, index) => <td key={plan.id}>{resources[index].find((resource) => resource.key === key)?.value ?? <NotListed />}</td>)}</tr>
                             ))}
                         </>}
                     </tbody>

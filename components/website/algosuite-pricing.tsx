@@ -2,20 +2,33 @@
 
 import { useId, useState } from 'react';
 import Link from 'next/link';
-import { ArrowDown, ArrowRight, Check, Columns3, Layers } from 'lucide-react';
+import { ArrowDown, ArrowRight, Check, ChevronDown, Columns3, Headset, Layers } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { PlanComparison } from '@/components/website/plan-comparison';
 import { formatPlanPrice, formatTransactionFee } from '@/lib/pricing';
-import { planFeatureValues, pricingPlanAction, type PricingPlan } from '@/lib/pricing-plans';
+import { planFeatureValues, planResources, pricingPlanAction, type PricingPlan } from '@/lib/pricing-plans';
 
 function priceLabel(plan: PricingPlan) {
     return plan.priceAmount == null && plan.trialDays ? `Free for ${plan.trialDays} days` : formatPlanPrice(plan);
 }
 
+/** "$29/mo" as the amount and its unit, so the card can set the unit small. */
+function splitPrice(plan: PricingPlan) {
+    const label = priceLabel(plan);
+    const at = label.indexOf('/');
+    return at === -1 ? { amount: label, unit: '' } : { amount: label.slice(0, at), unit: label.slice(at) };
+}
+
+const FEATURES_SHOWN = 6;
+
 export function AlgoSuitePricing({ plans }: { plans: PricingPlan[] }) {
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
+    const [category, setCategory] = useState<string | null>(null);
+    const categories = [...new Set(plans.map((plan) => plan.details.category).filter((value): value is string => Boolean(value)))];
+    const visible = category ? plans.filter((plan) => plan.details.category === category) : plans;
     const selected = plans.filter((plan) => selectedIds.includes(plan.id));
     const comparing = selected.length >= 2;
     const featureGroups = new Map<string, { label: string; plans: { plan: PricingPlan; value: string | true }[] }>();
@@ -34,15 +47,22 @@ export function AlgoSuitePricing({ plans }: { plans: PricingPlan[] }) {
 
     return (
         <>
-            <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
-                <div><h2 className="text-2xl tracking-tight">Find your plan</h2><p className="mt-2 text-sm text-muted-foreground">Monthly pricing. Expand any plan for the full picture.</p></div>
+            <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
+                <div><h2 className="text-2xl tracking-tight">Find your plan</h2><p className="mt-2 text-sm text-muted-foreground">Monthly pricing. Every plan includes managed hosting and updates.</p></div>
                 <a href="#pricing-details" className="inline-flex items-center gap-2 text-sm font-medium hover:underline">Explore modules<ArrowDown className="size-4" /></a>
             </div>
-            <Accordion type="multiple" className="plan-grid pricing-plan-picker">
-                {plans.map((plan) => <PlanDetail key={plan.id} plan={plan} selected={selectedIds.includes(plan.id)} onSelect={(checked) => select(plan.id, checked)} />)}
-            </Accordion>
+            {categories.length > 1 && (
+                <div className="mb-6 flex flex-wrap gap-2" role="group" aria-label="Filter plans by industry">
+                    {[null, ...categories].map((name) => (
+                        <Button key={name ?? 'all'} type="button" size="sm" variant={category === name ? 'default' : 'outline'} aria-pressed={category === name} onClick={() => setCategory(name)} className="rounded-full">{name ?? 'All plans'}</Button>
+                    ))}
+                </div>
+            )}
+            <div className="plan-grid pricing-plan-picker">
+                {visible.map((plan) => <PlanCard key={plan.id} plan={plan} selected={selectedIds.includes(plan.id)} onSelect={(checked) => select(plan.id, checked)} />)}
+            </div>
             <div className="pricing-compare-toolbar">
-                <div className="flex items-center gap-3"><Columns3 className="size-5 shrink-0 text-muted-foreground" /><div><p className="text-sm font-medium">Compare plans</p><p className="mt-0.5 text-xs text-muted-foreground" role="status">{selected.length === 0 ? 'Select two or more plans above to compare.' : comparing ? `${selected.length} plans selected. Your comparison is shown below.` : 'One plan selected. Choose one more to compare.'}</p></div></div>
+                <div className="flex items-center gap-3"><Columns3 className="size-5 shrink-0 text-muted-foreground" /><div><p className="text-sm font-medium">Compare plans</p><p className="mt-0.5 text-xs text-muted-foreground" role="status">{selected.length === 0 ? 'Tick Compare on two or more plans to see them side by side.' : comparing ? `${selected.length} plans selected. Your comparison is shown below.` : 'One plan selected. Choose one more to compare.'}</p></div></div>
                 <div className="flex flex-wrap items-center gap-3">
                     {selected.length > 0 && <Button type="button" variant="ghost" size="sm" onClick={() => setSelectedIds([])}>Clear selection</Button>}
                     {comparing && <Button asChild variant="outline" size="sm"><a href="#pricing-details">View comparison<ArrowDown className="size-4" /></a></Button>}
@@ -71,27 +91,56 @@ export function AlgoSuitePricing({ plans }: { plans: PricingPlan[] }) {
     );
 }
 
-function PlanDetail({ plan, selected, onSelect }: { plan: PricingPlan; selected: boolean; onSelect: (checked: boolean) => void }) {
+function PlanCard({ plan, selected, onSelect }: { plan: PricingPlan; selected: boolean; onSelect: (checked: boolean) => void }) {
     const id = useId();
+    const [expanded, setExpanded] = useState(false);
     const features = [...planFeatureValues(plan).values()];
+    const shown = expanded ? features : features.slice(0, FEATURES_SHOWN);
+    const resources = planResources(plan);
     const action = pricingPlanAction(plan);
     const fee = formatTransactionFee(plan.transactionFeePercent);
+    const { amount, unit } = splitPrice(plan);
     return (
-        <AccordionItem value={plan.id} className="pricing-plan-card last:border-b" data-selected={selected}>
-            <div className="flex items-center gap-2 border-b border-border pb-4">
-                <Checkbox id={id} checked={selected} onCheckedChange={(checked) => onSelect(checked === true)} aria-label={`Compare ${plan.name}`} />
-                <label htmlFor={id} className="cursor-pointer text-xs text-muted-foreground">Add to comparison</label>
+        <article className="pricing-plan-card flex flex-col" data-selected={selected}>
+            <div className="flex min-h-7 items-center justify-between gap-2">
+                {plan.details.category ? <Badge variant="neutral">{plan.details.category}</Badge> : <span />}
+                <label htmlFor={id} className="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
+                    <Checkbox id={id} checked={selected} onCheckedChange={(checked) => onSelect(checked === true)} aria-label={`Compare ${plan.name}`} />Compare
+                </label>
             </div>
-            <AccordionTrigger className="items-start gap-3 py-5" aria-label={`View ${plan.name} details`}>
-                <span className="min-w-0"><span className="block text-lg font-semibold">{plan.name}</span>{plan.tagline && <span className="mt-2 block text-sm font-normal leading-6 text-muted-foreground">{plan.tagline}</span>}<span className="mt-5 block break-words text-2xl font-semibold tracking-tight">{priceLabel(plan)}</span><span className="mt-2 block text-xs font-normal text-muted-foreground">{plan.userLimit == null ? 'Unlimited seats' : `Up to ${plan.userLimit} seats`}</span><span className="mt-5 block text-xs font-medium underline underline-offset-4">Plan details</span></span>
-            </AccordionTrigger>
-            <AccordionContent className="border-t border-border pt-5">
-                {features.length > 0 && <><p className="mb-3 text-xs font-semibold uppercase tracking-wide">Included capabilities</p><ul className="space-y-3">{features.map((feature) => <li key={feature.label} className="flex items-start gap-2"><Check className="mt-0.5 size-4 shrink-0 text-success" /><span>{feature.label}{feature.value !== true ? `: ${feature.value}` : ''}</span></li>)}</ul></>}
-                {(plan.vcpu != null || plan.ramMb != null || plan.storageGb != null) && <div className="mt-5 border-t border-border pt-4"><p className="mb-3 text-xs font-semibold uppercase tracking-wide">Hosting resources</p><dl className="space-y-2 text-muted-foreground">{plan.vcpu != null && <div className="flex justify-between gap-2"><dt>CPU</dt><dd>{plan.vcpu} vCPU</dd></div>}{plan.ramMb != null && <div className="flex justify-between gap-2"><dt>Memory</dt><dd>{plan.ramMb} MB</dd></div>}{plan.storageGb != null && <div className="flex justify-between gap-2"><dt>Storage</dt><dd>{plan.storageGb} GB</dd></div>}</dl></div>}
-                {Boolean(plan.trialDays) && <p className="mt-4 text-xs text-muted-foreground">{plan.trialDays}-day free trial</p>}
-                {fee && <p className="mt-3 text-xs text-muted-foreground">{fee}</p>}
-                <Button asChild className="mt-5 w-full"><Link href={action.href}>{action.label}<span className="sr-only">: {plan.name}</span></Link></Button>
-            </AccordionContent>
-        </AccordionItem>
+            <h3 className="mt-4 text-xl font-semibold">{plan.name}</h3>
+            {plan.tagline && <p className="mt-2 text-sm leading-6 text-muted-foreground">{plan.tagline}</p>}
+            <p className="mt-6 flex flex-wrap items-baseline gap-x-1 break-words"><span className="text-3xl font-semibold tracking-tight">{amount}</span>{unit && <span className="text-sm text-muted-foreground">{unit}</span>}</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+                {plan.userLimit == null ? 'Unlimited seats' : `Up to ${plan.userLimit} seats`}
+                {plan.priceAmount != null && plan.trialDays ? ` · ${plan.trialDays}-day free trial` : ''}
+            </p>
+            <Button asChild className="mt-5 w-full"><Link href={action.href}>{action.label}<span className="sr-only">: {plan.name}</span></Link></Button>
+            {(resources.length > 0 || plan.details.support) && (
+                <div className="mt-6 border-t border-border pt-5">
+                    <p className="mb-3 text-xs font-semibold uppercase tracking-wide">Hosting</p>
+                    {resources.length > 0 && (
+                        <dl className="grid grid-cols-3 gap-2">
+                            {resources.map((resource) => <div key={resource.key} className="min-w-0 rounded-lg bg-muted px-3 py-2"><dt className="text-xs text-muted-foreground">{resource.label}</dt><dd className="mt-0.5 break-words text-sm font-medium">{resource.value}</dd></div>)}
+                        </dl>
+                    )}
+                    {plan.details.support && <p className="mt-3 flex items-center gap-2 text-sm text-muted-foreground"><Headset className="size-4 shrink-0" aria-hidden="true" />{plan.details.support} support</p>}
+                </div>
+            )}
+            {features.length > 0 && (
+                <div className="mt-6 border-t border-border pt-5">
+                    <p className="mb-3 text-xs font-semibold uppercase tracking-wide">What&apos;s included</p>
+                    <ul className="space-y-2.5 text-sm">
+                        {shown.map((feature) => <li key={feature.label} className="flex items-start gap-2"><Check className="mt-0.5 size-4 shrink-0 text-success" aria-hidden="true" /><span>{feature.label}{feature.value !== true ? `: ${feature.value}` : ''}</span></li>)}
+                    </ul>
+                    {features.length > FEATURES_SHOWN && (
+                        <button type="button" onClick={() => setExpanded((value) => !value)} aria-expanded={expanded} className="mt-4 inline-flex items-center gap-1.5 text-xs font-medium underline-offset-4 hover:underline">
+                            {expanded ? 'Show fewer' : `Show all ${features.length} features`}<ChevronDown className={`size-3.5 transition-transform ${expanded ? 'rotate-180' : ''}`} aria-hidden="true" />
+                        </button>
+                    )}
+                </div>
+            )}
+            {fee && <p className="mt-5 text-xs text-muted-foreground">{fee}</p>}
+        </article>
     );
 }

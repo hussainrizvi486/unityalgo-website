@@ -637,7 +637,7 @@ h4 {
 @layer components {
   .pricing-page { padding-top: calc(var(--header-h) + var(--section-gap)); }
   .pricing-page-intro { padding-block: calc(var(--gap) * 2) var(--section-gap); }
-  .pricing-plan-picker { align-items: start; }
+  .pricing-plan-picker { align-items: stretch; }
   .pricing-plan-card {
     min-width: 0;
     padding: var(--card-pad);
@@ -646,6 +646,7 @@ h4 {
     background: var(--card);
     transition: border-color 180ms ease, box-shadow 180ms ease;
   }
+  .pricing-plan-card:hover { border-color: var(--foreground); }
   .pricing-plan-card[data-selected='true'] {
     border-color: var(--primary);
     box-shadow: 0 0 0 var(--border-width) var(--primary);
