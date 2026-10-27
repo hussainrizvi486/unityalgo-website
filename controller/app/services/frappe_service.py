@@ -1,7 +1,9 @@
 """Generate an isolated Compose stack following frappe/frappe_docker services."""
 
 import json
+import re
 import shlex
+from urllib.parse import urlencode
 from app.services.ssh_service import SSHService
 
 INSTALL_SCRIPT = """import json, os, pathlib, subprocess, sys
@@ -107,12 +109,12 @@ try:
     for role in roles:
         if not frappe.db.exists('Role', role):
             frappe.get_doc({'doctype': 'Role', 'role_name': role, 'desk_access': 1}).insert(ignore_permissions=True)
-    # The customer's own administrator account gets every role the plan allows; nothing it already has is taken away.
+    # The customer's own account gets exactly the roles the plan names: the wizard's System Manager and any other role is dropped.
+    # (Guest, All and Desk User are given by Frappe itself, not stored on the user.)
     user = frappe.get_doc('User', owner)
-    have = {row.role for row in user.roles}
+    user.set('roles', [])
     for role in roles:
-        if role not in have:
-            user.append('roles', {'role': role})
+        user.append('roles', {'role': role})
     user.save(ignore_permissions=True)
     frappe.db.commit()
     print('ROLES_ASSIGNED=' + json.dumps(roles))
@@ -246,7 +248,6 @@ class FrappeService:
     }
 
     def allocation(self):
-        """{service: (memory MB, vCPUs)} for the site's plan."""
         total_mb = getattr(self.site, "memory_limit_mb", None) or 4096
         total_cpu = getattr(self.site, "cpu_limit", None) or 2.0
         weights = {
@@ -262,6 +263,18 @@ class FrappeService:
             )
             for name, weight in weights.items()
         }
+
+    def containers(self):
+        """Long-running containers of this site's stack, as Docker names them, with their limits."""
+        return [
+            {
+                "service": name,
+                "name": "%s-%s-1" % (self.project, name),
+                "memory_mb": memory_mb,
+                "cpus": cpus,
+            }
+            for name, (memory_mb, cpus) in self.allocation().items()
+        ]
 
     SETUP_MIN_MB = 1536
     SETUP_MIN_CPUS = 2.0
@@ -386,6 +399,7 @@ class FrappeService:
                 "bench set-config -gp db_port %d" % db_port,
             )
         ]
+
         if self.external_db:
             del services["db"]
         allocation = self.allocation()
@@ -422,6 +436,7 @@ class FrappeService:
             "DB_PASSWORD": db["password"].replace("$", "$$"),
             "ADMIN_PASSWORD": self.site.admin_password.replace("$", "$$"),
         }
+
         if self.setup:
             environment.update(
                 {
@@ -572,7 +587,6 @@ class FrappeService:
             self._write_compose(sftp)
 
     def set_owner_password(self, email, password):
-        """Set a Frappe user's password. It travels over stdin, never as a command-line argument."""
         command = self._compose_cmd(
             [
                 "exec",
@@ -593,6 +607,24 @@ class FrappeService:
                 "Could not set the password (exit %s): %s"
                 % (result.exit_code, (result.stderr or result.stdout).strip()[-400:])
             )
+
+    def login_sid(self, email, password):
+        """Sign the customer in on the site from its own worker and return the session id, or None when the login is refused.
+
+        Runs there, not from the controller: site ports only accept the proxy. The credentials go in on stdin, never on a command line.
+        """
+        form = urlencode({"usr": email, "pwd": password})
+        url = "http://%s:%d/api/method/login" % (self.server.dial_host, self.site.port)
+        command = "curl -sS -m 25 -i -X POST -H 'Content-Type: application/x-www-form-urlencoded' --data-binary @- " + shlex.quote(url)
+        result = self.ssh.run(command, timeout=40, stdin_data=form)
+        if not result.ok:
+            raise RuntimeError("The site did not answer: %s" % (result.stderr or result.stdout).strip()[-200:])
+        head = result.stdout.split("\r\n\r\n", 1)[0]
+        if not head.startswith("HTTP/") or " 200" not in head.splitlines()[0]:
+            return None
+        match = re.search(r"(?im)^set-cookie:\s*sid=([^;\s]+)", head)
+        sid = match.group(1) if match else None
+        return sid if sid and sid != "Guest" else None
 
     def stop(self):
         self.run(["stop"], timeout=300)
@@ -705,7 +737,7 @@ class FrappeService:
             raise RuntimeError("The modules could not be applied on the site.")
         return json.loads(line.split("=", 1)[1])
 
-    def apply_limits(self, user_limit):
+    def xapply_limits(self, user_limit):
         self.exec_output(["bench", "set-config", "-gp", "server_script_enabled", "1"])
         self._in_site(LIMITS_SCRIPT, USER_LIMIT=user_limit or "")
 

@@ -306,7 +306,11 @@ class SitesView(BaseView):
                     "That database server is not an available MariaDB cluster."
                 )
             return found
-        return session.scalar(query.where(DatabaseConnection.is_default.is_(True)))
+        default = session.scalar(query.where(DatabaseConnection.is_default.is_(True)))
+        if default:
+            return default
+
+        return session.scalar(query.order_by(DatabaseConnection.created_at.asc()).limit(1))
 
     def post(self):
         data = self.json_body()
@@ -934,6 +938,9 @@ class SiteResetPasswordView(BaseView):
             raise ConflictError(
                 "The password could not be changed right now. Check that the site is running and try again."
             )
+        # Kept so "Access site" keeps signing them in with the new password.
+        with self.session() as session:
+            owned_site(session, site_id, data.get("user_id")).erp_user_password = password
         from app.services.activity_logger import ActivityLogger
 
         ActivityLogger().event(
@@ -944,6 +951,41 @@ class SiteResetPasswordView(BaseView):
             tenant_slug=slug,
         )
         return self.ok({"ok": True})
+
+
+class SiteAccessView(BaseView):
+    """POST /<id>/access. Body: user_id. Signs the customer in on their own site and returns a one-click URL.
+
+    The login is the customer's own ERP user, never the Administrator, so the roles and modules of their plan apply. Sites
+    set up before the login was kept have none stored: `available` is false and the caller opens the plain sign-in page.
+    """
+
+    def post(self, site_id):
+        data = self.json_body()
+        if not isinstance(data, dict):
+            raise ValidationError("Request body must be an object.")
+        with self.session() as session:
+            site = owned_site(session, site_id, data.get("user_id"))
+            if site.status != "ready" or site.activity:
+                raise ConflictError("The site must be running to open it.")
+            email, password, url = site.owner_email, site.erp_user_password, f"https://{site.domain}"
+            if not email or not password:
+                return self.ok({"available": False, "url": url})
+            service, slug = build_service(session, site), site.slug
+        try:
+            sid = service.login_sid(email, password)
+        except Exception:
+            logging.getLogger(__name__).exception("Signing in to site %s failed", site_id)
+            raise ConflictError("Your site did not answer. It may still be starting; try again in a moment.")
+        if not sid:
+            # The password was changed inside the ERP: the stored one no longer works.
+            return self.ok({"available": False, "url": url})
+        from app.services.activity_logger import ActivityLogger
+
+        ActivityLogger().event(
+            "deployment", "site.access", "Site opened", message="The site owner opened the site with a one-click sign-in", tenant_slug=slug,
+        )
+        return self.ok({"available": True, "url": f"{url}/app?sid={sid}"})
 
 
 class SiteModulesView(BaseView):
@@ -1467,6 +1509,19 @@ class AdminSiteUsageView(SiteUsageView):
 class AdminSiteDetailView(BaseView):
     """GET /admin/<id>: one site with everything an operator needs to diagnose it."""
 
+    @staticmethod
+    def infrastructure(session, site):
+        service = build_service(session, site)
+        return {
+            "site_id": str(site.id),
+            "slug": site.slug,
+            "compose_project": service.project,
+            "path": service.path,
+            "image": site.image,
+            "port": site.port,
+            "containers": service.containers(),
+        }
+
     def get(self, site_id):
         with self.session() as session:
             site = site_by_id(session, site_id)
@@ -1511,6 +1566,7 @@ class AdminSiteDetailView(BaseView):
                     "database": {"name": db.name, "host": db.host, "engine": db.engine}
                     if db
                     else None,
+                    "infrastructure": self.infrastructure(session, site),
                     "domains": [domain_info(row) for row in domains],
                     "backups": [
                         {
@@ -1659,6 +1715,7 @@ class SiteRoutes:
             ("/<site_id>/change-plan", SiteChangePlanView, "change_plan"),
             ("/<site_id>/reset-password", SiteResetPasswordView, "reset_password"),
             ("/<site_id>/modules", SiteModulesView, "modules"),
+            ("/<site_id>/access", SiteAccessView, "access"),
             ("/admin", AdminSitesView, "admin_list"),
             ("/admin/queue", AdminQueueStatusView, "admin_queue"),
             ("/admin/system", AdminSystemStatusView, "admin_system"),

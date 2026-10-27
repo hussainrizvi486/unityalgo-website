@@ -170,11 +170,15 @@ def provision_site_task(self, site_id, setup=None):
             )
             with database.session() as session:
                 trials.activated(session, uuid.UUID(site_id))
+                if service.setup and service.setup.get("owner_password"):
+                    # Encrypted at rest like the admin password; lets "Access site" sign the customer in.
+                    session.get(Site, uuid.UUID(site_id)).erp_user_password = service.setup["owner_password"]
             succeeded = True
             try:
                 service.scrub_setup()
             except Exception:
                 pass
+
     except Exception as failure:
         label = dict(STEP_FLOW).get(current[0], "deployment")
         reason = f'Deployment stopped at "{label}". '
@@ -195,6 +199,7 @@ def provision_site_task(self, site_id, setup=None):
                 tenant_slug=service.site.slug,
                 server_name=service.server.name,
             )
+
         if cleaned:
             update(
                 site_id,
@@ -218,7 +223,6 @@ def provision_site_task(self, site_id, setup=None):
                 ProxyConfigurationService(settings).sync_all(session)
             except Exception:
                 pass
-    # Notification delivery has its own retry lifecycle and cannot fail provisioning.
     notify(site_id, "ready" if succeeded else "failed")
 
 

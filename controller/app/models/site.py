@@ -58,6 +58,8 @@ class Site(Base):
     error: Mapped[str | None] = mapped_column(Text, nullable=True)
     failed_step: Mapped[str | None] = mapped_column(String(30), nullable=True)
     admin_password: Mapped[str] = mapped_column(EncryptedString)
+    # The customer's own ERP login (never the Administrator's), so "Access site" can sign them in. NULL on older sites.
+    erp_user_password: Mapped[str | None] = mapped_column(EncryptedString, nullable=True)
     db_password: Mapped[str] = mapped_column(EncryptedString)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())

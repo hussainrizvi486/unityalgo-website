@@ -6,7 +6,7 @@ import {
     ArrowUpRight, Check, Copy, Download, LifeBuoy, LoaderCircle, Play, RefreshCw, Square,
 } from 'lucide-react';
 import type { CustomerSite, SiteBackups, SiteUsage } from '@/lib/controller-client';
-import { siteActionAction } from '../../actions';
+import { accessSiteAction, siteActionAction } from '../../actions';
 import { DeleteSite } from './delete-site';
 import { ChangePlan, ResetPassword, type PlanChoice } from './site-dialogs';
 import { SiteBackupsPanel } from './site-backups';
@@ -14,7 +14,6 @@ import { MonitoringPanel } from '@/components/ui/monitoring-panel';
 import { InstallAppDialog, type InstallableApp } from '@/components/customer/install-app-dialog';
 import { RemoveAppButton } from '@/components/customer/remove-app-button';
 import { formatPrice } from '@/lib/admin-format';
-import { SiteDomainsPanel } from './site-domains';
 
 export type { PlanChoice };
 import { Badge } from '@/components/ui/badge';
@@ -38,6 +37,36 @@ const STATUS: Record<string, { label: string; variant: 'success' | 'neutral' | '
     updating: { label: 'Updating', variant: 'info' },
     deactivated: { label: 'Deactivated', variant: 'neutral' },
 };
+
+/** Opens the site already signed in as the customer's own user. The window is opened first so a pop-up blocker allows it. */
+function AccessSiteButton({ siteId, fallbackUrl, disabled }: { siteId: string; fallbackUrl: string; disabled: boolean }) {
+    const [busy, setBusy] = useState(false);
+    const [error, setError] = useState('');
+    const open = async () => {
+        setError('');
+        setBusy(true);
+        const popup = window.open('about:blank', '_blank');
+        if (popup) popup.opener = null;
+        const result = await accessSiteAction(siteId);
+        setBusy(false);
+        const target = result.url ?? (result.error ? '' : fallbackUrl);
+        if (!target) {
+            popup?.close();
+            setError(result.error ?? 'Could not open the site.');
+            return;
+        }
+        if (popup) popup.location.href = target;
+        else window.location.href = target;
+    };
+    return (
+        <>
+            <Button type="button" variant="outline" size="sm" disabled={disabled || busy} onClick={open}>
+                <ArrowUpRight className="size-4" />{busy ? 'Opening…' : 'Access site'}
+            </Button>
+            {error && <span role="alert" className="portal-text-caption text-destructive">{error}</span>}
+        </>
+    );
+}
 
 function Submit({ label, icon, variant, disabled }: {
     label: string; icon: React.ReactNode; variant?: 'outline' | 'default'; disabled?: boolean;
@@ -176,11 +205,7 @@ export function SiteOverview({ site, applicationNames, plans, installable, modul
                     <p className="mt-2 break-all portal-text-body text-foreground/70">{site.domain}</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
-                    <Button asChild variant="outline" size="sm" disabled={!running}>
-                        <a href={site.url} target="_blank" rel="noopener noreferrer" aria-disabled={!running}>
-                            <ArrowUpRight className="size-4" />Access site
-                        </a>
-                    </Button>
+                    <AccessSiteButton siteId={site.id} fallbackUrl={site.url} disabled={!running} />
                     {trialEnded ? (
                         <Button asChild size="sm"><Link href="/dashboard/plans">Subscribe to continue</Link></Button>
                     ) : deactivated ? (
@@ -260,7 +285,6 @@ export function SiteOverview({ site, applicationNames, plans, installable, modul
                     <TabsTrigger value="apps">Apps ({apps.length})</TabsTrigger>
                     <TabsTrigger value="monitoring">Monitoring</TabsTrigger>
                     <TabsTrigger value="backups">Backups</TabsTrigger>
-                    <TabsTrigger value="domains">Domains &amp; SSL</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="overview" className="mt-4">
@@ -435,10 +459,6 @@ export function SiteOverview({ site, applicationNames, plans, installable, modul
 
                 <TabsContent value="monitoring" className="mt-4">
                     <MonitoringPanel endpoint={`/api/customer/sites/${site.id}/metrics`} />
-                </TabsContent>
-
-                <TabsContent value="domains" className="mt-4">
-                    <SiteDomainsPanel site={site} />
                 </TabsContent>
 
                 <TabsContent value="backups" className="mt-4">

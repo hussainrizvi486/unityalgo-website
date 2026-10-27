@@ -71,7 +71,7 @@ export default async function AdminSiteDetailPage({
         }
         throw error;
     }
-    const { site, server, database, domains, backups, operations } = detail;
+    const { site, server, database, infrastructure, domains, backups, operations } = detail;
     const running = site.status === 'ready';
     const idle = !site.activity;
 
@@ -140,6 +140,41 @@ export default async function AdminSiteDetailPage({
                     {site.limits.audited_at && <Row label="Audited">{formatDateTime(site.limits.audited_at)}</Row>}
                 </Card>
             </div>
+
+            <section className="mt-4 rounded-xl border border-border p-card">
+                <h2 className="">Containers and identifiers</h2>
+                <dl className="mt-3 grid gap-x-gap gap-y-2 portal-text-body md:grid-cols-2">
+                    <Row label="Site ID"><span className="font-mono text-sm">{infrastructure.site_id}</span></Row>
+                    <Row label="Slug"><span className="font-mono text-sm">{infrastructure.slug}</span></Row>
+                    <Row label="Compose project"><span className="font-mono text-sm">{infrastructure.compose_project}</span></Row>
+                    <Row label="Directory on worker"><span className="font-mono text-sm">{infrastructure.path}</span></Row>
+                    <Row label="Image"><span className="font-mono text-sm">{infrastructure.image}</span></Row>
+                    <Row label="Site port">{infrastructure.port}</Row>
+                </dl>
+                <div className="mt-4 overflow-x-auto">
+                    <table className="w-full portal-text-body">
+                        <thead>
+                            <tr className="border-b border-border text-left text-muted-foreground">
+                                <th className="py-2 pr-4 font-medium">Service</th>
+                                <th className="py-2 pr-4 font-medium">Container name</th>
+                                <th className="py-2 pr-4 text-right font-medium">Memory</th>
+                                <th className="py-2 text-right font-medium">CPU</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-border/60">
+                            {infrastructure.containers.map((container) => (
+                                <tr key={container.name}>
+                                    <td className="py-2 pr-4">{container.service}</td>
+                                    <td className="py-2 pr-4 font-mono text-sm">{container.name}</td>
+                                    <td className="py-2 pr-4 text-right">{container.memory_mb} MB</td>
+                                    <td className="py-2 text-right">{container.cpus}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+                {!database && <p className="mt-3 portal-text-caption text-muted-foreground">The db container runs inside this stack because no database server is attached.</p>}
+            </section>
 
             <section className="mt-4 rounded-xl border border-border p-card">
                 <h2 className="">Actions</h2>

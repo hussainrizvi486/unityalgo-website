@@ -392,6 +392,15 @@ export interface AdminSiteDetail {
     site: AdminSite;
     server: { id: string; name: string; ip_address: string; port: number; memory_mb: number; cpu_cores: number | null; status: string | null };
     database: { name: string; host: string; engine: string } | null;
+    infrastructure: {
+        site_id: string;
+        slug: string;
+        compose_project: string;
+        path: string;
+        image: string;
+        port: number;
+        containers: { service: string; name: string; memory_mb: number; cpus: number }[];
+    };
     domains: SiteDomain[];
     backups: { stamp: string; kind: string; created_at: string }[];
     operations: { id: string; kind: string; label: string; status: string; started_at: string | null; duration_ms: number | null; error: string | null }[];
@@ -631,6 +640,12 @@ export const controller = {
             request<{ ok: boolean }>(
                 `/api/v1/sites/${encodeURIComponent(id)}/reset-password`,
                 { method: 'POST', body: { user_id: userId, new_password: newPassword }, timeoutMs: 150_000 },
+            ),
+        /** A one-click sign-in URL for the customer's own ERP login. `available` is false when only the plain sign-in page can be offered. */
+        access: (id: string, userId: string) =>
+            request<{ available: boolean; url: string }>(
+                `/api/v1/sites/${encodeURIComponent(id)}/access`,
+                { method: 'POST', body: { user_id: userId }, timeoutMs: 60_000 },
             ),
         /** Make exactly these Frappe modules visible on the site. Installs nothing; `missing` lists names the site does not have. */
         applyModules: (id: string, userId: string, modules: string[]) =>

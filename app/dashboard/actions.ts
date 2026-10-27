@@ -193,6 +193,22 @@ export async function resetSitePasswordAction(
     return { success: 'Your site password was changed. Everyone is signed out and must use the new password.' };
 }
 
+/** The address that opens the customer's site already signed in, or the plain site address when that is not possible. */
+export async function accessSiteAction(siteId: string): Promise<{ url?: string; error?: string }> {
+    const user = await requireCustomer();
+    try {
+        const { url } = await controller.sites.access(String(siteId), user.id);
+        return { url };
+    } catch (error) {
+        return {
+            error:
+                error instanceof ControllerError && error.status < 500
+                    ? error.message
+                    : 'Site hosting is temporarily unavailable. Please try again.',
+        };
+    }
+}
+
 export async function backupSettingsAction(
     _previous: PortalActionState | undefined,
     data: FormData,

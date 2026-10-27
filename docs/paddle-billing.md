@@ -159,8 +159,13 @@ Each plan has an optional **Metadata** JSON (Admin, Plans). Its `restrictions` o
 ```
 
 - **Modules** are applied right after the setup wizard with the same `DOMAIN_SCRIPT` as module entries (`MODULES`). The list sent is the plan's modules followed by any module entries chosen at creation. When a customer later adds or removes a module entry, the plan's modules stay in the list (`lib/site-modules.ts`, read from the site's subscription plan).
-- **Roles** run in a second step (`ROLES_SCRIPT`, `ROLES` in the create-site step), after the wizard has made the customer's account: each role is created if missing and added to the customer's administrator account. Roles the account already has are kept.
+- **Roles** run in a second step (`ROLES_SCRIPT`, `ROLES` in the create-site step), after the wizard has made the customer's account: each role is created if missing, and the customer's own account is left with **exactly** those roles (the wizard's System Manager is removed). The Administrator account is never given to a customer.
 - Both steps run only when the plan lists something, so a plan without `restrictions` changes nothing. The saved metadata is validated when the admin saves it; keys other than `restrictions` are stored as they are.
 - The restrictions are read when the site setup is saved (before payment) and sent to the controller as `modules` and `roles`. A plan change on an existing site does not re-apply them.
 
 Run `npm run db:migrate` (migration `0017_plan_metadata`) before restarting.
+
+### Access site and database servers
+
+- **Access site** (`POST /api/v1/sites/<id>/access`): the controller signs the customer in on their site's worker with their own ERP login and returns `https://<site>/app?sid=<sid>`, so the button lands on the desk already signed in. The login password is kept encrypted on the site (`sites.erp_user_password`, migration `r4b9d1e2f3a4`), set at provisioning and updated when the customer resets it. Sites created before this have none stored, and a password changed inside the ERP stops matching: both fall back to the plain sign-in page.
+- **Database servers:** a new site uses the default MariaDB cluster, else the oldest registered one, and only runs its own database container when none is registered.
