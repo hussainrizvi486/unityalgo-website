@@ -422,7 +422,7 @@ html {
   --ui-control-font-size: var(--fs-sm);
   --ui-control-padding: var(--control-px);
   --ui-control-radius: var(--radius-md);
-  --ui-button-padding: calc(var(--control-px) * 1.33);
+  --ui-button-padding: calc(var(--control-px) * 1.25);
   --ui-button-small-height: calc(var(--btn-h) - var(--spacing));
   --ui-button-large-height: calc(var(--btn-h) + var(--spacing) * 2);
   --footer-heading-size: var(--fs-lg);

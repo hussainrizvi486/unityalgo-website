@@ -60,6 +60,7 @@ export function PlanComparison({ plans }: { plans: PricingPlan[] }) {
                                 })}
                             </tr>
                         ))}
+                        
                         {plans.some((plan) => plan.vcpu != null || plan.ramMb != null || plan.storageGb != null) && <>
                             <tr className="plan-comparison-group"><th colSpan={plans.length + 1} scope="colgroup">Hosting resources</th></tr>
                             {([

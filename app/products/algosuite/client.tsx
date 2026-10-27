@@ -509,7 +509,8 @@ export const MainContent = ({ pricing }: { pricing?: React.ReactNode }) => (
                 <div className="grid items-center gap-12 lg:grid-cols-[1fr_1.08fr] lg:gap-16">
                     <div>
                         {}
-                        <h1 className="max-w-xl text-4xl leading-none tracking-tighter sm:text-6xl xl:text-7xl">
+                        {/* <h1 className="max-w-xl text-4xl leading-none tracking-tighter sm:text-6xl xl:text-7xl"> */}
+                        <h1 className="font-display text-display leading-none tracking-tighter [word-spacing:0.08em]">
                             Your whole business.
                             <br />
                             <span className="text-primary">
@@ -523,7 +524,7 @@ export const MainContent = ({ pricing }: { pricing?: React.ReactNode }) => (
                             anything.
                         </p>
                         <div className="mt-8 flex flex-wrap gap-3">
-                            <Button asChild size="lg" className="py-2 px-6">
+                            <Button asChild size="sm" className="py-2 px-6">
                                 <Link href="/register" className='text-sm'>
                                     Get Now{' '}
                                     <ArrowUpRight className="size-4" />
@@ -532,7 +533,7 @@ export const MainContent = ({ pricing }: { pricing?: React.ReactNode }) => (
                             <Button
                                 asChild
                                 variant="outline"
-                                size="lg"
+                                size="sm"
                                 className="py-2 px-6"
                             >
                                 <Link href="#modules" className='text-sm'>
@@ -702,7 +703,7 @@ export const MainContent = ({ pricing }: { pricing?: React.ReactNode }) => (
                             <TabsTrigger
                                 key={area.id}
                                 value={area.id}
-                                className="h-auto flex-none justify-start whitespace-nowrap rounded-none border-0 border-b-2 border-transparent px-3 py-3 text-left text-sm font-medium text-foreground/70 hover:bg-secondary hover:text-foreground data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:font-semibold data-[state=active]:text-foreground data-[state=active]:shadow-none lg:-ml-px lg:whitespace-normal lg:border-b-0 lg:border-l-2 lg:px-5 lg:py-2.5"
+                                className="h-auto flex-none justify-start whitespace-nowrap rounded-none border-0 border-b-2 border-transparent px-3 py-3 text-left text-sm font-medium text-foreground/70 hover:bg-secondary hover:text-foreground data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:font-semibold data-[state=active]:text-foreground data-[state=active]:shadow-none lg:-ml-px lg:whitespace-normal lg:border-b-0 lg:border-l-2 lg:px-5 lg:py-2"
                             >
                                 {area.label}
                             </TabsTrigger>

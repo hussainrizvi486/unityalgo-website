@@ -111,8 +111,8 @@ export const AboutContent = () => {
                             <h3 className="text-4xl md:text-5xl mb-6 leading-tight">
                                 Turning complex challenges into seamless <span className="underline decoration-primary decoration-2 underline-offset-4">digital experiences.</span>
                             </h3>
-                            <Button className="bg-primary-foreground text-primary hover:bg-primary-foreground/90 px-8 py-6 text-lg font-medium">
-                                Work With Us <ArrowRight className="ml-2 w-5 h-5" />
+                            <Button variant="secondary" className='text-xs px-4'>
+                                Work With Us <ArrowRight size="4"/>
                             </Button>
                         </motion.div>
 

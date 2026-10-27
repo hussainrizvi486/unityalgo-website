@@ -5,21 +5,28 @@ import type { PriceCurrency } from '@/lib/pricing';
 export type PricingPlan = Pick<Plan,
     'id' | 'name' | 'tagline' | 'priceAmount' | 'priceUnit' | 'transactionFeePercent' |
     'userLimit' | 'features' | 'trialDays' | 'vcpu' | 'ramMb' | 'storageGb'
-> & { currency?: PriceCurrency | null };
+> & { currency?: PriceCurrency | null, metadata?: string };
 
 // The catalog supports bundled features and label:value details.
-export function planFeatureValues(plan: Pick<PricingPlan, 'features'>) {
+export function planFeatureValues(plan: Pick<PricingPlan, 'metadata'>) {
     const values = new Map<string, { label: string; value: string | true }>();
-    for (const feature of plan.features) {
-        for (const part of feature.split(' + ')) {
-            const [label, ...detail] = part.split(':');
-            const name = label.trim();
-            if (!name) continue;
-            values.set(name.toLowerCase(), { label: name, value: detail.join(':').trim() || true });
+    if (plan.metadata){
+        let metadata = null 
+        try {
+            metadata = JSON.parse(plan.metadata)
+        } catch (error) {            
+        } 
+        if (metadata) {
+            if(metadata.features){
+                metadata.
+            }
         }
     }
+
+
     return values;
 }
+
 
 export function pricingPlanAction(plan: PricingPlan) {
     const quote = plan.priceAmount == null && !plan.trialDays;

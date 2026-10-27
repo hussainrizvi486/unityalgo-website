@@ -146,11 +146,17 @@ export function Header() {
             <div className='hidden md:block'>
               <DesktopNav isScrolled={isScrolled} />
             </div>
-            <div className="hidden md:flex items-center gap-gap">
+            <div className="hidden md:flex items-center gap-4">
+              <Link href="/login">
+                { }
+                <Button className="w-full px-4" size="sm">
+                  Log in
+                </Button>
+              </Link>
               <Link href="/register">
-                {}
-                <Button className="py-2 transition-all duration-300 bg-primary hover:bg-primary/90 text-primary-foreground shadow-md">
-                  Get Started
+                { }
+                <Button className="w-full px-4" size="sm" variant="outline">
+                  Sign Up
                 </Button>
               </Link>
             </div>
@@ -215,9 +221,14 @@ const MobileMenu = () => {
               </Link>
             ))}
 
-          <Button asChild className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground shadow-md" size="sm"><Link href="/register" onClick={closeMenu} className="block mt-6">
-              Get Started
+          <div className='flex gap-1 items-center'>
+            <Button asChild className="w-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-md" size="sm"><Link href="/login" className="block mt-6">
+              Sign In
             </Link></Button>
+            <Button asChild className="w-full bg-secondary hover:bg-secondary/90 text-secondary-foreground shadow-md" size="sm"><Link href="/register" className="block mt-6">
+              Sign Up
+            </Link></Button>
+          </div>
         </nav>
       </motion.div>
     </motion.div>
